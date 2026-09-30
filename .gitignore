@@ -13,3 +13,5 @@ todos/
 .buildstamp
 archive/
 desktop.ini
+web/node_modules/
+web/.next/

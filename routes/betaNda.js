@@ -106,11 +106,18 @@ router.post('/api/auth/register-beta', async (req, res) => {
 
     const newUser = newUserRes.rows[0];
 
-    // Seed House 1 & 2 for Affiliate System
-    await db.query(
-      `INSERT INTO affiliate_houses (user_id, house_number, status) VALUES ($1, 1, 'active'), ($1, 2, 'active')`,
+    // Invited testers can join income programs. Admin accounts cannot.
+    const { isAdminIncomeBlockedUser } = require('../config/adminIncomePolicy');
+    const roleRes = await db.query(
+      'SELECT is_admin, is_creator, email FROM users WHERE id = $1',
       [newUser.id]
     );
+    if (!isAdminIncomeBlockedUser(roleRes.rows[0])) {
+      await db.query(
+        `INSERT INTO affiliate_houses (user_id, house_number, status) VALUES ($1, 1, 'active'), ($1, 2, 'active')`,
+        [newUser.id]
+      );
+    }
 
     // Set Session
     req.session.userId = newUser.id;
@@ -138,16 +145,44 @@ router.post('/api/nda/accept', async (req, res) => {
   const db = getDb(req);
 
   try {
-    const result = await db.query(
-      `UPDATE users 
-       SET nda_accepted_at = NOW(), nda_version = '1.0' 
-       WHERE id = $1 
-       RETURNING nda_accepted_at`,
-      [req.session.userId]
-    );
+    const typedSignature = String(
+      (req.body && (req.body.typedSignature || req.body.ndaSignature || req.body.signature)) || ''
+    ).trim();
+    const userAgent = String(req.headers['user-agent'] || '');
+    const forwarded = req.headers['x-forwarded-for'];
+    const ipAddress = (Array.isArray(forwarded) ? forwarded[0] : forwarded || req.ip || '')
+      .toString()
+      .split(',')[0]
+      .trim() || null;
 
-    // Keep the existing nda_acceptances log in sync for /api/nda/status (legacy version key is v1)
-    const ipAddress = req.headers['x-forwarded-for'] || req.ip || null;
+    let result;
+    try {
+      result = await db.query(
+        `UPDATE users
+         SET nda_accepted_at = NOW(),
+             nda_version = '1.0',
+             nda_typed_signature = COALESCE(NULLIF($2, ''), nda_typed_signature),
+             nda_user_agent = COALESCE(NULLIF($3, ''), nda_user_agent),
+             nda_signed_ip = COALESCE($4, nda_signed_ip)
+         WHERE id = $1
+         RETURNING nda_accepted_at`,
+        [req.session.userId, typedSignature, userAgent, ipAddress]
+      );
+    } catch (columnErr) {
+      console.warn('NDA audit columns missing; recording acceptance without signature metadata.', columnErr && columnErr.message);
+      result = await db.query(
+        `UPDATE users
+         SET nda_accepted_at = NOW(), nda_version = '1.0'
+         WHERE id = $1
+         RETURNING nda_accepted_at`,
+        [req.session.userId]
+      );
+    }
+
+    if (!result.rows[0]) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
     await db.query(
       `INSERT INTO nda_acceptances (user_id, accepted_at, nda_version, ip_address)
        VALUES ($1, NOW(), $2, $3)
