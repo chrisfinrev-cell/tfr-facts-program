@@ -268,6 +268,7 @@
     <div class="tab" data-tab="education">📚 Education</div>
     <div class="tab" data-tab="shop-save">📡 Rate Radar</div>
     <div class="tab" data-tab="nda">🔏 NDA Status</div>
+    <div class="tab" data-tab="beta-invites">🎟️ Beta Invites</div>
     <div class="tab" data-tab="users">🗑️ Users</div>
     <div class="tab" data-tab="succession">⚜️ Succession</div>
     <div class="tab" data-tab="trials">🧪 Trials</div>
@@ -865,6 +866,65 @@
         </div>
       </div>
       <!-- END NDA STATUS TAB -->
+
+      <!-- ═══════ BETA INVITES / FOUNDER TRACKER ═══════ -->
+      <div class="panel" id="panel-beta-invites">
+        <div class="section">
+          <h2>Issue Master Admin Invite Code</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Code Name</label>
+              <input type="text" id="newCode" placeholder="Code Name (e.g., VIP-FOUNDER-2026)">
+            </div>
+            <div class="form-group">
+              <label>Max Uses</label>
+              <input type="number" id="maxUses" placeholder="Max Uses (e.g., 20)" value="5">
+            </div>
+            <button class="btn btn-primary" onclick="createBetaInviteCode()">Generate Code</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Master Admin Codes Tracker</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadBetaInviteTracking()">↻ Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Used / Max</th>
+                  <th>Remaining</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="masterCodesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Beta Tester Lineage & Invite Usage</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>User Email</th>
+                  <th>Personal Code</th>
+                  <th>Invited By</th>
+                  <th>Total Recruits</th>
+                  <th>Invites Remaining</th>
+                  <th>NDA Accepted</th>
+                  <th>Income Programs</th>
+                </tr>
+              </thead>
+              <tbody id="lineageBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- END BETA INVITES TAB -->
 
       <!-- ═══════ USERS / ACCOUNT DELETION TAB ═══════ -->
       <div class="panel" id="panel-users">
@@ -2077,6 +2137,64 @@
       }
     }
 
+    async function loadBetaInviteTracking() {
+      const res = await fetch('/api/admin/tracking');
+      const data = await res.json();
+      if (!data.success) return alert(data.error || 'Failed to load data.');
+
+      const masterBody = document.getElementById('masterCodesBody');
+      masterBody.innerHTML = (data.masterCodes || []).map(c => `
+        <tr>
+          <td><strong>${c.code}</strong></td>
+          <td>${c.uses_count} / ${c.max_uses}</td>
+          <td>${c.max_uses - c.uses_count}</td>
+          <td>${new Date(c.created_at).toLocaleDateString()}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4">No master codes yet.</td></tr>';
+
+      const lineageBody = document.getElementById('lineageBody');
+      lineageBody.innerHTML = (data.userLineage || []).map(u => `
+        <tr>
+          <td>${u.email}</td>
+          <td><code>${u.referral_code || 'N/A'}</code></td>
+          <td>${u.invited_by_email || 'Master Code'}</td>
+          <td><strong>${u.total_recruits}</strong></td>
+          <td>${u.monthly_invites_remaining}</td>
+          <td>${u.nda_accepted_at
+            ? '<span class="badge badge-green">Signed</span>'
+            : '<span class="badge badge-yellow">Pending</span>'}</td>
+          <td>${u.is_admin
+            ? '<span class="badge badge-yellow">Admin (blocked)</span>'
+            : `<button class="btn btn-sm ${u.income_programs_blocked ? 'btn-primary' : 'btn-secondary'}" onclick="setIncomeEligibility(${u.user_id}, ${u.income_programs_blocked ? 'false' : 'true'})">${u.income_programs_blocked ? 'Blocked — Allow' : 'Eligible — Block'}</button>`}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="7">No beta testers yet.</td></tr>';
+    }
+
+    async function setIncomeEligibility(userId, blocked) {
+      const res = await fetch('/api/admin/income-eligibility', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, blocked })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadBetaInviteTracking();
+    }
+
+    async function createBetaInviteCode() {
+      const code = document.getElementById('newCode').value;
+      const maxUses = document.getElementById('maxUses').value;
+
+      const res = await fetch('/api/admin/generate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, maxUses })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadBetaInviteTracking();
+    }
+
     function switchTab(tabName) {
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
       document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tabName}`));
@@ -2085,6 +2203,7 @@
       if (tabName === 'education') loadEducationAdmin();
       if (tabName === 'shop-save') loadShopAdmin();
       if (tabName === 'nda') loadNdaStatus();
+      if (tabName === 'beta-invites') loadBetaInviteTracking();
       if (tabName === 'resources') loadResourcesAdmin();
       if (tabName === 'feed') loadFeedAdmin();
       if (tabName === 'waitlist') loadWaitlist();

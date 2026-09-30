@@ -204,6 +204,14 @@ app.use('/api/auth', createAuthRouter());
 app.set('db', pool);
 const { router: betaNdaRouter, enforceNda } = require('./routes/betaNda');
 app.use(betaNdaRouter);
+const { router: adminRouter, requireAdmin } = require('./routes/admin');
+const { isAdminIncomeBlockedUser, loadIncomeBlockFlags, userBlockedFromIncomePrograms, INCOME_BLOCK_ERROR } = require('./config/adminIncomePolicy');
+app.use(adminRouter);
+
+// Serve Admin UI (Protected by admin middleware)
+app.get('/admin', requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
 
 // NDA Gate Page Route
 app.get('/nda', (req, res) => {
@@ -361,6 +369,7 @@ app.use(function auditLockoutGuard(req, res, next) {
 // Redirect /app.html → /app so all app access goes through requireAuth + auth injection.
 // MUST be before express.static — otherwise static middleware serves the raw file first.
 app.get('/app.html', (req, res) => res.redirect(301, '/app'));
+app.get('/admin.html', (req, res) => res.redirect(302, '/admin'));
 
 // Serve static files AFTER session middleware
 app.use(express.static(path.join(__dirname, 'public')));
@@ -1941,7 +1950,7 @@ app.get('/api/auth/me', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'SELECT id, email, name, display_name, avatar_url, avatar_color, plan, paid_until, is_creator, promo_code_used, referral_code, created_at, promo_grace_started_at, promo_grace_expired, trial_used, trial_started_at, trial_expires_at, trial_plan_type, pricing_tier, business_path_type, survival_burn_cents, bucket_cert_completed FROM users WHERE id = $1',
+      'SELECT id, email, name, display_name, avatar_url, avatar_color, plan, paid_until, is_creator, is_admin, income_programs_blocked, promo_code_used, referral_code, created_at, promo_grace_started_at, promo_grace_expired, trial_used, trial_started_at, trial_expires_at, trial_plan_type, pricing_tier, business_path_type, survival_burn_cents, bucket_cert_completed FROM users WHERE id = $1',
       [req.session.userId]
     );
 
@@ -2032,7 +2041,9 @@ app.get('/api/auth/me', async (req, res) => {
         // Business Pro onboarding fields
         business_path_type: user.business_path_type || null,
         survival_burn_cents: user.survival_burn_cents || null,
-        bucket_cert_completed: user.bucket_cert_completed || false
+        bucket_cert_completed: user.bucket_cert_completed || false,
+        is_admin: !!user.is_admin,
+        can_join_income_programs: !isAdminIncomeBlockedUser(user)
       }
     });
   } catch (err) {
@@ -12439,7 +12450,7 @@ app.post('/api/affiliate/join', async (req, res) => {
 
     const normalizedEmail = email.toLowerCase();
     const userResult = await pool.query(
-      'SELECT id, plan, paid_until, is_creator, promo_code_used FROM users WHERE LOWER(email) = $1',
+      'SELECT id, plan, paid_until, is_creator, is_admin, income_programs_blocked, promo_code_used, email FROM users WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
 
@@ -12456,8 +12467,8 @@ app.post('/api/affiliate/join', async (req, res) => {
 
     // Admin and Future Generations accounts are permanently blocked from affiliate enrollment.
     // Future Generations (OWNER_EMAILS) get free sovereign access but earn no commissions or referral payouts.
-    if (user.is_creator || isFutureGenEmail(normalizedEmail)) {
-      return res.status(403).json({ error: 'This account is not eligible to join the affiliate program.' });
+    if (isAdminIncomeBlockedUser(user)) {
+      return res.status(403).json({ error: INCOME_BLOCK_ERROR, code: 'ADMIN_INCOME_BLOCKED' });
     }
 
     const existingAffiliate = await pool.query(
@@ -12731,6 +12742,9 @@ app.post('/api/affiliate/request-payout', async (req, res) => {
     }
 
     const affiliate = affiliateResult.rows[0];
+    if (affiliate.user_id && (await userBlockedFromIncomePrograms(pool, affiliate.user_id))) {
+      return res.status(403).json({ error: INCOME_BLOCK_ERROR, code: 'ADMIN_INCOME_BLOCKED' });
+    }
     if (affiliate.status !== 'active') {
       return res.status(403).json({ error: 'Affiliate account is not active' });
     }
@@ -13119,6 +13133,9 @@ app.post('/api/affiliate/stripe-connect/onboard', async (req, res) => {
     if (affResult.rows.length === 0) return res.status(404).json({ error: 'Not an affiliate' });
 
     const affiliate = affResult.rows[0];
+    if (affiliate.user_id && (await userBlockedFromIncomePrograms(pool, affiliate.user_id))) {
+      return res.status(403).json({ error: INCOME_BLOCK_ERROR, code: 'ADMIN_INCOME_BLOCKED' });
+    }
 
     // If already onboarded, return existing status
     if (affiliate.stripe_connect_onboarding_completed) {
@@ -14163,7 +14180,7 @@ async function processCommission(subscriptionId, isRenewal = false) {
           hops++;
           // Find the ancestor user
           const ancestorResult = await client.query(
-            'SELECT id, email, referred_by_user_id FROM users WHERE id = $1',
+            'SELECT id, email, is_admin, is_creator, income_programs_blocked, referred_by_user_id FROM users WHERE id = $1',
             [currentUserId]
           );
           if (ancestorResult.rows.length === 0) break;
@@ -14171,10 +14188,7 @@ async function processCommission(subscriptionId, isRenewal = false) {
 
           // Block admin (CREATOR_EMAIL) and Future Generations accounts from receiving commissions.
           // Future Generations get free sovereign access but are not eligible for affiliate payouts.
-          if (ancestor.email && (
-            ancestor.email.toLowerCase() === CREATOR_EMAIL ||
-            isFutureGenEmail(ancestor.email)
-          )) {
+          if (isAdminIncomeBlockedUser(ancestor)) {
             console.log(`[Commission] Skipping ineligible email — blocked from payout (user ${ancestor.id})`);
             level++;
             currentUserId = ancestor.referred_by_user_id;
@@ -25332,9 +25346,9 @@ app.get('/api/affiliate/graduation-check', requireAuth, async (req, res) => {
 
     const user = userRes.rows[0];
 
-    // Creators are blocked from affiliate enrollment
-    if (user.is_creator) {
-      return res.json({ should_show: false, reason: 'creator_exempt' });
+    // Admin / creator cannot participate in income-generating programs
+    if (isAdminIncomeBlockedUser(user)) {
+      return res.json({ should_show: false, reason: 'admin_income_blocked' });
     }
 
     // Must be a paid Pro subscriber

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FACTS Founder Admin — Invite Tracker</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 30px; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+        h1, h2 { color: #38bdf8; margin-top: 0; }
+        .form-group { display: flex; gap: 12px; margin-bottom: 16px; }
+        input { background: #0f172a; border: 1px solid #334155; color: #fff; padding: 10px 14px; border-radius: 6px; font-size: 0.95rem; }
+        button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        button:hover { background: #0369a1; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.9rem; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: #94a3b8; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-green { background: #065f46; color: #34d399; }
+        .badge-yellow { background: #854d0e; color: #fde047; }
+    </style>
+</head>
+<body>
+    <h1>FACTS Founder Control Panel</h1>
+
+    <!-- Create Custom Code -->
+    <div class="card">
+        <h2>Issue Master Admin Invite Code</h2>
+        <div class="form-group">
+            <input type="text" id="newCode" placeholder="Code Name (e.g., VIP-FOUNDER-2026)">
+            <input type="number" id="maxUses" placeholder="Max Uses (e.g., 20)" value="5">
+            <button onclick="createCode()">Generate Code</button>
+        </div>
+    </div>
+
+    <!-- Master Codes Usage -->
+    <div class="card">
+        <h2>Master Admin Codes Tracker</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Used / Max</th>
+                    <th>Remaining</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody id="masterCodesBody"></tbody>
+        </table>
+    </div>
+
+    <!-- User Referral Lineage -->
+    <div class="card">
+        <h2>Beta Tester Lineage & Invite Usage</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>User Email</th>
+                    <th>Personal Code</th>
+                    <th>Invited By</th>
+                    <th>Total Recruits</th>
+                    <th>Invites Remaining</th>
+                    <th>NDA Accepted</th>
+                    <th>Income Programs</th>
+                </tr>
+            </thead>
+            <tbody id="lineageBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadTrackingData() {
+            const res = await fetch('/api/admin/tracking');
+            const data = await res.json();
+            if (!data.success) return alert(data.error || 'Failed to load data.');
+
+            // Render Master Codes
+            const masterBody = document.getElementById('masterCodesBody');
+            masterBody.innerHTML = data.masterCodes.map(c => `
+                <tr>
+                    <td><strong>${c.code}</strong></td>
+                    <td>${c.uses_count} / ${c.max_uses}</td>
+                    <td>${c.max_uses - c.uses_count}</td>
+                    <td>${new Date(c.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+
+            // Render User Lineage
+            const lineageBody = document.getElementById('lineageBody');
+            lineageBody.innerHTML = data.userLineage.map(u => `
+                <tr>
+                    <td>${u.email}</td>
+                    <td><code>${u.referral_code || 'N/A'}</code></td>
+                    <td>${u.invited_by_email || 'Master Code'}</td>
+                    <td><strong>${u.total_recruits}</strong></td>
+                    <td>${u.monthly_invites_remaining}</td>
+                    <td>${u.nda_accepted_at 
+                        ? '<span class="badge badge-green">Signed</span>' 
+                        : '<span class="badge badge-yellow">Pending</span>'}</td>
+                    <td>${u.is_admin
+                        ? '<span class="badge badge-yellow">Admin (blocked)</span>'
+                        : `<button onclick="setIncomeEligibility(${u.user_id}, ${u.income_programs_blocked ? 'false' : 'true'})">${u.income_programs_blocked ? 'Blocked — Allow' : 'Eligible — Block'}</button>`}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function setIncomeEligibility(userId, blocked) {
+            const res = await fetch('/api/admin/income-eligibility', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, blocked })
+            });
+            const data = await res.json();
+            alert(data.message || data.error);
+            loadTrackingData();
+        }
+
+        async function createCode() {
+            const code = document.getElementById('newCode').value;
+            const maxUses = document.getElementById('maxUses').value;
+
+            const res = await fetch('/api/admin/generate-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, maxUses })
+            });
+            const data = await res.json();
+            alert(data.message || data.error);
+            loadTrackingData();
+        }
+
+        loadTrackingData();
+    </script>
+</body>
+</html>

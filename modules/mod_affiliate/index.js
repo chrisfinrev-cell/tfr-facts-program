@@ -58,6 +58,11 @@ function getRecommendedTools(userProfile) {
 async function handleNewRegistration(args) {
   const userId = parseInt(args && args.newUserId, 10);
   if (!userId) return null;
+  const { userBlockedFromIncomePrograms } = require('../../config/adminIncomePolicy');
+  if (await userBlockedFromIncomePrograms(pool, userId)) {
+    await seedDefaultAllocations(pool, userId);
+    return { skipped: true, reason: 'admin_income_blocked' };
+  }
   const [placement] = await Promise.all([
     routeOrphanUser(pool, args),
     seedDefaultAllocations(pool, userId)
