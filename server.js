@@ -820,7 +820,7 @@ async function hasIncubatorSubAccess(userId) {
 async function getUserProductTier(userId) {
   try {
     const res = await pool.query(
-      'SELECT pricing_tier, plan, paid_until, is_creator FROM users WHERE id = $1',
+      'SELECT pricing_tier, plan, paid_until, is_creator, email FROM users WHERE id = $1',
       [userId]
     );
     if (res.rows.length === 0) return 'free';
