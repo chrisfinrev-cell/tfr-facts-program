@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Change Your Plan â€” FACTS</title>
+  <title>Change Your Plan — FACTS</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0a0f1a">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
@@ -48,7 +48,7 @@
     .price-period{font-size:11px;color:var(--text-muted)}
     .tier-features{list-style:none}
     .tier-features li{font-size:13px;color:var(--text-secondary);padding:3px 0;display:flex;align-items:center;gap:8px}
-    .tier-features li::before{content:'âœ“';color:var(--accent-green);font-size:12px;flex-shrink:0}
+    .tier-features li::before{content:'✓';color:var(--accent-green);font-size:12px;flex-shrink:0}
 
     /* Confirmation panel */
     .confirm-panel{background:var(--bg-elevated);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:20px;display:none}
@@ -99,7 +99,7 @@
 </head>
 <body>
 <div class="page-wrap">
-  <a href="/app" class="back-btn">â† Back to Dashboard</a>
+  <a href="/app" class="back-btn">← Back to Dashboard</a>
 
   <h1 class="page-title">Change Your Plan</h1>
   <p class="page-sub">Upgrade to unlock features, or downgrade anytime. Your data is always preserved.</p>
@@ -111,7 +111,7 @@
       <div class="plan-name" id="current-tier-name">Loading...</div>
       <div id="paid-until-label" style="font-size:12px;color:var(--text-muted);margin-top:3px"></div>
     </div>
-    <span class="plan-status" id="plan-status-badge">â€”</span>
+    <span class="plan-status" id="plan-status-badge">—</span>
   </div>
 
   <!-- Billing toggle -->
@@ -127,7 +127,7 @@
 
   <!-- Downgrade warning -->
   <div class="downgrade-warn" id="downgrade-warn">
-    <strong>âš  Features you'll lose when downgrading:</strong>
+    <strong>⚠ Features you'll lose when downgrading:</strong>
     <ul id="features-lost-list"></ul>
     <div style="margin-top:8px;font-size:12px;color:#94a3b8">Your data is always preserved. Features unlock again if you re-upgrade.</div>
   </div>
@@ -137,15 +137,15 @@
     <div class="confirm-title">Plan Change Summary</div>
     <div class="confirm-row">
       <span class="confirm-row-label">From</span>
-      <span class="confirm-row-value" id="from-tier-label">â€”</span>
+      <span class="confirm-row-value" id="from-tier-label">—</span>
     </div>
     <div class="confirm-row">
       <span class="confirm-row-label">To</span>
-      <span class="confirm-row-value" id="to-tier-label">â€”</span>
+      <span class="confirm-row-value" id="to-tier-label">—</span>
     </div>
     <div class="confirm-row" id="price-diff-row">
       <span class="confirm-row-label">Price change</span>
-      <span class="confirm-row-value" id="price-diff-label">â€”</span>
+      <span class="confirm-row-value" id="price-diff-label">—</span>
     </div>
     <div class="confirm-row" id="billing-row">
       <span class="confirm-row-label">Billing</span>
@@ -159,7 +159,7 @@
 
   <!-- Admin testing panel (only visible for admin accounts) -->
   <div class="admin-panel" id="admin-panel">
-    <div class="admin-label">ðŸ”§ Admin Testing Override</div>
+    <div class="admin-label">🔧 Admin Testing Override</div>
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Set any tier for any user. Shows "TESTING: [Tier]" indicator.</p>
     <div class="admin-row">
       <input class="admin-input" id="admin-email-input" placeholder="user@example.com" type="email">
@@ -266,7 +266,7 @@
         <div class="tier-header">
           <div>
             <div class="tier-name" style="color:${color}">${t.display_name}</div>
-            ${isCurrent ? '' : `<div style="font-size:12px;color:var(--text-muted);margin-top:2px">${TIER_ORDER.indexOf(t.tier) > TIER_ORDER.indexOf(currentTier) ? 'â†‘ Upgrade' : 'â†“ Downgrade'}</div>`}
+            ${isCurrent ? '' : `<div style="font-size:12px;color:var(--text-muted);margin-top:2px">${TIER_ORDER.indexOf(t.tier) > TIER_ORDER.indexOf(currentTier) ? '↑ Upgrade' : '↓ Downgrade'}</div>`}
           </div>
           <div class="tier-price">
             <div class="price-amount">${displayCents === 0 ? 'Free' : '$' + displayUSD}</div>
@@ -309,7 +309,7 @@
       const diffCents = preview.price_diff_cents;
       const diffLabel = diffCents === 0 ? 'No change'
         : diffCents > 0 ? `<span class="arrow-up">+$${(diffCents/100).toFixed(2)}/mo</span>`
-        : `<span class="arrow-down">âˆ’$${(Math.abs(diffCents)/100).toFixed(2)}/mo</span>`;
+        : `<span class="arrow-down">−$${(Math.abs(diffCents)/100).toFixed(2)}/mo</span>`;
       document.getElementById('price-diff-label').innerHTML = diffLabel;
       document.getElementById('billing-label').textContent = preview.billing === 'one_time' ? 'One-time purchase' : preview.billing === 'annual' ? 'Annual' : 'Monthly';
 
@@ -329,7 +329,7 @@
       ctaBtn.disabled = false;
       ctaBtn.style.background = preview.direction === 'downgrade' ? 'var(--accent-red)' : 'var(--accent-gold)';
       ctaBtn.textContent = preview.direction === 'upgrade'
-        ? `Upgrade to ${preview.to_display} â†’`
+        ? `Upgrade to ${preview.to_display} →`
         : `Downgrade to ${preview.to_display}`;
 
       document.getElementById('cancel-btn').style.display = 'block';
@@ -363,7 +363,7 @@
       if (stripeLink) {
         window.location.href = stripeLink;
       } else {
-        btn.innerHTML = 'Stripe link not available â€” contact admin@factsmoney.com';
+        btn.innerHTML = 'Stripe link not available — contact admin@factsmoney.com';
         btn.disabled = false;
       }
     } else {
@@ -378,7 +378,7 @@
         });
         const data = await r.json();
         if (r.ok) {
-          btn.innerHTML = 'âœ“ ' + data.message;
+          btn.innerHTML = '✓ ' + data.message;
           btn.style.background = 'var(--accent-green)';
           setTimeout(() => { window.location.href = '/app'; }, 2200);
         } else {
@@ -438,12 +438,12 @@
       });
       const data = await r.json();
       if (r.ok) {
-        result.textContent = `âœ“ ${data.message}`;
+        result.textContent = `✓ ${data.message}`;
         result.className = 'admin-result success';
         document.getElementById('admin-email-input').value = '';
         document.getElementById('admin-tier-select').value = '';
       } else {
-        result.textContent = `âœ— ${data.error}`;
+        result.textContent = `✗ ${data.error}`;
         result.className = 'admin-result error';
       }
     } catch (e) {

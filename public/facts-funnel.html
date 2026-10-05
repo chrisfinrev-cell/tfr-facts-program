@@ -29,7 +29,7 @@
         }
     </script>
     <style>
-        /* â”€â”€ Tailwind CDN fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── Tailwind CDN fallback ──────────────────────────────── */
         /* Privacy browsers (DuckDuckGo, Brave, aggressive ad-blockers)
            block cdn.tailwindcss.com, leaving all utility classes inert.
            These inline rules duplicate every Tailwind class used on this
@@ -128,9 +128,9 @@
         .active\:scale-\[0\.98\]:active { transform: scale(0.98); }
         .shadow-yellow-600\/10 { box-shadow: 0 10px 15px -3px rgba(202,138,4,0.1); }
 
-        /* â”€â”€ End Tailwind CDN fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        /* ── End Tailwind CDN fallback ─────────────────────────── */
 
-        /* ESTIMATOR HEADER â€” inline SVG handles STOLEN WEALTH + ESTIMATOR text.
+        /* ESTIMATOR HEADER — inline SVG handles STOLEN WEALTH + ESTIMATOR text.
            ESTIMATOR sits between T's, silver/grey, regular weight.
            Crimson divider line sits below at 100% of container width. */
         .stolen-wealth-block {
@@ -189,17 +189,17 @@
     <!-- Main Mobile Container Viewport -->
     <div class="w-full max-w-md bg-cardBg rounded-3xl p-6 shadow-2xl border border-gray-800 flex flex-col justify-between">
 
-        <!-- HEADER â€” inline SVG handles STOLEN WEALTH + ESTIMATOR text.
+        <!-- HEADER — inline SVG handles STOLEN WEALTH + ESTIMATOR text.
              Crimson divider line sits below at 100% of .stolen-wealth-block width. -->
         <div class="text-center mb-6 select-none">
             <div class="stolen-wealth-block">
                 <!-- SVG header: STOLEN WEALTH + ESTIMATOR.
                      Both lines use textLength + lengthAdjust="spacingAndGlyphs" so each
-                     character occupies an equal fraction of the specified width â€”
+                     character occupies an equal fraction of the specified width —
                      alignment is pure arithmetic, zero font-metric dependency.
 
                      STOLEN WEALTH: 13 chars, textLength 900 (full viewBox width), x=0.
-                       slot width = 900 / 13 â‰ˆ 69.23
+                       slot width = 900 / 13 ≈ 69.23
                        T-in-STOLEN  starts at 0 + 1*69.23 = 69
                        T-in-WEALTH  ends   at 0 + 12*69.23 = 831
 
@@ -208,12 +208,12 @@
                        regular weight. Font-size 46. y=118 tucks it just under
                        STOLEN WEALTH baseline, above crimson line. -->
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 210" role="img" aria-label="Stolen Wealth Estimator" style="width: 100%; height: auto; display: block;">
-                    <!-- STOLEN WEALTH â€” large red Impact headline, full-width so crimson line aligns flush -->
+                    <!-- STOLEN WEALTH — large red Impact headline, full-width so crimson line aligns flush -->
                     <text x="0" y="100"
                           font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif"
                           font-size="110" font-weight="bold" fill="#FF3B30"
                           textLength="900" lengthAdjust="spacingAndGlyphs">STOLEN WEALTH</text>
-                    <!-- ESTIMATOR â€” Montserrat Light (weight 300), NOT Impact.
+                    <!-- ESTIMATOR — Montserrat Light (weight 300), NOT Impact.
                          Uses weight 300 (Light) for genuinely thin/airy letterforms.
                          T-in-STOLEN starts ~x=69; T-in-WEALTH ends ~x=830.
                          Spans full T-to-T span (x=69, textLength=761).
@@ -223,7 +223,7 @@
                           font-size="46" font-weight="300" fill="#B0B0B0"
                           textLength="761" lengthAdjust="spacingAndGlyphs">ESTIMATOR</text>
                 </svg>
-                <!-- Crimson divider â€” DO NOT TOUCH -->
+                <!-- Crimson divider — DO NOT TOUCH -->
                 <div class="crimson-divider-line mt-3"></div>
             </div>
         </div>
@@ -292,7 +292,7 @@
                 <input type="range" id="input-rate" min="0.00" max="25.00" step="0.05" value="6.60" class="w-full">
             </div>
 
-            <!-- 5. Projection Timeline Slider (5â€“40 years, default 30) -->
+            <!-- 5. Projection Timeline Slider (5–40 years, default 30) -->
             <div>
                 <div class="flex justify-between items-center mb-1 text-sm">
                     <label class="text-gray-400 font-semibold tracking-wider text-xs uppercase">Projection Timeline</label>
@@ -418,7 +418,7 @@
             runWealthTheftCalculations();
         });
 
-        // Wire CTA â€” submit calculator state then navigate to forensic scan
+        // Wire CTA — submit calculator state then navigate to forensic scan
         document.getElementById('reclaim-btn').addEventListener('click', async () => {
             const btn = document.getElementById('reclaim-btn');
             btn.disabled = true;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0a0f1a">
-  <title>Level 1 â€” Ground Zero Intelligence Gate | FACTS</title>
+  <title>Level 1 — Ground Zero Intelligence Gate | FACTS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -65,7 +65,7 @@
       position: relative; z-index: 1;
     }
 
-    /* â”€â”€ Top bar â”€â”€ */
+    /* ── Top bar ── */
     .top-bar {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 40px;
@@ -88,7 +88,7 @@
       text-transform: uppercase;
     }
 
-    /* â”€â”€ Page title â”€â”€ */
+    /* ── Page title ── */
     .page-title { margin-bottom: 32px; }
     .page-title h1 {
       font-size: clamp(1.6rem, 4vw, 2.2rem);
@@ -104,7 +104,7 @@
       max-width: 580px;
     }
 
-    /* â”€â”€ Progress steps â”€â”€ */
+    /* ── Progress steps ── */
     .steps-bar {
       display: flex;
       align-items: flex-start;
@@ -170,7 +170,7 @@
     .step-item.active .step-label { color: var(--gold); }
     .step-item.done .step-label { color: var(--green); }
 
-    /* â”€â”€ Card â”€â”€ */
+    /* ── Card ── */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -201,7 +201,7 @@
       color: var(--text-sec); font-size: 0.875rem; line-height: 1.5;
     }
 
-    /* â”€â”€ Form elements â”€â”€ */
+    /* ── Form elements ── */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -236,7 +236,7 @@
     select option { background: var(--bg-elev); }
     textarea { resize: vertical; min-height: 80px; }
 
-    /* â”€â”€ Item list (creditors, liabilities, assets) â”€â”€ */
+    /* ── Item list (creditors, liabilities, assets) ── */
     .item-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
     .item-row {
       background: var(--bg-elev);
@@ -317,7 +317,7 @@
     }
     .add-item-btn:hover { color: var(--gold); border-color: var(--gold-border); }
 
-    /* â”€â”€ Buttons â”€â”€ */
+    /* ── Buttons ── */
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
       gap: 8px;
@@ -349,7 +349,7 @@
     }
     .btn-row .btn-gold { min-width: 180px; }
 
-    /* â”€â”€ Lock banner â”€â”€ */
+    /* ── Lock banner ── */
     .lock-banner {
       display: flex; align-items: center; gap: 16px;
       background: var(--bg-card);
@@ -362,7 +362,7 @@
     .lock-text { font-size: 0.875rem; color: var(--text-sec); }
     .lock-text strong { color: var(--text); display: block; margin-bottom: 2px; }
 
-    /* â”€â”€ Progress tracker chips â”€â”€ */
+    /* ── Progress tracker chips ── */
     .intake-chips {
       display: flex; flex-wrap: wrap; gap: 8px;
       margin-bottom: 28px;
@@ -378,7 +378,7 @@
     .chip.todo { background: var(--bg-elev); border-color: var(--border-h); color: var(--text-muted); }
     .chip.active { background: var(--gold-dim); border-color: var(--gold-border); color: var(--gold); }
 
-    /* â”€â”€ Reality Check screen â”€â”€ */
+    /* ── Reality Check screen ── */
     #reality-check-screen {
       display: none;
       text-align: center;
@@ -433,7 +433,7 @@
     }
     .reality-message strong { color: var(--gold); }
 
-    /* â”€â”€ Success unlock â”€â”€ */
+    /* ── Success unlock ── */
     #unlock-success {
       display: none;
       text-align: center;
@@ -448,7 +448,7 @@
       margin: 0 auto 20px;
     }
 
-    /* â”€â”€ Toast â”€â”€ */
+    /* ── Toast ── */
     #toast {
       position: fixed; bottom: 28px; left: 50%;
       transform: translateX(-50%) translateY(80px);
@@ -467,7 +467,7 @@
     #toast.success { border-color: rgba(16,185,129,0.5); color: var(--green); }
     #toast.error { border-color: rgba(239,68,68,0.5); color: #ef4444; }
 
-    /* â”€â”€ Loading overlay â”€â”€ */
+    /* ── Loading overlay ── */
     #loading { display: none; }
     .spinner {
       width: 32px; height: 32px;
@@ -512,10 +512,10 @@
 
   <!-- Top Bar -->
   <div class="top-bar">
-    <a href="/app" class="logo-link">âš¡ FACTS</a>
+    <a href="/app" class="logo-link">⚡ FACTS</a>
     <div style="display:flex;align-items:center;gap:12px;">
-      <span class="level-badge">Level 1 â€” Ground Zero</span>
-      <a href="/app" style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text-sec);font-size:0.82rem;font-weight:500;text-decoration:none;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-sec)'">â† Back to Dashboard</a>
+      <span class="level-badge">Level 1 — Ground Zero</span>
+      <a href="/app" style="display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text-sec);font-size:0.82rem;font-weight:500;text-decoration:none;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-sec)'">← Back to Dashboard</a>
     </div>
   </div>
 
@@ -528,12 +528,12 @@
     <!-- Page title -->
     <div class="page-title">
       <h1>Ground Zero <span>Intelligence Gate</span></h1>
-      <p>Before Level 2 unlocks, we need a clear picture of your financial reality. Complete all 4 data intakes below. No guesswork â€” just the truth.</p>
+      <p>Before Level 2 unlocks, we need a clear picture of your financial reality. Complete all 4 data intakes below. No guesswork — just the truth.</p>
     </div>
 
     <!-- Level 2 lock notice -->
     <div class="lock-banner" id="lock-banner">
-      <div class="lock-icon">ðŸ”’</div>
+      <div class="lock-icon">🔒</div>
       <div class="lock-text">
         <strong>Level 2 is locked</strong>
         Complete all 4 intakes to unlock Strategy Mapping and see exactly how to redirect your money.
@@ -542,10 +542,10 @@
 
     <!-- Progress chips -->
     <div class="intake-chips" id="intake-chips">
-      <span class="chip" id="chip-1">ðŸ“Š Credit Intake</span>
-      <span class="chip" id="chip-2">ðŸ’¸ Cash Flow</span>
-      <span class="chip" id="chip-3">ðŸ§¾ Liability Sync</span>
-      <span class="chip" id="chip-4">ðŸ¦ Asset Audit</span>
+      <span class="chip" id="chip-1">📊 Credit Intake</span>
+      <span class="chip" id="chip-2">💸 Cash Flow</span>
+      <span class="chip" id="chip-3">🧾 Liability Sync</span>
+      <span class="chip" id="chip-4">🏦 Asset Audit</span>
     </div>
 
     <!-- Step progress bar -->
@@ -568,19 +568,19 @@
       </div>
     </div>
 
-    <!-- â•â•â•â• STEP 1: Credit Intake â•â•â•â• -->
+    <!-- ════ STEP 1: Credit Intake ════ -->
     <div class="step-panel" id="panel-1">
       <div class="card">
         <div class="card-header">
-          <div class="card-icon gold">ðŸ“Š</div>
+          <div class="card-icon gold">📊</div>
           <div class="card-header-text">
             <h2>Credit Intake</h2>
-            <p>List every creditor â€” credit cards, loans, and any account charging you interest. Source: annualcreditreport.com</p>
+            <p>List every creditor — credit cards, loans, and any account charging you interest. Source: annualcreditreport.com</p>
           </div>
         </div>
 
         <div class="source-note">
-          <span>ðŸ’¡</span>
+          <span>💡</span>
           Pull your free credit report at <strong>annualcreditreport.com</strong> and enter the details below. Include all open accounts with balances.
         </div>
 
@@ -600,55 +600,55 @@
         <div class="item-list" id="creditor-list"></div>
 
         <button class="add-item-btn" onclick="addCreditor()">
-          ï¼‹ Add Creditor / Account
+          ＋ Add Creditor / Account
         </button>
 
         <div class="btn-row">
           <button class="btn btn-gold" id="save-credit-btn" onclick="saveCredit()">
-            Save &amp; Continue â†’
+            Save &amp; Continue →
           </button>
         </div>
       </div>
     </div>
 
-    <!-- â•â•â•â• STEP 2: Cash Flow Intake â•â•â•â• -->
+    <!-- ════ STEP 2: Cash Flow Intake ════ -->
     <div class="step-panel" id="panel-2">
       <div class="card">
         <div class="card-header">
-          <div class="card-icon blue">ðŸ’¸</div>
+          <div class="card-icon blue">💸</div>
           <div class="card-header-text">
             <h2>Cash Flow Intake</h2>
-            <p>Your real-world income vs. spending. Use bank statements to find the truth â€” not the budget you wish you had.</p>
+            <p>Your real-world income vs. spending. Use bank statements to find the truth — not the budget you wish you had.</p>
           </div>
         </div>
 
         <div class="source-note">
-          <span>ðŸ’¡</span>
-          Use your last 2â€“3 months of bank statements. Include ALL income sources and ALL regular spending categories.
+          <span>💡</span>
+          Use your last 2–3 months of bank statements. Include ALL income sources and ALL regular spending categories.
         </div>
 
         <h4 style="font-size:0.9rem;font-weight:700;color:var(--text-sec);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px;">Income Sources</h4>
         <div class="item-list" id="income-list"></div>
-        <button class="add-item-btn" onclick="addIncome()">ï¼‹ Add Income Source</button>
+        <button class="add-item-btn" onclick="addIncome()">＋ Add Income Source</button>
 
         <div style="margin:24px 0 12px; border-top:1px solid var(--border); padding-top:24px;">
           <h4 style="font-size:0.9rem;font-weight:700;color:var(--text-sec);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px;">Monthly Expenses</h4>
         </div>
         <div class="item-list" id="expense-list"></div>
-        <button class="add-item-btn" onclick="addExpense()">ï¼‹ Add Expense Category</button>
+        <button class="add-item-btn" onclick="addExpense()">＋ Add Expense Category</button>
 
         <div class="btn-row">
-          <button class="btn btn-outline" onclick="goToStep(1)">â† Back</button>
-          <button class="btn btn-gold" onclick="saveCashflow()">Save &amp; Continue â†’</button>
+          <button class="btn btn-outline" onclick="goToStep(1)">← Back</button>
+          <button class="btn btn-gold" onclick="saveCashflow()">Save &amp; Continue →</button>
         </div>
       </div>
     </div>
 
-    <!-- â•â•â•â• STEP 3: Liability Sync â•â•â•â• -->
+    <!-- ════ STEP 3: Liability Sync ════ -->
     <div class="step-panel" id="panel-3">
       <div class="card">
         <div class="card-header">
-          <div class="card-icon gold">ðŸ§¾</div>
+          <div class="card-icon gold">🧾</div>
           <div class="card-header-text">
             <h2>Liability Sync</h2>
             <p>Every bill, statement, and obligation with a due date and minimum payment. These are your monthly non-negotiables.</p>
@@ -656,25 +656,25 @@
         </div>
 
         <div class="source-note">
-          <span>ðŸ’¡</span>
+          <span>💡</span>
           Gather your bills and statements. Include credit cards, auto loans, student loans, rent/mortgage, subscriptions, and any recurring payment obligation.
         </div>
 
         <div class="item-list" id="liability-list"></div>
-        <button class="add-item-btn" onclick="addLiability()">ï¼‹ Add Liability</button>
+        <button class="add-item-btn" onclick="addLiability()">＋ Add Liability</button>
 
         <div class="btn-row">
-          <button class="btn btn-outline" onclick="goToStep(2)">â† Back</button>
-          <button class="btn btn-gold" onclick="saveLiability()">Save &amp; Continue â†’</button>
+          <button class="btn btn-outline" onclick="goToStep(2)">← Back</button>
+          <button class="btn btn-gold" onclick="saveLiability()">Save &amp; Continue →</button>
         </div>
       </div>
     </div>
 
-    <!-- â•â•â•â• STEP 4: Asset Audit â•â•â•â• -->
+    <!-- ════ STEP 4: Asset Audit ════ -->
     <div class="step-panel" id="panel-4">
       <div class="card">
         <div class="card-header">
-          <div class="card-icon green">ðŸ¦</div>
+          <div class="card-icon green">🏦</div>
           <div class="card-header-text">
             <h2>Asset Audit</h2>
             <p>Manual entry of what you own. Current liquidity, retirement accounts, equity, and anything with value.</p>
@@ -682,24 +682,24 @@
         </div>
 
         <div class="source-note">
-          <span>ðŸ’¡</span>
-          Log in to each account and enter the current balance. Be honest â€” this is your true net worth baseline.
+          <span>💡</span>
+          Log in to each account and enter the current balance. Be honest — this is your true net worth baseline.
         </div>
 
         <div class="item-list" id="asset-list"></div>
-        <button class="add-item-btn" onclick="addAsset()">ï¼‹ Add Asset</button>
+        <button class="add-item-btn" onclick="addAsset()">＋ Add Asset</button>
 
         <div class="btn-row">
-          <button class="btn btn-outline" onclick="goToStep(3)">â† Back</button>
-          <button class="btn btn-gold" id="save-asset-btn" onclick="saveAssets()">Complete Ground Zero â†’</button>
+          <button class="btn btn-outline" onclick="goToStep(3)">← Back</button>
+          <button class="btn btn-gold" id="save-asset-btn" onclick="saveAssets()">Complete Ground Zero →</button>
         </div>
       </div>
     </div>
 
-    <!-- â•â•â•â• REALITY CHECK SCREEN â•â•â•â• -->
+    <!-- ════ REALITY CHECK SCREEN ════ -->
     <div id="reality-check-screen">
       <div class="card" style="padding:48px 36px;">
-        <span class="reality-icon">âš ï¸</span>
+        <span class="reality-icon">⚠️</span>
         <h2 class="reality-title">System Reality Check</h2>
         <p class="reality-subtitle">Based on your credit intake and liability sync, here's what the system is extracting from you every single day.</p>
 
@@ -715,21 +715,21 @@
         </div>
 
         <button class="btn btn-gold" style="margin:0 auto;display:flex;" onclick="acknowledgeRealityCheck()">
-          I Understand â€” Unlock Level 2 â†’
+          I Understand — Unlock Level 2 →
         </button>
       </div>
     </div>
 
-    <!-- â•â•â•â• UNLOCK SUCCESS â•â•â•â• -->
+    <!-- ════ UNLOCK SUCCESS ════ -->
     <div id="unlock-success">
       <div class="card" style="padding:60px 36px; text-align:center;">
-        <div class="unlock-seal">âœ…</div>
+        <div class="unlock-seal">✅</div>
         <h2 style="font-size:1.6rem;margin-bottom:12px;">Level 2 Unlocked</h2>
         <p style="color:var(--text-sec);font-size:0.95rem;line-height:1.6;max-width:440px;margin:0 auto 32px;">
-          Ground Zero complete. You now have a full financial intelligence snapshot. Level 2 â€” Strategy Mapping â€” shows you exactly how to redirect every dollar.
+          Ground Zero complete. You now have a full financial intelligence snapshot. Level 2 — Strategy Mapping — shows you exactly how to redirect every dollar.
         </p>
         <a href="/app" class="btn btn-gold" style="margin:0 auto;">
-          Go to Dashboard â†’
+          Go to Dashboard →
         </a>
       </div>
     </div>
@@ -741,7 +741,7 @@
 <div id="toast"></div>
 
 <script>
-// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── State ──────────────────────────────────────────────────────────
 let currentStep = 1;
 let status = {
   credit_completed: false,
@@ -754,7 +754,7 @@ let status = {
 };
 let savedData = { credit: null, cashflow: null, liabilities: [], assets: [] };
 
-// â”€â”€â”€ Boot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Boot ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Check auth
   const me = await fetch('/api/auth/me').then(r => r.json()).catch(() => null);
@@ -802,7 +802,7 @@ function getFirstIncompleteStep() {
   return 1;
 }
 
-// â”€â”€â”€ Step Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Step Navigation ─────────────────────────────────────────────────
 function goToStep(n, force = false) {
   // Allow going back to any completed step
   if (!force && n > 1) {
@@ -828,7 +828,7 @@ function goToStep(n, force = false) {
 function updateStepUI() {
   const completed = [status.credit_completed, status.cashflow_completed, status.liability_completed, status.asset_completed];
   const chips = ['chip-1','chip-2','chip-3','chip-4'];
-  const icons = ['ðŸ“Š','ðŸ’¸','ðŸ§¾','ðŸ¦'];
+  const icons = ['📊','💸','🧾','🏦'];
   const labels = ['Credit Intake','Cash Flow','Liability Sync','Asset Audit'];
 
   for (let i = 0; i < 4; i++) {
@@ -841,9 +841,9 @@ function updateStepUI() {
 
     if (completed[i]) {
       stepEl.classList.add('done');
-      dot.textContent = 'âœ“';
+      dot.textContent = '✓';
       chip.classList.add('done');
-      chip.textContent = `âœ“ ${labels[i]}`;
+      chip.textContent = `✓ ${labels[i]}`;
     } else if (currentStep === i+1) {
       stepEl.classList.add('active');
       dot.textContent = i+1;
@@ -861,7 +861,7 @@ function updateStepUI() {
   document.getElementById('lock-banner').style.display = allDone ? 'none' : 'flex';
 }
 
-// â”€â”€â”€ Populate saved data into forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Populate saved data into forms ──────────────────────────────────
 function populateForms() {
   // Step 1: Credit
   if (savedData.credit) {
@@ -890,7 +890,7 @@ function populateForms() {
   if (document.getElementById('asset-list').children.length === 0) addAsset();
 }
 
-// â”€â”€â”€ STEP 1: Creditor rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STEP 1: Creditor rows ────────────────────────────────────────────
 function addCreditor(data = {}) {
   const list = document.getElementById('creditor-list');
   const div = document.createElement('div');
@@ -912,7 +912,7 @@ function addCreditor(data = {}) {
       <option value="mortgage" ${data.account_type==='mortgage'?'selected':''}>Mortgage</option>
       <option value="other" ${data.account_type==='other'?'selected':''}>Other</option>
     </select>
-    <button class="remove-btn" onclick="removeRow(this)" title="Remove">âœ•</button>
+    <button class="remove-btn" onclick="removeRow(this)" title="Remove">✕</button>
   `;
   list.appendChild(div);
   autoCalcTotalDebt();
@@ -940,7 +940,7 @@ async function saveCredit() {
   if (creditors.length === 0) { toast('Add at least one creditor.', 'error'); return; }
 
   const btn = document.getElementById('save-credit-btn');
-  btn.disabled = true; btn.textContent = 'Savingâ€¦';
+  btn.disabled = true; btn.textContent = 'Saving…';
 
   const r = await post('/api/level1/credit-intake', {
     credit_score: parseInt(document.getElementById('credit-score').value) || null,
@@ -948,19 +948,19 @@ async function saveCredit() {
     creditors,
   });
 
-  btn.disabled = false; btn.textContent = 'Save & Continue â†’';
+  btn.disabled = false; btn.textContent = 'Save & Continue →';
 
   if (r.success) {
     status.credit_completed = true;
     updateStepUI();
-    toast('Credit intake saved âœ“', 'success');
+    toast('Credit intake saved ✓', 'success');
     setTimeout(() => goToStep(2), 600);
   } else {
     toast(r.message || 'Failed to save.', 'error');
   }
 }
 
-// â”€â”€â”€ STEP 2: Cash Flow rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STEP 2: Cash Flow rows ───────────────────────────────────────────
 function addIncome(data = {}) {
   const list = document.getElementById('income-list');
   const div = document.createElement('div');
@@ -976,7 +976,7 @@ function addIncome(data = {}) {
         <option value="annual" ${data.frequency==='annual'?'selected':''}>Annual</option>
       </select>
     </div>
-    <button class="remove-btn" onclick="removeRow(this)" title="Remove">âœ•</button>
+    <button class="remove-btn" onclick="removeRow(this)" title="Remove">✕</button>
   `;
   list.appendChild(div);
 }
@@ -993,7 +993,7 @@ function addExpense(data = {}) {
       <input type="text" placeholder="Label (e.g. Rent)" value="${esc(data.label || '')}" data-field="label">
       <input type="number" placeholder="$/month" value="${data.amount_cents ? (data.amount_cents/100).toFixed(0) : ''}" min="0" data-field="amount">
     </div>
-    <button class="remove-btn" onclick="removeRow(this)" title="Remove">âœ•</button>
+    <button class="remove-btn" onclick="removeRow(this)" title="Remove">✕</button>
   `;
   list.appendChild(div);
 }
@@ -1029,14 +1029,14 @@ async function saveCashflow() {
   if (r.success) {
     status.cashflow_completed = true;
     updateStepUI();
-    toast('Cash flow saved âœ“', 'success');
+    toast('Cash flow saved ✓', 'success');
     setTimeout(() => goToStep(3), 600);
   } else {
     toast(r.message || 'Failed to save.', 'error');
   }
 }
 
-// â”€â”€â”€ STEP 3: Liability rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STEP 3: Liability rows ───────────────────────────────────────────
 const LIABILITY_TYPES = [
   { value: 'credit_card', label: 'Credit Card' },
   { value: 'auto_loan', label: 'Auto Loan' },
@@ -1059,7 +1059,7 @@ function addLiability(data = {}) {
       <input type="number" placeholder="APR %" value="${data.apr||''}" step="0.01" min="0" max="100" data-field="apr">
       <input type="number" placeholder="Min Pmt ($)" value="${data.min_payment_cents?(data.min_payment_cents/100).toFixed(2):''}" step="0.01" min="0" data-field="min_payment">
     </div>
-    <button class="remove-btn" onclick="removeRow(this)" title="Remove">âœ•</button>
+    <button class="remove-btn" onclick="removeRow(this)" title="Remove">✕</button>
   `;
   list.appendChild(div);
 }
@@ -1086,25 +1086,25 @@ async function saveLiability() {
   if (r.success) {
     status.liability_completed = true;
     updateStepUI();
-    toast('Liabilities saved âœ“', 'success');
+    toast('Liabilities saved ✓', 'success');
     setTimeout(() => goToStep(4), 600);
   } else {
     toast(r.message || 'Failed to save.', 'error');
   }
 }
 
-// â”€â”€â”€ STEP 4: Asset rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STEP 4: Asset rows ────────────────────────────────────────────────
 const ASSET_TYPES = [
-  { value: 'checking', label: 'ðŸ¦ Checking Account' },
-  { value: 'savings', label: 'ðŸ’° Savings Account' },
-  { value: 'investment', label: 'ðŸ“ˆ Brokerage / Investment' },
-  { value: 'retirement_401k', label: 'ðŸ›ï¸ 401k' },
-  { value: 'retirement_ira', label: 'ðŸ›ï¸ IRA / Roth IRA' },
-  { value: 'hsa', label: 'ðŸ¥ HSA' },
-  { value: 'real_estate', label: 'ðŸ  Real Estate Equity' },
-  { value: 'vehicle', label: 'ðŸš— Vehicle Value' },
-  { value: 'crypto', label: 'ðŸ”· Crypto' },
-  { value: 'other', label: 'ðŸ“¦ Other' },
+  { value: 'checking', label: '🏦 Checking Account' },
+  { value: 'savings', label: '💰 Savings Account' },
+  { value: 'investment', label: '📈 Brokerage / Investment' },
+  { value: 'retirement_401k', label: '🏛️ 401k' },
+  { value: 'retirement_ira', label: '🏛️ IRA / Roth IRA' },
+  { value: 'hsa', label: '🏥 HSA' },
+  { value: 'real_estate', label: '🏠 Real Estate Equity' },
+  { value: 'vehicle', label: '🚗 Vehicle Value' },
+  { value: 'crypto', label: '🔷 Crypto' },
+  { value: 'other', label: '📦 Other' },
 ];
 function addAsset(data = {}) {
   const list = document.getElementById('asset-list');
@@ -1117,7 +1117,7 @@ function addAsset(data = {}) {
       <input type="text" placeholder="Label (e.g. Chase Savings)" value="${esc(data.label||'')}" data-field="label">
       <input type="number" placeholder="Value ($)" value="${data.value_cents?(data.value_cents/100).toFixed(2):''}" step="0.01" min="0" data-field="value">
     </div>
-    <button class="remove-btn" onclick="removeRow(this)" title="Remove">âœ•</button>
+    <button class="remove-btn" onclick="removeRow(this)" title="Remove">✕</button>
   `;
   list.appendChild(div);
 }
@@ -1138,14 +1138,14 @@ async function saveAssets() {
     status.asset_completed = true;
     status.daily_interest_leak = r.daily_interest_leak || 0;
     updateStepUI();
-    toast('Asset audit complete âœ“', 'success');
+    toast('Asset audit complete ✓', 'success');
     setTimeout(() => showRealityCheck(), 800);
   } else {
     toast(r.message || 'Failed to save.', 'error');
   }
 }
 
-// â”€â”€â”€ Reality Check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Reality Check ─────────────────────────────────────────────────────
 function showRealityCheck() {
   // Hide step panels and top elements
   document.getElementById('steps-bar').style.display = 'none';
@@ -1171,7 +1171,7 @@ async function acknowledgeRealityCheck() {
   }
 }
 
-// â”€â”€â”€ Unlock Success â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Unlock Success ─────────────────────────────────────────────────────
 function showUnlockSuccess() {
   document.getElementById('steps-bar').style.display = 'none';
   document.getElementById('intake-chips').style.display = 'none';
@@ -1181,7 +1181,7 @@ function showUnlockSuccess() {
   document.getElementById('unlock-success').style.display = 'block';
 }
 
-// â”€â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Utilities ────────────────────────────────────────────────────────
 function removeRow(btn) {
   btn.closest('.item-row').remove();
 }

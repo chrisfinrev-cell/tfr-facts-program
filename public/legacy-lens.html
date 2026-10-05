@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Legacy Lens â€” Financial Revolution</title>
+<title>Legacy Lens — Financial Revolution</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -85,11 +85,11 @@
 <nav class="sticky top-0 z-40 border-b border-white/5" style="background:#0d1528cc;backdrop-filter:blur(12px)">
   <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <a href="/app" class="text-slate-400 hover:text-white text-sm">â† Dashboard</a>
+      <a href="/app" class="text-slate-400 hover:text-white text-sm">← Dashboard</a>
       <span class="text-slate-600">/</span>
       <span class="gold-text font-semibold text-sm">Legacy Lens</span>
     </div>
-    <div id="tierBadge" class="pill pill-gold">Loadingâ€¦</div>
+    <div id="tierBadge" class="pill pill-gold">Loading…</div>
   </div>
 </nav>
 
@@ -100,7 +100,7 @@
   <div class="flex items-start justify-between gap-4 flex-wrap">
     <div>
       <h1 class="text-2xl font-bold text-white">Legacy Lens</h1>
-      <p class="text-slate-400 text-sm mt-1">Entity hierarchy Â· Equity vault Â· Sovereign health score</p>
+      <p class="text-slate-400 text-sm mt-1">Entity hierarchy · Equity vault · Sovereign health score</p>
     </div>
     <div id="silentArchitectBadge" class="hidden silent-badge">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -131,7 +131,7 @@
         <!-- Teaser metrics -->
         <div id="teaserMetrics" class="grid grid-cols-3 gap-3 max-w-sm mx-auto text-center"></div>
         <div class="pt-2">
-          <button onclick="activateModule()" class="btn-gold px-8 py-3 text-base">Activate Module â€” $29/mo</button>
+          <button onclick="activateModule()" class="btn-gold px-8 py-3 text-base">Activate Module — $29/mo</button>
         </div>
         <p class="text-slate-500 text-xs">Included in Business &amp; Sovereignty tiers</p>
       </div>
@@ -152,13 +152,13 @@
         <div>
           <div class="text-slate-400 text-sm mb-1">Composite Score</div>
           <div class="flex items-end gap-3">
-            <span id="compositeScore" class="text-4xl font-black gold-text">â€”</span>
+            <span id="compositeScore" class="text-4xl font-black gold-text">—</span>
             <span class="text-slate-400 text-sm mb-1">/ 100</span>
           </div>
           <div id="sovereigntyLevel" class="text-sm text-slate-400 mt-1"></div>
         </div>
         <div class="text-right text-sm text-slate-500">
-          <div>Streak multiplier: <span id="streakMultiplier" class="gold-text font-semibold">â€”</span>Ã—</div>
+          <div>Streak multiplier: <span id="streakMultiplier" class="gold-text font-semibold">—</span>×</div>
           <div id="computedAt" class="text-xs mt-1"></div>
         </div>
       </div>
@@ -175,7 +175,7 @@
       <div class="flex items-center justify-between">
         <div>
           <div class="text-slate-400 text-sm">Total Vault Value</div>
-          <div id="grandTotal" class="text-3xl font-black text-white">$â€”</div>
+          <div id="grandTotal" class="text-3xl font-black text-white">$—</div>
         </div>
         <button onclick="openAddEquityModal()" class="btn-gold btn-sm">+ Add Asset</button>
       </div>
@@ -194,7 +194,7 @@
         <!-- Filled by JS -->
       </div>
       <div id="onboardingCTA" class="hidden card p-6 text-center">
-        <p class="text-slate-400 text-sm mb-3">All accounts are Personal â€” structure your sovereign entity stack to unlock capital flow visualization.</p>
+        <p class="text-slate-400 text-sm mb-3">All accounts are Personal — structure your sovereign entity stack to unlock capital flow visualization.</p>
         <button onclick="openAddEntityModal()" class="btn-outline">Set Up Entity Structure</button>
       </div>
     </div>
@@ -225,7 +225,7 @@
       </div>
       <div>
         <label class="text-slate-400 text-xs mb-1 block">Notes (optional)</label>
-        <textarea id="eq_notes" rows="2" placeholder="Additional detailsâ€¦"></textarea>
+        <textarea id="eq_notes" rows="2" placeholder="Additional details…"></textarea>
       </div>
     </div>
     <div class="flex gap-3 mt-5">
@@ -273,7 +273,7 @@
       </div>
       <div>
         <label class="text-slate-400 text-xs mb-1 block">Description (optional)</label>
-        <textarea id="ent_desc" rows="2" placeholder="Role/purpose of this entityâ€¦"></textarea>
+        <textarea id="ent_desc" rows="2" placeholder="Role/purpose of this entity…"></textarea>
       </div>
     </div>
     <div class="flex gap-3 mt-5">
@@ -284,7 +284,7 @@
 </div>
 
 <script>
-// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── State ────────────────────────────────────────────────────────────────────
 let state = {
   status: null,
   healthScore: null,
@@ -293,21 +293,21 @@ let state = {
 };
 
 const ASSET_CLASS_META = {
-  digital_assets: { label: 'Digital Assets', icon: 'â‚¿', color: '#f59e0b', desc: 'Crypto, tokens, digital IP' },
-  intellectual_property: { label: 'Intellectual Property', icon: 'ðŸ§ ', color: '#8b5cf6', desc: 'Courses, content, patents' },
-  information_systems: { label: 'Information Systems', icon: 'âš™ï¸', color: '#C5A55A', desc: 'Software, Polsia, SaaS' }
+  digital_assets: { label: 'Digital Assets', icon: '₿', color: '#f59e0b', desc: 'Crypto, tokens, digital IP' },
+  intellectual_property: { label: 'Intellectual Property', icon: '🧠', color: '#8b5cf6', desc: 'Courses, content, patents' },
+  information_systems: { label: 'Information Systems', icon: '⚙️', color: '#C5A55A', desc: 'Software, Polsia, SaaS' }
 };
 
 const ENTITY_TYPE_META = {
-  holding_co:    { label: 'Holding Company', icon: 'ðŸ›ï¸', color: '#C5A55A' },
-  operating_llc: { label: 'Operating LLC',   icon: 'âš™ï¸', color: '#60a5fa' },
-  brokerage:     { label: 'Brokerage (EIN)', icon: 'ðŸ“ˆ', color: '#4ade80' },
-  trust:         { label: 'Trust',           icon: 'ðŸ”', color: '#a78bfa' },
-  individual:    { label: 'Individual',      icon: 'ðŸ‘¤', color: '#94a3b8' },
-  other:         { label: 'Other',           icon: 'â—†',  color: '#64748b' }
+  holding_co:    { label: 'Holding Company', icon: '🏛️', color: '#C5A55A' },
+  operating_llc: { label: 'Operating LLC',   icon: '⚙️', color: '#60a5fa' },
+  brokerage:     { label: 'Brokerage (EIN)', icon: '📈', color: '#4ade80' },
+  trust:         { label: 'Trust',           icon: '🔐', color: '#a78bfa' },
+  individual:    { label: 'Individual',      icon: '👤', color: '#94a3b8' },
+  other:         { label: 'Other',           icon: '◆',  color: '#64748b' }
 };
 
-// â”€â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   try {
     const statusRes = await fetch('/api/mod_legacy_lens/status');
@@ -342,7 +342,7 @@ async function loadAll() {
   await Promise.all([loadHealthScore(), loadEquity(), loadEntities()]);
 }
 
-// â”€â”€â”€ Locked Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Locked Preview ───────────────────────────────────────────────────────────
 async function loadLockedPreview() {
   try {
     const res = await fetch('/api/mod_legacy_lens/health-score');
@@ -353,7 +353,7 @@ async function loadLockedPreview() {
         container.innerHTML = data.preview.teaser.map(t => `
           <div class="card p-3">
             <div class="text-slate-500 text-xs">${t.label}</div>
-            <div class="blurred text-lg font-bold text-white mt-1">â–ˆâ–ˆ</div>
+            <div class="blurred text-lg font-bold text-white mt-1">██</div>
             <div class="pill pill-${t.status === 'optimal' ? 'optimal' : t.status === 'watch' ? 'watch' : 'critical'} mt-2">${t.status}</div>
           </div>
         `).join('');
@@ -362,7 +362,7 @@ async function loadLockedPreview() {
   } catch {}
 }
 
-// â”€â”€â”€ Health Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Health Score ─────────────────────────────────────────────────────────────
 async function loadHealthScore() {
   try {
     const res = await fetch('/api/mod_legacy_lens/health-score');
@@ -376,7 +376,7 @@ function renderHealthScore() {
   const s = state.healthScore;
   if (!s) return;
 
-  document.getElementById('compositeScore').textContent = s.composite_score ?? 'â€”';
+  document.getElementById('compositeScore').textContent = s.composite_score ?? '—';
   document.getElementById('streakMultiplier').textContent = s.streak_multiplier ?? '1.0';
   document.getElementById('sovereigntyLevel').textContent = s.sovereignty_level ?? '';
   if (s.computed_at) {
@@ -400,7 +400,7 @@ function renderHealthScore() {
       <div class="card p-5">
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs text-slate-400">${p.label}</div>
-          <div class="pill ${statusClass}">${p.status || 'â€”'}</div>
+          <div class="pill ${statusClass}">${p.status || '—'}</div>
         </div>
         <div class="text-3xl font-black mb-3" style="color:${color}">${score}</div>
         <div class="gauge-bar">
@@ -408,16 +408,16 @@ function renderHealthScore() {
         </div>
         <div class="mt-3 text-xs text-slate-500 space-y-1">
           ${key === 'necessities_index' ? `
-            <div>Actual: <span class="text-slate-300">${p.pct_actual ?? 'â€”'}%</span></div>
+            <div>Actual: <span class="text-slate-300">${p.pct_actual ?? '—'}%</span></div>
             <div>Target: <span class="text-slate-300">50%</span></div>
           ` : ''}
           ${key === 'reserve_index' ? `
-            <div>Coverage: <span class="text-slate-300">${p.months_covered ?? 'â€”'} mo</span></div>
+            <div>Coverage: <span class="text-slate-300">${p.months_covered ?? '—'} mo</span></div>
             <div>Target: <span class="text-slate-300">6 mo</span></div>
           ` : ''}
           ${key === 'growth_index' ? `
-            <div>MoM: <span class="text-slate-300">${p.mom_growth_pct != null ? (p.mom_growth_pct > 0 ? '+' : '') + p.mom_growth_pct + '%' : 'â€”'}</span></div>
-            <div>Status: <span class="text-slate-300">${p.status ?? 'â€”'}</span></div>
+            <div>MoM: <span class="text-slate-300">${p.mom_growth_pct != null ? (p.mom_growth_pct > 0 ? '+' : '') + p.mom_growth_pct + '%' : '—'}</span></div>
+            <div>Status: <span class="text-slate-300">${p.status ?? '—'}</span></div>
           ` : ''}
         </div>
       </div>
@@ -425,7 +425,7 @@ function renderHealthScore() {
   }).join('');
 }
 
-// â”€â”€â”€ Equity Vault â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Equity Vault ─────────────────────────────────────────────────────────────
 async function loadEquity() {
   try {
     const res = await fetch('/api/mod_legacy_lens/equity');
@@ -470,7 +470,7 @@ function renderEquity() {
   }).join('');
 }
 
-// â”€â”€â”€ Entity Hierarchy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Entity Hierarchy ─────────────────────────────────────────────────────────
 async function loadEntities() {
   try {
     const res = await fetch('/api/mod_legacy_lens/entities');
@@ -496,8 +496,8 @@ function renderEntities() {
   if (!d.entities || d.entities.length === 0) {
     container.innerHTML = `
       <div class="card p-8 text-center">
-        <div class="text-4xl mb-3">ðŸ›ï¸</div>
-        <p class="text-slate-400 text-sm mb-3">No entities yet â€” add your first entity to build your sovereign structure.</p>
+        <div class="text-4xl mb-3">🏛️</div>
+        <p class="text-slate-400 text-sm mb-3">No entities yet — add your first entity to build your sovereign structure.</p>
         <button onclick="openAddEntityModal()" class="btn-gold btn-sm">Add First Entity</button>
       </div>
     `;
@@ -521,12 +521,12 @@ function renderEntityNode(entity, depth) {
           <span class="text-xl">${meta.icon}</span>
           <div class="min-w-0">
             <div class="text-white font-semibold text-sm truncate">${escHtml(entity.entity_name)}</div>
-            <div class="text-xs" style="color:${meta.color}">${meta.label}${entity.state_of_formation ? ' Â· ' + entity.state_of_formation : ''}${entity.ein ? ' Â· ' + escHtml(entity.ein) : ''}</div>
+            <div class="text-xs" style="color:${meta.color}">${meta.label}${entity.state_of_formation ? ' · ' + entity.state_of_formation : ''}${entity.ein ? ' · ' + escHtml(entity.ein) : ''}</div>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           ${(entity.tagged_assets || []).length > 0 ? `<span class="text-xs text-slate-500">${entity.tagged_assets.length} asset${entity.tagged_assets.length > 1 ? 's' : ''}</span>` : ''}
-          <button onclick="deleteEntity(${entity.id})" class="text-slate-600 hover:text-red-400 text-xs">âœ•</button>
+          <button onclick="deleteEntity(${entity.id})" class="text-slate-600 hover:text-red-400 text-xs">✕</button>
         </div>
       </div>
       ${entity.children && entity.children.length > 0 ? `
@@ -558,7 +558,7 @@ function populateParentSelect(entities) {
   }
 }
 
-// â”€â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
 function switchTab(tab, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -566,7 +566,7 @@ function switchTab(tab, btn) {
   document.getElementById('tab-entities').classList.toggle('hidden', tab !== 'entities');
 }
 
-// â”€â”€â”€ Modals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Modals ───────────────────────────────────────────────────────────────────
 function openAddEquityModal(defaultClass) {
   if (defaultClass) document.getElementById('eq_class').value = defaultClass;
   document.getElementById('eq_name').value = '';
@@ -628,7 +628,7 @@ async function deleteEntity(id) {
   await loadEntities();
 }
 
-// â”€â”€â”€ Activate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Activate ─────────────────────────────────────────────────────────────────
 async function activateModule() {
   try {
     const res = await fetch('/api/checkout/addon', {
@@ -644,9 +644,9 @@ async function activateModule() {
   }
 }
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatCents(cents) {
-  if (cents == null) return '$â€”';
+  if (cents == null) return '$—';
   return '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 function escHtml(str) {

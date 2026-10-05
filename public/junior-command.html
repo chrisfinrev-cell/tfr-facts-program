@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Junior Command Console â€” Financial Revolution</title>
+  <title>Junior Command Console — Financial Revolution</title>
   <meta name="description" content="Your personal command console for Junior Revolutionaries. Complete missions, earn XP, and build your fortress!">
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23052e16'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='%2322c55e'%3EðŸ•ï¸%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23052e16'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='%2322c55e'%3E🏕️%3C/text%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -139,22 +139,22 @@
 </head>
 <body class="min-h-screen">
 
-<!-- â”€â”€ Level-Up Overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Level-Up Overlay ─────────────────────────────────────────────────── -->
 <div id="level-up-overlay">
-  <div id="lu-emoji" class="star-burst" style="font-size:5rem;margin-bottom:1rem;">ðŸŽ‰</div>
+  <div id="lu-emoji" class="star-burst" style="font-size:5rem;margin-bottom:1rem;">🎉</div>
   <div class="font-military text-3xl sm:text-4xl glow-gold mb-3" id="lu-title" style="color:#fbbf24;">LEVEL UP!</div>
   <div class="text-xl sm:text-2xl text-emerald-300 mb-6" id="lu-subtitle">You are now a Cadet!</div>
-  <div id="lu-emoji-rank" style="font-size:3.5rem;margin-bottom:1.5rem;">â›º</div>
+  <div id="lu-emoji-rank" style="font-size:3.5rem;margin-bottom:1.5rem;">⛺</div>
   <div class="text-base text-emerald-400 mb-8 max-w-xs" id="lu-desc">Your fortress grows stronger. Keep completing missions!</div>
   <button onclick="closeLevelUp()" class="btn-green px-8 py-3 rounded-xl text-base">
-    Continue Mission âž”
+    Continue Mission ➔
   </button>
 </div>
 
-<!-- â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Toast ──────────────────────────────────────────────────────────────── -->
 <div id="toast"></div>
 
-<!-- â”€â”€ Loading screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Loading screen ─────────────────────────────────────────────────────── -->
 <div id="loading-screen" class="fixed inset-0 flex flex-col items-center justify-center z-50" style="background:#030a05;">
   <div class="font-military text-2xl glow-green mb-6" style="color:#22c55e;">LOADING COMMAND CONSOLE...</div>
   <div style="width:200px;height:6px;" class="xp-bar-track">
@@ -162,24 +162,24 @@
   </div>
 </div>
 
-<!-- â”€â”€ Invalid Access â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Invalid Access ─────────────────────────────────────────────────────── -->
 <div id="invalid-screen" class="hidden fixed inset-0 flex flex-col items-center justify-center z-50 p-8 text-center" style="background:#030a05;">
-  <div style="font-size:4rem;margin-bottom:1.5rem;">â›”</div>
+  <div style="font-size:4rem;margin-bottom:1.5rem;">⛔</div>
   <div class="font-military text-2xl mb-3" style="color:#ef4444;">ACCESS DENIED</div>
   <p class="text-emerald-300 mb-6 max-w-sm">This console link is invalid or has expired. Ask your parent for the correct link.</p>
 </div>
 
-<!-- â”€â”€ Main App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Main App ────────────────────────────────────────────────────────────── -->
 <div id="app" class="hidden min-h-screen pb-24">
 
   <!-- Header -->
   <header class="sticky z-40 px-4 py-3" style="top:44px;background:rgba(3,10,5,0.95);border-bottom:1px solid rgba(34,197,94,0.12);backdrop-filter:blur(10px);">
     <div class="max-w-xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div id="hdr-avatar" style="font-size:1.6rem;">ðŸ§’</div>
+        <div id="hdr-avatar" style="font-size:1.6rem;">🧒</div>
         <div>
           <div class="font-military text-sm glow-green" style="color:#22c55e;" id="hdr-name">LOADING...</div>
-          <div id="hdr-rank" class="rank-badge rank-1">âš¡ Recruit</div>
+          <div id="hdr-rank" class="rank-badge rank-1">⚡ Recruit</div>
         </div>
       </div>
       <div class="text-right">
@@ -192,7 +192,7 @@
   <!-- XP Bar -->
   <div class="px-4 py-3 max-w-xl mx-auto">
     <div class="flex justify-between text-xs mb-1.5" style="color:rgba(74,222,128,0.7);">
-      <span id="xp-label">Level 1 â†’ Level 2</span>
+      <span id="xp-label">Level 1 → Level 2</span>
       <span id="xp-pct">0%</span>
     </div>
     <div class="xp-bar-track" style="height:10px;">
@@ -204,62 +204,62 @@
   <!-- Tab Nav -->
   <nav class="px-4 mb-4 max-w-xl mx-auto">
     <div class="flex gap-1.5 overflow-x-auto pb-1" style="scrollbar-width:none;">
-      <button class="tab-btn active whitespace-nowrap" onclick="switchTab('missions')">âš”ï¸ Missions</button>
-      <button class="tab-btn whitespace-nowrap"        onclick="switchTab('fortress')">ðŸ° Fortress</button>
-      <button class="tab-btn whitespace-nowrap"        onclick="switchTab('badges')">ðŸ… Badges</button>
-      <button class="tab-btn whitespace-nowrap"        onclick="switchTab('vault')">ðŸ“š Vault</button>
-      <button class="tab-btn whitespace-nowrap"        onclick="switchTab('history')">ðŸ“œ History</button>
+      <button class="tab-btn active whitespace-nowrap" onclick="switchTab('missions')">⚔️ Missions</button>
+      <button class="tab-btn whitespace-nowrap"        onclick="switchTab('fortress')">🏰 Fortress</button>
+      <button class="tab-btn whitespace-nowrap"        onclick="switchTab('badges')">🏅 Badges</button>
+      <button class="tab-btn whitespace-nowrap"        onclick="switchTab('vault')">📚 Vault</button>
+      <button class="tab-btn whitespace-nowrap"        onclick="switchTab('history')">📜 History</button>
     </div>
   </nav>
 
   <div class="px-4 max-w-xl mx-auto">
 
-    <!-- â”€â”€â”€â”€â”€â”€â”€â”€ MISSIONS TAB â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ──────── MISSIONS TAB ──────── -->
     <div id="tab-missions" class="tab-content active">
-      <div class="font-military text-sm mb-3 glow-green" style="color:#22c55e;">â–¶ ACTIVE MISSION ORDERS</div>
+      <div class="font-military text-sm mb-3 glow-green" style="color:#22c55e;">▶ ACTIVE MISSION ORDERS</div>
       <div id="missions-list">
         <div class="card-base rounded-xl p-4 text-center loading-pulse" style="color:rgba(74,222,128,0.4);">Loading missions...</div>
       </div>
     </div>
 
-    <!-- â”€â”€â”€â”€â”€â”€â”€â”€ FORTRESS TAB â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ──────── FORTRESS TAB ──────── -->
     <div id="tab-fortress" class="tab-content">
-      <div class="font-military text-sm mb-4 glow-green" style="color:#22c55e;">â–¶ YOUR FORTRESS</div>
+      <div class="font-military text-sm mb-4 glow-green" style="color:#22c55e;">▶ YOUR FORTRESS</div>
       <div class="card-base rounded-2xl p-6 mb-4 text-center">
-        <div id="fortress-main-emoji" style="font-size:5rem;margin-bottom:0.75rem;">ðŸ•ï¸</div>
+        <div id="fortress-main-emoji" style="font-size:5rem;margin-bottom:0.75rem;">🏕️</div>
         <div class="font-military text-xl glow-green mb-1" style="color:#22c55e;" id="fortress-main-name">Base Camp</div>
         <div class="text-sm text-emerald-400 mb-4" id="fortress-main-desc">Every great fortress starts with a single camp. Keep earning XP to expand!</div>
 
         <!-- Stage progression -->
         <div class="flex items-center justify-center gap-1 mt-6 flex-wrap">
           <div class="fortress-stage" id="fs-1">
-            <div class="f-emoji">ðŸ•ï¸</div>
+            <div class="f-emoji">🏕️</div>
             <div style="font-size:0.55rem;color:rgba(74,222,128,0.6);">Base Camp</div>
           </div>
           <div class="f-connector"></div>
           <div class="fortress-stage" id="fs-2">
-            <div class="f-emoji">â›º</div>
+            <div class="f-emoji">⛺</div>
             <div style="font-size:0.55rem;color:rgba(74,222,128,0.6);">Outpost</div>
           </div>
           <div class="f-connector"></div>
           <div class="fortress-stage" id="fs-3">
-            <div class="f-emoji">ðŸ—¼</div>
+            <div class="f-emoji">🗼</div>
             <div style="font-size:0.55rem;color:rgba(74,222,128,0.6);">Watchtower</div>
           </div>
           <div class="f-connector"></div>
           <div class="fortress-stage" id="fs-4">
-            <div class="f-emoji">ðŸ¯</div>
+            <div class="f-emoji">🏯</div>
             <div style="font-size:0.55rem;color:rgba(74,222,128,0.6);">Border Fort</div>
           </div>
           <div class="f-connector"></div>
           <div class="fortress-stage" id="fs-5">
-            <div class="f-emoji">ðŸ°</div>
+            <div class="f-emoji">🏰</div>
             <div style="font-size:0.55rem;color:rgba(74,222,128,0.6);">Fortress</div>
           </div>
           <div class="f-connector"></div>
           <div class="fortress-stage" id="fs-6">
-            <div class="f-emoji">ðŸ°</div>
-            <div style="font-size:0.55rem;color:rgba(74,222,128,0.6);">Citadel âœ¨</div>
+            <div class="f-emoji">🏰</div>
+            <div style="font-size:0.55rem;color:rgba(74,222,128,0.6);">Citadel ✨</div>
           </div>
         </div>
       </div>
@@ -269,36 +269,36 @@
       </div>
     </div>
 
-    <!-- â”€â”€â”€â”€â”€â”€â”€â”€ BADGES TAB â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ──────── BADGES TAB ──────── -->
     <div id="tab-badges" class="tab-content">
-      <div class="font-military text-sm mb-4 glow-green" style="color:#22c55e;">â–¶ BADGE COLLECTION</div>
+      <div class="font-military text-sm mb-4 glow-green" style="color:#22c55e;">▶ BADGE COLLECTION</div>
       <div id="badges-earned-section" class="mb-6"></div>
       <div class="font-military text-xs mb-3" style="color:rgba(74,222,128,0.4);">LOCKED BADGES</div>
       <div id="badges-locked-section"></div>
     </div>
 
-    <!-- â”€â”€â”€â”€â”€â”€â”€â”€ VAULT TAB â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ──────── VAULT TAB ──────── -->
     <div id="tab-vault" class="tab-content">
-      <div class="font-military text-sm mb-2 glow-green" style="color:#22c55e;">â–¶ KNOWLEDGE VAULT</div>
+      <div class="font-military text-sm mb-2 glow-green" style="color:#22c55e;">▶ KNOWLEDGE VAULT</div>
       <p class="text-xs text-emerald-600 mb-4">Complete missions and level up to unlock secret knowledge from your parent.</p>
       <div id="vault-list"></div>
     </div>
 
-    <!-- â”€â”€â”€â”€â”€â”€â”€â”€ HISTORY TAB â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ──────── HISTORY TAB ──────── -->
     <div id="tab-history" class="tab-content">
-      <div class="font-military text-sm mb-4 glow-green" style="color:#22c55e;">â–¶ MISSION LOG</div>
+      <div class="font-military text-sm mb-4 glow-green" style="color:#22c55e;">▶ MISSION LOG</div>
       <div id="history-list"></div>
     </div>
 
   </div>
 </div>
 
-<!-- â”€â”€ Vault Entry Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Vault Entry Modal ──────────────────────────────────────────────────── -->
 <div id="vault-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(3,10,5,0.95);">
   <div class="w-full max-w-md">
     <div style="background:#0f2318;border:1px solid rgba(34,197,94,0.3);border-radius:1rem;padding:1.5rem;max-height:80vh;overflow-y:auto;">
       <div class="flex items-center gap-3 mb-4">
-        <div id="vault-modal-emoji" style="font-size:2rem;">ðŸ“–</div>
+        <div id="vault-modal-emoji" style="font-size:2rem;">📖</div>
         <div>
           <div class="font-military text-sm" style="color:#22c55e;">SECRET KNOWLEDGE</div>
           <div class="font-bold text-base text-white" id="vault-modal-title"></div>
@@ -311,7 +311,7 @@
 </div>
 
 <script>
-// â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── State ────────────────────────────────────────────────────────────────
 const params  = new URLSearchParams(location.search);
 const KID_ID  = params.get('kid') || params.get('kid_id');
 const CODE    = params.get('code');
@@ -320,7 +320,7 @@ let allData   = null;
 let prevLevel = 1;
 
 const LEVEL_NAMES    = ['', 'Recruit', 'Cadet', 'Specialist', 'Sergeant', 'Commander', 'General'];
-const LEVEL_EMOJIS   = ['', 'ðŸ•ï¸', 'â›º', 'ðŸ—¼', 'ðŸ¯', 'ðŸ°', 'ðŸ°'];
+const LEVEL_EMOJIS   = ['', '🏕️', '⛺', '🗼', '🏯', '🏰', '🏰'];
 const FORTRESS_NAMES = ['', 'Base Camp', 'Forward Outpost', 'Watchtower', 'Border Fort', 'Fortress', 'Grand Citadel'];
 const FORTRESS_DESCS = [
   '',
@@ -329,10 +329,10 @@ const FORTRESS_DESCS = [
   'A watchtower stands tall. Enemies can see you coming from miles away!',
   'A real fort now protects your territory. You\'re becoming formidable!',
   'Your fortress is strong and imposing. You\'ve earned serious respect!',
-  'The Grand Citadel â€” the most powerful stronghold. You are a LEGEND!'
+  'The Grand Citadel — the most powerful stronghold. You are a LEGEND!'
 ];
 
-// â”€â”€ Boot animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Boot animation ───────────────────────────────────────────────────────
 let bootPct = 0;
 const bootInterval = setInterval(() => {
   bootPct = Math.min(bootPct + 12, 90);
@@ -340,7 +340,7 @@ const bootInterval = setInterval(() => {
   if (bootPct >= 90) clearInterval(bootInterval);
 }, 120);
 
-// â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Init ─────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   if (!KID_ID || !CODE) { showInvalid(); return; }
   try {
@@ -364,7 +364,7 @@ function showInvalid() {
   document.getElementById('invalid-screen').classList.remove('hidden');
 }
 
-// â”€â”€ Render all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Render all ────────────────────────────────────────────────────────────
 function renderAll() {
   renderHeader();
   renderXPBar();
@@ -377,7 +377,7 @@ function renderAll() {
 
 function renderHeader() {
   const k = kidData;
-  document.getElementById('hdr-avatar').textContent = k.avatar_emoji || 'ðŸ§’';
+  document.getElementById('hdr-avatar').textContent = k.avatar_emoji || '🧒';
   document.getElementById('hdr-name').textContent   = k.name.toUpperCase();
   document.getElementById('hdr-xp').textContent     = k.xp + ' XP';
   const rb = document.getElementById('hdr-rank');
@@ -390,12 +390,12 @@ function renderXPBar() {
   const n = k.next_xp;
   const lv = k.level;
   if (lv >= 6) {
-    document.getElementById('xp-label').textContent  = `Level 6 â€” MAX RANK`;
+    document.getElementById('xp-label').textContent  = `Level 6 — MAX RANK`;
     document.getElementById('xp-pct').textContent    = '100%';
-    document.getElementById('xp-detail').textContent = `Total: ${k.xp} XP â€” You are a General! ðŸŒŸ`;
+    document.getElementById('xp-detail').textContent = `Total: ${k.xp} XP — You are a General! 🌟`;
     document.getElementById('xp-bar').style.width    = '100%';
   } else {
-    document.getElementById('xp-label').textContent  = `Level ${lv} â†’ Level ${lv + 1}`;
+    document.getElementById('xp-label').textContent  = `Level ${lv} → Level ${lv + 1}`;
     document.getElementById('xp-pct').textContent    = n.pct + '%';
     document.getElementById('xp-detail').textContent = `${n.progress} / ${n.needed} XP to ${LEVEL_NAMES[lv + 1]}`;
     setTimeout(() => { document.getElementById('xp-bar').style.width = n.pct + '%'; }, 200);
@@ -409,7 +409,7 @@ function renderMissions() {
 
   if (!active.length && !pending.length) {
     el.innerHTML = `<div class="card-base rounded-xl p-8 text-center">
-      <div style="font-size:3rem;margin-bottom:0.75rem;">ðŸŽ¯</div>
+      <div style="font-size:3rem;margin-bottom:0.75rem;">🎯</div>
       <div class="font-military text-sm mb-2" style="color:rgba(74,222,128,0.5);">NO ACTIVE MISSIONS</div>
       <p class="text-sm" style="color:rgba(240,253,244,0.4);">Ask your parent to assign you a new mission!</p>
     </div>`;
@@ -419,12 +419,12 @@ function renderMissions() {
   let html = '';
 
   if (pending.length) {
-    html += `<div class="font-military text-xs mb-2 mt-1" style="color:#fbbf24;">â³ AWAITING PARENT CONFIRMATION</div>`;
+    html += `<div class="font-military text-xs mb-2 mt-1" style="color:#fbbf24;">⏳ AWAITING PARENT CONFIRMATION</div>`;
     pending.forEach(m => {
       html += `<div class="card-pending rounded-xl p-4 mb-3" id="m-${m.id}">
         <div class="flex items-start justify-between gap-2 mb-1">
           <div class="font-bold text-sm text-yellow-200">${escHtml(m.title)}</div>
-          <span style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;font-size:0.65rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;white-space:nowrap;">â³ SENT</span>
+          <span style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;font-size:0.65rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;white-space:nowrap;">⏳ SENT</span>
         </div>
         ${m.description ? `<p class="text-xs mb-2" style="color:rgba(240,253,244,0.55);">${escHtml(m.description)}</p>` : ''}
         <div class="text-xs" style="color:rgba(251,191,36,0.7);">+${m.xp_reward} XP when approved by parent</div>
@@ -433,7 +433,7 @@ function renderMissions() {
   }
 
   if (active.length) {
-    html += `<div class="font-military text-xs mb-2" style="color:rgba(74,222,128,0.6);">ðŸ“‹ MISSION ORDERS</div>`;
+    html += `<div class="font-military text-xs mb-2" style="color:rgba(74,222,128,0.6);">📋 MISSION ORDERS</div>`;
     active.forEach(m => {
       html += `<div class="card-mission rounded-xl p-4 mb-3" id="m-${m.id}">
         <div class="flex items-start justify-between gap-2 mb-1.5">
@@ -442,7 +442,7 @@ function renderMissions() {
         </div>
         ${m.description ? `<p class="text-xs mb-3" style="color:rgba(240,253,244,0.6);">${escHtml(m.description)}</p>` : ''}
         <button onclick="requestConfirm(${m.id})" class="btn-gold w-full py-2 rounded-lg text-xs font-bold mt-1">
-          âœ… Request Confirmation from Parent
+          ✅ Request Confirmation from Parent
         </button>
       </div>`;
     });
@@ -464,17 +464,17 @@ async function requestConfirm(missionId) {
     });
     const data = await res.json();
     if (res.ok) {
-      showToast('ðŸ“¤ Request sent! Your parent will confirm it soon.', 'success');
+      showToast('📤 Request sent! Your parent will confirm it soon.', 'success');
       card.className = card.className.replace('card-mission', 'card-pending');
       card.innerHTML = `<div class="font-bold text-sm text-yellow-200">${card.querySelector('.font-bold')?.textContent || 'Mission'}</div>
-        <div class="text-xs mt-2" style="color:#fbbf24;">â³ Waiting for parent confirmation...</div>`;
+        <div class="text-xs mt-2" style="color:#fbbf24;">⏳ Waiting for parent confirmation...</div>`;
     } else {
       showToast(data.error || 'Failed to send request', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'âœ… Request Confirmation from Parent'; }
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Request Confirmation from Parent'; }
     }
   } catch (e) {
     showToast('Connection error', 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'âœ… Request Confirmation from Parent'; }
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Request Confirmation from Parent'; }
   }
 }
 
@@ -501,10 +501,10 @@ function renderFortress() {
     return `<div class="flex items-center gap-3 py-2.5 ${l < 6 ? 'border-b' : ''}" style="border-color:rgba(34,197,94,0.08);">
       <div style="font-size:1.3rem;min-width:28px;text-align:center;${!done && !cur ? 'opacity:0.3' : ''}">${LEVEL_EMOJIS[l]}</div>
       <div class="flex-1">
-        <div class="text-sm font-semibold ${cur ? 'text-emerald-300' : done ? 'text-emerald-600' : 'text-gray-600'}">${LEVEL_NAMES[l]} ${cur ? 'â† YOU ARE HERE' : ''}</div>
+        <div class="text-sm font-semibold ${cur ? 'text-emerald-300' : done ? 'text-emerald-600' : 'text-gray-600'}">${LEVEL_NAMES[l]} ${cur ? '← YOU ARE HERE' : ''}</div>
         <div class="text-xs" style="color:rgba(74,222,128,0.35);">${thresholds[l]} XP required</div>
       </div>
-      ${done ? '<div style="color:#22c55e;font-size:1.1rem;">âœ“</div>' : cur ? '<div style="color:#fbbf24;font-size:0.9rem;font-weight:700;">NOW</div>' : '<div style="color:rgba(255,255,255,0.2);font-size:0.9rem;">ðŸ”’</div>'}
+      ${done ? '<div style="color:#22c55e;font-size:1.1rem;">✓</div>' : cur ? '<div style="color:#fbbf24;font-size:0.9rem;font-weight:700;">NOW</div>' : '<div style="color:rgba(255,255,255,0.2);font-size:0.9rem;">🔒</div>'}
     </div>`;
   }).join('');
 }
@@ -526,7 +526,7 @@ function renderBadges() {
     </div>`;
   } else {
     earnedEl.innerHTML = `<div class="card-base rounded-xl p-6 text-center mb-4">
-      <div style="font-size:2.5rem;margin-bottom:0.75rem;">ðŸ…</div>
+      <div style="font-size:2.5rem;margin-bottom:0.75rem;">🏅</div>
       <div class="font-military text-xs mb-1" style="color:rgba(74,222,128,0.4);">NO BADGES YET</div>
       <p class="text-xs" style="color:rgba(240,253,244,0.3);">Complete missions to earn your first badge!</p>
     </div>`;
@@ -535,7 +535,7 @@ function renderBadges() {
   const lockedEl = document.getElementById('badges-locked-section');
   lockedEl.innerHTML = `<div class="grid grid-cols-2 gap-3">
     ${locked.map(b => `<div class="badge-card locked p-3 text-center">
-      <div style="font-size:2rem;margin-bottom:0.4rem;filter:grayscale(1)">â“</div>
+      <div style="font-size:2rem;margin-bottom:0.4rem;filter:grayscale(1)">❓</div>
       <div class="font-bold text-xs text-gray-600">???</div>
       <div class="text-xs mt-0.5 text-gray-700">${b.desc}</div>
     </div>`).join('')}
@@ -548,7 +548,7 @@ function renderVault() {
 
   if (!entries.length) {
     el.innerHTML = `<div class="card-base rounded-xl p-8 text-center">
-      <div style="font-size:3rem;margin-bottom:0.75rem;">ðŸ”’</div>
+      <div style="font-size:3rem;margin-bottom:0.75rem;">🔒</div>
       <div class="font-military text-xs mb-2" style="color:rgba(74,222,128,0.4);">VAULT EMPTY</div>
       <p class="text-xs" style="color:rgba(240,253,244,0.35);">Your parent hasn't added any entries yet.</p>
     </div>`;
@@ -558,7 +558,7 @@ function renderVault() {
   el.innerHTML = entries.map(e => {
     if (e.locked) {
       return `<div class="vault-entry locked p-4 mb-3 flex items-center gap-3">
-        <div style="font-size:1.8rem;opacity:0.3;">ðŸ”’</div>
+        <div style="font-size:1.8rem;opacity:0.3;">🔒</div>
         <div>
           <div class="font-bold text-sm text-gray-600">Secret Scroll</div>
           <div class="text-xs mt-0.5 text-gray-700">Reach Level ${e.level_required} (${LEVEL_NAMES[e.level_required]}) to unlock</div>
@@ -570,7 +570,7 @@ function renderVault() {
         <div style="font-size:1.8rem;">${e.emoji}</div>
         <div class="flex-1">
           <div class="font-bold text-sm text-emerald-200">${escHtml(e.title)}</div>
-          <div class="text-xs mt-0.5" style="color:rgba(74,222,128,0.5);">Level ${e.level_required} â€¢ Tap to read â†’</div>
+          <div class="text-xs mt-0.5" style="color:rgba(74,222,128,0.5);">Level ${e.level_required} • Tap to read →</div>
         </div>
       </div>
     </div>`;
@@ -601,7 +601,7 @@ function renderHistory() {
 
   if (!completed.length) {
     el.innerHTML = `<div class="card-base rounded-xl p-8 text-center">
-      <div style="font-size:3rem;margin-bottom:0.75rem;">ðŸ“œ</div>
+      <div style="font-size:3rem;margin-bottom:0.75rem;">📜</div>
       <div class="font-military text-xs mb-2" style="color:rgba(74,222,128,0.4);">MISSION LOG EMPTY</div>
       <p class="text-xs" style="color:rgba(240,253,244,0.35);">Completed missions will appear here.</p>
     </div>`;
@@ -610,15 +610,15 @@ function renderHistory() {
 
   el.innerHTML = `<div class="font-military text-xs mb-3" style="color:rgba(74,222,128,0.5);">${completed.length} MISSIONS COMPLETED</div>` +
     completed.map(m => `<div class="card-done rounded-xl p-3.5 mb-2.5 flex items-start gap-3">
-      <div class="text-lg mt-0.5">âœ…</div>
+      <div class="text-lg mt-0.5">✅</div>
       <div class="flex-1 min-w-0">
         <div class="font-semibold text-sm text-emerald-400">${escHtml(m.title)}</div>
-        <div class="text-xs mt-0.5" style="color:rgba(74,222,128,0.4);">+${m.xp_reward} XP Â· ${fmtDate(m.completed_at)}</div>
+        <div class="text-xs mt-0.5" style="color:rgba(74,222,128,0.4);">+${m.xp_reward} XP · ${fmtDate(m.completed_at)}</div>
       </div>
     </div>`).join('');
 }
 
-// â”€â”€ Tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Tab switching ─────────────────────────────────────────────────────────
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((b, i) => {
     const tabs = ['missions', 'fortress', 'badges', 'vault', 'history'];
@@ -628,7 +628,7 @@ function switchTab(name) {
   document.getElementById(`tab-${name}`)?.classList.add('active');
 }
 
-// â”€â”€ Level-up overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Level-up overlay ──────────────────────────────────────────────────────
 function showLevelUp(newLevel) {
   const overlay = document.getElementById('level-up-overlay');
   document.getElementById('lu-title').textContent    = `LEVEL UP!`;
@@ -651,7 +651,7 @@ function closeLevelUp() {
   document.getElementById('level-up-overlay').classList.remove('show');
 }
 
-// â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
@@ -661,7 +661,7 @@ function showToast(msg, type = 'success') {
   toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3000);
 }
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helpers ───────────────────────────────────────────────────────────────
 function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FACTSâ„¢ â€” Paycheck Allocation Engine</title>
+  <title>FACTS™ — Paycheck Allocation Engine</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Tailwind CDN fallback â€” privacy browsers (DuckDuckGo, Brave) block the CDN. */
+    /* Tailwind CDN fallback — privacy browsers (DuckDuckGo, Brave) block the CDN. */
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
     .max-w-2xl { max-width: 42rem; }
@@ -100,9 +100,9 @@
 
     <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
       <div>
-        <h1 class="text-xl font-bold text-white tracking-wide">FACTSâ„¢ Income Engine</h1>
+        <h1 class="text-xl font-bold text-white tracking-wide">FACTS™ Income Engine</h1>
         <p class="text-xs text-slate-400">Educational Non-Custodial Allocation</p>
-        <p class="text-xs text-slate-400" style="margin-top:4px;"><a href="/app.html">â† Back to dashboard</a> Â· <a href="/coaching-readiness.html">Coaching Rubric</a></p>
+        <p class="text-xs text-slate-400" style="margin-top:4px;"><a href="/app.html">← Back to dashboard</a> · <a href="/coaching-readiness.html">Coaching Rubric</a></p>
       </div>
       <span id="step-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Step 1 of 3</span>
     </div>
@@ -355,7 +355,7 @@
         renderPreview(out.data);
         goToStep(3);
       } catch (err) {
-        setStatus('Network error â€” try again.', 'error');
+        setStatus('Network error — try again.', 'error');
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -365,7 +365,7 @@
       currentPayload = collectPayload(save);
       const btn = document.getElementById('btn-save');
       if (btn) btn.disabled = true;
-      setStatus('Savingâ€¦');
+      setStatus('Saving…');
       try {
         const out = await postProcess(currentPayload);
         if (out.res.status === 401) {
@@ -385,7 +385,7 @@
         addDeductionRow('Federal/State Tax', '', 'NECESSITIES');
         setStatus('Paycheck entry processed and recorded successfully.', 'ok');
       } catch (err) {
-        setStatus('Network error â€” try again.', 'error');
+        setStatus('Network error — try again.', 'error');
       } finally {
         if (btn) btn.disabled = false;
       }

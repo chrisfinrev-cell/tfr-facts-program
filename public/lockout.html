@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Account Locked â€” FACTS Protocol</title>
+  <title>Account Locked — FACTS Protocol</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
@@ -247,9 +247,9 @@
 <body>
   <div class="page-wrap">
     <div class="lockout-card">
-      <span class="lock-icon">ðŸ”’</span>
+      <span class="lock-icon">🔒</span>
       <div class="lockout-title">Account Locked</div>
-      <div class="lockout-subtitle">FACTS Protocol â€” Phase Zero Deadline Expired</div>
+      <div class="lockout-subtitle">FACTS Protocol — Phase Zero Deadline Expired</div>
 
       <div class="info-block">
         <p>
@@ -257,12 +257,12 @@
           As part of the FACTS Protocol, your account has been locked for <strong>30 days</strong>.
         </p>
         <p>
-          Phase Zero requires active commitment â€” not passive sign-up. Your progress is preserved and you will be able to resume exactly where you left off after the lockout period ends.
+          Phase Zero requires active commitment — not passive sign-up. Your progress is preserved and you will be able to resume exactly where you left off after the lockout period ends.
         </p>
       </div>
 
       <div class="return-date-wrap">
-        <span class="return-date-icon">ðŸ“…</span>
+        <span class="return-date-icon">📅</span>
         <div>
           <div class="return-date-label">Return Date</div>
           <div class="return-date-value" id="returnDate">Loading...</div>
@@ -290,7 +290,7 @@
 
       <div class="reminder-block">
         <p>
-          <strong>Why this matters:</strong> The FACTS Protocol is built on the principle that financial sovereignty requires consistent, active participation â€” not passive intention. The 7-day Phase Zero window is designed to confirm that commitment.
+          <strong>Why this matters:</strong> The FACTS Protocol is built on the principle that financial sovereignty requires consistent, active participation — not passive intention. The 7-day Phase Zero window is designed to confirm that commitment.
         </p>
       </div>
 
@@ -320,7 +320,7 @@
           return;
         }
         if (!data.is_locked && !data.lockout_until) {
-          // No lockout â€” go to phase-zero to resume
+          // No lockout — go to phase-zero to resume
           window.location.href = '/phase-zero';
           return;
         }
@@ -340,7 +340,7 @@
         }
       })
       .catch(function() {
-        // API error â€” show static state, don't redirect (prevent redirect loop)
+        // API error — show static state, don't redirect (prevent redirect loop)
         document.getElementById('returnDate').textContent = 'Contact support for details';
         document.getElementById('countdownWrap').style.display = 'none';
       });
@@ -349,7 +349,7 @@
       function tick() {
         var msLeft = until.getTime() - Date.now();
         if (msLeft <= 0) {
-          // Lockout expired â€” redirect to phase-zero
+          // Lockout expired — redirect to phase-zero
           clearInterval(countdownInterval);
           window.location.href = '/phase-zero';
           return;
