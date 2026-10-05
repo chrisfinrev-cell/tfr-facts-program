@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resource Center — FACTS</title>
+  <title>Resource Center â€” FACTS</title>
   <meta name="description" content="Access guides, diagrams, templates, compliance checklists, and reference materials for the FACTS system.">
 
   <!-- Favicon -->
@@ -183,11 +183,11 @@
     <div style="background: linear-gradient(180deg, #0a0f1a 0%, #0d1117 100%); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 40px 24px 32px;">
       <div style="max-width: 1200px; margin: 0 auto;">
         <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 8px;">
-          <span style="font-size: 36px;">📚</span>
+          <span style="font-size: 36px;">ðŸ“š</span>
           <h1 style="font-size: clamp(24px, 4vw, 36px); font-weight: 800; margin: 0;" class="gold-text">Resource Center</h1>
         </div>
         <p style="color: #9ca3af; font-size: 16px; margin: 0 0 24px 0; max-width: 600px;">
-          Guides, diagrams, templates, and reference materials — everything you need to master the FACTS system.
+          Guides, diagrams, templates, and reference materials â€” everything you need to master the FACTS system.
         </p>
 
         <!-- Search Bar -->
@@ -216,13 +216,13 @@
       <!-- Pro Upgrade Banner (for free users) -->
       <div id="proBanner" style="display:none; margin-bottom: 28px; padding: 16px 20px; background: linear-gradient(135deg, rgba(201,162,39,0.1), rgba(201,162,39,0.05)); border: 1px solid rgba(201,162,39,0.3); border-radius: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 24px;">🔒</span>
+          <span style="font-size: 24px;">ðŸ”’</span>
           <div>
             <div style="font-weight: 700; color: #e8c96a; font-size: 15px;">Some resources require a paid plan</div>
             <div style="font-size: 13px; color: #9ca3af; margin-top: 2px;">Upgrade to access all guides, templates, and advanced materials.</div>
           </div>
         </div>
-        <a href="/pricing.html" class="btn-gold" style="padding: 10px 20px; font-size: 14px; text-decoration: none; white-space: nowrap;">Upgrade Now →</a>
+        <a href="/pricing.html" class="btn-gold" style="padding: 10px 20px; font-size: 14px; text-decoration: none; white-space: nowrap;">Upgrade Now â†’</a>
       </div>
 
       <!-- Resource Grid -->
@@ -260,8 +260,8 @@
           <div style="font-size: 12px; color: #6b7280; margin-top: 2px;" id="viewerMeta"></div>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-          <a id="viewerDownloadBtn" href="#" download style="padding: 8px 16px; font-size: 13px; text-decoration: none;" class="btn-gold">⬇ Download</a>
-          <button onclick="closeViewer()" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 18px; line-height: 1;">×</button>
+          <a id="viewerDownloadBtn" href="#" download style="padding: 8px 16px; font-size: 13px; text-decoration: none;" class="btn-gold">â¬‡ Download</a>
+          <button onclick="closeViewer()" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 18px; line-height: 1;">Ã—</button>
         </div>
       </div>
       <div class="modal-body" id="viewerBody">
@@ -282,19 +282,19 @@
     let hasPro = false;
     let searchTimeout = null;
 
-    // ── Type config ──────────────────────────────────────────
+    // â”€â”€ Type config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const TYPE_CONFIG = {
-      pdf:        { label: 'PDF',         class: 'type-pdf',         icon: '📄' },
-      image:      { label: 'Image',       class: 'type-image',       icon: '🖼' },
-      diagram:    { label: 'Diagram',     class: 'type-diagram',     icon: '📐' },
-      spreadsheet:{ label: 'Sheet',       class: 'type-spreadsheet', icon: '📊' },
-      link:       { label: 'Link',        class: 'type-link',        icon: '🔗' },
-      chart:      { label: 'Chart',       class: 'type-chart',       icon: '📈' },
-      video:      { label: 'Video',       class: 'type-video',       icon: '🎬' },
-      doc:        { label: 'Document',    class: 'type-doc',         icon: '📝' },
+      pdf:        { label: 'PDF',         class: 'type-pdf',         icon: 'ðŸ“„' },
+      image:      { label: 'Image',       class: 'type-image',       icon: 'ðŸ–¼' },
+      diagram:    { label: 'Diagram',     class: 'type-diagram',     icon: 'ðŸ“' },
+      spreadsheet:{ label: 'Sheet',       class: 'type-spreadsheet', icon: 'ðŸ“Š' },
+      link:       { label: 'Link',        class: 'type-link',        icon: 'ðŸ”—' },
+      chart:      { label: 'Chart',       class: 'type-chart',       icon: 'ðŸ“ˆ' },
+      video:      { label: 'Video',       class: 'type-video',       icon: 'ðŸŽ¬' },
+      doc:        { label: 'Document',    class: 'type-doc',         icon: 'ðŸ“' },
     };
 
-    // ── Init ─────────────────────────────────────────────────
+    // â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function init() {
       try {
         const params = new URLSearchParams();
@@ -326,7 +326,7 @@
       } catch (err) {
         document.getElementById('resourceGrid').innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #6b7280;">
-            <div style="font-size: 40px; margin-bottom: 12px;">⚠️</div>
+            <div style="font-size: 40px; margin-bottom: 12px;">âš ï¸</div>
             <div style="font-size: 15px;">Failed to load resources. Please refresh.</div>
           </div>
         `;
@@ -334,7 +334,7 @@
       }
     }
 
-    // ── Build category filter pills ──────────────────────────
+    // â”€â”€ Build category filter pills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function buildCategoryFilters(categories) {
       const container = document.getElementById('categoryFilters');
       // Keep "All Resources" pill (first child), rebuild the rest
@@ -352,7 +352,7 @@
       });
     }
 
-    // ── Set active category ──────────────────────────────────
+    // â”€â”€ Set active category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function setCat(cat) {
       currentCat = cat;
       document.querySelectorAll('.cat-pill').forEach(p => {
@@ -361,13 +361,13 @@
       applyFilters();
     }
 
-    // ── Search handler (debounced) ───────────────────────────
+    // â”€â”€ Search handler (debounced) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function handleSearch() {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => applyFilters(), 300);
     }
 
-    // ── Apply cat + search filters client-side ────────────────
+    // â”€â”€ Apply cat + search filters client-side â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function applyFilters() {
       const search = document.getElementById('searchInput').value.trim().toLowerCase();
       filteredResources = allResources.filter(r => {
@@ -381,7 +381,7 @@
       renderResources(filteredResources);
     }
 
-    // ── Render resource grid ─────────────────────────────────
+    // â”€â”€ Render resource grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function renderResources(resources) {
       const grid = document.getElementById('resourceGrid');
       const countLabel = document.getElementById('countLabel');
@@ -389,12 +389,12 @@
       // Update count
       const total = resources.length;
       const locked = resources.filter(r => r.locked).length;
-      countLabel.textContent = `${total} resource${total !== 1 ? 's' : ''}${locked ? ` · ${locked} paid-only` : ''}`;
+      countLabel.textContent = `${total} resource${total !== 1 ? 's' : ''}${locked ? ` Â· ${locked} paid-only` : ''}`;
 
       if (total === 0) {
         grid.innerHTML = `
           <div style="grid-column: 1/-1;" class="empty-state">
-            <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+            <div style="font-size: 48px; margin-bottom: 16px;">ðŸ”</div>
             <div style="font-size: 18px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">No resources found</div>
             <div style="font-size: 14px; color: #4b5563;">Try a different category or search term.</div>
           </div>
@@ -405,14 +405,14 @@
       grid.innerHTML = resources.map(r => renderCard(r)).join('');
     }
 
-    // ── Render single resource card ──────────────────────────
+    // â”€â”€ Render single resource card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function renderCard(r) {
       const typeConf = TYPE_CONFIG[r.resource_type] || TYPE_CONFIG.pdf;
       const hasFile = r.file_url || r.has_file_data;
       const isComingSoon = !hasFile;
 
       const typeBadge = `<span class="type-badge ${typeConf.class}">${typeConf.icon} ${typeConf.label}</span>`;
-      const proBadge = r.is_pro_only ? `<span class="pro-badge">⭐ Pro</span>` : '';
+      const proBadge = r.is_pro_only ? `<span class="pro-badge">â­ Pro</span>` : '';
 
       const fileSize = r.file_size_bytes > 0
         ? `<span style="color:#6b7280;font-size:12px;">${formatFileSize(r.file_size_bytes)}</span>`
@@ -422,7 +422,7 @@
       if (r.locked) {
         actionBtn = `
           <div style="display:flex; gap:8px; align-items:center;">
-            <button class="btn-outline" style="padding:9px 16px;font-size:13px;cursor:not-allowed;opacity:0.6;" disabled>🔒 Paid Plans Only</button>
+            <button class="btn-outline" style="padding:9px 16px;font-size:13px;cursor:not-allowed;opacity:0.6;" disabled>ðŸ”’ Paid Plans Only</button>
             <a href="/pricing.html" class="btn-gold" style="padding:9px 14px;font-size:13px;text-decoration:none;">Upgrade</a>
           </div>
         `;
@@ -430,19 +430,19 @@
         const safeTitle = escHtml(r.title).replace(/'/g, '&#39;');
         actionBtn = `
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span class="coming-soon-badge">🕐 Coming Soon</span>
-            <button class="btn-outline" style="padding:7px 14px;font-size:12px;cursor:pointer;border-color:rgba(201,162,39,0.3);color:#c9a227;" onclick="openRcNotifyModal(${r.id}, '${safeTitle}')">🔔 Notify Me</button>
+            <span class="coming-soon-badge">ðŸ• Coming Soon</span>
+            <button class="btn-outline" style="padding:7px 14px;font-size:12px;cursor:pointer;border-color:rgba(201,162,39,0.3);color:#c9a227;" onclick="openRcNotifyModal(${r.id}, '${safeTitle}')">ðŸ”” Notify Me</button>
           </div>
         `;
       } else {
         const viewable = ['pdf', 'image', 'diagram', 'chart'].includes(r.resource_type);
         const viewBtn = viewable
-          ? `<button class="btn-outline" style="padding:9px 16px;font-size:13px;cursor:pointer;" onclick="viewResource(${r.id}, '${escHtml(r.title)}', '${r.resource_type}')">👁 View</button>`
+          ? `<button class="btn-outline" style="padding:9px 16px;font-size:13px;cursor:pointer;" onclick="viewResource(${r.id}, '${escHtml(r.title)}', '${r.resource_type}')">ðŸ‘ View</button>`
           : '';
         actionBtn = `
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
             ${viewBtn}
-            <button class="btn-gold" style="padding:9px 16px;font-size:13px;cursor:pointer;border:none;" onclick="downloadResource(${r.id}, '${escHtml(r.file_name || r.title)}')">⬇ Download</button>
+            <button class="btn-gold" style="padding:9px 16px;font-size:13px;cursor:pointer;border:none;" onclick="downloadResource(${r.id}, '${escHtml(r.file_name || r.title)}')">â¬‡ Download</button>
           </div>
         `;
       }
@@ -455,7 +455,7 @@
         <div class="card${r.locked ? ' card-locked' : ''}" style="padding: 24px; position: relative;">
           ${r.locked ? `
             <div class="lock-overlay">
-              <div style="font-size:36px;margin-bottom:8px;">🔒</div>
+              <div style="font-size:36px;margin-bottom:8px;">ðŸ”’</div>
               <div style="font-size:14px;font-weight:700;color:#e8c96a;margin-bottom:4px;">Paid Plan Required</div>
               <a href="/pricing.html" style="color:#9ca3af;font-size:12px;text-decoration:underline;">Upgrade to access</a>
             </div>
@@ -463,7 +463,7 @@
 
           <!-- Top: emoji + badges -->
           <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px;">
-            <span style="font-size:32px; line-height:1;">${r.thumbnail_emoji || '📄'}</span>
+            <span style="font-size:32px; line-height:1;">${r.thumbnail_emoji || 'ðŸ“„'}</span>
             <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
               ${typeBadge}
               ${proBadge}
@@ -475,7 +475,7 @@
 
           <!-- Description -->
           <p style="font-size:13px; color:#9ca3af; line-height:1.6; margin:0 0 16px 0; flex-grow:1;">
-            ${r.description ? escHtml(r.description).substring(0, 140) + (r.description.length > 140 ? '…' : '') : 'No description provided.'}
+            ${r.description ? escHtml(r.description).substring(0, 140) + (r.description.length > 140 ? 'â€¦' : '') : 'No description provided.'}
           </p>
 
           <!-- Category tag -->
@@ -497,7 +497,7 @@
       `;
     }
 
-    // ── View resource (inline PDF/image viewer) ──────────────
+    // â”€â”€ View resource (inline PDF/image viewer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function viewResource(id, title, type) {
       const modal = document.getElementById('viewerModal');
       const body = document.getElementById('viewerBody');
@@ -505,7 +505,7 @@
       document.getElementById('viewerMeta').textContent = (TYPE_CONFIG[type] || {}).label || type;
       document.getElementById('viewerDownloadBtn').href = `/api/resources/${id}/download`;
 
-      body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:300px;color:#6b7280;"><div style="font-size:32px;">⏳</div></div>`;
+      body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:300px;color:#6b7280;"><div style="font-size:32px;">â³</div></div>`;
       modal.classList.add('open');
 
       // Use iframe to display via download URL
@@ -527,7 +527,7 @@
       if (e.target === this) closeViewer();
     });
 
-    // ── Download resource ────────────────────────────────────
+    // â”€â”€ Download resource â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function downloadResource(id, filename) {
       try {
         const link = document.createElement('a');
@@ -537,13 +537,13 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        toast('Download started ✓');
+        toast('Download started âœ“');
       } catch (err) {
         toast('Download failed: ' + err.message, true);
       }
     }
 
-    // ── Helpers ──────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function formatFileSize(bytes) {
       if (bytes < 1024) return bytes + ' B';
       if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -568,12 +568,12 @@
       setTimeout(() => t.classList.remove('show'), 3500);
     }
 
-    // ── Keyboard close modal ─────────────────────────────────
+    // â”€â”€ Keyboard close modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') { closeViewer(); closeRcNotifyModal(); }
     });
 
-    // ── Resource Center Notify Modal ──────────────────────────
+    // â”€â”€ Resource Center Notify Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function openRcNotifyModal(resourceId, resourceTitle) {
       var modal = document.getElementById('rc-notify-modal');
       var titleEl = document.getElementById('rc-notify-title');
@@ -605,7 +605,7 @@
       }
       var title = titleEl ? titleEl.textContent : 'resource';
       var featureName = 'resource_' + title.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 50);
-      if (btn) { btn.textContent = '…'; btn.disabled = true; }
+      if (btn) { btn.textContent = 'â€¦'; btn.disabled = true; }
       fetch('/api/waitlist/feature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
@@ -617,19 +617,19 @@
         if (confirm) confirm.style.display = 'block';
       })
       .catch(() => {
-        if (btn) { btn.textContent = '🔔 Notify Me'; btn.disabled = false; }
+        if (btn) { btn.textContent = 'ðŸ”” Notify Me'; btn.disabled = false; }
       });
     }
 
-    // ── Start ────────────────────────────────────────────────
+    // â”€â”€ Start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     init();
   </script>
 
-<!-- ── Resource Notify Modal ──────────────────────────────── -->
+<!-- â”€â”€ Resource Notify Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="rc-notify-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeRcNotifyModal();">
   <div style="background:#141b2d;border:1px solid rgba(201,162,39,0.2);border-radius:16px;padding:32px 28px;max-width:400px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
-    <button onclick="closeRcNotifyModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer;">✕</button>
-    <div style="font-size:2rem;text-align:center;margin-bottom:12px;">🔔</div>
+    <button onclick="closeRcNotifyModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer;">âœ•</button>
+    <div style="font-size:2rem;text-align:center;margin-bottom:12px;">ðŸ””</div>
     <h3 style="font-size:1.1rem;font-weight:800;text-align:center;margin-bottom:6px;color:#f1f5f9;">Get notified when it's live</h3>
     <p style="color:#94a3b8;font-size:0.85rem;text-align:center;margin-bottom:4px;line-height:1.5;" id="rc-notify-title"></p>
     <p style="color:#64748b;font-size:0.8rem;text-align:center;margin-bottom:20px;">We'll email you the moment this resource is available.</p>
@@ -639,14 +639,15 @@
         <input id="rc-notify-email" type="email" placeholder="your@email.com"
                style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.05);color:#f1f5f9;font-size:0.875rem;outline:none;box-sizing:border-box;">
         <button id="rc-notify-btn" onclick="submitRcWaitlist()"
-                style="width:100%;padding:10px 18px;background:linear-gradient(135deg,#c9a227,#e8c96a);color:#0d1117;border:none;border-radius:8px;font-size:0.875rem;font-weight:700;cursor:pointer;">🔔 Notify Me</button>
+                style="width:100%;padding:10px 18px;background:linear-gradient(135deg,#c9a227,#e8c96a);color:#0d1117;border:none;border-radius:8px;font-size:0.875rem;font-weight:700;cursor:pointer;">ðŸ”” Notify Me</button>
       </div>
     </div>
-    <div id="rc-notify-confirm" style="display:none;padding:12px 16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;color:#10b981;font-size:0.875rem;font-weight:600;text-align:center;">✓ You're on the list!</div>
+    <div id="rc-notify-confirm" style="display:none;padding:12px 16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;color:#10b981;font-size:0.875rem;font-weight:600;text-align:center;">âœ“ You're on the list!</div>
   </div>
 </div>
 
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

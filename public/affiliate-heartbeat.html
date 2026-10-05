@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FACTS">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <title>Monthly Heartbeat Audit — FACTS Financial</title>
+  <title>Monthly Heartbeat Audit â€” FACTS Financial</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background: #0a0f1a; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
@@ -95,11 +95,11 @@
     <header style="background:#111827; border-bottom: 1px solid rgba(212,175,55,0.2);">
       <div class="max-w-4xl mx-auto px-4 py-4 sm:px-6 flex items-center justify-between">
         <div>
-          <h1 class="text-xl font-bold gold">🏛️ Monthly Heartbeat Audit</h1>
-          <p class="text-sm text-gray-400">FACTS Financial · Future Generations Affiliate</p>
+          <h1 class="text-xl font-bold gold">ðŸ›ï¸ Monthly Heartbeat Audit</h1>
+          <p class="text-sm text-gray-400">FACTS Financial Â· Future Generations Affiliate</p>
         </div>
         <div class="flex items-center gap-3">
-          <a href="/affiliate-dashboard.html" class="text-sm text-blue-400 hover:text-blue-300">← Affiliate Dashboard</a>
+          <a href="/affiliate-dashboard.html" class="text-sm text-blue-400 hover:text-blue-300">â† Affiliate Dashboard</a>
         </div>
       </div>
     </header>
@@ -115,22 +115,22 @@
       <!-- Not Affiliate -->
       <div id="not-affiliate-view" class="hidden">
         <div class="bg-card rounded-xl p-8 text-center max-w-lg mx-auto" style="border:1px solid rgba(212,175,55,0.2);">
-          <div class="text-5xl mb-4">🔒</div>
+          <div class="text-5xl mb-4">ðŸ”’</div>
           <h2 class="text-xl font-bold text-white mb-2">Affiliate Access Required</h2>
           <p class="text-gray-400 mb-6">The Monthly Heartbeat Audit is only available to active Future Generations affiliates.</p>
-          <a href="/affiliate-dashboard.html" class="btn-gold">Join the Program →</a>
+          <a href="/affiliate-dashboard.html" class="btn-gold">Join the Program â†’</a>
         </div>
       </div>
 
       <!-- Already Completed -->
       <div id="completed-view" class="hidden">
         <div class="bg-card rounded-xl p-8 text-center max-w-2xl mx-auto" style="border:1px solid rgba(74,222,128,0.4);">
-          <div class="text-6xl mb-4">✅</div>
+          <div class="text-6xl mb-4">âœ…</div>
           <h2 class="text-2xl font-bold text-white mb-2">Heartbeat Complete</h2>
           <p class="text-gray-300 mb-2" id="completed-month-label">Your audit is confirmed for this month.</p>
-          <p class="text-sm text-gray-500 mb-6">Completed on <span id="completed-date" class="gold"></span> · Signed by <span id="completed-signer" class="gold"></span></p>
+          <p class="text-sm text-gray-500 mb-6">Completed on <span id="completed-date" class="gold"></span> Â· Signed by <span id="completed-signer" class="gold"></span></p>
           <div class="bg-card-inner rounded-lg p-4 text-left mb-6" style="border:1px solid rgba(74,222,128,0.2);">
-            <p class="text-green-400 font-semibold mb-1">✓ Your account is in full compliance</p>
+            <p class="text-green-400 font-semibold mb-1">âœ“ Your account is in full compliance</p>
             <p class="text-gray-400 text-sm">Commissions are processing normally. You remain eligible for Orphan Placements.</p>
           </div>
           <a href="/affiliate-dashboard.html" class="btn-gold">Back to Dashboard</a>
@@ -142,7 +142,7 @@
         <!-- Deadline Banner -->
         <div id="deadline-banner" class="rounded-lg p-4 mb-6 flex items-center justify-between flex-wrap gap-3" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.4);">
           <div class="flex items-center gap-3">
-            <div class="text-2xl">⏳</div>
+            <div class="text-2xl">â³</div>
             <div>
               <div class="font-semibold gold" id="banner-month"></div>
               <div class="text-sm text-gray-300" id="banner-deadline"></div>
@@ -156,7 +156,7 @@
         <!-- Compliance Hold Warning (if currently on hold) -->
         <div id="hold-warning" class="hidden rounded-lg p-4 mb-6 badge-hold" style="border:1px solid #ef4444;">
           <div class="flex items-start gap-3">
-            <div class="text-2xl">🚨</div>
+            <div class="text-2xl">ðŸš¨</div>
             <div>
               <div class="font-bold text-red-400 mb-1">Compliance Hold Active</div>
               <div class="text-sm text-red-300">Your commissions are currently on hold from a missed previous audit. Completing this month's Heartbeat will restore your account.</div>
@@ -298,16 +298,16 @@
       <div id="window-closed-view" class="hidden">
         <div class="bg-card rounded-xl p-8 max-w-2xl mx-auto" style="border:1px solid rgba(239,68,68,0.3);">
           <div class="text-center mb-6">
-            <div class="text-5xl mb-4">🔒</div>
+            <div class="text-5xl mb-4">ðŸ”’</div>
             <h2 class="text-2xl font-bold text-white mb-2">Audit Window Closed</h2>
             <p class="text-gray-400" id="window-closed-month"></p>
           </div>
           <div style="background:rgba(239,68,68,0.1); border:1px solid #ef4444; border-radius:8px; padding:16px;" class="mb-6">
-            <p class="text-red-300 text-sm">The 1st–7th window has passed. If you did not complete your Heartbeat, the system has flagged your account for compliance review. Commissions may be placed on hold pending next month's audit.</p>
+            <p class="text-red-300 text-sm">The 1stâ€“7th window has passed. If you did not complete your Heartbeat, the system has flagged your account for compliance review. Commissions may be placed on hold pending next month's audit.</p>
           </div>
           <div style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.4); border-radius:8px; padding:16px;" class="mb-6">
-            <p class="gold font-semibold mb-1">🔄 How to Restore</p>
-            <p class="text-gray-300 text-sm">Complete the Heartbeat during the 1st–7th window next month. All held commissions will be released automatically upon completion.</p>
+            <p class="gold font-semibold mb-1">ðŸ”„ How to Restore</p>
+            <p class="text-gray-300 text-sm">Complete the Heartbeat during the 1stâ€“7th window next month. All held commissions will be released automatically upon completion.</p>
           </div>
           <div class="text-center">
             <a href="/affiliate-dashboard.html" class="btn-gold">Back to Dashboard</a>
@@ -334,14 +334,14 @@
     };
 
     function fmt(cents) {
-      if (cents == null) return '—';
+      if (cents == null) return 'â€”';
       const n = parseFloat(cents);
       const prefix = n < 0 ? '-$' : '$';
       return prefix + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function fmtDate(d) {
-      if (!d) return '—';
+      if (!d) return 'â€”';
       return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
@@ -377,7 +377,7 @@
       if (s.completed) {
         document.getElementById('completed-month-label').textContent = `Heartbeat confirmed for ${s.monthLabel}`;
         document.getElementById('completed-date').textContent = fmtDate(s.completedAt);
-        document.getElementById('completed-signer').textContent = s.signerName || '—';
+        document.getElementById('completed-signer').textContent = s.signerName || 'â€”';
         show('completed-view');
         return;
       }
@@ -388,7 +388,7 @@
         populateReviewData();
       } catch (err) {
         console.warn('Review data not available:', err.message);
-        // Not fatal — still show the form
+        // Not fatal â€” still show the form
         document.getElementById('allocation-table').innerHTML = '<div class="text-center py-6 text-gray-500 text-sm">No transaction data available for review.</div>';
         document.getElementById('txn-body').innerHTML = '<tr><td colspan="4" class="text-center py-6 text-gray-500 text-sm">No transactions found.</td></tr>';
       }
@@ -424,14 +424,14 @@
 
       // Period label
       const el = document.getElementById('txn-period-label');
-      if (el) el.textContent = `Reviewing transactions for ${d.monthLabel} (${d.periodStart} – ${d.periodEnd})`;
+      if (el) el.textContent = `Reviewing transactions for ${d.monthLabel} (${d.periodStart} â€“ ${d.periodEnd})`;
 
       // Allocation table
       const allocTable = document.getElementById('allocation-table');
       if (d.allocationSummary && d.allocationSummary.length > 0) {
         let rows = d.allocationSummary.map(r => `
           <tr class="txn-row">
-            <td class="px-3 py-2 capitalize">${r.type || '—'}</td>
+            <td class="px-3 py-2 capitalize">${r.type || 'â€”'}</td>
             <td class="px-3 py-2 text-right ${r.type === 'income' ? 'txn-income' : 'txn-expense'}">${fmt(r.total_amount)}</td>
             <td class="px-3 py-2 text-right text-gray-400">${r.count} txn${r.count !== 1 ? 's' : ''}</td>
           </tr>
@@ -454,9 +454,9 @@
       if (d.transactions && d.transactions.length > 0) {
         tbody.innerHTML = d.transactions.map(t => `
           <tr class="txn-row">
-            <td class="px-3 py-2 text-gray-400">${t.date ? t.date.split('T')[0] : '—'}</td>
-            <td class="px-3 py-2 text-gray-200">${escHtml(t.description || '—')}</td>
-            <td class="px-3 py-2 text-gray-400">${escHtml(t.category || t.type || '—')}</td>
+            <td class="px-3 py-2 text-gray-400">${t.date ? t.date.split('T')[0] : 'â€”'}</td>
+            <td class="px-3 py-2 text-gray-200">${escHtml(t.description || 'â€”')}</td>
+            <td class="px-3 py-2 text-gray-400">${escHtml(t.category || t.type || 'â€”')}</td>
             <td class="px-3 py-2 text-right ${parseFloat(t.amount) >= 0 ? 'txn-income' : 'txn-expense'}">${fmt(t.amount)}</td>
           </tr>
         `).join('');
@@ -502,20 +502,20 @@
       const c1 = document.getElementById('step1-circle');
       if (c1) {
         c1.className = `step-circle ${state.allocChecked ? 'done' : 'active'}`;
-        c1.textContent = state.allocChecked ? '✓' : '1';
+        c1.textContent = state.allocChecked ? 'âœ“' : '1';
       }
       // Step 2
       const c2 = document.getElementById('step2-circle');
       if (c2) {
         c2.className = `step-circle ${state.txnChecked ? 'done' : (state.allocChecked ? 'active' : 'pending')}`;
-        c2.textContent = state.txnChecked ? '✓' : '2';
+        c2.textContent = state.txnChecked ? 'âœ“' : '2';
       }
       // Step 3
       const c3 = document.getElementById('step3-circle');
       if (c3) {
         const ready = state.allocChecked && state.txnChecked;
         c3.className = `step-circle ${(state.finalChecked && state.signatureName.length >= 2) ? 'done' : (ready ? 'active' : 'pending')}`;
-        c3.textContent = (state.finalChecked && state.signatureName.length >= 2) ? '✓' : '3';
+        c3.textContent = (state.finalChecked && state.signatureName.length >= 2) ? 'âœ“' : '3';
       }
     }
 
@@ -586,5 +586,6 @@
   </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

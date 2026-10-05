@@ -3,6 +3,10 @@ export type FactsUser = {
   email: string;
   name?: string | null;
   referral_code?: string | null;
+  affiliate_code?: string | null;
+  affiliate_tier?: string | null;
+  is_affiliate_disabled?: boolean;
+  affiliate_eligible?: boolean;
   nda_required?: boolean;
   nda_accepted?: boolean;
   nda_accepted_at?: string | null;

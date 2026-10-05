@@ -23,11 +23,24 @@ export async function registerBeta(input: {
   email: string;
   password: string;
   inviteCode: string;
-}): Promise<{ requiresNda: boolean; referralCode?: string }> {
+  name?: string;
+  fullName?: string;
+  relationshipTag?: 'STANDARD' | 'FAMILY' | 'CLOSE_CONTACT';
+  ndaAccepted?: boolean;
+}): Promise<{
+  requiresNda: boolean;
+  referralCode?: string;
+  relationshipTag?: string;
+  showPersonalContactDisclosure?: boolean;
+  disclosure?: string | null;
+}> {
   const { data } = await api.post(apiRoutes.register, input);
   return {
     requiresNda: Boolean(data.requiresNda ?? true),
-    referralCode: data.referralCode
+    referralCode: data.referralCode,
+    relationshipTag: data.relationshipTag,
+    showPersonalContactDisclosure: Boolean(data.showPersonalContactDisclosure),
+    disclosure: data.disclosure || null
   };
 }
 

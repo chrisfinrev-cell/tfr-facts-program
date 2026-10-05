@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,12 +10,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FACTS">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <title>Financial News Hub — FACTS</title>
-  <meta name="description" content="Financial news that affects real people — interest rates, inflation, housing, taxes, retirement, markets and more. Auto-updating, curated, and clear.">
+  <title>Financial News Hub â€” FACTS</title>
+  <meta name="description" content="Financial news that affects real people â€” interest rates, inflation, housing, taxes, retirement, markets and more. Auto-updating, curated, and clear.">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Financial News Hub — FACTS">
-  <meta property="og:description" content="The latest financial news that affects real people. Market moves, economic shifts, and policy changes — curated and clear.">
+  <meta property="og:title" content="Financial News Hub â€” FACTS">
+  <meta property="og:description" content="The latest financial news that affects real people. Market moves, economic shifts, and policy changes â€” curated and clear.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://app.factsmoney.com/news">
   <meta property="og:site_name" content="FACTS">
@@ -43,21 +43,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- ═══════════════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        GOOGLE ADSENSE
        Replace ca-pub-XXXXXXXXXXXXXXXXXX with your publisher ID
-       ═══════════════════════════════════════════ -->
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
 
   <style>
     * { font-family: 'Inter', system-ui, sans-serif; box-sizing: border-box; }
     body { background: #0d1117; color: #e2e8f0; margin: 0; min-height: 100vh; min-height: 100dvh; }
 
-    /* ── Gold accent ── */
+    /* â”€â”€ Gold accent â”€â”€ */
     .gold-text { color: #c9a227; }
     .gold-border { border-color: #c9a227; }
 
-    /* ── Nav bar ── */
+    /* â”€â”€ Nav bar â”€â”€ */
     .nav-bar {
       background: rgba(13,17,23,0.96);
       border-bottom: 1px solid rgba(201,162,39,0.15);
@@ -65,7 +65,7 @@
       position: sticky; top: 44px; z-index: 40;
     }
 
-    /* ── Category pills ── */
+    /* â”€â”€ Category pills â”€â”€ */
     .cat-pill {
       cursor: pointer;
       padding: 6px 14px;
@@ -86,7 +86,7 @@
       color: #e8c96a;
     }
 
-    /* ── News card ── */
+    /* â”€â”€ News card â”€â”€ */
     .news-card {
       background: #13192a;
       border: 1px solid rgba(255,255,255,0.07);
@@ -117,7 +117,7 @@
       margin: 0;
     }
 
-    /* ── Category badge ── */
+    /* â”€â”€ Category badge â”€â”€ */
     .cat-badge {
       display: inline-flex;
       align-items: center;
@@ -137,14 +137,14 @@
     .badge-economy    { background: rgba(148,163,184,0.12); color: #94a3b8; }
     .badge-student-loans { background: rgba(34,197,94,0.12); color: #4ade80; }
 
-    /* ── Source tag ── */
+    /* â”€â”€ Source tag â”€â”€ */
     .source-tag {
       font-size: 11px;
       color: #475569;
       font-weight: 500;
     }
 
-    /* ── Skeleton loading ── */
+    /* â”€â”€ Skeleton loading â”€â”€ */
     .skeleton {
       background: linear-gradient(90deg, #1a2235 25%, #1f2940 50%, #1a2235 75%);
       background-size: 200% 100%;
@@ -156,7 +156,7 @@
       100% { background-position: -200% 0; }
     }
 
-    /* ── Ad unit ── */
+    /* â”€â”€ Ad unit â”€â”€ */
     .ad-unit {
       background: rgba(255,255,255,0.02);
       border: 1px dashed rgba(255,255,255,0.08);
@@ -174,7 +174,7 @@
     /* Hide ads for pro users */
     body.ad-free .ad-unit { display: none !important; }
 
-    /* ── Top banner ad ── */
+    /* â”€â”€ Top banner ad â”€â”€ */
     .ad-banner {
       width: 100%;
       min-height: 90px;
@@ -185,16 +185,16 @@
       .ad-banner { min-height: 60px; }
     }
 
-    /* ── Sidebar ad ── */
+    /* â”€â”€ Sidebar ad â”€â”€ */
     .ad-sidebar { width: 300px; min-height: 250px; flex-shrink: 0; }
 
-    /* ── In-feed ad ── */
+    /* â”€â”€ In-feed ad â”€â”€ */
     .ad-infeed {
       min-height: 120px;
       width: 100%;
     }
 
-    /* ── Refresh button ── */
+    /* â”€â”€ Refresh button â”€â”€ */
     .refresh-btn {
       background: rgba(201,162,39,0.1);
       border: 1px solid rgba(201,162,39,0.25);
@@ -213,7 +213,7 @@
     .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* ── Scrollable category bar ── */
+    /* â”€â”€ Scrollable category bar â”€â”€ */
     .cat-scroll {
       overflow-x: auto;
       scrollbar-width: none;
@@ -221,14 +221,14 @@
     }
     .cat-scroll::-webkit-scrollbar { display: none; }
 
-    /* ── No results ── */
+    /* â”€â”€ No results â”€â”€ */
     .no-results {
       text-align: center;
       padding: 60px 20px;
       color: #475569;
     }
 
-    /* ── Read more link ── */
+    /* â”€â”€ Read more link â”€â”€ */
     .read-more {
       font-size: 12px;
       color: #c9a227;
@@ -241,7 +241,7 @@
     }
     .read-more:hover { color: #e8c96a; }
 
-    /* ── Pro badge ── */
+    /* â”€â”€ Pro badge â”€â”€ */
     .pro-badge {
       background: rgba(201,162,39,0.12);
       border: 1px solid rgba(201,162,39,0.25);
@@ -257,7 +257,7 @@
 </head>
 <body>
 
-  <!-- ═══════════════ NAV ═══════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• NAV â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <nav class="nav-bar">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
       <div class="flex items-center gap-3">
@@ -273,21 +273,21 @@
       </div>
       <div class="flex items-center gap-3">
         <span id="pro-indicator" class="pro-badge hidden">Ad-Free</span>
-        <a href="/app" class="text-xs text-gray-500 hover:text-gray-300 transition-colors hidden sm:inline">Open FACTS →</a>
+        <a href="/app" class="text-xs text-gray-500 hover:text-gray-300 transition-colors hidden sm:inline">Open FACTS â†’</a>
       </div>
     </div>
   </nav>
 
-  <!-- ═══════════════ HERO ═══════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HERO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <div class="max-w-6xl mx-auto px-4 pt-8 pb-4">
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-2">
       <div>
         <div class="flex items-center gap-3 mb-2">
-          <span class="text-2xl">📰</span>
+          <span class="text-2xl">ðŸ“°</span>
           <h1 class="text-2xl sm:text-3xl font-bold text-white">Financial News Hub</h1>
         </div>
         <p class="text-gray-400 text-sm sm:text-base max-w-xl">
-          The latest financial news that affects real people — market moves, economic shifts, rate changes, and policy updates. Curated and clear.
+          The latest financial news that affects real people â€” market moves, economic shifts, rate changes, and policy updates. Curated and clear.
         </p>
       </div>
       <div class="flex items-center gap-3 shrink-0">
@@ -302,10 +302,10 @@
     </div>
   </div>
 
-  <!-- ═══════════════ TOP BANNER AD ═══════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TOP BANNER AD â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <div class="max-w-6xl mx-auto px-4 mb-2" id="ad-top-banner">
     <div class="ad-unit ad-banner">
-      <!-- AdSense Top Banner (728×90 desktop / responsive mobile)
+      <!-- AdSense Top Banner (728Ã—90 desktop / responsive mobile)
            Replace ca-pub-XXXXXXXXXXXXXXXXXX with your publisher ID
       <ins class="adsbygoogle"
            style="display:block"
@@ -319,29 +319,29 @@
     </div>
   </div>
 
-  <!-- ═══════════════ CATEGORY FILTER ═══════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• CATEGORY FILTER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <div class="max-w-6xl mx-auto px-4 mb-6">
     <div class="cat-scroll">
       <div class="flex gap-2 pb-1" id="category-bar">
         <button class="cat-pill active" data-cat="All" onclick="filterCategory('All', this)">All</button>
-        <button class="cat-pill" data-cat="Markets" onclick="filterCategory('Markets', this)">📈 Markets</button>
-        <button class="cat-pill" data-cat="Rates" onclick="filterCategory('Rates', this)">💹 Rates</button>
-        <button class="cat-pill" data-cat="Economy" onclick="filterCategory('Economy', this)">🌐 Economy</button>
-        <button class="cat-pill" data-cat="Housing" onclick="filterCategory('Housing', this)">🏠 Housing</button>
-        <button class="cat-pill" data-cat="Taxes" onclick="filterCategory('Taxes', this)">🧾 Taxes</button>
-        <button class="cat-pill" data-cat="Jobs" onclick="filterCategory('Jobs', this)">💼 Jobs</button>
-        <button class="cat-pill" data-cat="Retirement" onclick="filterCategory('Retirement', this)">🏖️ Retirement</button>
-        <button class="cat-pill" data-cat="Credit" onclick="filterCategory('Credit', this)">💳 Credit</button>
-        <button class="cat-pill" data-cat="Student Loans" onclick="filterCategory('Student Loans', this)">🎓 Student Loans</button>
+        <button class="cat-pill" data-cat="Markets" onclick="filterCategory('Markets', this)">ðŸ“ˆ Markets</button>
+        <button class="cat-pill" data-cat="Rates" onclick="filterCategory('Rates', this)">ðŸ’¹ Rates</button>
+        <button class="cat-pill" data-cat="Economy" onclick="filterCategory('Economy', this)">ðŸŒ Economy</button>
+        <button class="cat-pill" data-cat="Housing" onclick="filterCategory('Housing', this)">ðŸ  Housing</button>
+        <button class="cat-pill" data-cat="Taxes" onclick="filterCategory('Taxes', this)">ðŸ§¾ Taxes</button>
+        <button class="cat-pill" data-cat="Jobs" onclick="filterCategory('Jobs', this)">ðŸ’¼ Jobs</button>
+        <button class="cat-pill" data-cat="Retirement" onclick="filterCategory('Retirement', this)">ðŸ–ï¸ Retirement</button>
+        <button class="cat-pill" data-cat="Credit" onclick="filterCategory('Credit', this)">ðŸ’³ Credit</button>
+        <button class="cat-pill" data-cat="Student Loans" onclick="filterCategory('Student Loans', this)">ðŸŽ“ Student Loans</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MAIN CONTENT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <div class="max-w-6xl mx-auto px-4 pb-16">
     <div class="flex gap-6 items-start">
 
-      <!-- ── News feed (main column) ── -->
+      <!-- â”€â”€ News feed (main column) â”€â”€ -->
       <div class="flex-1 min-w-0">
         <!-- Article count -->
         <div class="flex items-center justify-between mb-4">
@@ -362,26 +362,26 @@
 
         <!-- No results -->
         <div id="no-results" class="hidden no-results">
-          <div class="text-4xl mb-3">🔍</div>
+          <div class="text-4xl mb-3">ðŸ”</div>
           <p class="text-gray-500 font-medium">No articles in this category right now.</p>
-          <button onclick="filterCategory('All', document.querySelector('[data-cat=All]'))" class="mt-3 text-sm text-gold-500 hover:text-gold-300" style="color:#c9a227">View all news →</button>
+          <button onclick="filterCategory('All', document.querySelector('[data-cat=All]'))" class="mt-3 text-sm text-gold-500 hover:text-gold-300" style="color:#c9a227">View all news â†’</button>
         </div>
 
         <!-- Error state -->
         <div id="error-state" class="hidden no-results">
-          <div class="text-4xl mb-3">📡</div>
+          <div class="text-4xl mb-3">ðŸ“¡</div>
           <p class="text-gray-500 font-medium">Couldn't load news right now.</p>
           <button onclick="refreshNews()" class="mt-3 refresh-btn">Try Again</button>
         </div>
       </div>
 
-      <!-- ── Sidebar (desktop only) ── -->
+      <!-- â”€â”€ Sidebar (desktop only) â”€â”€ -->
       <div class="hidden lg:flex flex-col gap-4 w-72 shrink-0">
 
         <!-- Sidebar Ad 1 -->
         <div id="ad-sidebar-1">
           <div class="ad-unit ad-sidebar">
-            <!-- AdSense Sidebar (300×250)
+            <!-- AdSense Sidebar (300Ã—250)
                  Replace ca-pub-XXXXXXXXXXXXXXXXXX with your publisher ID
             <ins class="adsbygoogle"
                  style="display:block; width:300px; height:250px"
@@ -403,7 +403,7 @@
         <!-- Sidebar Ad 2 -->
         <div id="ad-sidebar-2">
           <div class="ad-unit ad-sidebar">
-            <!-- AdSense Sidebar (300×250)
+            <!-- AdSense Sidebar (300Ã—250)
                  Replace ca-pub-XXXXXXXXXXXXXXXXXX with your publisher ID
             <ins class="adsbygoogle"
                  style="display:block; width:300px; height:250px"
@@ -418,11 +418,11 @@
 
         <!-- FACTS CTA -->
         <div class="rounded-2xl p-4" style="background:rgba(201,162,39,0.06); border:1px solid rgba(201,162,39,0.2);">
-          <div class="text-xl mb-2">💰</div>
+          <div class="text-xl mb-2">ðŸ’°</div>
           <h3 class="text-sm font-semibold text-white mb-1">Track Your Finances</h3>
           <p class="text-xs text-gray-500 mb-3">See how these headlines affect your budget with FACTS.</p>
           <a href="/app" class="block text-center text-xs font-semibold py-2 px-3 rounded-lg" style="background:rgba(201,162,39,0.15); border:1px solid rgba(201,162,39,0.3); color:#c9a227;">
-            Open FACTS →
+            Open FACTS â†’
           </a>
         </div>
 
@@ -430,10 +430,10 @@
     </div>
   </div>
 
-  <!-- ═══════════════ FOOTER ═══════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• FOOTER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <footer class="border-t border-gray-800 py-8 mt-4">
     <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-xs text-gray-600">© 2025 FACTS. News sourced from public RSS feeds.</p>
+      <p class="text-xs text-gray-600">Â© 2025 FACTS. News sourced from public RSS feeds.</p>
       <div class="flex items-center gap-4 text-xs text-gray-600">
         <a href="/" class="hover:text-gray-400 transition-colors">FACTS Hub</a>
         <a href="/app" class="hover:text-gray-400 transition-colors">FACTS App</a>
@@ -442,7 +442,7 @@
     </div>
   </footer>
 
-  <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• JAVASCRIPT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <script>
     const CATEGORIES = ['All','Markets','Rates','Economy','Housing','Taxes','Jobs','Retirement','Credit','Student Loans'];
     const BADGE_CLASSES = {
@@ -461,7 +461,7 @@
     let activeCategory = 'All';
     let isLoading = false;
 
-    // ── Relative time ──────────────────────────────────────────
+    // â”€â”€ Relative time â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function relativeTime(dateStr) {
       if (!dateStr) return '';
       const d = new Date(dateStr);
@@ -474,13 +474,13 @@
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    // ── Build badge HTML ──────────────────────────────────────
+    // â”€â”€ Build badge HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function categoryBadge(cat) {
       const cls = BADGE_CLASSES[cat] || 'badge-economy';
       return `<span class="cat-badge ${cls}">${cat}</span>`;
     }
 
-    // ── Build a news card ─────────────────────────────────────
+    // â”€â”€ Build a news card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function buildCard(article) {
       const time = relativeTime(article.pubDate);
       const desc = article.description ? `<p>${escHtml(article.description)}</p>` : '';
@@ -504,7 +504,7 @@
         </div>`;
     }
 
-    // ── Build in-feed ad HTML ─────────────────────────────────
+    // â”€â”€ Build in-feed ad HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function buildInFeedAd() {
       return `
         <div id="ad-infeed-${Math.random().toString(36).slice(2)}" class="ad-unit ad-infeed">
@@ -522,13 +522,13 @@
         </div>`;
     }
 
-    // ── Escape HTML ───────────────────────────────────────────
+    // â”€â”€ Escape HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function escHtml(str) {
       if (!str) return '';
       return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
 
-    // ── Render articles ───────────────────────────────────────
+    // â”€â”€ Render articles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function renderArticles(articles) {
       const feed = document.getElementById('news-feed');
       const loading = document.getElementById('loading-state');
@@ -559,7 +559,7 @@
       feed.innerHTML = html;
     }
 
-    // ── Filter by category ────────────────────────────────────
+    // â”€â”€ Filter by category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function filterCategory(cat, btn) {
       activeCategory = cat;
       document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
@@ -572,7 +572,7 @@
       renderArticles(filtered);
     }
 
-    // ── Build sidebar category list ───────────────────────────
+    // â”€â”€ Build sidebar category list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function buildSidebarCats(articles) {
       const counts = {};
       articles.forEach(a => { counts[a.category] = (counts[a.category] || 0) + 1; });
@@ -587,7 +587,7 @@
         </button>`).join('');
     }
 
-    // ── Fetch news from API ───────────────────────────────────
+    // â”€â”€ Fetch news from API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function fetchNews(forceRefresh = false) {
       if (isLoading) return;
       isLoading = true;
@@ -635,7 +635,7 @@
       fetchNews(true);
     }
 
-    // ── Check pro status → hide ads ───────────────────────────
+    // â”€â”€ Check pro status â†’ hide ads â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function checkProStatus() {
       try {
         const resp = await fetch('/api/auth/me');
@@ -648,11 +648,11 @@
           if (badge) badge.classList.remove('hidden');
         }
       } catch (_) {
-        // Not logged in or error — show ads (default)
+        // Not logged in or error â€” show ads (default)
       }
     }
 
-    // ── Init ──────────────────────────────────────────────────
+    // â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     document.addEventListener('DOMContentLoaded', () => {
       fetchNews();
       checkProStatus();
@@ -660,5 +660,6 @@
   </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

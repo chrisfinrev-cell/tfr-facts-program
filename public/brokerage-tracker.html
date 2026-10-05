@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FACTS">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <title>Project Net Zero — Road to Zero | FACTS</title>
-  <meta name="description" content="Educational brokerage position tracker for literacy — track notes on dividends, premiums, and fees against cost basis. Illustrative only, not investment advice.">
+  <title>Project Net Zero â€” Road to Zero | FACTS</title>
+  <meta name="description" content="Educational brokerage position tracker for literacy â€” track notes on dividends, premiums, and fees against cost basis. Illustrative only, not investment advice.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1f2e'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-weight='bold' fill='%23c9a227'%3E%F0%9F%94%92%3C/text%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -34,18 +34,18 @@
     * { font-family: 'Inter', system-ui, sans-serif; box-sizing: border-box; }
     body { background: #0a0f1a; color: #f1f5f9; margin: 0; }
 
-    /* ── Gold gradient text ─────────────────── */
+    /* â”€â”€ Gold gradient text â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .gold-text {
       background: linear-gradient(135deg,#c9a227 0%,#e8c96a 50%,#c9a227 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .gold-text-solid { color: #c9a227; }
 
-    /* ── Cards ──────────────────────────────── */
+    /* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .card { background: linear-gradient(145deg,#13192a,#1a2235); border:1px solid rgba(255,255,255,0.07); border-radius:0.875rem; }
     .card-highlight { background: linear-gradient(145deg,#1a2235,#243049); border:1px solid rgba(201,162,39,0.18); border-radius:0.875rem; }
 
-    /* ── Buttons ─────────────────────────────── */
+    /* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .btn-gold {
       background: linear-gradient(135deg,#c9a227,#e8c96a); color:#0d1117; font-weight:700;
       transition:opacity 0.2s,transform 0.15s; border:none; cursor:pointer;
@@ -62,7 +62,7 @@
     }
     .btn-danger:hover { background:rgba(239,68,68,0.18); }
 
-    /* ── Inputs ──────────────────────────────── */
+    /* â”€â”€ Inputs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .input {
       background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.10);
       color:#f1f5f9; border-radius:0.5rem; padding:0.6rem 0.9rem; font-size:0.875rem;
@@ -72,7 +72,7 @@
     .input option { background:#1a2235; color:#f1f5f9; }
     select.input { cursor:pointer; }
 
-    /* ── Meter / Progress bar ─────────────────── */
+    /* â”€â”€ Meter / Progress bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .meter-track {
       background:rgba(255,255,255,0.07); border-radius:99px; overflow:hidden;
       height:10px; width:100%; position:relative;
@@ -90,14 +90,14 @@
       0%{background-position:200% 0} 100%{background-position:-200% 0}
     }
 
-    /* ── Leaderboard table ───────────────────── */
+    /* â”€â”€ Leaderboard table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .lb-table { width:100%; border-collapse:collapse; }
     .lb-table th { font-size:0.72rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; padding:0.6rem 0.75rem; border-bottom:1px solid rgba(255,255,255,0.07); text-align:left; }
     .lb-table td { padding:0.75rem; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.875rem; vertical-align:middle; }
     .lb-table tr:last-child td { border-bottom:none; }
     .lb-table tr:hover td { background:rgba(255,255,255,0.025); }
 
-    /* ── Activity badges ─────────────────────── */
+    /* â”€â”€ Activity badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .badge-buy      { background:rgba(239,68,68,0.15);  color:#f87171;  border:1px solid rgba(239,68,68,0.25);  }
     .badge-sell     { background:rgba(34,197,94,0.15);  color:#4ade80;  border:1px solid rgba(34,197,94,0.25);  }
     .badge-dividend { background:rgba(59,130,246,0.15); color:#60a5fa;  border:1px solid rgba(59,130,246,0.25); }
@@ -107,7 +107,7 @@
     .badge-infinite { background:rgba(201,162,39,0.18); color:#e8c96a;  border:1px solid rgba(201,162,39,0.3);  }
     .badge { font-size:0.72rem; font-weight:600; padding:0.15rem 0.55rem; border-radius:99px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
 
-    /* ── Modal ───────────────────────────────── */
+    /* â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .modal-overlay {
       position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999;
       display:flex; align-items:center; justify-content:center; padding:1rem;
@@ -119,14 +119,14 @@
       overflow-y:auto; padding:1.75rem;
     }
 
-    /* ── Discipline bar ──────────────────────── */
+    /* â”€â”€ Discipline bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     #discipline-bar {
       background:rgba(10,15,26,0.95); border-bottom:1px solid rgba(255,255,255,0.06);
       padding:0.55rem 1rem; display:flex; gap:1rem; align-items:center; flex-wrap:wrap;
       position:sticky; top:44px; z-index:100;
     }
 
-    /* ── Vault lock screen ───────────────────── */
+    /* â”€â”€ Vault lock screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     #vault-lock-screen {
       min-height:80vh; display:flex; align-items:center; justify-content:center;
       flex-direction:column; text-align:center; padding:2rem;
@@ -145,7 +145,7 @@
       50%      { box-shadow:0 0 60px rgba(201,162,39,0.18); }
     }
 
-    /* ── FAB (floating action button) ─────────── */
+    /* â”€â”€ FAB (floating action button) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     #fab {
       position:fixed; bottom:1.5rem; right:1.5rem; z-index:500;
       width:56px; height:56px; border-radius:50%;
@@ -157,7 +157,7 @@
     }
     #fab:hover { transform:scale(1.08); box-shadow:0 6px 32px rgba(201,162,39,0.55); }
 
-    /* ── Entity flow diagram ────────────────── */
+    /* â”€â”€ Entity flow diagram â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .flow-node {
       background:rgba(26,34,53,0.8); border:1px solid rgba(201,162,39,0.25);
       border-radius:0.625rem; padding:0.6rem 1.1rem; font-size:0.8rem;
@@ -165,11 +165,11 @@
     }
     .flow-arrow { color:#64748b; font-size:0.75rem; text-align:center; padding:0.15rem 0; }
 
-    /* ── Hall of Fame gold treatment ─────────── */
+    /* â”€â”€ Hall of Fame gold treatment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .hof-row td { background:rgba(201,162,39,0.05) !important; }
     .hof-row:hover td { background:rgba(201,162,39,0.09) !important; }
 
-    /* ── Infinite badge glow ─────────────────── */
+    /* â”€â”€ Infinite badge glow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .inf-badge {
       display:inline-flex; align-items:center; gap:4px;
       background:linear-gradient(135deg,#c9a227,#e8c96a);
@@ -183,13 +183,13 @@
       50%      { box-shadow:0 0 22px rgba(201,162,39,0.8); }
     }
 
-    /* ── Silent Architect panel ─────────────── */
+    /* â”€â”€ Silent Architect panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     #architect-panel {
       background: linear-gradient(145deg,#0d1117,#13192a);
       border-left:3px solid rgba(201,162,39,0.25);
     }
 
-    /* ── Responsive ─────────────────────────── */
+    /* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     @media(min-width:768px){
       #fab { bottom:2rem; right:2rem; }
       .desktop-table { display:table; }
@@ -201,26 +201,26 @@
       .modal-box { padding:1.25rem; }
     }
 
-    /* ── Protection score badge ─────────────── */
+    /* â”€â”€ Protection score badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .prot-protected { color:#4ade80; }
     .prot-exposed   { color:#f87171; }
     .prot-mixed     { color:#fbbf24; }
 
-    /* ── Tab toggle ─────────────────────────── */
+    /* â”€â”€ Tab toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .tab-btn { padding:0.4rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.15s; border:none; }
     .tab-btn.active { background:rgba(201,162,39,0.15); color:#e8c96a; border:1px solid rgba(201,162,39,0.3); }
     .tab-btn.inactive { background:transparent; color:#64748b; border:1px solid transparent; }
     .tab-btn:hover:not(.active) { color:#94a3b8; background:rgba(255,255,255,0.04); }
 
-    /* ── Net exposure chart container ─────── */
+    /* â”€â”€ Net exposure chart container â”€â”€â”€â”€â”€â”€â”€ */
     .chart-container { position:relative; height:160px; width:100%; }
   </style>
 </head>
 <body class="min-h-screen" style="background:#080d16;">
 
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <!-- DISCIPLINE STATUS BAR (always visible above content)     -->
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="discipline-bar" style="display:none;">
   <div id="disc-vault-dot" style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;margin-top:1px;box-shadow:0 0 6px #4ade80;"></div>
   <span id="disc-vault-label" class="text-xs font-semibold text-slate-400">Net Zero Active</span>
@@ -229,42 +229,42 @@
   <span id="disc-lock-warning" style="display:none;"></span>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <!-- VAULT LOCK SCREEN                                        -->
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="vault-lock-screen" style="display:none;">
-  <div class="vault-door">🔒</div>
+  <div class="vault-door">ðŸ”’</div>
   <h1 class="text-2xl md:text-3xl font-black mb-2">Your Project Net Zero Has Been Sealed</h1>
   <p class="text-slate-400 text-sm mb-6 max-w-sm leading-relaxed">
     30 days without a brokerage entry. Your recovery progress is hidden until you reactivate.
   </p>
   <div id="vault-lock-stats" class="card p-4 mb-6 max-w-xs w-full text-left space-y-2">
-    <div class="flex justify-between text-sm"><span class="text-slate-500">Last Entry:</span><span id="vl-last-entry" class="text-slate-300 font-medium">—</span></div>
-    <div class="flex justify-between text-sm"><span class="text-slate-500">Previous Streak:</span><span id="vl-streak" class="text-gold-400 font-bold">—</span></div>
-    <div class="flex justify-between text-sm"><span class="text-slate-500">Times Reactivated:</span><span id="vl-reactivations" class="text-slate-300 font-medium">—</span></div>
+    <div class="flex justify-between text-sm"><span class="text-slate-500">Last Entry:</span><span id="vl-last-entry" class="text-slate-300 font-medium">â€”</span></div>
+    <div class="flex justify-between text-sm"><span class="text-slate-500">Previous Streak:</span><span id="vl-streak" class="text-gold-400 font-bold">â€”</span></div>
+    <div class="flex justify-between text-sm"><span class="text-slate-500">Times Reactivated:</span><span id="vl-reactivations" class="text-slate-300 font-medium">â€”</span></div>
   </div>
   <button id="btn-reactivate" onclick="reactivateVault()"
     class="btn-gold px-8 py-3 rounded-xl text-base font-bold shadow-lg">
-    🔓 Reactivate Project Net Zero
+    ðŸ”“ Reactivate Project Net Zero
   </button>
   <p class="text-slate-600 text-xs mt-4">Reactivation resets your streak to 0. Build it back.</p>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <!-- MAIN CONTENT                                             -->
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="main-content" style="padding:1.5rem 1rem 6rem; max-width:1100px; margin:0 auto; display:none;">
 
   <!-- Header row -->
   <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
     <div>
       <h1 class="text-xl md:text-2xl font-black gold-text">Project Net Zero</h1>
-      <p class="text-slate-400 text-sm mt-0.5 font-semibold tracking-wide">Educational tracker — Road to Zero (illustrative)</p>
+      <p class="text-slate-400 text-sm mt-0.5 font-semibold tracking-wide">Educational tracker â€” Road to Zero (illustrative)</p>
     </div>
     <!-- Architect toggle -->
     <button id="architect-toggle-btn" onclick="toggleArchitect()"
       class="tab-btn inactive text-xs flex items-center gap-1.5">
-      🏛️ Silent Architect
+      ðŸ›ï¸ Silent Architect
     </button>
   </div>
   <div class="mb-4 p-3 rounded-lg text-xs text-slate-400" style="background:#1c1a03;border:1px solid rgba(250,204,21,0.25);line-height:1.55;">
@@ -272,28 +272,28 @@
     Tracking tools are for literacy/organization. Securities involve risk of loss. Consult a licensed professional before investing.
   </div>
 
-  <!-- ─── ONBOARDING MODULE (shown when zero assets) ─────── -->
+  <!-- â”€â”€â”€ ONBOARDING MODULE (shown when zero assets) â”€â”€â”€â”€â”€â”€â”€ -->
   <div id="onboarding-module" style="display:none;">
     <div class="card-highlight p-8 text-center max-w-lg mx-auto">
-      <div class="text-4xl mb-4">🏛️</div>
+      <div class="text-4xl mb-4">ðŸ›ï¸</div>
       <h2 class="text-xl font-black mb-2">Your Road to Zero Starts Here</h2>
       <p class="text-slate-400 text-sm leading-relaxed mb-6">
         Educational tracker for brokerage positions and how dividends, premiums, and fees can be noted against cost basis.
-        Goal framing of <strong class="text-gold-400">$0 net exposure</strong> is illustrative only — not a promise of profit or “free money.”
+        Goal framing of <strong class="text-gold-400">$0 net exposure</strong> is illustrative only â€” not a promise of profit or â€œfree money.â€
       </p>
       <div class="text-left space-y-3 mb-8">
         <div class="flex items-start gap-3 bg-navy-800 rounded-lg p-3">
           <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0" style="background:rgba(201,162,39,0.2);color:#e8c96a;">1</span>
           <div>
             <p class="text-sm font-semibold text-white">Enter your first ticker symbol</p>
-            <p class="text-xs text-slate-500">The asset you want to track — AAPL, T, JEPI, etc.</p>
+            <p class="text-xs text-slate-500">The asset you want to track â€” AAPL, T, JEPI, etc.</p>
           </div>
         </div>
         <div class="flex items-start gap-3 bg-navy-800 rounded-lg p-3">
           <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0" style="background:rgba(201,162,39,0.2);color:#e8c96a;">2</span>
           <div>
             <p class="text-sm font-semibold text-white">Log your opening position</p>
-            <p class="text-xs text-slate-500">Record your initial buy — shares, date, amount paid.</p>
+            <p class="text-xs text-slate-500">Record your initial buy â€” shares, date, amount paid.</p>
           </div>
         </div>
         <div class="flex items-start gap-3 bg-navy-800 rounded-lg p-3">
@@ -310,12 +310,12 @@
     </div>
   </div>
 
-  <!-- ─── COMMAND CENTER (shown when assets exist) ────────── -->
+  <!-- â”€â”€â”€ COMMAND CENTER (shown when assets exist) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div id="command-center" style="display:none;">
 
     <!-- SILENT ARCHITECT PANEL (collapsible) -->
     <div id="architect-panel" class="rounded-xl p-5 mb-6" style="display:none;">
-      <h3 class="text-sm font-bold text-gold-400 mb-4 flex items-center gap-2">🏛️ Silent Architect Overlay</h3>
+      <h3 class="text-sm font-bold text-gold-400 mb-4 flex items-center gap-2">ðŸ›ï¸ Silent Architect Overlay</h3>
 
       <!-- Ownership filter -->
       <div class="flex items-center gap-2 mb-5 flex-wrap">
@@ -330,14 +330,14 @@
         <div>
           <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-3">Entity Flow Map</p>
           <div id="entity-flow-map" class="space-y-1">
-            <div class="flow-node" id="fn-holding">🏛️ Wyoming Holding Co</div>
-            <div class="flow-arrow">↓ licenses strategy</div>
-            <div class="flow-node" id="fn-llc">🏢 Operating LLC</div>
-            <div class="flow-arrow">↓ executes trades</div>
-            <div class="flow-node" id="fn-brokerage">💰 Brokerage Account (EIN)</div>
+            <div class="flow-node" id="fn-holding">ðŸ›ï¸ Wyoming Holding Co</div>
+            <div class="flow-arrow">â†“ licenses strategy</div>
+            <div class="flow-node" id="fn-llc">ðŸ¢ Operating LLC</div>
+            <div class="flow-arrow">â†“ executes trades</div>
+            <div class="flow-node" id="fn-brokerage">ðŸ’° Brokerage Account (EIN)</div>
           </div>
           <p id="flow-map-cta" class="text-xs text-amber-400 mt-3 leading-relaxed" style="display:none;">
-            ⚠️ All positions are in personal accounts. Structure through an entity for asset protection.
+            âš ï¸ All positions are in personal accounts. Structure through an entity for asset protection.
           </p>
         </div>
 
@@ -345,9 +345,9 @@
         <div>
           <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-3">Asset Protection Score</p>
           <div class="card p-4">
-            <div id="prot-badge" class="text-2xl font-black mb-1">—</div>
-            <div id="prot-score-text" class="text-sm font-semibold mb-1">—</div>
-            <div id="prot-detail" class="text-xs text-slate-500">—</div>
+            <div id="prot-badge" class="text-2xl font-black mb-1">â€”</div>
+            <div id="prot-score-text" class="text-sm font-semibold mb-1">â€”</div>
+            <div id="prot-detail" class="text-xs text-slate-500">â€”</div>
             <div class="mt-3 text-xs text-slate-600 leading-relaxed">
               Assets held in personal accounts are exposed to personal liability. Entity-owned assets add a layer of protection.
             </div>
@@ -359,7 +359,7 @@
     <!-- Hall of Fame (infinite return assets) -->
     <div id="hof-section" class="mb-5" style="display:none;">
       <div class="flex items-center gap-2 mb-3">
-        <div class="inf-badge">∞</div>
+        <div class="inf-badge">âˆž</div>
         <h3 class="text-sm font-bold text-gold-400">Infinite Return Hall of Fame</h3>
       </div>
       <div id="hof-list" class="space-y-2"></div>
@@ -368,7 +368,7 @@
     <!-- Leaderboard section heading -->
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
       <h3 class="text-sm font-bold text-slate-300 flex items-center gap-1.5">
-        📊 Recovery Leaderboard
+        ðŸ“Š Recovery Leaderboard
         <span class="text-xs text-slate-600 font-normal">sorted by velocity</span>
       </h3>
       <div class="flex items-center gap-2">
@@ -409,51 +409,51 @@
           <h3 id="detail-ticker" class="text-lg font-black gold-text"></h3>
           <p id="detail-entity" class="text-xs text-slate-500"></p>
         </div>
-        <button onclick="closeDetail()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs">✕ Close</button>
+        <button onclick="closeDetail()" class="btn-ghost px-3 py-1.5 rounded-lg text-xs">âœ• Close</button>
       </div>
 
       <!-- Metrics grid -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <div class="card p-3 text-center">
-          <div id="d-recovery" class="text-xl font-black gold-text">—</div>
+          <div id="d-recovery" class="text-xl font-black gold-text">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">Recovery %</div>
         </div>
         <div class="card p-3 text-center">
-          <div id="d-exposure" class="text-xl font-black text-white">—</div>
+          <div id="d-exposure" class="text-xl font-black text-white">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">Net Exposure</div>
         </div>
         <div class="card p-3 text-center">
-          <div id="d-cost-basis" class="text-xl font-black text-white">—</div>
+          <div id="d-cost-basis" class="text-xl font-black text-white">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">True Cost Basis/sh</div>
         </div>
         <div class="card p-3 text-center">
-          <div id="d-yield" class="text-xl font-black text-white">—</div>
+          <div id="d-yield" class="text-xl font-black text-white">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">Yield on True Cost</div>
         </div>
         <div class="card p-3 text-center">
-          <div id="d-shares" class="text-xl font-black text-white">—</div>
+          <div id="d-shares" class="text-xl font-black text-white">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">Total Shares</div>
         </div>
         <div class="card p-3 text-center">
-          <div id="d-avg-cost" class="text-xl font-black text-white">—</div>
+          <div id="d-avg-cost" class="text-xl font-black text-white">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">Avg Cost/Share</div>
         </div>
         <div class="card p-3 text-center">
-          <div id="d-total-in" class="text-xl font-black text-red-400">—</div>
+          <div id="d-total-in" class="text-xl font-black text-red-400">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">Total Invested</div>
         </div>
         <div class="card p-3 text-center">
-          <div id="d-total-recovered" class="text-xl font-black text-green-400">—</div>
+          <div id="d-total-recovered" class="text-xl font-black text-green-400">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">Total Recovered</div>
         </div>
         <div class="card p-3 text-center">
-          <div id="d-velocity" class="text-xl font-black text-blue-400">—</div>
+          <div id="d-velocity" class="text-xl font-black text-blue-400">â€”</div>
           <div class="text-xs text-slate-500 mt-0.5">Velocity/day</div>
         </div>
         <!-- Current Price (prominent) -->
         <div class="card-highlight p-3 text-center col-span-2 md:col-span-1">
           <div class="flex items-center justify-center gap-2">
-            <span id="d-price" class="text-xl font-black gold-text">—</span>
+            <span id="d-price" class="text-xl font-black gold-text">â€”</span>
           </div>
           <div class="text-xs text-slate-500 mt-0.5">Current Price</div>
           <div class="mt-1">
@@ -483,14 +483,14 @@
   </div><!-- /command-center -->
 </div><!-- /main-content -->
 
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <!-- FLOATING ACTION BUTTON                                   -->
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <button id="fab" onclick="openModal('choose')" aria-label="Add asset or transaction">+</button>
 
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <!-- MODAL                                                    -->
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="modal" class="modal-overlay" style="display:none;" onclick="handleModalBg(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
 
@@ -499,11 +499,11 @@
       <h2 class="text-lg font-black mb-4">What do you want to add?</h2>
       <div class="space-y-3">
         <button onclick="openModal('asset')" class="w-full card p-4 text-left hover:border-gold-600 transition-colors cursor-pointer" style="border:1px solid rgba(255,255,255,0.07);">
-          <div class="font-bold text-white mb-1">📈 New Asset</div>
+          <div class="font-bold text-white mb-1">ðŸ“ˆ New Asset</div>
           <div class="text-xs text-slate-500">Add a ticker symbol to start tracking (e.g. AAPL, T, JEPI)</div>
         </button>
         <button onclick="openModal('transaction')" class="w-full card p-4 text-left hover:border-gold-600 transition-colors cursor-pointer" style="border:1px solid rgba(255,255,255,0.07);">
-          <div class="font-bold text-white mb-1">💰 New Transaction</div>
+          <div class="font-bold text-white mb-1">ðŸ’° New Transaction</div>
           <div class="text-xs text-slate-500">Log a buy, sell, dividend, option premium, or lending fee</div>
         </button>
       </div>
@@ -556,12 +556,12 @@
           <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Activity Type *</label>
           <select id="t-type" class="input" onchange="handleTypeChange()">
             <option value="">Select type...</option>
-            <option value="buy"            style="color:#f87171">Buy (capital out 🔴)</option>
-            <option value="sell"           style="color:#4ade80">Sell (capital in 🟢)</option>
-            <option value="dividend"       style="color:#60a5fa">Dividend (income 🟢)</option>
-            <option value="option_premium" style="color:#c084fc">Option Premium (income 🟢)</option>
-            <option value="lending_fee"    style="color:#2dd4bf">Lending Fee (income 🟢)</option>
-            <option value="options"        style="color:#fbbf24">Options (configurable 🔶)</option>
+            <option value="buy"            style="color:#f87171">Buy (capital out ðŸ”´)</option>
+            <option value="sell"           style="color:#4ade80">Sell (capital in ðŸŸ¢)</option>
+            <option value="dividend"       style="color:#60a5fa">Dividend (income ðŸŸ¢)</option>
+            <option value="option_premium" style="color:#c084fc">Option Premium (income ðŸŸ¢)</option>
+            <option value="lending_fee"    style="color:#2dd4bf">Lending Fee (income ðŸŸ¢)</option>
+            <option value="options"        style="color:#fbbf24">Options (configurable ðŸ”¶)</option>
           </select>
         </div>
         <div>
@@ -572,7 +572,7 @@
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
             <input id="t-amount" type="number" class="input" placeholder="0.00" step="0.01" min="0" style="padding-left:1.75rem">
           </div>
-          <p class="text-xs text-slate-600 mt-1">Enter the absolute value — sign is set automatically by activity type.</p>
+          <p class="text-xs text-slate-600 mt-1">Enter the absolute value â€” sign is set automatically by activity type.</p>
         </div>
         <div id="share-count-row">
           <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Share Count *</label>
@@ -641,9 +641,9 @@
 <script src="/nav-bar.js" defer></script>
 
 <script>
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  STATE
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 let allAssets      = [];
 let discipline     = null;
 let currentFilter  = 'all';
@@ -651,9 +651,9 @@ let expandedAsset  = null;
 let exposureChart  = null;
 let architectOpen  = false;
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  BOOT
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 document.addEventListener('DOMContentLoaded', async () => {
   // Set today as default date in transaction form
   document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
@@ -661,9 +661,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([loadDiscipline(), loadAssets()]);
 });
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  LOAD DISCIPLINE
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function loadDiscipline() {
   try {
     const res = await fetch('/api/brokerage/discipline');
@@ -697,22 +697,22 @@ function renderDisciplineBar() {
   }
 
   if (discipline.streak_count > 0) {
-    streak.innerHTML = `<span class="text-xs font-semibold" style="color:#e8c96a;">🔥 ${discipline.streak_count}-week streak</span>`;
+    streak.innerHTML = `<span class="text-xs font-semibold" style="color:#e8c96a;">ðŸ”¥ ${discipline.streak_count}-week streak</span>`;
   } else {
     streak.innerHTML = `<span class="text-xs text-slate-600">No streak yet</span>`;
   }
 
   if (discipline.days_until_lock > 0 && discipline.days_until_lock <= 10 && discipline.vault_status !== 'locked') {
     warn.style.display = 'inline';
-    warn.innerHTML = `<span class="text-xs font-semibold text-amber-400">⚠️ Net Zero locks in ${discipline.days_until_lock} day${discipline.days_until_lock === 1 ? '' : 's'}</span>`;
+    warn.innerHTML = `<span class="text-xs font-semibold text-amber-400">âš ï¸ Net Zero locks in ${discipline.days_until_lock} day${discipline.days_until_lock === 1 ? '' : 's'}</span>`;
   } else {
     warn.style.display = 'none';
   }
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  LOAD ASSETS
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function loadAssets() {
   try {
     const res = await fetch('/api/brokerage/assets');
@@ -742,9 +742,9 @@ async function loadAssets() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  RENDER PAGE
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function renderPage() {
   document.getElementById('vault-lock-screen').style.display = 'none';
 
@@ -767,9 +767,9 @@ function renderPage() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  VAULT LOCK
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function showVaultLock() {
   document.getElementById('main-content').style.display        = 'none';
   document.getElementById('vault-lock-screen').style.display  = 'flex';
@@ -795,22 +795,22 @@ async function reactivateVault() {
       const d = await res.json();
       alert(d.error || 'Failed to reactivate');
       btn.disabled = false;
-      btn.textContent = '🔓 Reactivate Project Net Zero';
+      btn.textContent = 'ðŸ”“ Reactivate Project Net Zero';
       return;
     }
     // Brief celebration then reload
-    btn.textContent = '✅ Net Zero Unlocked!';
-    document.querySelector('.vault-door').textContent = '🔓';
+    btn.textContent = 'âœ… Net Zero Unlocked!';
+    document.querySelector('.vault-door').textContent = 'ðŸ”“';
     setTimeout(() => location.reload(), 1200);
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = '🔓 Reactivate Project Net Zero';
+    btn.textContent = 'ðŸ”“ Reactivate Project Net Zero';
   }
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  LEADERBOARD
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function getFilteredAssets() {
   if (currentFilter === 'all') return allAssets;
   if (currentFilter === 'personal') return allAssets.filter(a => a.entity_owner === 'personal');
@@ -857,7 +857,7 @@ function renderHOFCard(a) {
   return `
     <div class="card-highlight p-4 flex items-center justify-between gap-4 cursor-pointer" onclick="openDetail(${a.id})">
       <div class="flex items-center gap-3">
-        <div class="inf-badge">∞</div>
+        <div class="inf-badge">âˆž</div>
         <div>
           <span class="font-black text-lg text-white">${a.ticker_symbol}</span>
           <span class="text-xs text-slate-500 ml-2">${entityLabel(a.entity_owner)}</span>
@@ -885,8 +885,8 @@ function renderLeaderboardRow(a, rank) {
     </td>
     <td><span class="${a.net_exposure <= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">${fmt(a.net_exposure)}</span></td>
     <td><span class="text-blue-400 text-sm">${a.recovery_velocity > 0 ? '+' : ''}${a.recovery_velocity.toFixed(2)}%/day</span></td>
-    <td><span class="badge badge-sell">🟢 Active</span></td>
-    <td><span class="text-slate-600 text-sm">→</span></td>`;
+    <td><span class="badge badge-sell">ðŸŸ¢ Active</span></td>
+    <td><span class="text-slate-600 text-sm">â†’</span></td>`;
 }
 
 function renderAssetCard(a) {
@@ -898,7 +898,7 @@ function renderAssetCard(a) {
         <div>
           <div class="flex items-center gap-2">
             <span class="font-black text-white text-base">${a.ticker_symbol}</span>
-            ${isInf ? '<div class="inf-badge">∞</div>' : ''}
+            ${isInf ? '<div class="inf-badge">âˆž</div>' : ''}
           </div>
           <span class="text-xs ${entityColor(a.entity_owner)}">${entityLabel(a.entity_owner)}</span>
         </div>
@@ -912,14 +912,14 @@ function renderAssetCard(a) {
       </div>
       <div class="flex justify-between mt-2 text-xs text-slate-500">
         <span>Recovery velocity: ${a.recovery_velocity > 0 ? '+' : ''}${a.recovery_velocity.toFixed(2)}%/day</span>
-        <span class="text-slate-600">Tap to expand →</span>
+        <span class="text-slate-600">Tap to expand â†’</span>
       </div>
     </div>`;
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  ASSET DETAIL
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function openDetail(assetId) {
   expandedAsset = assetId;
   const panel = document.getElementById('asset-detail-panel');
@@ -951,14 +951,14 @@ async function openDetail(assetId) {
     document.getElementById('detail-entity').textContent = entityLabel(a.entity_owner);
 
     document.getElementById('d-recovery').innerHTML     = a.infinite_return
-      ? '<span class="inf-badge" style="font-size:1rem">∞</span>'
+      ? '<span class="inf-badge" style="font-size:1rem">âˆž</span>'
       : `${a.recovery_percentage.toFixed(1)}%`;
     document.getElementById('d-exposure').textContent   = fmt(a.net_exposure);
     document.getElementById('d-exposure').className     = `text-xl font-black ${a.net_exposure <= 0 ? 'text-green-400' : 'text-white'}`;
-    document.getElementById('d-cost-basis').textContent = a.true_cost_basis_per_share != null ? `$${a.true_cost_basis_per_share.toFixed(2)}` : '—';
-    document.getElementById('d-yield').textContent      = a.yield_on_true_cost === 'Infinite' ? '∞' : (a.yield_on_true_cost ? `${a.yield_on_true_cost}%` : '—');
+    document.getElementById('d-cost-basis').textContent = a.true_cost_basis_per_share != null ? `$${a.true_cost_basis_per_share.toFixed(2)}` : 'â€”';
+    document.getElementById('d-yield').textContent      = a.yield_on_true_cost === 'Infinite' ? 'âˆž' : (a.yield_on_true_cost ? `${a.yield_on_true_cost}%` : 'â€”');
     document.getElementById('d-shares').textContent     = a.total_shares ? a.total_shares.toLocaleString() : '0';
-    document.getElementById('d-avg-cost').textContent    = a.average_cost_per_share != null ? `$${a.average_cost_per_share.toFixed(2)}` : '—';
+    document.getElementById('d-avg-cost').textContent    = a.average_cost_per_share != null ? `$${a.average_cost_per_share.toFixed(2)}` : 'â€”';
     document.getElementById('d-total-in').textContent   = `$${(a.total_buy_cost || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
     document.getElementById('d-total-recovered').textContent = `$${(a.total_recovered || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
     document.getElementById('d-velocity').textContent   = `${a.recovery_velocity > 0 ? '+' : ''}${a.recovery_velocity.toFixed(2)}%`;
@@ -967,13 +967,13 @@ async function openDetail(assetId) {
     if (a.current_price && a.current_price > 0) {
       document.getElementById('d-price').textContent = `$${parseFloat(a.current_price).toFixed(2)}`;
     } else {
-      document.getElementById('d-price').textContent = '—';
+      document.getElementById('d-price').textContent = 'â€”';
     }
 
     // Chart
     renderExposureChart(chartData);
 
-    // Transactions — full ledger with running balance
+    // Transactions â€” full ledger with running balance
     renderTxHistory(txs, assetId);
 
   } catch(e) {
@@ -1045,7 +1045,7 @@ function renderTxHistory(txs, assetId) {
     }
     const balanceLabel = ['buy','sell'].includes(t.activity_type)
       ? runningShares.toLocaleString(undefined,{maximumFractionDigits:4})
-      : '—';
+      : 'â€”';
     return { ...t, running_shares: balanceLabel };
   });
 
@@ -1059,8 +1059,8 @@ function renderTxHistory(txs, assetId) {
     </div>
     ${displayTx.map(t => {
       const isIncome = t.activity_type !== 'buy';
-      const pricePerShare = t.price_per_share || (t.share_count && t.cash_flow ? (Math.abs(parseFloat(t.cash_flow)) / parseFloat(t.share_count)).toFixed(2) : '—');
-      const feeStr = t.fee && parseFloat(t.fee) > 0 ? `$${parseFloat(t.fee).toFixed(2)}` : '—';
+      const pricePerShare = t.price_per_share || (t.share_count && t.cash_flow ? (Math.abs(parseFloat(t.cash_flow)) / parseFloat(t.share_count)).toFixed(2) : 'â€”');
+      const feeStr = t.fee && parseFloat(t.fee) > 0 ? `$${parseFloat(t.fee).toFixed(2)}` : 'â€”';
       const amountColor = isIncome ? 'text-green-400' : 'text-red-400';
       const amountPrefix = isIncome ? '+' : '-';
       const amountVal = Math.abs(parseFloat(t.cash_flow)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1080,14 +1080,14 @@ function renderTxHistory(txs, assetId) {
           <span class="badge ${activityBadgeClass(t.activity_type)}" style="font-size:0.65rem">${activityLabel(t.activity_type)}</span>
           ${cpStr ? `<span class="text-xs text-amber-400 font-semibold">${cpStr}</span>` : ''}
         </div>
-        <span class="text-slate-300 text-xs text-right">${t.share_count ? parseFloat(t.share_count).toLocaleString(undefined,{maximumFractionDigits:4}) : '—'}</span>
+        <span class="text-slate-300 text-xs text-right">${t.share_count ? parseFloat(t.share_count).toLocaleString(undefined,{maximumFractionDigits:4}) : 'â€”'}</span>
         <span class="text-slate-300 text-xs text-right">${typeof pricePerShare === 'number' ? `$${pricePerShare.toFixed(2)}` : pricePerShare}</span>
         <span class="text-slate-500 text-xs text-right">${feeStr}</span>
         <span class="font-semibold ${amountColor} text-xs text-right">${amountPrefix}$${amountVal}</span>
         <div class="flex items-center gap-1 min-w-0">
           <span class="text-slate-400 text-xs truncate flex-1">${t.notes || ''}</span>
           ${t.expiry_date ? `<span class="text-xs text-slate-600 shrink-0">exp:${expiryStr}</span>` : ''}
-          <button onclick="deleteTx(${t.id},${assetId})" class="btn-danger px-1.5 py-0.5 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0">✕</button>
+          <button onclick="deleteTx(${t.id},${assetId})" class="btn-danger px-1.5 py-0.5 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0">âœ•</button>
         </div>
       </div>`;
     }).join('')}`;
@@ -1104,9 +1104,9 @@ async function deleteTx(txId, assetId) {
   } catch(e) {}
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SILENT ARCHITECT
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function toggleArchitect() {
   architectOpen = !architectOpen;
   const panel = document.getElementById('architect-panel');
@@ -1150,31 +1150,31 @@ function renderArchitectPanel() {
   const detail    = document.getElementById('prot-detail');
 
   if (total === 0) {
-    badge.innerHTML = '<span style="color:#64748b">—</span>';
+    badge.innerHTML = '<span style="color:#64748b">â€”</span>';
     scoreText.textContent = 'No assets yet';
     scoreText.className = 'text-sm font-semibold text-slate-500';
     detail.textContent = 'Add assets to see your protection score.';
   } else if (entityN === total) {
-    badge.innerHTML = '🛡️ <span class="prot-protected">Protected</span>';
-    scoreText.textContent = '100% — All positions held in entity accounts';
+    badge.innerHTML = 'ðŸ›¡ï¸ <span class="prot-protected">Protected</span>';
+    scoreText.textContent = '100% â€” All positions held in entity accounts';
     scoreText.className = 'text-sm font-semibold text-green-400';
     detail.textContent = `${entityN} of ${total} positions under entity protection.`;
   } else if (personalN === total) {
-    badge.innerHTML = '⚠️ <span class="prot-exposed">Exposed</span>';
-    scoreText.textContent = '0% — All positions in personal accounts';
+    badge.innerHTML = 'âš ï¸ <span class="prot-exposed">Exposed</span>';
+    scoreText.textContent = '0% â€” All positions in personal accounts';
     scoreText.className = 'text-sm font-semibold text-red-400';
     detail.textContent = `${personalN} of ${total} positions exposed to personal liability.`;
   } else {
-    badge.innerHTML = '⚡ <span class="prot-mixed">Mixed</span>';
-    scoreText.textContent = `${pct}% — ${entityN} of ${total} positions in entity accounts`;
+    badge.innerHTML = 'âš¡ <span class="prot-mixed">Mixed</span>';
+    scoreText.textContent = `${pct}% â€” ${entityN} of ${total} positions in entity accounts`;
     scoreText.className = 'text-sm font-semibold text-amber-400';
     detail.textContent = `${personalN} position${personalN !== 1 ? 's' : ''} still in personal accounts.`;
   }
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  MODAL
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function openModal(type) {
   document.getElementById('modal').style.display = 'flex';
   ['choose','asset','transaction'].forEach(t =>
@@ -1216,10 +1216,10 @@ function handleTypeChange() {
   optsRow.style.display  = type === 'options' ? 'block' : 'none';
 
   if (type === 'buy') {
-    hint.textContent = '— will be recorded as negative (capital out)';
+    hint.textContent = 'â€” will be recorded as negative (capital out)';
     hint.style.color = '#f87171';
   } else if (type) {
-    hint.textContent = '— will be recorded as positive (capital in)';
+    hint.textContent = 'â€” will be recorded as positive (capital in)';
     hint.style.color = '#4ade80';
   } else {
     hint.textContent = '';
@@ -1239,9 +1239,9 @@ function populateAssetDropdown() {
   if (currentVal) sel.value = currentVal;
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SUBMIT ASSET
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function submitAsset() {
   const ticker  = document.getElementById('a-ticker').value.trim().toUpperCase();
   const entity  = document.getElementById('a-entity').value;
@@ -1268,9 +1268,9 @@ async function submitAsset() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SUBMIT TRANSACTION
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function submitTransaction() {
   const assetId  = document.getElementById('t-asset').value;
   const date     = document.getElementById('t-date').value;
@@ -1339,11 +1339,11 @@ async function submitTransaction() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  HELPERS
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function fmt(val) {
-  if (val == null) return '—';
+  if (val == null) return 'â€”';
   const n = parseFloat(val);
   const prefix = n < 0 ? '-$' : '$';
   return prefix + Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1389,5 +1389,6 @@ document.addEventListener('keydown', e => {
 </script>
 <script src="/analytics-tracker.js" defer></script>
 <script defer src="/legal-disclaimer.js"></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

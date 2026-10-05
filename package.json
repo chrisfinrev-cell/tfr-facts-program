@@ -10,6 +10,7 @@
     "schema:export": "node db/export-schema.js",
     "test:engine": "node scripts/test-engine.js",
     "web:dev": "npm --prefix web run dev",
+    "invite:generate": "node scripts/generate-invite-codes.js",
     "affiliate-jobs": "node jobs/affiliate-jobs.js",
     "refresh-creds": "node scripts/refresh-credentials.js"
   },

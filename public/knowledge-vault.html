@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Knowledge Vault — FACTS</title>
+  <title>Knowledge Vault â€” FACTS</title>
   <meta name="description" content="Level-gated financial intelligence. Unlock advanced strategies as you progress through the FACTS 12-Level Protocol.">
 
   <!-- Sovereign Seal favicon -->
@@ -140,8 +140,8 @@
       <span class="text-xs text-white font-medium tracking-wide">KNOWLEDGE VAULT</span>
     </div>
     <div class="flex items-center gap-3">
-      <a href="/sovereign" class="text-xs text-gray-400 hover:text-white transition-colors">⚔️ Sovereign</a>
-      <a href="/app" class="text-xs text-gray-400 hover:text-white transition-colors">← FACTS App</a>
+      <a href="/sovereign" class="text-xs text-gray-400 hover:text-white transition-colors">âš”ï¸ Sovereign</a>
+      <a href="/app" class="text-xs text-gray-400 hover:text-white transition-colors">â† FACTS App</a>
     </div>
   </div>
 </nav>
@@ -149,7 +149,7 @@
 <!-- Auth gate -->
 <div id="auth-gate" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(13,17,23,0.95);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;">
   <div class="card p-8 max-w-md w-full text-center">
-    <div class="text-5xl mb-4">📚</div>
+    <div class="text-5xl mb-4">ðŸ“š</div>
     <h2 class="text-xl font-bold mb-2">Sign In to Access the Vault</h2>
     <p class="text-gray-400 text-sm mb-6">Level-gated financial intelligence, unlocked as you progress through the FACTS Protocol.</p>
     <div class="flex flex-col gap-3">
@@ -168,9 +168,9 @@
         <h1 class="text-3xl font-black tracking-tight mb-1"><span class="gold-text">KNOWLEDGE VAULT</span></h1>
         <p class="text-gray-400 text-sm">Financial intelligence, level-gated. Advance through the FACTS Protocol to unlock each tier.</p>
         <div class="flex items-center gap-3 mt-3 flex-wrap">
-          <span id="vault-tier-badge" class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(201,162,39,0.12);color:#e8c96a;border:1px solid rgba(201,162,39,0.2);">Loading…</span>
+          <span id="vault-tier-badge" class="text-xs font-bold px-3 py-1 rounded-full" style="background:rgba(201,162,39,0.12);color:#e8c96a;border:1px solid rgba(201,162,39,0.2);">Loadingâ€¦</span>
           <span id="vault-count" class="text-xs text-gray-500"></span>
-          <a href="/sovereign" class="text-xs text-gray-500 hover:text-gold-300 transition-colors">← Back to Sovereign Protocol</a>
+          <a href="/sovereign" class="text-xs text-gray-500 hover:text-gold-300 transition-colors">â† Back to Sovereign Protocol</a>
         </div>
       </div>
     </div>
@@ -209,18 +209,18 @@ let currentAccess = {};
 let activeFilter = 'all';
 
 const TIER_CONFIG = {
-  free:      { label: 'FREE (L1-3)',      color: '#e8a857', bgClass: 'band-free',      desc: 'Levels 1-3 — FACTS Free',          icon: '⚔️' },
-  pro:       { label: 'INDIVIDUAL+ (L4-6)',       color: '#d4e1ec', bgClass: 'band-pro',       desc: 'Levels 4-6 — Individual ($25/mo)',   icon: '💥' },
-  business:  { label: 'BUSINESS (L7-9)',  color: '#e8c96a', bgClass: 'band-business',  desc: 'Levels 7-9 — FACTS Business ($297/mo)', icon: '🏹' },
-  elite:     { label: 'ELITE (L7-11)',    color: '#f0f0f0', bgClass: 'band-elite',     desc: 'Levels 7-11 — Elite ($197/mo · $1,500/yr)', icon: '👑' },
-  sovereign: { label: 'SOVEREIGN',        color: '#e8c96a', bgClass: 'band-sovereign', desc: 'Sovereign Executive ($19,997)',    icon: '🌟' },
+  free:      { label: 'FREE (L1-3)',      color: '#e8a857', bgClass: 'band-free',      desc: 'Levels 1-3 â€” FACTS Free',          icon: 'âš”ï¸' },
+  pro:       { label: 'INDIVIDUAL+ (L4-6)',       color: '#d4e1ec', bgClass: 'band-pro',       desc: 'Levels 4-6 â€” Individual ($25/mo)',   icon: 'ðŸ’¥' },
+  business:  { label: 'BUSINESS (L7-9)',  color: '#e8c96a', bgClass: 'band-business',  desc: 'Levels 7-9 â€” FACTS Business ($297/mo)', icon: 'ðŸ¹' },
+  elite:     { label: 'ELITE (L7-11)',    color: '#f0f0f0', bgClass: 'band-elite',     desc: 'Levels 7-11 â€” Elite ($197/mo Â· $1,500/yr)', icon: 'ðŸ‘‘' },
+  sovereign: { label: 'SOVEREIGN',        color: '#e8c96a', bgClass: 'band-sovereign', desc: 'Sovereign Executive ($19,997)',    icon: 'ðŸŒŸ' },
 };
 
 const UPGRADE_MSGS = {
-  pro:       { msg: 'Unlock with Individual — $25/mo', url: '/pricing.html' },
-  business:  { msg: 'Unlock with FACTS Business — $297/mo', url: '/pricing.html' },
-  elite:     { msg: 'Unlock with Elite — $197/mo · $1,500/yr', url: '/pricing.html' },
-  sovereign: { msg: 'Unlock with Sovereign Executive — $19,997', url: '/pricing.html' },
+  pro:       { msg: 'Unlock with Individual â€” $25/mo', url: '/pricing.html' },
+  business:  { msg: 'Unlock with FACTS Business â€” $297/mo', url: '/pricing.html' },
+  elite:     { msg: 'Unlock with Elite â€” $197/mo Â· $1,500/yr', url: '/pricing.html' },
+  sovereign: { msg: 'Unlock with Sovereign Executive â€” $19,997', url: '/pricing.html' },
 };
 
 function esc(s) {
@@ -261,7 +261,7 @@ async function init() {
     console.error('Knowledge vault error:', err);
     document.getElementById('vault-loading').innerHTML = `
       <div class="card p-8 text-center">
-        <div class="text-3xl mb-3">⚠️</div>
+        <div class="text-3xl mb-3">âš ï¸</div>
         <p class="text-gray-400 text-sm">Could not load vault. <a href="/login.html" class="text-yellow-400">Sign in</a> to access.</p>
       </div>
     `;
@@ -293,7 +293,7 @@ function renderContent(items) {
   if (!items || items.length === 0) {
     container.innerHTML = `
       <div class="card p-10 text-center">
-        <div class="text-3xl mb-3">🔒</div>
+        <div class="text-3xl mb-3">ðŸ”’</div>
         <div class="font-semibold text-white mb-2">No content available in this tier yet</div>
         <p class="text-gray-400 text-sm mb-5">Advance your subscription tier to unlock this content.</p>
         <a href="/pricing.html" class="inline-block px-6 py-2.5 rounded-xl font-bold text-sm" style="background:linear-gradient(135deg,#c9a227,#e8c96a);color:#0d1117;">View Pricing</a>
@@ -327,8 +327,8 @@ function renderContent(items) {
             <div class="text-xs font-normal opacity-60">${cfg.desc}</div>
           </div>
           ${hasAccess
-            ? `<span style="font-size:0.65rem;padding:0.2rem 0.75rem;border-radius:100px;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);font-weight:800;text-transform:uppercase;letter-spacing:0.08em;">✓ UNLOCKED</span>`
-            : `<span class="tier-lock-pill ${tier}">🔒 ${tier.toUpperCase()} REQUIRED</span>`
+            ? `<span style="font-size:0.65rem;padding:0.2rem 0.75rem;border-radius:100px;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);font-weight:800;text-transform:uppercase;letter-spacing:0.08em;">âœ“ UNLOCKED</span>`
+            : `<span class="tier-lock-pill ${tier}">ðŸ”’ ${tier.toUpperCase()} REQUIRED</span>`
           }
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -337,11 +337,11 @@ function renderContent(items) {
         ${!hasAccess && UPGRADE_MSGS[tier] ? `
           <div class="mt-3 flex items-center justify-between p-4 rounded-xl" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
             <div class="flex items-center gap-2">
-              <span class="text-sm">⚡</span>
+              <span class="text-sm">âš¡</span>
               <span class="text-xs text-gray-400">${esc(UPGRADE_MSGS[tier].msg)}</span>
             </div>
             <a href="${UPGRADE_MSGS[tier].url}" class="text-xs font-bold px-4 py-1.5 rounded-lg" style="background:rgba(201,162,39,0.15);color:#e8c96a;border:1px solid rgba(201,162,39,0.3);">
-              Upgrade →
+              Upgrade â†’
             </a>
           </div>
         ` : ''}
@@ -364,7 +364,7 @@ function renderContentCard(item, hasAccess) {
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap mb-1">
               <span class="type-badge ${typeClass}">${esc(item.type)}</span>
-              <span class="read-time">· ${esc(item.read_time)}</span>
+              <span class="read-time">Â· ${esc(item.read_time)}</span>
             </div>
             <div class="font-bold text-white text-sm mb-1 leading-snug">${esc(item.title)}</div>
             <p class="text-gray-400 text-xs leading-relaxed">${esc(item.desc)}</p>
@@ -381,8 +381,8 @@ function renderContentCard(item, hasAccess) {
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap mb-1">
               <span class="type-badge ${typeClass}" style="opacity:0.5;">${esc(item.type)}</span>
-              <span class="read-time">· ${esc(item.read_time)}</span>
-              <span class="tier-lock-pill ${esc(item.tier)}">🔒 ${esc(item.tier.toUpperCase())}</span>
+              <span class="read-time">Â· ${esc(item.read_time)}</span>
+              <span class="tier-lock-pill ${esc(item.tier)}">ðŸ”’ ${esc(item.tier.toUpperCase())}</span>
             </div>
             <div class="font-bold text-gray-500 text-sm mb-1 leading-snug">${esc(item.title)}</div>
             <p class="text-gray-600 text-xs leading-relaxed">${esc(item.desc)}</p>
@@ -393,11 +393,11 @@ function renderContentCard(item, hasAccess) {
   }
 }
 
-// Content modal (simple read modal — content is educational, no PDFs needed)
+// Content modal (simple read modal â€” content is educational, no PDFs needed)
 const CONTENT_INTROS = {
-  f1: `<h2 class="text-xl font-black text-white mb-4">The FACTS Method: Your Financial Foundation</h2><p class="text-gray-300 mb-4">FACTS stands for <strong class="text-yellow-400">Financial Allocation Control &amp; Tracking System</strong>. It's zero-based budgeting — every dollar gets allocated before it gets spent.</p><h3 class="font-bold text-white mb-2">The Core Principle</h3><p class="text-gray-400 mb-4">At the start of each month, allocate 100% of expected income across your spending categories. Every dollar has a mission. Nothing floats free. This eliminates the mystery spending that drains most people's accounts.</p><h3 class="font-bold text-white mb-2">The 6 Core Allocations</h3><ol class="text-gray-400 space-y-2 list-decimal list-inside mb-4"><li><strong class="text-white">Necessities</strong> — Foundational operational bucket. Covers essential costs required to maintain the baseline of the system and daily operations.</li><li><strong class="text-white">Reserve</strong> — Focused on liquidity and security. Acts as a buffer to ensure stability and provides a safety net for the entire structure.</li><li><strong class="text-white">Velocity</strong> — Dedicated to debt reduction and interest recovery. Keeps capital moving and recaptures lost opportunity costs.</li><li><strong class="text-white">Growth</strong> — Designed for wealth multiplication. Focuses on acquiring and scaling assets to build long-term value.</li><li><strong class="text-white">Lifestyle</strong> — Ensures personal enrichment and quality of life. The system serves the individual, not the other way around.</li><li><strong class="text-white">Legacy</strong> — Designed for impact, contribution, and mentorship. Focuses on long-term influence and the transition of value to others.</li></ol><p class="text-gray-500 text-sm">Start here. The system builds from this foundation upward.</p>`,
-  f2: `<h2 class="text-xl font-black text-white mb-4">Day Zero: Your Debt Baseline Snapshot</h2><p class="text-gray-300 mb-4">Before you can fight your way out of debt, you need to know exactly what you're fighting. Day Zero is the moment you commit to your financial revolution — and document every dollar of debt that exists.</p><h3 class="font-bold text-white mb-2">What to Document</h3><ul class="text-gray-400 space-y-2 list-disc list-inside mb-4"><li>Every credit card balance + interest rate</li><li>Every auto loan + remaining term</li><li>Student loans (federal + private, separately)</li><li>Medical debt</li><li>Personal loans</li><li>HELOC / second mortgage</li></ul><p class="text-gray-400 mb-4">Upload your credit report in the <a href="/document-vault" class="text-yellow-400 hover:text-yellow-300">Document Vault</a> to automatically establish your Day Zero baseline. The system parses it for you.</p><p class="text-gray-500 text-sm">The most important number is Total Monthly Debt Service — how much of your income goes to debt payments each month.</p>`,
-  f3: `<h2 class="text-xl font-black text-white mb-4">The 4 Phases of FACTS</h2><p class="text-gray-300 mb-4">The FACTS Protocol maps your financial journey across 4 distinct phases, each with its own character, tools, and milestones.</p><div class="space-y-4 mb-4"><div class="p-4 rounded-xl" style="background:rgba(205,127,50,0.1);border:1px solid rgba(205,127,50,0.2);"><div class="font-bold" style="color:#e8a857;">Phase I: RESISTANCE (L1-3)</div><p class="text-gray-400 text-sm mt-1">Know your enemy. Map your debt. Build your tracking habit. Stop the bleeding before you start advancing.</p></div><div class="p-4 rounded-xl" style="background:rgba(168,184,200,0.1);border:1px solid rgba(168,184,200,0.2);"><div class="font-bold" style="color:#d4e1ec;">Phase II: UPRISING (L4-6)</div><p class="text-gray-400 text-sm mt-1">Automate your finances. Eliminate leaks. Deploy the Debt Velocity strategy. Pro tools come online.</p></div><div class="p-4 rounded-xl" style="background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.2);"><div class="font-bold" style="color:#e8c96a;">Phase III: EXPANSION (L7-9)</div><p class="text-gray-400 text-sm mt-1">Business allocation, tax optimization, Friday Sweep system. Money starts working for you, not against you.</p></div><div class="p-4 rounded-xl" style="background:rgba(229,228,226,0.1);border:1px solid rgba(229,228,226,0.2);"><div class="font-bold" style="color:#f0f0f0;">Phase IV: LIBERATION (L10-12)</div><p class="text-gray-400 text-sm mt-1">HELOC velocity, wealth acceleration, prestige status. You're no longer fighting debt — you're building empire.</p></div></div>`,
+  f1: `<h2 class="text-xl font-black text-white mb-4">The FACTS Method: Your Financial Foundation</h2><p class="text-gray-300 mb-4">FACTS stands for <strong class="text-yellow-400">Financial Allocation Control &amp; Tracking System</strong>. It's zero-based budgeting â€” every dollar gets allocated before it gets spent.</p><h3 class="font-bold text-white mb-2">The Core Principle</h3><p class="text-gray-400 mb-4">At the start of each month, allocate 100% of expected income across your spending categories. Every dollar has a mission. Nothing floats free. This eliminates the mystery spending that drains most people's accounts.</p><h3 class="font-bold text-white mb-2">The 6 Core Allocations</h3><ol class="text-gray-400 space-y-2 list-decimal list-inside mb-4"><li><strong class="text-white">Necessities</strong> â€” Foundational operational bucket. Covers essential costs required to maintain the baseline of the system and daily operations.</li><li><strong class="text-white">Reserve</strong> â€” Focused on liquidity and security. Acts as a buffer to ensure stability and provides a safety net for the entire structure.</li><li><strong class="text-white">Velocity</strong> â€” Dedicated to debt reduction and interest recovery. Keeps capital moving and recaptures lost opportunity costs.</li><li><strong class="text-white">Growth</strong> â€” Designed for wealth multiplication. Focuses on acquiring and scaling assets to build long-term value.</li><li><strong class="text-white">Lifestyle</strong> â€” Ensures personal enrichment and quality of life. The system serves the individual, not the other way around.</li><li><strong class="text-white">Legacy</strong> â€” Designed for impact, contribution, and mentorship. Focuses on long-term influence and the transition of value to others.</li></ol><p class="text-gray-500 text-sm">Start here. The system builds from this foundation upward.</p>`,
+  f2: `<h2 class="text-xl font-black text-white mb-4">Day Zero: Your Debt Baseline Snapshot</h2><p class="text-gray-300 mb-4">Before you can fight your way out of debt, you need to know exactly what you're fighting. Day Zero is the moment you commit to your financial revolution â€” and document every dollar of debt that exists.</p><h3 class="font-bold text-white mb-2">What to Document</h3><ul class="text-gray-400 space-y-2 list-disc list-inside mb-4"><li>Every credit card balance + interest rate</li><li>Every auto loan + remaining term</li><li>Student loans (federal + private, separately)</li><li>Medical debt</li><li>Personal loans</li><li>HELOC / second mortgage</li></ul><p class="text-gray-400 mb-4">Upload your credit report in the <a href="/document-vault" class="text-yellow-400 hover:text-yellow-300">Document Vault</a> to automatically establish your Day Zero baseline. The system parses it for you.</p><p class="text-gray-500 text-sm">The most important number is Total Monthly Debt Service â€” how much of your income goes to debt payments each month.</p>`,
+  f3: `<h2 class="text-xl font-black text-white mb-4">The 4 Phases of FACTS</h2><p class="text-gray-300 mb-4">The FACTS Protocol maps your financial journey across 4 distinct phases, each with its own character, tools, and milestones.</p><div class="space-y-4 mb-4"><div class="p-4 rounded-xl" style="background:rgba(205,127,50,0.1);border:1px solid rgba(205,127,50,0.2);"><div class="font-bold" style="color:#e8a857;">Phase I: RESISTANCE (L1-3)</div><p class="text-gray-400 text-sm mt-1">Know your enemy. Map your debt. Build your tracking habit. Stop the bleeding before you start advancing.</p></div><div class="p-4 rounded-xl" style="background:rgba(168,184,200,0.1);border:1px solid rgba(168,184,200,0.2);"><div class="font-bold" style="color:#d4e1ec;">Phase II: UPRISING (L4-6)</div><p class="text-gray-400 text-sm mt-1">Automate your finances. Eliminate leaks. Deploy the Debt Velocity strategy. Pro tools come online.</p></div><div class="p-4 rounded-xl" style="background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.2);"><div class="font-bold" style="color:#e8c96a;">Phase III: EXPANSION (L7-9)</div><p class="text-gray-400 text-sm mt-1">Business allocation, tax optimization, Friday Sweep system. Money starts working for you, not against you.</p></div><div class="p-4 rounded-xl" style="background:rgba(229,228,226,0.1);border:1px solid rgba(229,228,226,0.2);"><div class="font-bold" style="color:#f0f0f0;">Phase IV: LIBERATION (L10-12)</div><p class="text-gray-400 text-sm mt-1">HELOC velocity, wealth acceleration, prestige status. You're no longer fighting debt â€” you're building empire.</p></div></div>`,
 };
 
 function openContent(id) {
@@ -414,13 +414,13 @@ function openContent(id) {
         <div class="flex items-center gap-2">
           <span class="text-xl">${esc(item.icon)}</span>
           <span class="text-xs font-bold px-2 py-0.5 rounded-full type-badge type-${esc(item.type)}">${esc(item.type)}</span>
-          <span class="text-xs text-gray-500">· ${esc(item.read_time)}</span>
+          <span class="text-xs text-gray-500">Â· ${esc(item.read_time)}</span>
         </div>
-        <button onclick="this.closest('[style*=fixed]').remove()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#9ca3af;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1;">×</button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#9ca3af;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1;">Ã—</button>
       </div>
       <div class="text-sm leading-relaxed">${body}</div>
       <div class="mt-6 flex gap-3 flex-wrap">
-        <a href="/sovereign" class="text-xs font-bold px-4 py-2 rounded-xl" style="background:linear-gradient(135deg,#c9a227,#e8c96a);color:#0d1117;">↗ Apply in Sovereign Protocol</a>
+        <a href="/sovereign" class="text-xs font-bold px-4 py-2 rounded-xl" style="background:linear-gradient(135deg,#c9a227,#e8c96a);color:#0d1117;">â†— Apply in Sovereign Protocol</a>
         <button onclick="this.closest('[style*=fixed]').remove()" class="text-xs font-medium px-4 py-2 rounded-xl" style="background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(255,255,255,0.1);">Close</button>
       </div>
     </div>
@@ -433,5 +433,6 @@ init();
 </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

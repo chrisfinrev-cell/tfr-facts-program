@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>The Desk — Sovereign Lending · Financial Revolution</title>
+<title>The Desk â€” Sovereign Lending Â· Financial Revolution</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -87,13 +87,13 @@
 <nav class="sticky top-0 z-40 border-b border-white/5" style="background:#0d1528cc;backdrop-filter:blur(12px)">
   <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <a href="/app" class="text-slate-400 hover:text-white text-sm">← Dashboard</a>
+      <a href="/app" class="text-slate-400 hover:text-white text-sm">â† Dashboard</a>
       <span class="text-slate-600">/</span>
       <span class="gold-text font-semibold text-sm">The Desk</span>
     </div>
     <div class="flex items-center gap-3">
       <div id="automationBadge" class="pill"></div>
-      <div id="tierBadge" class="pill pill-gold">Loading…</div>
+      <div id="tierBadge" class="pill pill-gold">Loadingâ€¦</div>
     </div>
   </div>
 </nav>
@@ -103,10 +103,10 @@
   <!-- Header -->
   <div>
     <h1 class="text-2xl font-bold text-white">The Desk</h1>
-    <p class="text-slate-400 text-sm mt-1">Educational lending-architecture workspace — 9-Pod model (illustrative only)</p>
+    <p class="text-slate-400 text-sm mt-1">Educational lending-architecture workspace â€” 9-Pod model (illustrative only)</p>
     <div class="mt-3 p-3 rounded-lg text-xs text-slate-400" style="background:#1c1a03;border:1px solid rgba(250,204,21,0.25);line-height:1.55;">
       <strong style="color:#facc15;">Educational only.</strong> FACTS is not a lender, broker, bank, or credit decisioning service.
-      Pods, scores, and sweeps are literacy tools for organizing your own notes — not loan offers, underwriting decisions, or advice to borrow.
+      Pods, scores, and sweeps are literacy tools for organizing your own notes â€” not loan offers, underwriting decisions, or advice to borrow.
       Consult a licensed lender or advisor before any credit action.
     </div>
   </div>
@@ -137,7 +137,7 @@
         <div class="pod-card pod-empty h-16 rounded"></div>
         <div class="pod-card pod-completed h-16 rounded"></div>
       </div>
-      <button onclick="activateModule()" class="btn-gold px-8 py-3 text-base">Activate Lending Desk — $29/mo</button>
+      <button onclick="activateModule()" class="btn-gold px-8 py-3 text-base">Activate Lending Desk â€” $29/mo</button>
       <p class="text-slate-500 text-xs mt-2">Included in Business &amp; Sovereignty tiers</p>
     </div>
   </div>
@@ -149,18 +149,18 @@
     <section>
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-white">Sovereign Health Score</h2>
-        <a href="/legacy-lens" class="text-xs text-slate-400 hover:gold-text">View Full Lens →</a>
+        <a href="/legacy-lens" class="text-xs text-slate-400 hover:gold-text">View Full Lens â†’</a>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="healthGauges"></div>
       <div class="card p-4 mt-4 flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-4">
           <div>
             <div class="text-slate-400 text-xs mb-1">Composite Score</div>
-            <span id="compositeScore" class="text-3xl font-black gold-text">—</span>
+            <span id="compositeScore" class="text-3xl font-black gold-text">â€”</span>
           </div>
           <div>
             <div class="text-slate-400 text-xs mb-1">Sovereignty Level</div>
-            <span id="sovereigntyLevel" class="text-white font-semibold text-sm">—</span>
+            <span id="sovereigntyLevel" class="text-white font-semibold text-sm">â€”</span>
           </div>
         </div>
         <div id="underwritingStatus" class="text-right"></div>
@@ -183,26 +183,26 @@
           <span><span class="inline-block w-2 h-2 rounded-sm" style="background:#f87171;margin-right:4px"></span>Defaulted</span>
           <span><span class="inline-block w-2 h-2 rounded-sm" style="background:#1e2d4a;margin-right:4px"></span>Empty</span>
         </div>
-        <div class="text-sm text-slate-500">Net Exposure: <span id="netExposure" class="text-white font-semibold">—</span></div>
+        <div class="text-sm text-slate-500">Net Exposure: <span id="netExposure" class="text-white font-semibold">â€”</span></div>
       </div>
 
-      <!-- 9-pod 3×3 grid -->
+      <!-- 9-pod 3Ã—3 grid -->
       <div class="grid grid-cols-3 gap-3" id="podGrid"></div>
 
       <!-- Infinite Return banner -->
       <div id="infiniteReturnBanner" class="hidden infinite-return-row">
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div class="flex items-center gap-3">
-            <span class="text-2xl">∞</span>
+            <span class="text-2xl">âˆž</span>
             <div>
               <div class="text-white font-bold text-sm">Infinite Return State Active</div>
-              <div class="text-slate-400 text-xs">Net exposure ≤ $0 — all future cash flow is pure return</div>
+              <div class="text-slate-400 text-xs">Net exposure â‰¤ $0 â€” all future cash flow is pure return</div>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="text-slate-400 text-xs">Route future cash flow to:</span>
             <select id="infiniteRouteSelect" class="text-xs" style="width:auto;padding:4px 8px" onchange="setInfiniteRoute(this.value)">
-              <option value="">Select…</option>
+              <option value="">Selectâ€¦</option>
               <option value="necessities">Necessities</option>
               <option value="reserve">The Reserve</option>
               <option value="override">Override (Manual)</option>
@@ -215,7 +215,7 @@
     <!-- Sweep History Tab -->
     <div id="tab-sweeps" class="hidden space-y-4">
       <div class="flex items-center justify-between">
-        <div class="text-slate-400 text-sm">All sweep transactions — 70% Growth · 30% Legacy</div>
+        <div class="text-slate-400 text-sm">All sweep transactions â€” 70% Growth Â· 30% Legacy</div>
       </div>
       <div id="sweepTotals" class="grid grid-cols-3 gap-3 mb-2"></div>
       <div id="sweepList" class="space-y-2"></div>
@@ -246,7 +246,7 @@
 <div id="activatePodModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('activatePodModal')">
   <div class="modal">
     <h3 class="text-white font-bold text-lg mb-1">Activate Pod <span id="activatePodNum" class="gold-text"></span></h3>
-    <p class="text-slate-400 text-xs mb-4">Each pod is isolated — independent collateral pool and risk profile.</p>
+    <p class="text-slate-400 text-xs mb-4">Each pod is isolated â€” independent collateral pool and risk profile.</p>
     <div class="space-y-3">
       <div>
         <label class="text-slate-400 text-xs mb-1 block">Label (optional)</label>
@@ -270,7 +270,7 @@
       </div>
       <div>
         <label class="text-slate-400 text-xs mb-1 block">Notes</label>
-        <input id="pod_notes" placeholder="Any additional context…"/>
+        <input id="pod_notes" placeholder="Any additional contextâ€¦"/>
       </div>
     </div>
     <div class="flex gap-3 mt-5">
@@ -284,7 +284,7 @@
 <div id="sweepModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeModal('sweepModal')">
   <div class="modal">
     <h3 class="text-white font-bold text-lg mb-1">Apply Sweep</h3>
-    <p class="text-slate-400 text-xs mb-4">70% → Growth (reduces net exposure) · 30% → Legacy (Knowledge / Tools / Mentorship)</p>
+    <p class="text-slate-400 text-xs mb-4">70% â†’ Growth (reduces net exposure) Â· 30% â†’ Legacy (Knowledge / Tools / Mentorship)</p>
     <div class="space-y-3">
       <div>
         <label class="text-slate-400 text-xs mb-1 block">Total Sweep Amount ($)</label>
@@ -308,7 +308,7 @@
 </div>
 
 <script>
-// ─── State ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let state = {
   status: null,
   pods: null,
@@ -321,7 +321,7 @@ let state = {
   isInfiniteReturn: false
 };
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function init() {
   try {
     const res = await fetch('/api/mod_lending_desk/status');
@@ -337,7 +337,7 @@ async function init() {
       autoBadge.innerHTML = '<span class="live-dot"></span> Live Auto-Sweep';
       autoBadge.className = 'pill pill-live flex items-center gap-2';
     } else if (state.status.automation_mode === 'sync') {
-      autoBadge.innerHTML = '⟳ Sync Mode';
+      autoBadge.innerHTML = 'âŸ³ Sync Mode';
       autoBadge.className = 'pill pill-sync';
     } else {
       autoBadge.innerHTML = 'Manual';
@@ -358,7 +358,7 @@ async function loadAll() {
   checkNotifications();
 }
 
-// ─── Health Score ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Health Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadHealthScore() {
   try {
     const [scoreRes, uw] = await Promise.all([
@@ -377,8 +377,8 @@ function renderHealthScore() {
   if (!s?.pillars) return;
   const p = s.pillars;
 
-  document.getElementById('compositeScore').textContent = s.composite_score ?? '—';
-  document.getElementById('sovereigntyLevel').textContent = s.sovereignty_level ?? '—';
+  document.getElementById('compositeScore').textContent = s.composite_score ?? 'â€”';
+  document.getElementById('sovereigntyLevel').textContent = s.sovereignty_level ?? 'â€”';
 
   const gauges = [
     { key: 'necessities_index', label: 'The Floor',  color: '#4ade80' },
@@ -417,7 +417,7 @@ function renderHealthScore() {
   }
 }
 
-// ─── Pod Grid ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Pod Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadPods() {
   try {
     const res = await fetch('/api/mod_lending_desk/pods');
@@ -448,7 +448,7 @@ function renderPods() {
       empty: 'text-slate-500', active: 'text-green-400',
       at_risk: 'text-orange-400', defaulted: 'text-red-400', completed: 'text-gold'
     };
-    const statusLabel = { empty: '○ Empty', active: '● Active', at_risk: '⚠ At Risk', defaulted: '✕ Defaulted', completed: '✓ Completed' };
+    const statusLabel = { empty: 'â—‹ Empty', active: 'â— Active', at_risk: 'âš  At Risk', defaulted: 'âœ• Defaulted', completed: 'âœ“ Completed' };
     const cls = `pod-${pod.status}`;
     const color = statusColors[pod.status] || 'text-slate-400';
     const isActive = pod.status === 'active' || pod.status === 'at_risk';
@@ -467,7 +467,7 @@ function renderPods() {
             <div class="text-xs text-slate-500">Outstanding: <span class="text-slate-200">${formatCents(pod.outstanding_cents)}</span></div>
             ${isActive ? `
               <div class="gauge-bar mt-2"><div class="gauge-fill" style="width:${calcPayoffPct(pod)}%;background:#C5A55A"></div></div>
-              <button onclick="event.stopPropagation();openSweepModal(${pod.id})" class="btn-gold btn-sm mt-2 w-full text-xs sweep-anim">Sweep →</button>
+              <button onclick="event.stopPropagation();openSweepModal(${pod.id})" class="btn-gold btn-sm mt-2 w-full text-xs sweep-anim">Sweep â†’</button>
             ` : ''}
           </div>
         `}
@@ -482,7 +482,7 @@ function calcPayoffPct(pod) {
   return Math.max(0, Math.min(100, Math.round((1 - outstanding / principal) * 100)));
 }
 
-// ─── Pod Detail ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Pod Detail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function openPodDetail(podId) {
   state.selectedPodId = podId;
   try {
@@ -500,10 +500,10 @@ function renderPodDetail(pod) {
   document.getElementById('podModalContent').innerHTML = `
     <div class="flex items-center justify-between mb-4">
       <div>
-        <div class="text-white font-bold text-lg">Pod ${pod.pod_number}${pod.label ? ' — ' + escHtml(pod.label) : ''}</div>
+        <div class="text-white font-bold text-lg">Pod ${pod.pod_number}${pod.label ? ' â€” ' + escHtml(pod.label) : ''}</div>
         <div class="text-slate-400 text-xs">${capitalize(pod.status)}</div>
       </div>
-      <button onclick="closeModal('podModal')" class="text-slate-400 hover:text-white text-xl">×</button>
+      <button onclick="closeModal('podModal')" class="text-slate-400 hover:text-white text-xl">Ã—</button>
     </div>
     <div class="grid grid-cols-2 gap-3 mb-4">
       <div class="card p-3">
@@ -524,7 +524,7 @@ function renderPodDetail(pod) {
       </div>
     </div>
     ${pod.collateral_description ? `
-      <div class="text-slate-400 text-xs mb-3">Collateral: <span class="text-slate-300">${escHtml(pod.collateral_description)}</span>${pod.collateral_value_cents ? ' · ' + formatCents(pod.collateral_value_cents) : ''}</div>
+      <div class="text-slate-400 text-xs mb-3">Collateral: <span class="text-slate-300">${escHtml(pod.collateral_description)}</span>${pod.collateral_value_cents ? ' Â· ' + formatCents(pod.collateral_value_cents) : ''}</div>
     ` : ''}
     <div class="mb-4">
       <div class="text-slate-400 text-xs mb-1">Payoff Progress</div>
@@ -539,7 +539,7 @@ function renderPodDetail(pod) {
             <div class="flex items-center justify-between text-xs bg-navy-700 rounded px-2 py-1">
               <span class="text-slate-400">${new Date(s.created_at).toLocaleDateString()}</span>
               <span class="text-green-400">${formatCents(s.total_amount_cents)}</span>
-              ${s.is_infinite_return ? '<span class="gold-text">∞</span>' : ''}
+              ${s.is_infinite_return ? '<span class="gold-text">âˆž</span>' : ''}
             </div>
           `).join('')}
         </div>
@@ -565,7 +565,7 @@ async function markPodStatus(podId, status) {
   await loadPods();
 }
 
-// ─── Activate Pod ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Activate Pod â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openActivatePod(podNumber) {
   state.activatingPodNumber = podNumber;
   document.getElementById('activatePodNum').textContent = '#' + podNumber;
@@ -606,7 +606,7 @@ async function submitActivatePod() {
   } catch (e) { alert('Error: ' + e.message); }
 }
 
-// ─── Sweep ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Sweep â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openSweepModal(podId) {
   state.selectedPodForSweep = podId;
   document.getElementById('sweep_amount').value = '';
@@ -675,7 +675,7 @@ function setInfiniteRoute(route) {
   // Could persist preference via future endpoint
 }
 
-// ─── Sweeps ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Sweeps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadSweeps() {
   try {
     const res = await fetch('/api/mod_lending_desk/sweeps');
@@ -703,19 +703,19 @@ function renderSweeps() {
   document.getElementById('sweepList').innerHTML = (d.sweeps || []).map(s => `
     <div class="card p-3 flex items-center justify-between gap-3 flex-wrap ${s.is_infinite_return ? 'infinite-return-row' : ''}">
       <div>
-        <div class="text-slate-400 text-xs">${new Date(s.created_at).toLocaleDateString()} · Pod ${s.pod_number || '—'}${s.pod_label ? ' · ' + escHtml(s.pod_label) : ''}</div>
-        ${s.is_infinite_return ? '<span class="text-xs gold-text">∞ Infinite Return — ' + capitalize(s.infinite_return_route || '') + '</span>' : ''}
+        <div class="text-slate-400 text-xs">${new Date(s.created_at).toLocaleDateString()} Â· Pod ${s.pod_number || 'â€”'}${s.pod_label ? ' Â· ' + escHtml(s.pod_label) : ''}</div>
+        ${s.is_infinite_return ? '<span class="text-xs gold-text">âˆž Infinite Return â€” ' + capitalize(s.infinite_return_route || '') + '</span>' : ''}
       </div>
       <div class="flex items-center gap-4 text-sm">
         <span class="text-slate-300 font-semibold">${formatCents(s.total_amount_cents)}</span>
-        <span class="text-green-400 text-xs">↑ ${formatCents(s.growth_portion_cents)}</span>
-        <span class="gold-text text-xs">⬦ ${formatCents(s.legacy_portion_cents)}</span>
+        <span class="text-green-400 text-xs">â†‘ ${formatCents(s.growth_portion_cents)}</span>
+        <span class="gold-text text-xs">â¬¦ ${formatCents(s.legacy_portion_cents)}</span>
       </div>
     </div>
   `).join('') || '<div class="text-slate-600 text-sm text-center py-6">No sweeps yet</div>';
 }
 
-// ─── Scorecard Tab ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Scorecard Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadScorecard() {
   try {
     const res = await fetch('/api/mod_lending_desk/scorecard');
@@ -725,7 +725,7 @@ async function loadScorecard() {
   } catch {}
 }
 
-// ─── Notifications ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function checkNotifications() {
   try {
     const res = await fetch('/api/mod_lending_desk/notifications/check');
@@ -738,7 +738,7 @@ async function checkNotifications() {
   } catch {}
 }
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function switchTab(tab, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -747,7 +747,7 @@ function switchTab(tab, btn) {
   });
 }
 
-// ─── Activate Module ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Activate Module â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function activateModule() {
   try {
     const res = await fetch('/api/checkout/addon', {
@@ -763,10 +763,10 @@ async function activateModule() {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function formatCents(cents) {
-  if (cents == null) return '$—';
+  if (cents == null) return '$â€”';
   return '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ') : ''; }
@@ -779,5 +779,6 @@ init();
 </script>
 <script src="/analytics-tracker.js" defer></script>
 <script defer src="/legal-disclaimer.js"></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

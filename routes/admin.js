@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../db/pool');
+const { createTargetedInvites, invitesToCsv, parseMeta } = require('../lib/inviteCodes');
 
 function getDb(req) {
   return req.app.get('db') || pool;
@@ -26,13 +27,43 @@ async function requireAdmin(req, res, next) {
 }
 
 // --- 1. POST /api/admin/generate-code ---
-// Create master codes with custom limit (e.g., 5, 50, 500 uses)
+// Create multi-use master codes in beta_codes (legacy), OR targeted beta_invites when recipient fields present.
 router.post('/api/admin/generate-code', requireAdmin, async (req, res) => {
-  const { code, maxUses } = req.body;
+  const body = req.body || {};
   const db = getDb(req);
 
+  const hasRecipient =
+    Boolean(body.sentToName || body.name || body.sentToEmail || body.email || body.meta || body.recipientMetadata);
+
+  // Targeted single/multi invites mapped to recipient identity
+  if (hasRecipient || body.generateCleanCodes === true || Number(body.count) > 0) {
+    try {
+      const created = await createTargetedInvites(db, {
+        count: body.count || 1,
+        name: body.sentToName || body.name,
+        email: body.sentToEmail || body.email,
+        meta: body.recipientMetadata || body.meta || {},
+        parentCode: body.parentCode || body.parent_code,
+        maxUses: body.maxUses || 1,
+        createdByUserId: req.session.userId
+      });
+      return res.json({
+        success: true,
+        invites: created,
+        csv: invitesToCsv(created),
+        message: `Created ${created.length} targeted invite code(s).`
+      });
+    } catch (err) {
+      console.error('Error generating targeted invites:', err);
+      return res.status(500).json({ error: 'Failed to create targeted invite codes.' });
+    }
+  }
+
+  const { code, maxUses } = body;
   if (!code || !maxUses) {
-    return res.status(400).json({ error: 'Code name and maxUses are required.' });
+    return res.status(400).json({
+      error: 'Provide code + maxUses for a master code, or recipient name/email/meta for targeted invites.'
+    });
   }
 
   try {
@@ -50,25 +81,65 @@ router.post('/api/admin/generate-code', requireAdmin, async (req, res) => {
   }
 });
 
+// --- 1b. POST /api/admin/generate-invites ---
+// Explicit targeted invite creator (name/email/metadata/CSV)
+router.post('/api/admin/generate-invites', requireAdmin, async (req, res) => {
+  const body = req.body || {};
+  const db = getDb(req);
+  try {
+    const created = await createTargetedInvites(db, {
+      count: body.count || 1,
+      name: body.sentToName || body.name,
+      email: body.sentToEmail || body.email,
+      meta: body.recipientMetadata || body.meta || {},
+      parentCode: body.parentCode || body.parent_code,
+      maxUses: body.maxUses || 1,
+      createdByUserId: req.session.userId
+    });
+    return res.json({
+      success: true,
+      invites: created,
+      csv: invitesToCsv(created),
+      message: `Created ${created.length} invite code(s).`
+    });
+  } catch (err) {
+    console.error('Error generating invites:', err);
+    return res.status(500).json({ error: 'Failed to create invite codes.' });
+  }
+});
+
 // --- 2. GET /api/admin/tracking ---
-// Returns master code usage, individual user referral stats, and full referral lineage
 router.get('/api/admin/tracking', requireAdmin, async (req, res) => {
   const db = getDb(req);
 
   try {
-    // A. Master Beta Codes Status (e.g., CORSAIR-FACTS-2026)
     const masterCodes = await db.query(
-      `SELECT id, code, max_uses, uses_count, created_at 
-       FROM beta_codes 
+      `SELECT id, code, max_uses, uses_count, created_at
+       FROM beta_codes
        ORDER BY created_at DESC`
     );
 
-    // B. User Referral Tree & Invite Usage
+    let targetedInvites = { rows: [] };
+    try {
+      targetedInvites = await db.query(
+        `SELECT id, code, parent_code, sent_to_name, sent_to_email, recipient_metadata,
+                claimed_by_user_id, claimed_at, max_uses, uses_count, created_at
+         FROM beta_invites
+         ORDER BY created_at DESC
+         LIMIT 500`
+      );
+    } catch (inviteErr) {
+      console.warn('beta_invites tracking unavailable:', inviteErr.message);
+    }
+
     const userLineage = await db.query(
-      `SELECT 
+      `SELECT
           u.id AS user_id,
           u.email,
           u.referral_code,
+          u.affiliate_code,
+          u.referred_by_code,
+          u.affiliate_tier,
           u.monthly_invites_remaining,
           u.lifetime_invites_issued,
           u.nda_accepted_at,
@@ -85,6 +156,7 @@ router.get('/api/admin/tracking', requireAdmin, async (req, res) => {
     return res.json({
       success: true,
       masterCodes: masterCodes.rows,
+      targetedInvites: targetedInvites.rows,
       userLineage: userLineage.rows
     });
   } catch (err) {
@@ -94,7 +166,6 @@ router.get('/api/admin/tracking', requireAdmin, async (req, res) => {
 });
 
 // --- 3. POST /api/admin/income-eligibility ---
-// Admin marks a user ineligible (or eligible again) for income-generating programs.
 router.post('/api/admin/income-eligibility', requireAdmin, async (req, res) => {
   const { userId, blocked } = req.body || {};
   const db = getDb(req);
@@ -138,4 +209,4 @@ router.post('/api/admin/income-eligibility', requireAdmin, async (req, res) => {
   }
 });
 
-module.exports = { router, requireAdmin };
+module.exports = { router, requireAdmin, parseMeta };

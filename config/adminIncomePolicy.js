@@ -17,6 +17,8 @@ function isFounderAdmin(user) {
 function isAdminIncomeBlockedUser(user) {
   if (!user) return false;
   if (isFounderAdmin(user)) return true;
+  if (user.is_affiliate_disabled === true) return true;
+  if (String(user.affiliate_tier || '').toUpperCase() === 'EXCLUDED') return true;
   return user.income_programs_blocked === true;
 }
 

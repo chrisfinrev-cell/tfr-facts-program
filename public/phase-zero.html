@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FACTS Protocol — Phase Zero Initialization</title>
+<title>FACTS Protocol â€” Phase Zero Initialization</title>
 <meta name="robots" content="noindex">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
@@ -36,7 +36,7 @@
     overflow-x: hidden;
   }
 
-  /* Grid overlay — tactical aesthetic */
+  /* Grid overlay â€” tactical aesthetic */
   body::before {
     content: '';
     position: fixed;
@@ -653,7 +653,7 @@
     font-size: 14px;
   }
 
-  /* ── Phase Zero Deadline Banner ──────────────────────── */
+  /* â”€â”€ Phase Zero Deadline Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   .pz-deadline-banner {
     display: none; /* shown by JS when timer is active */
     max-width: 640px;
@@ -734,35 +734,35 @@
     <span id="pl4">Complete</span>
   </div>
 
-  <!-- ── Deadline countdown banner (shown once timer starts) ── -->
+  <!-- â”€â”€ Deadline countdown banner (shown once timer starts) â”€â”€ -->
   <div class="pz-deadline-banner" id="pzDeadlineBanner">
     <div class="pz-deadline-banner-row">
       <div>
-        <div class="pz-deadline-label">⏱ Phase Zero Deadline</div>
+        <div class="pz-deadline-label">â± Phase Zero Deadline</div>
         <div class="pz-deadline-date" id="pzDeadlineDate"></div>
       </div>
       <div class="pz-deadline-time" id="pzDeadlineTime">-- days</div>
     </div>
   </div>
 
-  <!-- ═══ STEP 0: PRE-GATE ═══ -->
+  <!-- â•â•â• STEP 0: PRE-GATE â•â•â• -->
   <div class="step active" id="step0">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
-      <div class="step-count">STEP 01 / 05 — SOVEREIGN BRIEFING</div>
-      <div class="hud-tag">Classified — Read Before Proceeding</div>
+      <div class="step-count">STEP 01 / 05 â€” SOVEREIGN BRIEFING</div>
+      <div class="hud-tag">Classified â€” Read Before Proceeding</div>
       <h1>Before You Enter</h1>
       <p class="lead">Understand what you're building. This isn't optional.</p>
 
       <div class="briefing-doc">
-        <div class="doc-header">▶ FACTS Protocol — Sovereign Briefing Document</div>
+        <div class="doc-header">â–¶ FACTS Protocol â€” Sovereign Briefing Document</div>
         <div class="doc-line">
           <strong>WHAT FACTS IS:</strong><br>
-          A command-and-control system for your income. Every dollar you earn has a mission before it enters your life. You allocate first. You spend from allocation. You do not chase money — you deploy it.
+          A command-and-control system for your income. Every dollar you earn has a mission before it enters your life. You allocate first. You spend from allocation. You do not chase money â€” you deploy it.
         </div>
         <div class="doc-line">
           <strong>THE 6 CATEGORIES:</strong><br>
-          Necessities · Velocity · The Reserve · Lifestyle · Growth · Legacy<br>
+          Necessities Â· Velocity Â· The Reserve Â· Lifestyle Â· Growth Â· Legacy<br>
           Each category is a purpose. None is optional. Together they form your financial architecture.
         </div>
         <div class="doc-line">
@@ -781,16 +781,16 @@
 
       <div id="errStep0" class="alert alert-error"></div>
       <button class="btn btn-primary" onclick="goToDeclaration()">
-        I'm Ready — Proceed to Declaration
+        I'm Ready â€” Proceed to Declaration
       </button>
     </div>
   </div>
 
-  <!-- ═══ STEP 1: DECLARATION ═══ -->
+  <!-- â•â•â• STEP 1: DECLARATION â•â•â• -->
   <div class="step" id="step1">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
-      <div class="step-count">STEP 02 / 05 — DECLARATION OF INTENT</div>
+      <div class="step-count">STEP 02 / 05 â€” DECLARATION OF INTENT</div>
       <div class="hud-tag">Binding Commitment Required</div>
       <h1>The FACTS Declaration</h1>
 
@@ -806,17 +806,17 @@
       <div id="errStep1" class="alert alert-error"></div>
 
       <button class="btn btn-primary" id="btnDeclaration" disabled onclick="acceptDeclaration()">
-        Accept Declaration — Continue
+        Accept Declaration â€” Continue
       </button>
       <p class="sub-note">Recorded with timestamp. Your journey begins here.</p>
     </div>
   </div>
 
-  <!-- ═══ STEP 2: ALLOCATION SETUP (two-step: defaults → customize) ═══ -->
+  <!-- â•â•â• STEP 2: ALLOCATION SETUP (two-step: defaults â†’ customize) â•â•â• -->
   <div class="step" id="step2">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
-      <div class="step-count">STEP 04 / 05 — ALLOCATION SETUP</div>
+      <div class="step-count">STEP 04 / 05 â€” ALLOCATION SETUP</div>
       <div class="hud-tag">Configuration Required</div>
       <h1>Set Your Architecture</h1>
       <p>Your income will be split across 6 purpose-driven categories. Here's the default baseline allocation:</p>
@@ -824,27 +824,27 @@
       <!-- Default allocation preview -->
       <div id="defaultAllocationPreview" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.3rem;">🏠</span>
+          <span style="font-size:1.3rem;">ðŸ </span>
           <div><div style="font-size:0.82rem;font-weight:700;color:var(--fg);">Necessities</div><div style="font-size:0.78rem;color:var(--muted);">50%</div></div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.3rem;">🔒</span>
+          <span style="font-size:1.3rem;">ðŸ”’</span>
           <div><div style="font-size:0.82rem;font-weight:700;color:var(--fg);">Reserve</div><div style="font-size:0.78rem;color:var(--muted);">10%</div></div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.3rem;">⚡</span>
+          <span style="font-size:1.3rem;">âš¡</span>
           <div><div style="font-size:0.82rem;font-weight:700;color:var(--fg);">Velocity</div><div style="font-size:0.78rem;color:var(--muted);">10%</div></div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.3rem;">📈</span>
+          <span style="font-size:1.3rem;">ðŸ“ˆ</span>
           <div><div style="font-size:0.82rem;font-weight:700;color:var(--fg);">Growth</div><div style="font-size:0.78rem;color:var(--muted);">10%</div></div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.3rem;">🎯</span>
+          <span style="font-size:1.3rem;">ðŸŽ¯</span>
           <div><div style="font-size:0.82rem;font-weight:700;color:var(--fg);">Lifestyle</div><div style="font-size:0.78rem;color:var(--muted);">10%</div></div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.3rem;">🌿</span>
+          <span style="font-size:1.3rem;">ðŸŒ¿</span>
           <div><div style="font-size:0.82rem;font-weight:700;color:var(--fg);">Legacy</div><div style="font-size:0.78rem;color:var(--muted);">10%</div></div>
         </div>
       </div>
@@ -858,17 +858,17 @@
 
       <!-- Customize option (hidden by default) -->
       <div id="customizeToggle" style="text-align:center;margin-top:16px;">
-        <a href="#" onclick="event.preventDefault();showCustomizeOptions();" style="color:var(--accent);font-size:0.88rem;text-decoration:none;font-weight:500;">I want to customize →</a>
+        <a href="#" onclick="event.preventDefault();showCustomizeOptions();" style="color:var(--accent);font-size:0.88rem;text-decoration:none;font-weight:500;">I want to customize â†’</a>
       </div>
 
       <div class="option-grid" id="customizeOptions" style="display:none;margin-top:20px;">
         <div class="option-card" id="optYes" onclick="selectSetupOption('yes')">
-          <div class="opt-icon">🤖</div>
+          <div class="opt-icon">ðŸ¤–</div>
           <div class="opt-label">AI-Assisted Setup</div>
           <p class="opt-desc">AI suggests custom allocations based on your income and goals. Takes 60 seconds.</p>
         </div>
         <div class="option-card" id="optNo" onclick="selectSetupOption('no')">
-          <div class="opt-icon">⚙️</div>
+          <div class="opt-icon">âš™ï¸</div>
           <div class="opt-label">Manual Setup</div>
           <p class="opt-desc">Adjust the 50/10/10/10/10/10 split yourself in Settings after onboarding.</p>
         </div>
@@ -876,48 +876,48 @@
     </div>
   </div>
 
-  <!-- ═══ STEP 2B: AI QUESTIONNAIRE ═══ -->
+  <!-- â•â•â• STEP 2B: AI QUESTIONNAIRE â•â•â• -->
   <div class="step" id="step2b">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
-      <div class="step-count">STEP 03 / 05 — AI ARCHITECTURE BRIEF</div>
-      <div class="hud-tag">4 Questions — 60 Seconds</div>
+      <div class="step-count">STEP 03 / 05 â€” AI ARCHITECTURE BRIEF</div>
+      <div class="hud-tag">4 Questions â€” 60 Seconds</div>
       <h1>Brief the AI Architect</h1>
 
       <div class="q-item">
-        <label>Q1 — Monthly Income (rough estimate)</label>
+        <label>Q1 â€” Monthly Income (rough estimate)</label>
         <input type="number" id="qIncome" placeholder="e.g. 5000" min="1" step="100">
       </div>
 
       <div class="q-item">
-        <label>Q2 — Do you currently carry debt?</label>
+        <label>Q2 â€” Do you currently carry debt?</label>
         <select id="qDebt">
           <option value="">Select...</option>
-          <option value="yes_significant">Yes — significant debt (credit cards, personal loans)</option>
-          <option value="yes_mortgage">Yes — mortgage only</option>
-          <option value="yes_student">Yes — student loans</option>
+          <option value="yes_significant">Yes â€” significant debt (credit cards, personal loans)</option>
+          <option value="yes_mortgage">Yes â€” mortgage only</option>
+          <option value="yes_student">Yes â€” student loans</option>
           <option value="no">No debt</option>
         </select>
       </div>
 
       <div class="q-item">
-        <label>Q3 — Do you have an emergency fund?</label>
+        <label>Q3 â€” Do you have an emergency fund?</label>
         <select id="qEmergency">
           <option value="">Select...</option>
-          <option value="no">No — building from scratch</option>
-          <option value="partial">Partial — less than 3 months expenses</option>
-          <option value="yes">Yes — 3+ months covered</option>
+          <option value="no">No â€” building from scratch</option>
+          <option value="partial">Partial â€” less than 3 months expenses</option>
+          <option value="yes">Yes â€” 3+ months covered</option>
         </select>
       </div>
 
       <div class="q-item">
-        <label>Q4 — Primary Financial Goal</label>
+        <label>Q4 â€” Primary Financial Goal</label>
         <select id="qGoal">
           <option value="">Select...</option>
-          <option value="crush_debt">Crush Debt — eliminate debt as fast as possible</option>
-          <option value="build_savings">Build Savings — secure financial foundation first</option>
-          <option value="grow_wealth">Grow Wealth — maximize investment and legacy</option>
-          <option value="all_three">All Three — balanced approach across all priorities</option>
+          <option value="crush_debt">Crush Debt â€” eliminate debt as fast as possible</option>
+          <option value="build_savings">Build Savings â€” secure financial foundation first</option>
+          <option value="grow_wealth">Grow Wealth â€” maximize investment and legacy</option>
+          <option value="all_three">All Three â€” balanced approach across all priorities</option>
         </select>
       </div>
 
@@ -928,17 +928,17 @@
     </div>
   </div>
 
-  <!-- ═══ STEP 2C: AI RESULT ═══ -->
+  <!-- â•â•â• STEP 2C: AI RESULT â•â•â• -->
   <div class="step" id="step2c">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
-      <div class="step-count">STEP 03 / 05 — ALLOCATION RESULT</div>
+      <div class="step-count">STEP 03 / 05 â€” ALLOCATION RESULT</div>
       <div class="hud-tag">AI Architect Recommendation</div>
       <h1>Your Architecture</h1>
       <p id="allocRationale" class="lead"></p>
 
       <hr class="divider">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Adjust any category — total must equal 100%</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Adjust any category â€” total must equal 100%</p>
 
       <div id="allocGrid" class="alloc-grid"></div>
 
@@ -949,17 +949,17 @@
 
       <div id="errStep2c" class="alert alert-error"></div>
       <button class="btn btn-gold" onclick="acceptAllocation()">
-        Accept Allocation — Continue
+        Accept Allocation â€” Continue
       </button>
-      <button class="btn btn-outline" onclick="goBack2b()">← Adjust Answers</button>
+      <button class="btn btn-outline" onclick="goBack2b()">â† Adjust Answers</button>
     </div>
   </div>
 
-  <!-- ═══ STEP 3: EMAIL VERIFY ═══ -->
+  <!-- â•â•â• STEP 3: EMAIL VERIFY â•â•â• -->
   <div class="step" id="step3">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
-      <div class="step-count">STEP 03 / 05 — IDENTITY VERIFICATION</div>
+      <div class="step-count">STEP 03 / 05 â€” IDENTITY VERIFICATION</div>
       <div class="hud-tag">Email Required</div>
       <h1>Verify Your Email</h1>
       <p>Before your 168-Hour Audit begins, confirm your identity. A 6-digit code will be sent to your registered email address.</p>
@@ -988,18 +988,18 @@
     </div>
   </div>
 
-  <!-- ═══ STEP 4: PHASE ZERO COMPLETE ═══ -->
+  <!-- â•â•â• STEP 4: PHASE ZERO COMPLETE â•â•â• -->
   <div class="step" id="step4">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
 
       <div class="completion-badge">
-        <span class="badge-icon" id="completionIcon">🏆</span>
+        <span class="badge-icon" id="completionIcon">ðŸ†</span>
         <h1 id="completionTitle">Phase Zero Complete</h1>
       </div>
 
       <div class="xp-banner" id="xpBanner">
-        🏆 Phase Zero Complete — 100 XP earned. Your architecture is set.
+        ðŸ† Phase Zero Complete â€” 100 XP earned. Your architecture is set.
       </div>
 
       <hr class="divider">
@@ -1014,7 +1014,7 @@
 
       <div id="errStep4" class="alert alert-error"></div>
       <button class="btn btn-primary" onclick="enterDashboard()">
-        Enter the Revolution →
+        Enter the Revolution â†’
       </button>
     </div>
   </div>
@@ -1022,9 +1022,9 @@
 </div><!-- /hud-container -->
 
 <script>
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // State
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 var currentStep = 0;
 var setupChoice = null;
 var aiAnswers = {};
@@ -1040,7 +1040,7 @@ var BUCKET_LABELS = {
 
 // Steps: 0=pregate, 1=declaration, 2=aiChoice, 2b=aiQ, 2c=aiResult, 3=sms, 4=complete
 var STEP_INDICES = { 0: 0, 1: 1, 2: 2, '2b': 2, '2c': 2, 3: 3, 4: 4 };
-// Flow: 0(Pre-Gate) → 1(Declaration) → 3(Email Verify) → 2(Setup) → 2b/2c(AI) → 4(Complete)
+// Flow: 0(Pre-Gate) â†’ 1(Declaration) â†’ 3(Email Verify) â†’ 2(Setup) â†’ 2b/2c(AI) â†’ 4(Complete)
 var PROGRESS_MAP = { 0: 0, 1: 20, 3: 40, 2: 60, '2b': 70, '2c': 80, 4: 100 };
 var LABEL_ACTIVE_AT = { pl0: [0], pl1: [1], pl2: [2,'2b','2c'], pl3: [3], pl4: [4] };
 
@@ -1074,9 +1074,9 @@ function clearError(id) {
   el.classList.remove('show');
 }
 
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Check if user already completed Phase Zero
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 (function init() {
   fetch('/api/phase-zero/status', { credentials: 'include' })
     .then(function(r) { return r.json(); })
@@ -1095,20 +1095,20 @@ function clearError(id) {
         document.getElementById('verifyEmailDisplay').textContent = data.email;
         document.getElementById('emailOtpDisplay').textContent = data.email;
       }
-      // Resume from correct step (Bug 4: flow is Declaration → Email Verify → Setup → Complete)
+      // Resume from correct step (Bug 4: flow is Declaration â†’ Email Verify â†’ Setup â†’ Complete)
       if (data.phone_verified_at && data.allocation_set_at) {
-        // Email verified AND setup done — go to completion
+        // Email verified AND setup done â€” go to completion
         showStep(4);
         renderCompletionStats(data);
         return;
       }
       if (data.phone_verified_at) {
-        // Email verified but setup not done — go to allocation setup
+        // Email verified but setup not done â€” go to allocation setup
         showStep(2);
         return;
       }
       if (data.declaration_accepted_at) {
-        // Declaration done but email not verified — go to email verify
+        // Declaration done but email not verified â€” go to email verify
         initEmailVerifyStep(verifyEmail);
         showStep(3);
         return;
@@ -1120,7 +1120,7 @@ function clearError(id) {
     });
 })();
 
-// ─── Phase Zero Deadline Banner ──────────────────────────────────────
+// â”€â”€â”€ Phase Zero Deadline Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Loads independently; does not block the Phase Zero flow.
 (function initDeadlineBanner() {
   fetch('/api/mod_pz_deadline/status', { credentials: 'include' })
@@ -1146,11 +1146,11 @@ function clearError(id) {
         month: 'long', day: 'numeric', year: 'numeric'
       });
 
-      // Update display and add urgent class if ≤ 2 days remain
+      // Update display and add urgent class if â‰¤ 2 days remain
       function updateBannerTime() {
         var msLeft = deadline.getTime() - Date.now();
         if (msLeft <= 0) {
-          // Timer expired — redirect to lockout (server will apply lockout on next request)
+          // Timer expired â€” redirect to lockout (server will apply lockout on next request)
           clearInterval(bannerInterval);
           window.location.reload();
           return;
@@ -1173,20 +1173,20 @@ function clearError(id) {
       var bannerInterval = setInterval(updateBannerTime, 60000); // refresh every minute
     })
     .catch(function() {
-      // Deadline API unavailable — banner stays hidden, not blocking
+      // Deadline API unavailable â€” banner stays hidden, not blocking
     });
 })();
 
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Step 0: Pre-Gate
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function goToDeclaration() {
   showStep(1);
 }
 
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Step 1: Declaration
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function toggleDeclaration() {
   var cb = document.getElementById('declarationCheck');
   cb.checked = !cb.checked;
@@ -1214,7 +1214,7 @@ function acceptDeclaration() {
   .then(function(data) {
     if (data.error) {
       btn.disabled = false;
-      btn.textContent = 'Accept Declaration — Continue';
+      btn.textContent = 'Accept Declaration â€” Continue';
       showError('errStep1', data.error);
       return;
     }
@@ -1224,14 +1224,14 @@ function acceptDeclaration() {
   })
   .catch(function() {
     btn.disabled = false;
-    btn.textContent = 'Accept Declaration — Continue';
+    btn.textContent = 'Accept Declaration â€” Continue';
     showError('errStep1', 'Network error. Try again.');
   });
 }
 
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Step 2: AI Choice
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function selectSetupOption(choice) {
   setupChoice = choice;
   document.getElementById('optYes').classList.toggle('selected', choice === 'yes');
@@ -1245,7 +1245,7 @@ function proceedSetupChoice() {
   if (setupChoice === 'yes') {
     showStep('2b');
   } else {
-    // Skip AI — use defaults, award XP
+    // Skip AI â€” use defaults, award XP
     skipAi();
   }
 }
@@ -1292,9 +1292,9 @@ function showCustomizeOptions() {
   document.getElementById('btnSetupChoice').onclick = proceedSetupChoice;
 }
 
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Step 2B: AI Questionnaire
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function getAiSuggestion() {
   var income = document.getElementById('qIncome').value;
   var debt = document.getElementById('qDebt').value;
@@ -1387,21 +1387,21 @@ function acceptAllocation() {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     btn.disabled = false;
-    btn.textContent = 'Accept Allocation — Continue';
+    btn.textContent = 'Accept Allocation â€” Continue';
     if (data.error) { showError('errStep2c', data.error); return; }
     // Email already verified (Bug 4), go straight to completion
     completePhaseZero();
   })
   .catch(function() {
     btn.disabled = false;
-    btn.textContent = 'Accept Allocation — Continue';
+    btn.textContent = 'Accept Allocation â€” Continue';
     showError('errStep2c', 'Network error. Try again.');
   });
 }
 
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Step 3: Email Verification
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 var verifyEmail = ''; // populated from /api/phase-zero/status or session
 
 function initEmailVerifyStep(email) {
@@ -1485,9 +1485,9 @@ function resendEmailOtp() {
   clearError('errEmailB');
 }
 
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Step 4: Complete
-// ═══════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function completePhaseZero() {
   fetch('/api/phase-zero/complete', {
     method: 'POST',
@@ -1500,7 +1500,7 @@ function completePhaseZero() {
 
     // Show AI bonus if applicable
     if (data.ai_guided) {
-      document.getElementById('xpBanner').textContent = '🏆 Phase Zero Complete — 100 XP + 25 Bonus Wallet Points earned. Your architecture is set.';
+      document.getElementById('xpBanner').textContent = 'ðŸ† Phase Zero Complete â€” 100 XP + 25 Bonus Wallet Points earned. Your architecture is set.';
     }
 
     renderCompletionStats(data);
@@ -1513,7 +1513,7 @@ function completePhaseZero() {
 
 function renderCompletionStats(data) {
   var html = '';
-  html += '<div class="stat-row"><span class="stat-label">Status</span><span class="stat-value" style="color:var(--accent)">VERIFIED ✓</span></div>';
+  html += '<div class="stat-row"><span class="stat-label">Status</span><span class="stat-value" style="color:var(--accent)">VERIFIED âœ“</span></div>';
   html += '<div class="stat-row"><span class="stat-label">XP Awarded</span><span class="stat-value">+100 XP</span></div>';
   if (data && data.ai_guided) {
     html += '<div class="stat-row"><span class="stat-label">AI Bonus Points</span><span class="stat-value" style="color:var(--gold)">+25 Wallet Points</span></div>';
@@ -1529,5 +1529,6 @@ function enterDashboard() {
 </script>
 <script src="/analytics-tracker.js" defer></script>
 <script defer src="/legal-disclaimer.js"></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

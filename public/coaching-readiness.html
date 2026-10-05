@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FACTS™ — Coaching Readiness Assessment</title>
+  <title>FACTSâ„¢ â€” Coaching Readiness Assessment</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Tailwind CDN fallback — privacy browsers (DuckDuckGo, Brave) block the CDN. */
+    /* Tailwind CDN fallback â€” privacy browsers (DuckDuckGo, Brave) block the CDN. */
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
     .max-w-xl { max-width: 36rem; }
@@ -67,30 +67,30 @@
       <h1 class="text-xl font-bold text-white">Coaching Readiness Rubric</h1>
       <p class="text-xs text-slate-400">100-Point Behavioral &amp; Alignment Assessment</p>
       <p class="text-xs text-slate-400" style="margin-top:4px;">
-        <a href="/app.html">← Back to dashboard</a>
-        &nbsp;·&nbsp;
+        <a href="/app.html">â† Back to dashboard</a>
+        &nbsp;Â·&nbsp;
         <a href="/paycheck-entry.html">Paycheck Engine</a>
       </p>
     </div>
     <form id="coaching-form" onsubmit="submitRubric(event)" class="space-y-4">
       <div>
-        <label class="block text-xs font-semibold text-slate-300 uppercase" for="pain_point_clarity">1. Pain Point Clarity (0–25)</label>
+        <label class="block text-xs font-semibold text-slate-300 uppercase" for="pain_point_clarity">1. Pain Point Clarity (0â€“25)</label>
         <input type="number" id="pain_point_clarity" min="0" max="25" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white mt-1">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-slate-300 uppercase" for="systems_orientation">2. Systems Orientation (0–20)</label>
+        <label class="block text-xs font-semibold text-slate-300 uppercase" for="systems_orientation">2. Systems Orientation (0â€“20)</label>
         <input type="number" id="systems_orientation" min="0" max="20" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white mt-1">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-slate-300 uppercase" for="accountability">3. Accountability (0–25)</label>
+        <label class="block text-xs font-semibold text-slate-300 uppercase" for="accountability">3. Accountability (0â€“25)</label>
         <input type="number" id="accountability" min="0" max="25" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white mt-1">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-slate-300 uppercase" for="implementation_speed">4. Implementation Speed (0–15)</label>
+        <label class="block text-xs font-semibold text-slate-300 uppercase" for="implementation_speed">4. Implementation Speed (0â€“15)</label>
         <input type="number" id="implementation_speed" min="0" max="15" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white mt-1">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-slate-300 uppercase" for="value_alignment">5. Value Alignment (0–15)</label>
+        <label class="block text-xs font-semibold text-slate-300 uppercase" for="value_alignment">5. Value Alignment (0â€“15)</label>
         <input type="number" id="value_alignment" min="0" max="15" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white mt-1">
       </div>
       <p class="text-xs text-slate-400">Running total: <span id="live-total">0</span> / 100</p>
@@ -189,11 +189,12 @@
           setStatus('Evaluated. Log in to save this score to your record.', 'ok');
         }
       } catch (err) {
-        setStatus('Network error — try again.', 'error');
+        setStatus('Network error â€” try again.', 'error');
       } finally {
         btn.disabled = false;
       }
     }
   </script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

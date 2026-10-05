@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FACTS">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <title>Rate Radar — Find Better Deals | FACTS</title>
+  <title>Rate Radar â€” Find Better Deals | FACTS</title>
   <meta name="description" content="Track every recurring bill, scan statements, and let AI find better deals. FACTS Rate Radar.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1f2e'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='%23c9a227'%3E📡%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1f2e'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='%23c9a227'%3EðŸ“¡%3C/text%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -98,29 +98,29 @@
 </head>
 <body>
 
-<!-- ── Nav ──────────────────────────────────────────────────────────────── -->
+<!-- â”€â”€ Nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <nav style="background:rgba(13,17,23,0.97); border-bottom:1px solid rgba(255,255,255,0.07); position:sticky; top:0; z-index:40; backdrop-filter:blur(10px);">
   <div style="max-width:1100px; margin:0 auto; padding:0 1rem; display:flex; align-items:center; justify-content:space-between; height:56px;">
     <div style="display:flex; align-items:center; gap:0.75rem;">
       <a href="/app" style="color:#64748b; text-decoration:none; font-size:0.875rem; display:flex; align-items:center; gap:0.4rem;">
-        ← App
+        â† App
       </a>
       <span style="color:#2d3748;">|</span>
-      <span style="font-weight:700; font-size:1rem;" class="gold-text">📡 Rate Radar</span>
+      <span style="font-weight:700; font-size:1rem;" class="gold-text">ðŸ“¡ Rate Radar</span>
     </div>
     <div style="display:flex; gap:0.5rem;">
-      <button onclick="openScanModal()" class="btn-ghost" style="padding:0.4rem 0.875rem; border-radius:0.5rem; font-size:0.875rem;">📷 Scan Bill</button>
+      <button onclick="openScanModal()" class="btn-ghost" style="padding:0.4rem 0.875rem; border-radius:0.5rem; font-size:0.875rem;">ðŸ“· Scan Bill</button>
       <button onclick="openAddModal()" class="btn-gold" style="padding:0.4rem 0.875rem; border-radius:0.5rem; font-size:0.875rem;">+ Add Bill</button>
     </div>
   </div>
 </nav>
 
-<!-- ── Main ─────────────────────────────────────────────────────────────── -->
+<!-- â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div style="max-width:1100px; margin:0 auto; padding:1.5rem 1rem 5rem;">
 
   <!-- Locked state (free tier) -->
   <div id="locked-state" style="display:none; text-align:center; padding:4rem 1rem;">
-    <div style="font-size:3rem; margin-bottom:1rem;">🔒</div>
+    <div style="font-size:3rem; margin-bottom:1rem;">ðŸ”’</div>
     <h2 style="font-size:1.5rem; font-weight:700; margin:0 0 0.5rem;" class="gold-text">Rate Radar</h2>
     <p style="color:#64748b; max-width:400px; margin:0 auto 1.5rem;">Find better deals on every recurring bill. Available on Individual plan and above.</p>
     <a href="/tier-upgrade" class="btn-gold" style="display:inline-block; padding:0.75rem 2rem; border-radius:0.5rem; text-decoration:none; font-size:0.9375rem;">Upgrade to Unlock</a>
@@ -133,24 +133,24 @@
     <div id="dashboard-cards" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:1.5rem;">
       <div class="card-savings" style="padding:1.25rem;">
         <div style="font-size:0.75rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.5rem;">Monthly Spend</div>
-        <div id="total-monthly" style="font-size:1.75rem; font-weight:800; color:#f1f5f9;">—</div>
-        <div id="bill-count" style="font-size:0.8125rem; color:#64748b; margin-top:0.25rem;">—</div>
+        <div id="total-monthly" style="font-size:1.75rem; font-weight:800; color:#f1f5f9;">â€”</div>
+        <div id="bill-count" style="font-size:0.8125rem; color:#64748b; margin-top:0.25rem;">â€”</div>
       </div>
       <div class="card-emerald" style="padding:1.25rem;">
         <div style="font-size:0.75rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.5rem;">Potential Monthly Savings</div>
-        <div id="total-savings" style="font-size:1.75rem; font-weight:800;" class="emerald-text">—</div>
-        <div id="annual-savings" style="font-size:0.8125rem; color:#64748b; margin-top:0.25rem;">—</div>
+        <div id="total-savings" style="font-size:1.75rem; font-weight:800;" class="emerald-text">â€”</div>
+        <div id="annual-savings" style="font-size:0.8125rem; color:#64748b; margin-top:0.25rem;">â€”</div>
       </div>
       <div class="card" style="padding:1.25rem;">
         <div style="font-size:0.75rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.5rem;">Quick Win</div>
-        <div id="quick-win-text" style="font-size:0.9375rem; font-weight:700; color:#f1f5f9;">—</div>
-        <div id="quick-win-sub" style="font-size:0.8125rem; color:#64748b; margin-top:0.25rem;">—</div>
+        <div id="quick-win-text" style="font-size:0.9375rem; font-weight:700; color:#f1f5f9;">â€”</div>
+        <div id="quick-win-sub" style="font-size:0.8125rem; color:#64748b; margin-top:0.25rem;">â€”</div>
       </div>
     </div>
 
     <!-- FACTS allocation suggestion -->
     <div id="facts-suggestion" class="card-gold" style="padding:1rem 1.25rem; margin-bottom:1.5rem; display:none; align-items:flex-start; gap:0.875rem;">
-      <span style="font-size:1.25rem; flex-shrink:0;">💡</span>
+      <span style="font-size:1.25rem; flex-shrink:0;">ðŸ’¡</span>
       <div>
         <div id="facts-suggestion-text" style="font-size:0.9375rem; color:#f1f5f9; font-weight:600;"></div>
         <div id="facts-buckets" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem;"></div>
@@ -169,7 +169,7 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
         <h3 style="font-size:1rem; font-weight:700; margin:0; color:#94a3b8;">Tracked Bills</h3>
         <button onclick="refreshAllComparisons()" class="btn-ghost" style="padding:0.4rem 0.875rem; border-radius:0.5rem; font-size:0.8125rem; display:flex; align-items:center; gap:0.4rem;">
-          <span id="refresh-all-icon">🔄</span> Refresh All Rates
+          <span id="refresh-all-icon">ðŸ”„</span> Refresh All Rates
         </button>
       </div>
       <div id="bills-list">
@@ -199,15 +199,15 @@
   </div>
 </div>
 
-<!-- ── Toast ─────────────────────────────────────────────────────────────── -->
+<!-- â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="toast" class="toast"></div>
 
-<!-- ── Add Bill Modal ─────────────────────────────────────────────────────── -->
+<!-- â”€â”€ Add Bill Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="modal-add" class="modal-backdrop" onclick="if(event.target===this) closeAddModal()">
   <div class="modal">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
       <h2 style="font-size:1.125rem; font-weight:700; margin:0;" class="gold-text">Add Bill</h2>
-      <button onclick="closeAddModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">×</button>
+      <button onclick="closeAddModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">Ã—</button>
     </div>
 
     <form id="form-add-bill" onsubmit="submitAddBill(event)">
@@ -279,12 +279,12 @@
   </div>
 </div>
 
-<!-- ── Edit Bill Modal ─────────────────────────────────────────────────────── -->
+<!-- â”€â”€ Edit Bill Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="modal-edit" class="modal-backdrop" onclick="if(event.target===this) closeEditModal()">
   <div class="modal">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
       <h2 style="font-size:1.125rem; font-weight:700; margin:0;" class="gold-text">Edit Bill</h2>
-      <button onclick="closeEditModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">×</button>
+      <button onclick="closeEditModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">Ã—</button>
     </div>
     <form id="form-edit-bill" onsubmit="submitEditBill(event)">
       <input type="hidden" id="edit-id">
@@ -355,23 +355,23 @@
   </div>
 </div>
 
-<!-- ── Scan Bill Modal ────────────────────────────────────────────────────── -->
+<!-- â”€â”€ Scan Bill Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="modal-scan" class="modal-backdrop" onclick="if(event.target===this) closeScanModal()">
   <div class="modal">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
-      <h2 style="font-size:1.125rem; font-weight:700; margin:0;" class="gold-text">📷 Scan a Bill</h2>
-      <button onclick="closeScanModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">×</button>
+      <h2 style="font-size:1.125rem; font-weight:700; margin:0;" class="gold-text">ðŸ“· Scan a Bill</h2>
+      <button onclick="closeScanModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">Ã—</button>
     </div>
 
     <div id="scan-upload-step">
       <div class="drop-zone" id="drop-zone" onclick="document.getElementById('scan-file-input').click()">
-        <div style="font-size:2.5rem; margin-bottom:0.75rem;">📄</div>
+        <div style="font-size:2.5rem; margin-bottom:0.75rem;">ðŸ“„</div>
         <div style="font-weight:600; color:#f1f5f9; margin-bottom:0.25rem;">Drop bill here or tap to upload</div>
-        <div style="font-size:0.8125rem; color:#64748b;">JPG, PNG, HEIC, PDF — up to 10 MB</div>
+        <div style="font-size:0.8125rem; color:#64748b;">JPG, PNG, HEIC, PDF â€” up to 10 MB</div>
         <input id="scan-file-input" type="file" accept="image/jpeg,image/png,image/heic,image/webp,application/pdf" style="display:none;" onchange="handleScanFile(this.files[0])">
       </div>
       <div style="text-align:center; margin-top:1rem;">
-        <button onclick="document.getElementById('scan-file-input').setAttribute('capture','environment'); document.getElementById('scan-file-input').click();" class="btn-ghost" style="padding:0.6rem 1.25rem; border-radius:0.5rem; font-size:0.875rem; margin-right:0.5rem;">📷 Use Camera</button>
+        <button onclick="document.getElementById('scan-file-input').setAttribute('capture','environment'); document.getElementById('scan-file-input').click();" class="btn-ghost" style="padding:0.6rem 1.25rem; border-radius:0.5rem; font-size:0.875rem; margin-right:0.5rem;">ðŸ“· Use Camera</button>
       </div>
     </div>
 
@@ -383,9 +383,9 @@
 
     <div id="scan-review-step" style="display:none;">
       <div class="card-emerald" style="padding:0.875rem 1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem;">
-        <span style="font-size:1.25rem;">✅</span>
+        <span style="font-size:1.25rem;">âœ…</span>
         <div>
-          <div style="font-weight:600; font-size:0.9375rem;">Bill extracted — review and confirm</div>
+          <div style="font-weight:600; font-size:0.9375rem;">Bill extracted â€” review and confirm</div>
           <div style="font-size:0.8125rem; color:#64748b;">Low-confidence fields are highlighted. Edit any field before saving.</div>
         </div>
       </div>
@@ -436,13 +436,13 @@
       </div>
 
       <div style="display:flex; gap:0.75rem; margin-top:1.25rem;">
-        <button onclick="resetScanModal()" class="btn-ghost" style="flex:1; padding:0.75rem; border-radius:0.5rem;">↩ Try Again</button>
-        <button onclick="saveScanBill()" id="btn-scan-save" class="btn-emerald" style="flex:2; padding:0.75rem; border-radius:0.5rem; font-size:0.9375rem;">✅ Save Bill</button>
+        <button onclick="resetScanModal()" class="btn-ghost" style="flex:1; padding:0.75rem; border-radius:0.5rem;">â†© Try Again</button>
+        <button onclick="saveScanBill()" id="btn-scan-save" class="btn-emerald" style="flex:2; padding:0.75rem; border-radius:0.5rem; font-size:0.9375rem;">âœ… Save Bill</button>
       </div>
     </div>
 
     <div id="scan-error-step" style="display:none; text-align:center; padding:1.5rem 0;">
-      <div style="font-size:2.5rem; margin-bottom:0.75rem;">⚠️</div>
+      <div style="font-size:2.5rem; margin-bottom:0.75rem;">âš ï¸</div>
       <div style="font-weight:600; color:#f87171; margin-bottom:0.5rem;" id="scan-error-msg">Couldn't read this bill.</div>
       <div style="font-size:0.875rem; color:#64748b; margin-bottom:1.25rem;">Try a clearer image, or add the bill manually.</div>
       <div style="display:flex; gap:0.75rem; justify-content:center;">
@@ -453,19 +453,19 @@
   </div>
 </div>
 
-<!-- ── Comparison Detail Modal ────────────────────────────────────────────── -->
+<!-- â”€â”€ Comparison Detail Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 <div id="modal-comparison" class="modal-backdrop" onclick="if(event.target===this) closeComparisonModal()">
   <div class="modal" style="max-width:620px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
       <h2 style="font-size:1.125rem; font-weight:700; margin:0;" class="gold-text">AI Rate Comparison</h2>
-      <button onclick="closeComparisonModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">×</button>
+      <button onclick="closeComparisonModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">Ã—</button>
     </div>
     <div id="comparison-modal-content"></div>
   </div>
 </div>
 
 <script>
-// ─── State ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let bills = [];
 let dashboardData = {};
 let scanFileUrl = null;
@@ -484,7 +484,7 @@ const CATEGORY_COLORS = {
   utilities:'#60a5fa', memberships:'#34d399', other:'#94a3b8'
 };
 
-// ─── Init ──────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function init() {
   try {
     await Promise.all([loadDashboard(), loadBills()]);
@@ -511,7 +511,7 @@ async function apiFetch(path, opts = {}) {
   return res.json();
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadDashboard() {
   const data = await apiFetch('/dashboard');
   dashboardData = data;
@@ -549,7 +549,7 @@ async function loadDashboard() {
   }
 }
 
-// ─── Bills list ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Bills list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadBills() {
   const data = await apiFetch('/bills');
   bills = data.bills || [];
@@ -562,11 +562,11 @@ function renderBills() {
   const el = document.getElementById('bills-list');
   if (!bills.length) {
     el.innerHTML = `<div style="text-align:center;padding:3rem;color:#64748b;">
-      <div style="font-size:2.5rem;margin-bottom:0.75rem;">📋</div>
+      <div style="font-size:2.5rem;margin-bottom:0.75rem;">ðŸ“‹</div>
       <div style="font-weight:600;color:#f1f5f9;margin-bottom:0.5rem;">No bills tracked yet</div>
       <div style="margin-bottom:1.25rem;">Add a bill manually or scan a statement to get started.</div>
       <div style="display:flex;gap:0.75rem;justify-content:center;">
-        <button onclick="openScanModal()" class="btn-ghost" style="padding:0.65rem 1.25rem;border-radius:0.5rem;">📷 Scan Bill</button>
+        <button onclick="openScanModal()" class="btn-ghost" style="padding:0.65rem 1.25rem;border-radius:0.5rem;">ðŸ“· Scan Bill</button>
         <button onclick="openAddModal()" class="btn-gold" style="padding:0.65rem 1.25rem;border-radius:0.5rem;">+ Add Manually</button>
       </div>
     </div>`;
@@ -605,16 +605,16 @@ function renderBills() {
             </div>
             <div style="font-size:0.8125rem;color:#64748b;margin-top:0.25rem;">
               $${parseFloat(bill.amount).toFixed(2)} ${bill.frequency}
-              ${bill.monthly_equivalent !== bill.amount ? `· $${parseFloat(bill.monthly_equivalent).toFixed(2)}/mo equiv.` : ''}
-              ${bill.next_payment_date ? `· Next: ${formatDate(bill.next_payment_date)}` : ''}
-              ${bill.checked_at ? `<span style="color:#475569;"> · Checked ${timeAgo(bill.checked_at)}</span>` : ''}
+              ${bill.monthly_equivalent !== bill.amount ? `Â· $${parseFloat(bill.monthly_equivalent).toFixed(2)}/mo equiv.` : ''}
+              ${bill.next_payment_date ? `Â· Next: ${formatDate(bill.next_payment_date)}` : ''}
+              ${bill.checked_at ? `<span style="color:#475569;"> Â· Checked ${timeAgo(bill.checked_at)}</span>` : ''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">
-            <button onclick="openEditModal(${bill.id})" class="btn-ghost" style="padding:0.35rem 0.625rem;border-radius:0.375rem;font-size:0.75rem;" title="Edit bill">✏️</button>
-            <button onclick="runComparison(${bill.id})" class="btn-ghost" style="padding:0.35rem 0.625rem;border-radius:0.375rem;font-size:0.75rem;" title="Refresh rates">🔄</button>
+            <button onclick="openEditModal(${bill.id})" class="btn-ghost" style="padding:0.35rem 0.625rem;border-radius:0.375rem;font-size:0.75rem;" title="Edit bill">âœï¸</button>
+            <button onclick="runComparison(${bill.id})" class="btn-ghost" style="padding:0.35rem 0.625rem;border-radius:0.375rem;font-size:0.75rem;" title="Refresh rates">ðŸ”„</button>
             ${hasSavings ? `<button onclick="openComparisonModal(${bill.id})" class="btn-emerald" style="padding:0.35rem 0.75rem;border-radius:0.375rem;font-size:0.75rem;">View Deals</button>` : `<button onclick="runComparison(${bill.id})" class="btn-ghost" style="padding:0.35rem 0.75rem;border-radius:0.375rem;font-size:0.75rem;">Find Deals</button>`}
-            <button onclick="deleteBill(${bill.id})" class="btn-danger" style="padding:0.35rem 0.625rem;border-radius:0.375rem;font-size:0.75rem;" title="Delete">🗑</button>
+            <button onclick="deleteBill(${bill.id})" class="btn-danger" style="padding:0.35rem 0.625rem;border-radius:0.375rem;font-size:0.75rem;" title="Delete">ðŸ—‘</button>
           </div>
         </div>
       </div>`;
@@ -631,7 +631,7 @@ function renderComparisons() {
 
   if (!sorted.length) {
     el.innerHTML = `<div style="text-align:center;padding:3rem;color:#64748b;">
-      <div style="font-size:2.5rem;margin-bottom:0.75rem;">🤖</div>
+      <div style="font-size:2.5rem;margin-bottom:0.75rem;">ðŸ¤–</div>
       <div style="font-weight:600;color:#f1f5f9;margin-bottom:0.5rem;">No comparisons run yet</div>
       <div style="margin-bottom:1.25rem;">Add bills and click "Find Deals" or "Refresh All Rates" to run AI analysis.</div>
     </div>`;
@@ -645,7 +645,7 @@ function renderComparisons() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.875rem;">
         <div>
           <div style="font-weight:700;font-size:0.9375rem;">${escHtml(bill.provider)}</div>
-          <div style="font-size:0.8125rem;color:#64748b;">${bill.category} · $${parseFloat(bill.monthly_equivalent).toFixed(2)}/mo current</div>
+          <div style="font-size:0.8125rem;color:#64748b;">${bill.category} Â· $${parseFloat(bill.monthly_equivalent).toFixed(2)}/mo current</div>
         </div>
         <span class="savings-badge" style="font-size:0.875rem;padding:0.3rem 0.75rem;">Save $${parseFloat(bill.potential_savings).toFixed(2)}/mo</span>
       </div>
@@ -670,7 +670,7 @@ function renderComparisons() {
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <div style="font-weight:800;font-size:1rem;color:#34d399;">$${parseFloat(alt.monthly_amount).toFixed(2)}/mo</div>
-            <div style="font-size:0.75rem;color:#34d399;font-weight:600;">−$${parseFloat(alt.monthly_savings).toFixed(2)}/mo</div>
+            <div style="font-size:0.75rem;color:#34d399;font-weight:600;">âˆ’$${parseFloat(alt.monthly_savings).toFixed(2)}/mo</div>
             <div style="font-size:0.75rem;color:#64748b;">$${parseFloat(alt.annual_savings).toFixed(0)}/yr</div>
           </div>
         </div>
@@ -694,7 +694,7 @@ function renderDueSoon() {
     html += `<div class="bill-row" style="padding:0.875rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-weight:700;">${escHtml(b.provider)}</div>
-        <div style="font-size:0.8125rem;color:#64748b;">${b.category} · Due ${formatDate(b.next_payment_date)}</div>
+        <div style="font-size:0.8125rem;color:#64748b;">${b.category} Â· Due ${formatDate(b.next_payment_date)}</div>
       </div>
       <div style="font-weight:700;font-size:1.0625rem;color:#fbbf24;">$${parseFloat(b.amount).toFixed(2)}</div>
     </div>`;
@@ -702,7 +702,7 @@ function renderDueSoon() {
   el.innerHTML = html;
 }
 
-// ─── Tab switching ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function switchTab(tab) {
   ['bills','comparison','due-soon'].forEach(t => {
     document.getElementById(`panel-${t}`).style.display = t === tab ? 'block' : 'none';
@@ -710,7 +710,7 @@ function switchTab(tab) {
   });
 }
 
-// ─── Add Bill modal ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Add Bill modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openAddModal() { document.getElementById('modal-add').classList.add('open'); }
 function closeAddModal() { document.getElementById('modal-add').classList.remove('open'); document.getElementById('form-add-bill').reset(); }
 
@@ -743,16 +743,16 @@ async function submitAddBill(e) {
       }),
     });
     closeAddModal();
-    showToast('✅ Bill added successfully');
+    showToast('âœ… Bill added successfully');
     await Promise.all([loadDashboard(), loadBills()]);
   } catch (err) {
-    showToast('❌ ' + (err.error || 'Failed to add bill'), 'error');
+    showToast('âŒ ' + (err.error || 'Failed to add bill'), 'error');
   } finally {
     btn.disabled = false; btn.textContent = 'Add Bill';
   }
 }
 
-// ─── Edit Bill modal ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Edit Bill modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openEditModal(billId) {
   const bill = bills.find(b => b.id === billId);
   if (!bill) return;
@@ -806,16 +806,16 @@ async function submitEditBill(e) {
       }),
     });
     closeEditModal();
-    showToast('✅ Bill updated');
+    showToast('âœ… Bill updated');
     await Promise.all([loadDashboard(), loadBills()]);
   } catch (err) {
-    showToast('❌ ' + (err.error || 'Failed to update bill'), 'error');
+    showToast('âŒ ' + (err.error || 'Failed to update bill'), 'error');
   } finally {
     btn.disabled = false; btn.textContent = 'Save Changes';
   }
 }
 
-// ─── Delete Bill ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Delete Bill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function deleteBill(id) {
   if (!confirm('Remove this bill from Rate Radar?')) return;
   await apiFetch('/bills/' + id, { method: 'DELETE' });
@@ -823,15 +823,15 @@ async function deleteBill(id) {
   await Promise.all([loadDashboard(), loadBills()]);
 }
 
-// ─── Run Comparison ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Run Comparison â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function runComparison(billId) {
-  showToast('🤖 AI is searching for better rates...');
+  showToast('ðŸ¤– AI is searching for better rates...');
   try {
     const result = await apiFetch('/bills/' + billId + '/compare', { method: 'POST' });
-    showToast(`✅ Found ${result.alternatives.length} alternatives — save up to $${result.potential_savings.toFixed(2)}/mo`);
+    showToast(`âœ… Found ${result.alternatives.length} alternatives â€” save up to $${result.potential_savings.toFixed(2)}/mo`);
     await Promise.all([loadDashboard(), loadBills()]);
   } catch (err) {
-    showToast('❌ ' + (err.error || 'Comparison failed. Try again.'), 'error');
+    showToast('âŒ ' + (err.error || 'Comparison failed. Try again.'), 'error');
   }
 }
 
@@ -840,16 +840,16 @@ async function refreshAllComparisons() {
   icon.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span>';
   try {
     const result = await apiFetch('/compare-all', { method: 'POST' });
-    showToast(`🔄 Running comparisons for ${result.queued} bills — refresh in ~30s`);
+    showToast(`ðŸ”„ Running comparisons for ${result.queued} bills â€” refresh in ~30s`);
     setTimeout(() => Promise.all([loadDashboard(), loadBills()]), 35000);
   } catch (err) {
-    showToast('❌ ' + (err.error || 'Failed to start refresh'), 'error');
+    showToast('âŒ ' + (err.error || 'Failed to start refresh'), 'error');
   } finally {
-    setTimeout(() => { icon.innerHTML = '🔄'; }, 3000);
+    setTimeout(() => { icon.innerHTML = 'ðŸ”„'; }, 3000);
   }
 }
 
-// ─── Comparison Detail Modal ──────────────────────────────────────────────────
+// â”€â”€â”€ Comparison Detail Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function openComparisonModal(billId) {
   document.getElementById('modal-comparison').classList.add('open');
   const el = document.getElementById('comparison-modal-content');
@@ -898,7 +898,7 @@ async function openComparisonModal(billId) {
     html += `<div style="font-size:0.75rem;color:#475569;margin-top:0.875rem;">Comparison run: ${timeAgo(comparison.checked_at)}</div>`;
     html += `<div style="margin-top:1.25rem;display:flex;gap:0.75rem;">
       <button onclick="closeComparisonModal()" class="btn-ghost" style="flex:1;padding:0.75rem;border-radius:0.5rem;">Close</button>
-      <button onclick="runComparison(${billId}); closeComparisonModal();" class="btn-gold" style="flex:1;padding:0.75rem;border-radius:0.5rem;">🔄 Refresh Rates</button>
+      <button onclick="runComparison(${billId}); closeComparisonModal();" class="btn-gold" style="flex:1;padding:0.75rem;border-radius:0.5rem;">ðŸ”„ Refresh Rates</button>
     </div>`;
 
     el.innerHTML = html;
@@ -909,7 +909,7 @@ async function openComparisonModal(billId) {
 
 function closeComparisonModal() { document.getElementById('modal-comparison').classList.remove('open'); }
 
-// ─── Scan Bill modal ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Scan Bill modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openScanModal() { document.getElementById('modal-scan').classList.add('open'); resetScanModal(); }
 function closeScanModal() { document.getElementById('modal-scan').classList.remove('open'); }
 
@@ -981,16 +981,16 @@ async function saveScanBill() {
       }),
     });
     closeScanModal();
-    showToast('✅ Bill saved from scan');
+    showToast('âœ… Bill saved from scan');
     await Promise.all([loadDashboard(), loadBills()]);
   } catch (err) {
-    showToast('❌ ' + (err.error || 'Failed to save bill'), 'error');
+    showToast('âŒ ' + (err.error || 'Failed to save bill'), 'error');
   } finally {
-    btn.disabled = false; btn.textContent = '✅ Save Bill';
+    btn.disabled = false; btn.textContent = 'âœ… Save Bill';
   }
 }
 
-// ─── Drag & Drop ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Drag & Drop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function setupDragDrop() {
   const dz = document.getElementById('drop-zone');
   if (!dz) return;
@@ -1003,7 +1003,7 @@ function setupDragDrop() {
   });
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showToast(msg, type = 'info') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1038,9 +1038,10 @@ function isDueWithin7(dateStr) {
   return diff >= 0 && diff <= 7 * 24 * 60 * 60 * 1000;
 }
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Boot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 init();
 </script>
 <script defer src="/legal-disclaimer.js"></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

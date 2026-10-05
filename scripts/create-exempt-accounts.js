@@ -15,6 +15,7 @@
  */
 
 require('dotenv').config();
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 
@@ -27,8 +28,13 @@ const ACCOUNTS = [
   { email: 'dianes3cps@gmail.com', name: 'Diane' },
 ];
 
-// Temporary password — users should reset via Forgot Password after first login
-const TEMP_PASSWORD = 'FamilyFacts2026!';
+// Temporary password — from env, or generated once per run. Users should reset via Forgot Password.
+const TEMP_PASSWORD =
+  process.env.EXEMPT_ACCOUNT_TEMP_PASSWORD
+  || process.env.BETA_SEED_PASSWORD
+  || crypto.randomBytes(16).toString('hex');
+const GENERATED_TEMP_PASSWORD =
+  !process.env.EXEMPT_ACCOUNT_TEMP_PASSWORD && !process.env.BETA_SEED_PASSWORD;
 
 async function generateUniqueReferralCode(client) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -59,7 +65,11 @@ async function seedUserAllocations(client, userId) {
 
 async function main() {
   console.log('=== Creating Future Generations Accounts ===\n');
-  console.log(`Temporary password: ${TEMP_PASSWORD}`);
+  if (GENERATED_TEMP_PASSWORD) {
+    console.log(`Temporary password: ${TEMP_PASSWORD} (generated — store securely; set EXEMPT_ACCOUNT_TEMP_PASSWORD to pin)`);
+  } else {
+    console.log('Temporary password: (from EXEMPT_ACCOUNT_TEMP_PASSWORD / BETA_SEED_PASSWORD env)');
+  }
   console.log('(Users should reset via Forgot Password after first login)\n');
 
   const passwordHash = await bcrypt.hash(TEMP_PASSWORD, 12);
@@ -125,8 +135,12 @@ async function main() {
     console.log('  ✓ Eligible for XP, rewards, Sovereign Credits');
     console.log('  ✗ NO admin panel access');
     console.log('  ✗ NOT eligible for affiliate program (no commissions, no referral payouts)');
-    console.log(`  ✓ Temporary password: ${TEMP_PASSWORD}`);
-    console.log('     → Share with users or have them use Forgot Password to set their own');
+    if (GENERATED_TEMP_PASSWORD) {
+      console.log(`  ✓ Temporary password (this run only): ${TEMP_PASSWORD}`);
+    } else {
+      console.log('  ✓ Temporary password sourced from env (not printed again)');
+    }
+    console.log('     → Share via password manager, or have users use Forgot Password');
   } finally {
     client.release();
     await pool.end();

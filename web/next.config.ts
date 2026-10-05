@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
     return {
       afterFiles: [
         { source: '/api/auth/:path*', destination: `${expressOrigin}/api/auth/:path*` },
+        { source: '/api/admin/:path*', destination: `${expressOrigin}/api/admin/:path*` },
+        { source: '/api/beta/:path*', destination: `${expressOrigin}/api/beta/:path*` },
         { source: '/api/engine/:path*', destination: `${expressOrigin}/api/engine/:path*` },
         { source: '/api/mod_plaid/:path*', destination: `${expressOrigin}/api/mod_plaid/:path*` },
         { source: '/api/nda/accept', destination: `${expressOrigin}/api/nda/accept` },

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ShieldCheck,
   FileText,
@@ -9,27 +9,40 @@ import {
   Lock,
   ArrowRight,
   Sparkles,
-  User
+  User,
+  AlertTriangle
 } from 'lucide-react';
 import { SovereignPassportCard } from './SovereignPassportCard';
+import { registerBeta } from '@/lib/auth';
 
 // SETTING THIS TO 'false' DISABLES THE NDA STEP FOR POST-BETA LAUNCH
 const IS_BETA_MODE = true;
 
 type Step = 'code' | 'nda' | 'profile' | 'passport';
+type RelationshipTag = 'STANDARD' | 'FAMILY' | 'CLOSE_CONTACT';
+
+const DISCLOSURE_FALLBACK =
+  'You were invited by a personal contact / family member of the team. Standard FACTS™ Affiliate Program terms and standard payout schedules apply.';
 
 export const BetaLaunchWizard: React.FC = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('code');
 
   const [formData, setFormData] = useState({
     referralCode: '',
     fullName: '',
     email: '',
+    password: '',
+    relationshipTag: 'STANDARD' as RelationshipTag,
     ndaAccepted: false,
     ndaSignature: '',
     primaryPriority: 'Eliminate High-Interest Credit Card Debt'
   });
+
+  const [disclosure, setDisclosure] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [issuedPassport, setIssuedPassport] = useState<{
     founderName: string;
@@ -52,6 +65,37 @@ export const BetaLaunchWizard: React.FC = () => {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const code = formData.referralCode.trim();
+    if (!code) {
+      setDisclosure(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/auth/invite-context?code=${encodeURIComponent(code)}`,
+          { credentials: 'include' }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (data.showPersonalContactDisclosure) {
+          setDisclosure(data.disclosure || DISCLOSURE_FALLBACK);
+        } else {
+          setDisclosure(null);
+        }
+      } catch {
+        if (!cancelled) setDisclosure(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.referralCode]);
+
   const handleNextFromCode = () => {
     if (IS_BETA_MODE) {
       setCurrentStep('nda');
@@ -61,15 +105,43 @@ export const BetaLaunchWizard: React.FC = () => {
   };
 
   const handleCompleteOnboarding = async () => {
-    const mockResponse = {
-      founderName: formData.fullName || 'Founding Member',
-      founderNumber: 42,
-      sovereignScore: 28,
-      targetMonthsToIndependence: 36
-    };
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      const result = await registerBeta({
+        email: formData.email.trim(),
+        password: formData.password,
+        inviteCode: formData.referralCode.trim(),
+        name: formData.fullName.trim(),
+        fullName: formData.fullName.trim(),
+        relationshipTag: formData.relationshipTag,
+        ndaAccepted: formData.ndaAccepted
+      });
 
-    setIssuedPassport(mockResponse);
-    setCurrentStep('passport');
+      if (result.showPersonalContactDisclosure) {
+        setDisclosure(result.disclosure || DISCLOSURE_FALLBACK);
+      }
+
+      setIssuedPassport({
+        founderName: formData.fullName || 'Founding Member',
+        founderNumber: 42,
+        sovereignScore: 28,
+        targetMonthsToIndependence: 36
+      });
+      setCurrentStep('passport');
+
+      if (!result.requiresNda) {
+        // Session already established; allow pause on passport then dashboard
+        setTimeout(() => router.push('/dashboard'), 2500);
+      }
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        (err instanceof Error ? err.message : 'Registration failed');
+      setSubmitError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -96,6 +168,13 @@ export const BetaLaunchWizard: React.FC = () => {
         </div>
       )}
 
+      {disclosure ? (
+        <div className="mb-4 flex gap-3 rounded-xl border border-violet-500/40 bg-violet-950/40 p-3 text-xs leading-relaxed text-violet-100">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
+          <p>{disclosure}</p>
+        </div>
+      ) : null}
+
       {currentStep === 'code' && (
         <div className="rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-xl">
           <div className="mb-6 flex items-center gap-3">
@@ -118,16 +197,20 @@ export const BetaLaunchWizard: React.FC = () => {
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                   <span className="font-mono font-bold tracking-wider">{formData.referralCode}</span>
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500/80">
-                  Auto-Verified
-                </span>
+                <button
+                  type="button"
+                  className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 hover:text-white"
+                  onClick={() => setFormData((prev) => ({ ...prev, referralCode: '' }))}
+                >
+                  Change
+                </button>
               </div>
             ) : (
               <input
                 type="text"
                 value={formData.referralCode}
                 onChange={(e) => setFormData((prev) => ({ ...prev, referralCode: e.target.value }))}
-                placeholder="e.g. SOVEREIGN-2026"
+                placeholder="e.g. FACTS-XXXX-XXXX"
                 className="w-full rounded-xl border border-slate-800 bg-slate-900 p-3 text-sm text-white focus:border-amber-400 focus:outline-none"
               />
             )}
@@ -243,15 +326,60 @@ export const BetaLaunchWizard: React.FC = () => {
                 className="w-full rounded-xl border border-slate-800 bg-slate-900 p-3 text-sm text-white focus:border-amber-400 focus:outline-none"
               />
             </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-300">Password</label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                placeholder="At least 8 characters"
+                className="w-full rounded-xl border border-slate-800 bg-slate-900 p-3 text-sm text-white focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-300">
+                Relationship to Team / Sponsor
+              </label>
+              <select
+                name="relationshipTag"
+                value={formData.relationshipTag}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    relationshipTag: e.target.value as RelationshipTag
+                  }))
+                }
+                className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none"
+              >
+                <option value="STANDARD">Standard User</option>
+                <option value="FAMILY">Family Member</option>
+                <option value="CLOSE_CONTACT">Close Contact / Personal Network</option>
+              </select>
+              <p className="text-[11px] text-slate-500">
+                Family / Close Contact is a disclosure tag only — standard affiliate payout rates always apply.
+              </p>
+            </div>
           </div>
+
+          {submitError ? (
+            <p className="mt-4 text-xs text-red-300">{submitError}</p>
+          ) : null}
 
           <button
             type="button"
-            onClick={handleCompleteOnboarding}
-            disabled={!formData.fullName || !formData.email}
+            onClick={() => void handleCompleteOnboarding()}
+            disabled={
+              submitting ||
+              !formData.fullName ||
+              !formData.email ||
+              formData.password.length < 8
+            }
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 py-3.5 text-sm font-bold text-slate-950 transition-colors hover:bg-amber-300 disabled:opacity-50"
           >
-            Generate Sovereign Passport <Sparkles className="h-4 w-4" />
+            {submitting ? 'Creating account…' : 'Generate Sovereign Passport'}{' '}
+            <Sparkles className="h-4 w-4" />
           </button>
         </div>
       )}

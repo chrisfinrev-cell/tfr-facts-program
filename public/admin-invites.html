@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FACTS Founder Admin — Invite Tracker</title>
+    <title>FACTS Founder Admin â€” Invite Tracker</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 30px; }
         .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
@@ -98,7 +98,7 @@
                         : '<span class="badge badge-yellow">Pending</span>'}</td>
                     <td>${u.is_admin
                         ? '<span class="badge badge-yellow">Admin (blocked)</span>'
-                        : `<button onclick="setIncomeEligibility(${u.user_id}, ${u.income_programs_blocked ? 'false' : 'true'})">${u.income_programs_blocked ? 'Blocked — Allow' : 'Eligible — Block'}</button>`}</td>
+                        : `<button onclick="setIncomeEligibility(${u.user_id}, ${u.income_programs_blocked ? 'false' : 'true'})">${u.income_programs_blocked ? 'Blocked â€” Allow' : 'Eligible â€” Block'}</button>`}</td>
                 </tr>
             `).join('');
         }
@@ -130,5 +130,6 @@
 
         loadTrackingData();
     </script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

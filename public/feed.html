@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FACTS">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <title>Feed — FACTS</title>
-  <meta name="description" content="Financial wisdom, CP quotes, community wins, and tips — all in one scroll.">
+  <title>Feed â€” FACTS</title>
+  <meta name="description" content="Financial wisdom, CP quotes, community wins, and tips â€” all in one scroll.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1f2e'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-weight='bold' fill='%23c9a227'%3E%E2%82%A3%3C/text%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -162,13 +162,13 @@
   <div class="max-w-2xl mx-auto px-4">
     <!-- Filter row -->
     <div class="flex items-center gap-2 py-3 overflow-x-auto" style="scrollbar-width:none;">
-      <button class="filter-pill active" data-filter="all">✨ All</button>
-      <button class="filter-pill" data-filter="quote">💛 CP Quotes</button>
-      <button class="filter-pill" data-filter="news">📰 News</button>
-      <button class="filter-pill" data-filter="story">🏆 Wins</button>
-      <button class="filter-pill" data-filter="tip">💡 Tips</button>
-      <button class="filter-pill" data-filter="digest">📋 Digest</button>
-      <button class="filter-pill" data-filter="bookmarks">🔖 Saved</button>
+      <button class="filter-pill active" data-filter="all">âœ¨ All</button>
+      <button class="filter-pill" data-filter="quote">ðŸ’› CP Quotes</button>
+      <button class="filter-pill" data-filter="news">ðŸ“° News</button>
+      <button class="filter-pill" data-filter="story">ðŸ† Wins</button>
+      <button class="filter-pill" data-filter="tip">ðŸ’¡ Tips</button>
+      <button class="filter-pill" data-filter="digest">ðŸ“‹ Digest</button>
+      <button class="filter-pill" data-filter="bookmarks">ðŸ”– Saved</button>
     </div>
     <!-- Sort row -->
     <div class="flex items-center justify-between pb-3">
@@ -187,7 +187,7 @@
   <div id="guest-banner" style="display:none;" class="mb-5 rounded-xl p-4 text-center"
        style="background:rgba(201,162,39,0.07); border:1px solid rgba(201,162,39,0.2);">
     <p class="text-sm text-slate-400 mb-2">Sign in to like, save, and comment on posts.</p>
-    <a href="/login" class="inline-block text-xs font-semibold text-gold-400 border border-gold-500 rounded-lg px-4 py-2 hover:bg-gold-500 hover:bg-opacity-10 transition-colors">Sign In →</a>
+    <a href="/login" class="inline-block text-xs font-semibold text-gold-400 border border-gold-500 rounded-lg px-4 py-2 hover:bg-gold-500 hover:bg-opacity-10 transition-colors">Sign In â†’</a>
   </div>
 
   <!-- Feed container -->
@@ -207,24 +207,24 @@
 
   <!-- End of feed -->
   <div id="feed-end" style="display:none;" class="text-center py-10 text-slate-600 text-sm">
-    <div class="text-2xl mb-2">🌟</div>
+    <div class="text-2xl mb-2">ðŸŒŸ</div>
     You're all caught up!
   </div>
 
   <!-- Empty state -->
   <div id="feed-empty" style="display:none;" class="text-center py-16 text-slate-600">
-    <div class="text-4xl mb-3">📭</div>
+    <div class="text-4xl mb-3">ðŸ“­</div>
     <p class="font-medium">Nothing here yet.</p>
     <p class="text-sm mt-1">Check back soon for new content.</p>
   </div>
 </main>
 
 <!-- Copy toast -->
-<div id="copy-toast">Copied to clipboard ✓</div>
+<div id="copy-toast">Copied to clipboard âœ“</div>
 
 <script>
 (function() {
-  // ── State ────────────────────────────────────────────────────────────────
+  // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   let currentUser = null;
   let currentFilter = 'all';
   let currentSort = 'for_you';
@@ -236,7 +236,7 @@
   const likedSet = new Set();
   const bookmarkedSet = new Set();
 
-  // ── Init ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function init() {
     await checkAuth();
     setupFilters();
@@ -245,7 +245,7 @@
     setupInfiniteScroll();
   }
 
-  // ── Auth check ───────────────────────────────────────────────────────────
+  // â”€â”€ Auth check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function checkAuth() {
     try {
       const r = await fetch('/api/auth/me');
@@ -258,7 +258,7 @@
     } catch(e) { /* non-fatal */ }
   }
 
-  // ── Filter setup ─────────────────────────────────────────────────────────
+  // â”€â”€ Filter setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function setupFilters() {
     document.querySelectorAll('[data-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -271,7 +271,7 @@
     });
   }
 
-  // ── Sort setup ───────────────────────────────────────────────────────────
+  // â”€â”€ Sort setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function setupSort() {
     document.querySelectorAll('[data-sort]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -284,7 +284,7 @@
     });
   }
 
-  // ── Reset ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function resetFeed() {
     page = 1;
     hasMore = true;
@@ -294,7 +294,7 @@
     document.getElementById('feed-empty').style.display = 'none';
   }
 
-  // ── Load feed ─────────────────────────────────────────────────────────────
+  // â”€â”€ Load feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function loadFeed(initial) {
     if (isLoading || !hasMore) return;
     isLoading = true;
@@ -348,13 +348,13 @@
     }
   }
 
-  // ── Append post card ──────────────────────────────────────────────────────
+  // â”€â”€ Append post card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function appendPost(post) {
     const card = buildCard(post);
     document.getElementById('feed-container').appendChild(card);
   }
 
-  // ── Build card ────────────────────────────────────────────────────────────
+  // â”€â”€ Build card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function buildCard(post) {
     const div = document.createElement('div');
     div.dataset.postId = post.id;
@@ -363,7 +363,7 @@
     const isLiked = likedSet.has(post.id);
     const isBookmarked = bookmarkedSet.has(post.id);
     const badgeClass = 'badge-' + post.type;
-    const badgeLabel = { quote: '💛 CP Quote', news: '📰 News', story: '🏆 Win', tip: '💡 Tip', digest: '📋 Digest' }[post.type] || post.type;
+    const badgeLabel = { quote: 'ðŸ’› CP Quote', news: 'ðŸ“° News', story: 'ðŸ† Win', tip: 'ðŸ’¡ Tip', digest: 'ðŸ“‹ Digest' }[post.type] || post.type;
     const timeAgo = formatRelTime(post.created_at);
     const isPro = currentUser && currentUser.is_pro;
 
@@ -371,18 +371,18 @@
       div.innerHTML = `
         <div class="flex items-start justify-between mb-4">
           <span class="badge-quote text-xs font-semibold px-3 py-1 rounded-full">${badgeLabel}</span>
-          ${post.pinned ? '<span class="text-xs text-gold-400">📌 Pinned</span>' : ''}
+          ${post.pinned ? '<span class="text-xs text-gold-400">ðŸ“Œ Pinned</span>' : ''}
         </div>
         <div class="quote-mark leading-none mb-1">&ldquo;</div>
         <blockquote class="text-lg font-medium text-gold-200 leading-relaxed mb-2" style="font-family:'Space Grotesk',sans-serif;">
           ${escHtml(post.content)}
         </blockquote>
-        <p class="text-gold-500 text-sm font-semibold mt-3">— ${escHtml(post.author || 'CP')}</p>
+        <p class="text-gold-500 text-sm font-semibold mt-3">â€” ${escHtml(post.author || 'CP')}</p>
         <div class="mt-5 flex items-center gap-2 flex-wrap">
           ${actionBtn('like', post.id, isLiked, post.like_count)}
           ${actionBtn('bookmark', post.id, isBookmarked, post.bookmark_count)}
-          <button class="action-btn copy-btn" data-text="${escAttr(post.content + '\n— ' + (post.author || 'CP'))}">
-            📋 Copy
+          <button class="action-btn copy-btn" data-text="${escAttr(post.content + '\nâ€” ' + (post.author || 'CP'))}">
+            ðŸ“‹ Copy
           </button>
           <span class="ml-auto text-xs text-slate-600">${timeAgo}</span>
         </div>
@@ -397,19 +397,19 @@
             <span class="${badgeClass} text-xs font-semibold px-3 py-1 rounded-full">${badgeLabel}</span>
             ${post.category ? `<span class="text-xs text-slate-600">${escHtml(post.category)}</span>` : ''}
           </div>
-          ${post.pinned ? '<span class="text-xs text-gold-400 shrink-0">📌 Pinned</span>' : ''}
+          ${post.pinned ? '<span class="text-xs text-gold-400 shrink-0">ðŸ“Œ Pinned</span>' : ''}
         </div>
         ${post.title ? `<h3 class="text-base font-semibold text-white mb-2 leading-snug">${escHtml(post.title)}</h3>` : ''}
         <p class="text-sm text-slate-300 leading-relaxed whitespace-pre-line">${escHtml(post.content)}</p>
-        ${post.source_url ? `<a href="${escAttr(post.source_url)}" target="_blank" rel="noopener" class="inline-block mt-3 text-xs text-blue-400 hover:underline">Read more →</a>` : ''}
+        ${post.source_url ? `<a href="${escAttr(post.source_url)}" target="_blank" rel="noopener" class="inline-block mt-3 text-xs text-blue-400 hover:underline">Read more â†’</a>` : ''}
         <div class="mt-4 flex items-center gap-2 flex-wrap">
           ${actionBtn('like', post.id, isLiked, post.like_count)}
           ${actionBtn('bookmark', post.id, isBookmarked, post.bookmark_count)}
           <button class="action-btn share-btn" data-id="${post.id}" data-title="${escAttr(post.title || '')}">
-            🔗 Share
+            ðŸ”— Share
           </button>
           <span class="ml-auto text-xs text-slate-600">
-            ${post.author ? escHtml(post.author) + ' · ' : ''}${timeAgo}
+            ${post.author ? escHtml(post.author) + ' Â· ' : ''}${timeAgo}
           </span>
         </div>
         <div class="mt-4 comments-section" data-post-id="${post.id}">
@@ -451,7 +451,7 @@
   }
 
   function actionBtn(type, postId, active, count) {
-    const icon = type === 'like' ? (active ? '❤️' : '🤍') : (active ? '🔖' : '🏷️');
+    const icon = type === 'like' ? (active ? 'â¤ï¸' : 'ðŸ¤') : (active ? 'ðŸ”–' : 'ðŸ·ï¸');
     const activeClass = type === 'like' ? 'liked' : 'bookmarked';
     return `<button class="action-btn ${type}-btn ${active ? activeClass : ''}" data-post-id="${postId}">
       ${icon} <span class="${type}-count">${count > 0 ? count : ''}</span>
@@ -462,20 +462,20 @@
     const commentCount = post.comment_count || 0;
     if (!isPro && !currentUser) {
       return `<div class="pro-upsell">
-        💬 <strong style="color:#c4b5fd;">Paid members</strong> can join the conversation.
-        <a href="/pricing.html" class="ml-1 text-purple-400 hover:underline font-medium">Upgrade →</a>
+        ðŸ’¬ <strong style="color:#c4b5fd;">Paid members</strong> can join the conversation.
+        <a href="/pricing.html" class="ml-1 text-purple-400 hover:underline font-medium">Upgrade â†’</a>
       </div>`;
     }
     if (!isPro) {
       return `<div class="pro-upsell">
-        💬 <strong style="color:#c4b5fd;">Paid members</strong> can comment on posts.
-        <a href="/pricing.html" class="ml-1 text-purple-400 hover:underline font-medium">Upgrade →</a>
+        ðŸ’¬ <strong style="color:#c4b5fd;">Paid members</strong> can comment on posts.
+        <a href="/pricing.html" class="ml-1 text-purple-400 hover:underline font-medium">Upgrade â†’</a>
       </div>`;
     }
     return `
       <div class="mt-1">
         ${commentCount > 0 ? `<button class="toggle-comments text-xs text-slate-500 hover:text-slate-300 transition-colors mb-3">
-          💬 ${commentCount} comment${commentCount !== 1 ? 's' : ''} — tap to load
+          ðŸ’¬ ${commentCount} comment${commentCount !== 1 ? 's' : ''} â€” tap to load
         </button>
         <div class="comments-list space-y-3 mb-3"></div>` : ''}
         <form class="comment-form flex gap-2">
@@ -489,7 +489,7 @@
     `;
   }
 
-  // ── Like toggle ───────────────────────────────────────────────────────────
+  // â”€â”€ Like toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function toggleLike(postId, cardEl) {
     if (!currentUser) { window.location.href = '/login'; return; }
     const btn = cardEl.querySelector('.like-btn');
@@ -501,13 +501,13 @@
       likedSet.delete(postId);
       btn.classList.remove('liked');
       btn.querySelector('.like-count').textContent && (countEl.textContent = Math.max(0, parseInt(countEl.textContent || 0) - 1) || '');
-      btn.innerHTML = btn.innerHTML.replace('❤️', '🤍');
+      btn.innerHTML = btn.innerHTML.replace('â¤ï¸', 'ðŸ¤');
     } else {
       likedSet.add(postId);
       btn.classList.add('liked');
       const c = parseInt(countEl.textContent || 0) + 1;
       countEl.textContent = c;
-      btn.innerHTML = btn.innerHTML.replace('🤍', '❤️');
+      btn.innerHTML = btn.innerHTML.replace('ðŸ¤', 'â¤ï¸');
     }
 
     try {
@@ -515,7 +515,7 @@
     } catch(e) { /* revert optimistic on failure */ }
   }
 
-  // ── Bookmark toggle ───────────────────────────────────────────────────────
+  // â”€â”€ Bookmark toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function toggleBookmark(postId, cardEl) {
     if (!currentUser) { window.location.href = '/login'; return; }
     const btn = cardEl.querySelector('.bookmark-btn');
@@ -524,11 +524,11 @@
     if (isBookmarked) {
       bookmarkedSet.delete(postId);
       btn.classList.remove('bookmarked');
-      btn.innerHTML = btn.innerHTML.replace('🔖', '🏷️');
+      btn.innerHTML = btn.innerHTML.replace('ðŸ”–', 'ðŸ·ï¸');
     } else {
       bookmarkedSet.add(postId);
       btn.classList.add('bookmarked');
-      btn.innerHTML = btn.innerHTML.replace('🏷️', '🔖');
+      btn.innerHTML = btn.innerHTML.replace('ðŸ·ï¸', 'ðŸ”–');
     }
 
     try {
@@ -536,7 +536,7 @@
     } catch(e) { /* non-fatal */ }
   }
 
-  // ── Submit comment ────────────────────────────────────────────────────────
+  // â”€â”€ Submit comment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function submitComment(postId, cardEl) {
     const textarea = cardEl.querySelector('.comment-input');
     const content = textarea.value.trim();
@@ -577,7 +577,7 @@
     list.prepend(el);
   }
 
-  // ── Load comments ─────────────────────────────────────────────────────────
+  // â”€â”€ Load comments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function loadComments(postId, cardEl) {
     const toggleBtn = cardEl.querySelector('.toggle-comments');
     if (toggleBtn) toggleBtn.style.display = 'none';
@@ -600,7 +600,7 @@
     } catch(e) { /* non-fatal */ }
   }
 
-  // ── Share ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Share â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function sharePost(post) {
     const url = window.location.origin + '/feed?post=' + post.id;
     if (navigator.share) {
@@ -609,7 +609,7 @@
     copyText(url);
   }
 
-  // ── Copy ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Copy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function copyText(text) {
     navigator.clipboard.writeText(text).catch(() => {
       const ta = document.createElement('textarea');
@@ -622,7 +622,7 @@
     setTimeout(() => toast.classList.remove('show'), 2000);
   }
 
-  // ── Infinite scroll ───────────────────────────────────────────────────────
+  // â”€â”€ Infinite scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function setupInfiniteScroll() {
     const sentinel = document.getElementById('scroll-sentinel');
     const io = new IntersectionObserver((entries) => {
@@ -633,7 +633,7 @@
     io.observe(sentinel);
   }
 
-  // ── Skeleton ──────────────────────────────────────────────────────────────
+  // â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function showSkeletons(n) {
     const c = document.getElementById('feed-container');
     for (let i = 0; i < n; i++) {
@@ -660,7 +660,7 @@
     document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
   }
 
-  // ── Utils ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Utils â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function escHtml(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -677,11 +677,12 @@
     return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric' });
   }
 
-  // ── Start ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   init();
 })();
 </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

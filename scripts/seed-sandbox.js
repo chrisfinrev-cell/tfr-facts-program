@@ -6,8 +6,8 @@
  * Runs automatically during: npm run build (via migrate + seed pipeline)
  *
  * Sandbox credentials:
- *   Email:    sandbox@financial-revolution.app
- *   Password: SandboxDemo2025!
+ *   Email:    sandbox@financial-revolution.app (or SANDBOX_EMAIL)
+ *   Password: from SANDBOX_PASSWORD / BETA_SEED_PASSWORD env (never commit secrets)
  *
  * ⚠️  ENGINEER NOTE: When shipping new features that introduce new data
  *     sections or tables, ADD SAMPLE DATA HERE so the sandbox reflects
@@ -18,14 +18,19 @@
  */
 
 // Note: dotenv not needed — Render injects env vars directly in production
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-const SANDBOX_EMAIL = 'sandbox@financial-revolution.app';
-const SANDBOX_PASSWORD = 'SandboxDemo2025!';
-const SANDBOX_NAME = 'Alex Rivera (Demo)';
+const SANDBOX_EMAIL = process.env.SANDBOX_EMAIL || 'sandbox@financial-revolution.app';
+const SANDBOX_PASSWORD =
+  process.env.SANDBOX_PASSWORD
+  || process.env.BETA_SEED_PASSWORD
+  || crypto.randomBytes(16).toString('hex');
+const SANDBOX_NAME = process.env.SANDBOX_NAME || 'Alex Rivera (Demo)';
+const GENERATED_SANDBOX_PASSWORD = !process.env.SANDBOX_PASSWORD && !process.env.BETA_SEED_PASSWORD;
 
 // Category IDs (from categories table)
 const CAT = {
@@ -560,7 +565,11 @@ async function main() {
   console.log('\n🧪 SANDBOX SEED SCRIPT');
   console.log('═══════════════════════════════════════');
   console.log(`Email:    ${SANDBOX_EMAIL}`);
-  console.log(`Password: ${SANDBOX_PASSWORD}`);
+  if (GENERATED_SANDBOX_PASSWORD) {
+    console.log(`Password: ${SANDBOX_PASSWORD} (generated — store in password manager; set SANDBOX_PASSWORD to pin)`);
+  } else {
+    console.log('Password: (from SANDBOX_PASSWORD / BETA_SEED_PASSWORD env)');
+  }
   console.log('');
 
   const client = await pool.connect();
@@ -635,7 +644,11 @@ async function main() {
     console.log('═══════════════════════════════════════');
     console.log(`  Sandbox user ID : ${userId}`);
     console.log(`  Email           : ${SANDBOX_EMAIL}`);
-    console.log(`  Password        : ${SANDBOX_PASSWORD}`);
+    if (GENERATED_SANDBOX_PASSWORD) {
+      console.log(`  Password        : ${SANDBOX_PASSWORD} (generated this run)`);
+    } else {
+      console.log('  Password        : (from env — not printed)');
+    }
     console.log(`  Plan            : Pro (permanent via is_creator=true)`);
     console.log('');
 

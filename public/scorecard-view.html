@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0a0f1a">
-  <title>Financial Responsibility Scorecard — FACTS</title>
-  <meta name="description" content="View this member's Financial Responsibility Scorecard — real data proving financial discipline.">
+  <title>Financial Responsibility Scorecard â€” FACTS</title>
+  <meta name="description" content="View this member's Financial Responsibility Scorecard â€” real data proving financial discipline.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1f2e'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-weight='bold' fill='%23c9a227'%3E%E2%82%A3%3C/text%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -74,7 +74,7 @@
 <!-- FACTS Branding Header -->
 <div class="facts-bar py-3 px-4 flex items-center justify-between">
   <div class="flex items-center gap-2">
-    <span class="text-xl font-bold" style="color:#c9a227; font-family:'Space Grotesk',sans-serif;">₣</span>
+    <span class="text-xl font-bold" style="color:#c9a227; font-family:'Space Grotesk',sans-serif;">â‚£</span>
     <div>
       <div class="text-sm font-bold" style="color:#e2e8f0; font-family:'Space Grotesk',sans-serif;">FACTS</div>
       <div class="text-xs" style="color:#64748b;">Verified by FACTS Finance</div>
@@ -100,7 +100,7 @@
 
   <!-- Error State -->
   <div id="error-state" style="display:none;" class="text-center py-20">
-    <div class="text-5xl mb-4">🔗</div>
+    <div class="text-5xl mb-4">ðŸ”—</div>
     <h2 class="text-xl font-bold mb-2" style="color:#e2e8f0;">Link Not Found or Expired</h2>
     <p class="text-sm mb-6" style="color:#64748b;">This scorecard link may have been revoked or has expired (links last 30 days).</p>
     <a href="/" class="btn-primary px-6 py-2.5 inline-block text-sm rounded-xl" style="text-decoration:none;">Join FACTS</a>
@@ -117,7 +117,7 @@
       <div>
         <h1 class="text-xl font-bold" id="owner-name" style="color:#e2e8f0;">Loading...</h1>
         <div class="flex items-center gap-2 flex-wrap mt-0.5">
-          <span class="verified-badge">✓ Verified FACTS Member</span>
+          <span class="verified-badge">âœ“ Verified FACTS Member</span>
           <span class="text-xs" id="member-since" style="color:#475569;"></span>
         </div>
       </div>
@@ -137,7 +137,7 @@
               stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="490" style="transition: stroke-dashoffset 1.4s ease;"/>
           </svg>
           <div class="score-center">
-            <div id="score-num" class="text-5xl font-bold" style="color:#c9a227; font-family:'Space Grotesk',sans-serif;">—</div>
+            <div id="score-num" class="text-5xl font-bold" style="color:#c9a227; font-family:'Space Grotesk',sans-serif;">â€”</div>
             <div class="text-sm" style="color:#64748b;">/100</div>
           </div>
         </div>
@@ -145,8 +145,8 @@
         <!-- Tier + Description -->
         <div class="text-center sm:text-left">
           <div id="tier-badge" class="tier-badge mb-3 mx-auto sm:mx-0" style="width:fit-content;">
-            <span id="tier-emoji">🌱</span>
-            <span id="tier-name">—</span>
+            <span id="tier-emoji">ðŸŒ±</span>
+            <span id="tier-name">â€”</span>
           </div>
           <p id="tier-desc" class="text-sm mb-4 max-w-xs" style="color:#94a3b8;"></p>
 
@@ -159,8 +159,8 @@
 
       <!-- Transparency note -->
       <div class="mt-5 pt-4 flex items-center gap-2" style="border-top: 1px solid rgba(255,255,255,0.05);">
-        <span class="text-xs" style="color:#475569;">🔒</span>
-        <span class="text-xs" style="color:#475569;">All-or-nothing transparency — this is their complete scorecard. No cherry-picking.</span>
+        <span class="text-xs" style="color:#475569;">ðŸ”’</span>
+        <span class="text-xs" style="color:#475569;">All-or-nothing transparency â€” this is their complete scorecard. No cherry-picking.</span>
         <span class="text-xs ml-auto" id="updated-at" style="color:#334155;"></span>
       </div>
     </div>
@@ -172,27 +172,27 @@
         <div class="flex-1 text-center">
           <div class="h-2 rounded-l-full" style="background:#DC2626;"></div>
           <div class="text-xs mt-1" style="color:#f87171;">Emerging</div>
-          <div class="text-xs" style="color:#475569;">0–20</div>
+          <div class="text-xs" style="color:#475569;">0â€“20</div>
         </div>
         <div class="flex-1 text-center">
           <div class="h-2" style="background:#D97706;"></div>
           <div class="text-xs mt-1" style="color:#fcd34d;">Building</div>
-          <div class="text-xs" style="color:#475569;">21–40</div>
+          <div class="text-xs" style="color:#475569;">21â€“40</div>
         </div>
         <div class="flex-1 text-center">
           <div class="h-2" style="background:#0891B2;"></div>
           <div class="text-xs mt-1" style="color:#67e8f9;">Strong</div>
-          <div class="text-xs" style="color:#475569;">41–60</div>
+          <div class="text-xs" style="color:#475569;">41â€“60</div>
         </div>
         <div class="flex-1 text-center">
           <div class="h-2" style="background:#059669;"></div>
           <div class="text-xs mt-1" style="color:#34d399;">Exceptional</div>
-          <div class="text-xs" style="color:#475569;">61–80</div>
+          <div class="text-xs" style="color:#475569;">61â€“80</div>
         </div>
         <div class="flex-1 text-center">
           <div class="h-2 rounded-r-full" style="background:#7C3AED;"></div>
           <div class="text-xs mt-1" style="color:#a78bfa;">Legacy-Ready</div>
-          <div class="text-xs" style="color:#475569;">81–100</div>
+          <div class="text-xs" style="color:#475569;">81â€“100</div>
         </div>
       </div>
       <div id="tier-indicator-row" class="flex gap-1 items-center mt-1">
@@ -210,7 +210,7 @@
 
     <!-- Dollar amounts note (if applicable) -->
     <div id="dollar-note" style="display:none;" class="mt-4 p-3 rounded-lg" style="background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.1);">
-      <p class="text-xs" style="color:#6ee7b7;">💵 This member has chosen to show actual dollar amounts for full transparency.</p>
+      <p class="text-xs" style="color:#6ee7b7;">ðŸ’µ This member has chosen to show actual dollar amounts for full transparency.</p>
     </div>
 
     <!-- Expiry note -->
@@ -220,11 +220,11 @@
 
     <!-- Join CTA -->
     <div class="mt-8 card p-6 text-center" style="background: linear-gradient(135deg, rgba(201,162,39,0.08), rgba(201,162,39,0.03));">
-      <div class="text-2xl mb-2">₣</div>
+      <div class="text-2xl mb-2">â‚£</div>
       <h3 class="text-lg font-bold mb-2" style="color:#e2e8f0;">Build Your Own Scorecard</h3>
       <p class="text-sm mb-4 mx-auto max-w-sm" style="color:#94a3b8;">Join FACTS and start proving your financial discipline with real data.</p>
       <a href="/" class="btn-primary px-8 py-3 inline-block text-sm rounded-xl" style="text-decoration:none;">Start Free Trial</a>
-      <p class="text-xs mt-3" style="color:#475569;">21-day free trial · No credit card required</p>
+      <p class="text-xs mt-3" style="color:#475569;">21-day free trial Â· No credit card required</p>
     </div>
 
   </div>
@@ -241,7 +241,7 @@
   };
 
   function getMetricIcon(key) {
-    return { allocation_adherence: '🎯', savings_consistency: '💰', debt_reduction: '📉', income_expense_ratio: '⚖️', financial_freedom: '🗽', app_engagement: '🔥' }[key] || '📊';
+    return { allocation_adherence: 'ðŸŽ¯', savings_consistency: 'ðŸ’°', debt_reduction: 'ðŸ“‰', income_expense_ratio: 'âš–ï¸', financial_freedom: 'ðŸ—½', app_engagement: 'ðŸ”¥' }[key] || 'ðŸ“Š';
   }
 
   async function loadScorecard() {
@@ -294,7 +294,7 @@
       document.getElementById('member-since').textContent = `Member since ${new Date(member_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
     }
 
-    // Score ring (circumference = 2π * 78 ≈ 490)
+    // Score ring (circumference = 2Ï€ * 78 â‰ˆ 490)
     const score = scorecard.composite_score;
     document.getElementById('score-num').textContent = score;
     const circumference = 490;
@@ -325,7 +325,7 @@
     // Link expiry
     if (link_expires_at) {
       const daysLeft = Math.ceil((new Date(link_expires_at) - new Date()) / (1000 * 60 * 60 * 24));
-      document.getElementById('link-expiry-note').textContent = `🔗 This link expires in ${daysLeft} days`;
+      document.getElementById('link-expiry-note').textContent = `ðŸ”— This link expires in ${daysLeft} days`;
     }
 
     // Radar chart
@@ -335,7 +335,7 @@
     renderMetrics(scorecard.metrics);
 
     // Set page title
-    document.title = `${name}'s Financial Scorecard — FACTS`;
+    document.title = `${name}'s Financial Scorecard â€” FACTS`;
   }
 
   function renderRadar(metrics) {
@@ -378,22 +378,22 @@
       let detail = '';
       if (key === 'allocation_adherence' && data.deviation !== undefined) {
         detail = `Avg deviation from targets: ${data.deviation}%`;
-        if (data.total_tracked_90d) detail += ` · $${data.total_tracked_90d.toLocaleString()} tracked (90d)`;
+        if (data.total_tracked_90d) detail += ` Â· $${data.total_tracked_90d.toLocaleString()} tracked (90d)`;
       } else if (key === 'savings_consistency') {
-        detail = `${data.months_with_savings} of 12 months with savings · Trend: ${data.trend}`;
+        detail = `${data.months_with_savings} of 12 months with savings Â· Trend: ${data.trend}`;
       } else if (key === 'debt_reduction') {
-        if (!data.has_debt) detail = `✓ Debt-free`;
+        if (!data.has_debt) detail = `âœ“ Debt-free`;
         else {
-          detail = `${data.debt_count} debt(s) · ${(data.strategy||'').replace(/_/g,' ')} · ${(data.trajectory||'').replace(/_/g,' ')}`;
-          if (data.total_balance) detail += ` · $${data.total_balance.toLocaleString()} balance`;
+          detail = `${data.debt_count} debt(s) Â· ${(data.strategy||'').replace(/_/g,' ')} Â· ${(data.trajectory||'').replace(/_/g,' ')}`;
+          if (data.total_balance) detail += ` Â· $${data.total_balance.toLocaleString()} balance`;
         }
       } else if (key === 'income_expense_ratio') {
-        detail = data.avg_expense_to_income_pct !== undefined ? `Avg ${data.avg_expense_to_income_pct}% of income spent · ${data.months_living_within_means}/${data.total_months_tracked} months within means` : 'Start tracking income & expenses to score';
+        detail = data.avg_expense_to_income_pct !== undefined ? `Avg ${data.avg_expense_to_income_pct}% of income spent Â· ${data.months_living_within_means}/${data.total_months_tracked} months within means` : 'Start tracking income & expenses to score';
       } else if (key === 'financial_freedom') {
-        detail = data.has_ff_activity ? `${data.months_active} months active · ${data.trend}` : 'No FF activity tracked yet';
-        if (data.total_12m) detail += ` · $${data.total_12m.toLocaleString()} invested (12m)`;
+        detail = data.has_ff_activity ? `${data.months_active} months active Â· ${data.trend}` : 'No FF activity tracked yet';
+        if (data.total_12m) detail += ` Â· $${data.total_12m.toLocaleString()} invested (12m)`;
       } else if (key === 'app_engagement') {
-        detail = `${data.streak_days}-day streak · Level ${data.level} · ${data.total_transactions} transactions logged`;
+        detail = `${data.streak_days}-day streak Â· Level ${data.level} Â· ${data.total_transactions} transactions logged`;
       }
 
       // Score color
@@ -426,5 +426,6 @@
 </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +12,10 @@ const repoRoot = resolve(webRoot, '..');
 const SEED_EMAIL = (process.env.NDA_SEED_EMAIL || 'nda-pdf-seed@facts.local').toLowerCase();
 const SEED_NAME = process.env.NDA_SEED_NAME || 'Sovereign Beta Tester';
 const SEED_SIGNATURE = process.env.NDA_SEED_SIGNATURE || SEED_NAME;
-const SEED_PASSWORD = process.env.NDA_SEED_PASSWORD || 'NdaPdfSeed2026!';
+const SEED_PASSWORD =
+  process.env.NDA_SEED_PASSWORD
+  || process.env.BETA_SEED_PASSWORD
+  || randomBytes(16).toString('hex');
 const SEED_VERSION = process.env.NDA_SEED_VERSION || 'v1.0-BETA';
 const SEED_IP = process.env.NDA_SEED_IP || '203.0.113.42';
 const SEED_UA =

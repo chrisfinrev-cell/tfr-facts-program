@@ -7,6 +7,10 @@ import { useAuth } from '@/hooks/useAuth';
 const PUBLIC_PATHS = new Set(['/login', '/register']);
 const WIZARD_PATHS = new Set(['/register']);
 
+function isAdminPath(pathname: string) {
+  return pathname === '/admin' || pathname.startsWith('/admin/');
+}
+
 export function NdaGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -17,6 +21,11 @@ export function NdaGate({ children }: { children: React.ReactNode }) {
 
     if (!isAuthenticated && !PUBLIC_PATHS.has(pathname)) {
       router.replace('/login');
+      return;
+    }
+
+    // Admin console is session-gated by Express requireAdmin; skip NDA redirect.
+    if (isAuthenticated && isAdminPath(pathname)) {
       return;
     }
 

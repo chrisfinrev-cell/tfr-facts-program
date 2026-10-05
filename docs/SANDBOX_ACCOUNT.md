@@ -1,29 +1,31 @@
-# 🧪 Sandbox Training Account
+# Sandbox Training Account
 
 This document describes the sandbox/training account for demos and new-user onboarding.
 
 ---
 
-## Credentials
+## Credentials (do not store passwords in git)
 
-| Field    | Value                                  |
-|----------|----------------------------------------|
-| Email    | `sandbox@financial-revolution.app`    |
-| Password | `SandboxDemo2025!`                     |
+| Field    | Value |
+|----------|--------|
+| Email    | `sandbox@financial-revolution.app` (override with `SANDBOX_EMAIL`) |
+| Password | Set via `SANDBOX_PASSWORD` or `BETA_SEED_PASSWORD` in the staging/deploy environment. If unset, `scripts/seed-sandbox.js` generates a one-time password and prints it once at seed time — store that value in your password manager. |
 | Plan     | Pro (permanent — `is_creator = true`) |
+
+Never commit plaintext sandbox passwords to the repository.
 
 ---
 
 ## Accessing the Sandbox
 
 ### From the Dashboard (Recommended)
-1. Log in as `chris.finrev@gmail.com`
-2. Click **🧪 Training Mode** in the top-right corner
+1. Log in as the founder/admin account
+2. Click **Training Mode** in the top-right corner
 3. The dashboard reloads with all demo data pre-loaded
-4. Click **⬅ Exit Sandbox** to return to your account
+4. Click **Exit Sandbox** to return to your account
 
 ### Direct Login
-Navigate to `/login.html` and use the sandbox credentials above.
+Navigate to `/login.html` and use the sandbox email + the password from your password manager / seed output.
 
 ---
 
@@ -46,7 +48,7 @@ Navigate to `/login.html` and use the sandbox credentials above.
 
 ---
 
-## ⚠️ Engineer Update Protocol
+## Engineer Update Protocol
 
 **When you ship a new feature with new data sections, you MUST update the sandbox.**
 
@@ -68,5 +70,4 @@ It's idempotent: clears old sandbox data and re-seeds fresh data every deploy.
   - `POST /api/auth/sandbox-login` — switches session to sandbox user (creator-only)
   - `POST /api/auth/sandbox-exit` — restores original session
 - **Frontend**: `public/app.html` — `enterSandboxMode()` / `exitSandboxMode()` functions
-- **UI trigger**: 🧪 Training Mode button (visible only when `is_creator = true`)
-- **Visual indicator**: Header shows "🧪 Training Mode — Demo Data" in purple when active
+- **UI trigger**: Training Mode button (visible only when `is_creator = true`)

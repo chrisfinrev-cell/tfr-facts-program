@@ -3,18 +3,37 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { db } from '@/lib/db';
 import { NdaPdfDocument } from '@/components/pdf/NdaPdfDocument';
+import { getExpressSessionUser } from '@/lib/server-session';
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    const sessionUser = await getExpressSessionUser(req);
+    if (!sessionUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Authentication required' },
+        { status: 401 }
+      );
+    }
 
-    if (!userId) {
+    const { searchParams } = new URL(req.url);
+    const targetUserId = searchParams.get('userId');
+
+    if (!targetUserId) {
       return NextResponse.json({ error: 'Missing userId parameter' }, { status: 400 });
     }
 
+    const isOwner = String(sessionUser.id) === String(targetUserId);
+    const isAdmin = Boolean(sessionUser.is_admin || sessionUser.is_creator);
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Access denied to requested NDA record' },
+        { status: 403 }
+      );
+    }
+
     const user = await db.user.findUnique({
-      where: { id: userId },
+      where: { id: targetUserId },
       select: {
         id: true,
         fullName: true,
