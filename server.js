@@ -60,6 +60,51 @@ const pool = process.env.DATABASE_URL ? new Pool({
   ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
 }) : null;
 
+// Self-heal auth columns on boot so login never 500s on schema drift.
+(async () => {
+  if (!pool) return;
+  try {
+    const { ensureAuthSchema } = require('./lib/ensureAuthSchema');
+    await ensureAuthSchema(pool);
+    console.log('[boot] auth schema ensured');
+    const bootPass = process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.BOOTSTRAP_PASSWORD;
+    if (bootPass) {
+      try {
+        // Inline minimal upsert for creator host so first login works after deploy.
+        const bcrypt = require('bcrypt');
+        const hash = await bcrypt.hash(String(bootPass), 12);
+        const hosts = [
+          ['chris.finrev@gmail.com', 'Chris FinRev', true],
+          ['admin@factsmoney.com', 'FACTS Admin', false],
+          ['wtrchrisparks@gmail.com', 'Chris Parks', false],
+          ['ecci2760@gmail.com', 'ECCI Admin', false],
+          ['admin@thefinancialrevolution.net', 'TFR Admin', false]
+        ];
+        for (const [email, name, isCreator] of hosts) {
+          const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1', [email]);
+          if (existing.rows[0]) {
+            await pool.query(
+              `UPDATE users SET password_hash = $2, is_admin = TRUE, is_creator = $3, name = COALESCE(NULLIF(name, ''), $4), updated_at = NOW() WHERE id = $1`,
+              [existing.rows[0].id, hash, isCreator, name]
+            );
+          } else {
+            await pool.query(
+              `INSERT INTO users (email, name, password_hash, is_admin, is_creator, is_beta_tester, relationship_tag, is_affiliate_disabled, monthly_invites_remaining)
+               VALUES ($1, $2, $3, TRUE, $4, TRUE, 'STANDARD', FALSE, 5)`,
+              [email, name, hash, isCreator]
+            );
+          }
+        }
+        console.log('[boot] admin bootstrap complete');
+      } catch (bootErr) {
+        console.error('[boot] admin bootstrap failed:', bootErr.message);
+      }
+    }
+  } catch (err) {
+    console.error('[boot] ensureAuthSchema failed:', err.message);
+  }
+})();
+
 // â”€â”€â”€ Safe Pool Accessor (auto-reconnect for cron callbacks) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // All scheduled callbacks must use getPool() instead of direct `pool` reference.
 // This guards against the race condition where pool is null at startup
@@ -1437,10 +1482,15 @@ async function completeLogin(req, res, user) {
   req.session.userId = user.id;
   req.session.email = user.email;
 
-  await pool.query(
-    `UPDATE users SET last_login = NOW(), scheduled_deletion_at = NULL, inactivity_warnings_sent = 0 WHERE id = $1`,
-    [user.id]
-  );
+  // Best-effort login metadata — never block auth if optional columns are missing.
+  try {
+    await pool.query(
+      `UPDATE users SET last_login = NOW(), scheduled_deletion_at = NULL, inactivity_warnings_sent = 0 WHERE id = $1`,
+      [user.id]
+    );
+  } catch (metaErr) {
+    console.error('[auth] last_login update skipped:', metaErr.message);
+  }
 
   // Award 10 TFR Points on daily login (max once per calendar day) + login streak tracking
   try {
@@ -1584,11 +1634,27 @@ app.post('/api/auth/login', async (req, res) => {
 
     const normalizedIdentifier = email.toLowerCase().trim();
 
-    // Try to find user by email or user_id (also fetch two_factor_enabled)
-    const result = await pool.query(
-      'SELECT id, email, name, password_hash, plan, paid_until, is_creator, promo_code_used, promo_grace_expired, two_factor_enabled, verification_method, verified_phone FROM users WHERE LOWER(email) = $1 OR LOWER(user_id) = $1',
-      [normalizedIdentifier]
-    );
+    // Prefer email/user_id lookup; fall back to email-only if optional columns are missing.
+    let result;
+    try {
+      result = await pool.query(
+        `SELECT id, email, name, password_hash, plan, paid_until, is_creator, promo_code_used,
+                COALESCE(promo_grace_expired, false) AS promo_grace_expired,
+                COALESCE(two_factor_enabled, false) AS two_factor_enabled,
+                verification_method, verified_phone
+         FROM users
+         WHERE LOWER(email) = $1 OR LOWER(user_id) = $1`,
+        [normalizedIdentifier]
+      );
+    } catch (selectErr) {
+      console.error('[auth] full login SELECT failed, falling back to email-only:', selectErr.message);
+      result = await pool.query(
+        `SELECT id, email, name, password_hash, plan, paid_until, is_creator, promo_code_used
+         FROM users
+         WHERE LOWER(email) = $1`,
+        [normalizedIdentifier]
+      );
+    }
 
     if (result.rows.length === 0 || !result.rows[0].password_hash) {
       return res.status(401).json({ error: 'Invalid email/User ID or password' });

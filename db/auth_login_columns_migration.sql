@@ -1,0 +1,20 @@
+-- Auth/login columns required by server.js /api/auth/login + completeLogin.
+-- Safe to re-run.
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS promo_grace_expired BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS promo_grace_started_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_method VARCHAR(20);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_phone VARCHAR(32);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS user_id VARCHAR(64);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS scheduled_deletion_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS inactivity_warnings_sent INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_expires_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_used BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_plan_type VARCHAR(64);
+
+CREATE UNIQUE INDEX IF NOT EXISTS users_user_id_lower_uidx
+  ON users (LOWER(user_id))
+  WHERE user_id IS NOT NULL;
