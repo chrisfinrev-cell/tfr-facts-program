@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>FACTS â€” Discover Your Back Door Leak</title>
+  <title>FACTS — Discover Your Back Door Leak</title>
   <meta name="description" content="Calculate your bank interest bleed and unlock your private Forensic Report in under 3 minutes.">
 
   <!-- Favicon -->
@@ -49,7 +49,7 @@
 
     h1, h2, h3, .font-display { font-family: 'Syne', sans-serif; }
 
-    /* â”€â”€ Bleed Counter (pinned) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Bleed Counter (pinned) ───────────────────────────── */
     #bleed-counter {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -73,7 +73,7 @@
       color: rgba(255,255,255,0.45);
     }
 
-    /* â”€â”€ Bucket visualization (6 pillars, faint outlines) â”€â”€â”€ */
+    /* ── Bucket visualization (6 pillars, faint outlines) ─── */
     #bucket-viz {
       position: fixed;
       inset: 0;
@@ -118,7 +118,7 @@
       box-shadow: 0 0 16px rgba(220,38,38,0.4);
     }
 
-    /* â”€â”€ Progress dots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Progress dots ───────────────────────────────────── */
     #progress-dots {
       position: fixed;
       bottom: 1.5rem;
@@ -135,7 +135,7 @@
     .prog-dot.done { background: #c9a227; }
     .prog-dot.active { background: #e8c96a; width: 20px; border-radius: 4px; }
 
-    /* â”€â”€ Screen container â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Screen container ────────────────────────────────── */
     #screens {
       position: relative; z-index: 1;
       min-height: 100dvh;
@@ -146,7 +146,7 @@
       justify-content: center;
     }
 
-    /* â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Card ─────────────────────────────────────────────── */
     .card {
       width: 100%; max-width: 540px;
       background: rgba(17,24,39,0.85);
@@ -163,7 +163,7 @@
     .screen { display: none; }
     .screen.active { display: block; }
 
-    /* â”€â”€ Headline / Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Headline / Hook ─────────────────────────────────── */
     .headline {
       font-family: 'Syne', sans-serif;
       font-size: clamp(1.6rem, 5vw, 2.4rem);
@@ -179,7 +179,7 @@
       margin-bottom: 2rem;
     }
 
-    /* â”€â”€ Inputs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Inputs ──────────────────────────────────────────── */
     .input-group { margin-bottom: 1.25rem; }
     .input-label {
       display: flex; justify-content: space-between; align-items: center;
@@ -237,7 +237,7 @@
       border: none; cursor: pointer;
     }
 
-    /* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Buttons ─────────────────────────────────────────── */
     .btn-gold {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
       background: linear-gradient(135deg, #c9a227, #d4a929);
@@ -266,7 +266,7 @@
     }
     .btn-outline:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
 
-    /* â”€â”€ Forensic question cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Forensic question cards ─────────────────────────── */
     .forensic-card {
       display: flex; align-items: flex-start; gap: 1rem;
       background: rgba(255,255,255,0.03);
@@ -306,7 +306,7 @@
       display: inline-block;
     }
 
-    /* â”€â”€ Toggle yes/no â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Toggle yes/no ────────────────────────────────────── */
     .toggle-group {
       display: flex; gap: 0.5rem; margin-top: 1rem;
       flex-shrink: 0;
@@ -334,7 +334,7 @@
       color: #dc2626;
     }
 
-    /* â”€â”€ Account creation modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Account creation modal ──────────────────────────── */
     #auth-modal {
       display: none;
       position: fixed; inset: 0; z-index: 200;
@@ -396,7 +396,7 @@
       display: none;
     }
 
-    /* â”€â”€ Vault screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Vault screen ────────────────────────────────────── */
     .vault-zone {
       border: 2px dashed rgba(201,162,39,0.25);
       border-radius: 16px;
@@ -414,7 +414,7 @@
     .vault-zone p  { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
     #pdf-file-name { font-size: 0.8rem; color: #10b981; margin-top: 0.5rem; display: none; }
 
-    /* â”€â”€ Phase Zero Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Phase Zero Dashboard ────────────────────────────── */
     .bucket-card {
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 14px;
@@ -440,7 +440,7 @@
     .badge-structured { background: rgba(16,185,129,0.15); color: #10b981; }
     .badge-breached  { background: rgba(220,38,38,0.15);  color: #dc2626; }
 
-    /* â”€â”€ Exit overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Exit overlay ─────────────────────────────────────── */
     #exit-overlay {
       display: none;
       position: fixed; inset: 0; z-index: 300;
@@ -465,7 +465,7 @@
       margin: 0.5rem 0;
     }
 
-    /* â”€â”€ Misc â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Misc ────────────────────────────────────────────── */
     .info-text { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-top: 0.3rem; }
     .step-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: #c9a227; font-weight: 700; margin-bottom: 0.75rem; }
     .fade-up { animation: slideUp 0.45s ease both; }
@@ -477,7 +477,7 @@
 </head>
 <body>
 
-<!-- â”€â”€ Back Door Bleed Counter (pinned) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Back Door Bleed Counter (pinned) ──────────────────────────────────── -->
 <div id="bleed-counter">
   <div class="flex items-center justify-between max-w-xl mx-auto">
     <div>
@@ -491,7 +491,7 @@
   </div>
 </div>
 
-<!-- â”€â”€ 6 Bucket Pillars (background viz) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── 6 Bucket Pillars (background viz) ──────────────────────────────────── -->
 <div id="bucket-viz">
   <div class="pillar" data-bucket="necessities" id="p-nec">
     <div class="pillar bar"></div>
@@ -519,10 +519,10 @@
   </div>
 </div>
 
-<!-- â”€â”€ Screens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Screens ──────────────────────────────────────────────────────────── -->
 <div id="screens">
 
-  <!-- STEP 1: Calculator Landing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- STEP 1: Calculator Landing ────────────────────────────────────────── -->
   <div class="screen active" id="screen-calc">
     <div class="card">
       <p class="step-label">Step 1 of 4</p>
@@ -576,10 +576,10 @@
     </div>
   </div>
 
-  <!-- STEP 2: Forensic Questions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- STEP 2: Forensic Questions ─────────────────────────────────────────── -->
   <div class="screen" id="screen-forensic">
     <div class="card">
-      <p class="step-label">Step 2 of 4 â€” Forensic Scan</p>
+      <p class="step-label">Step 2 of 4 — Forensic Scan</p>
       <h1 class="headline">Map your <span class="gold">architecture</span></h1>
       <p class="subhead">5 questions. Your buckets light up as you answer.</p>
 
@@ -591,10 +591,10 @@
     </div>
   </div>
 
-  <!-- STEP 4: Secure Vault â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- STEP 4: Secure Vault ─────────────────────────────────────────────── -->
   <div class="screen" id="screen-vault">
     <div class="card">
-      <p class="step-label">Step 3 of 4 â€” Your Secure Vault</p>
+      <p class="step-label">Step 3 of 4 — Your Secure Vault</p>
       <h1 class="headline">Your Vault is <span class="gold">Active</span></h1>
       <p class="subhead">Enter your exact income. Drop your credit report for penny-accurate analysis.</p>
 
@@ -628,7 +628,7 @@
     </div>
   </div>
 
-  <!-- STEP 5: Phase Zero Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- STEP 5: Phase Zero Dashboard ─────────────────────────────────────── -->
   <div class="screen" id="screen-dashboard">
     <div class="card">
       <p class="step-label">Phase Zero Active</p>
@@ -657,14 +657,14 @@
       </div>
 
       <button class="btn-outline mt-3 w-full" style="border:none;background:none" onclick="window.location.href='/app.html'">
-        Go to My Dashboard â†’
+        Go to My Dashboard →
       </button>
     </div>
   </div>
 
 </div><!-- /screens -->
 
-<!-- â”€â”€ Progress Dots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Progress Dots ────────────────────────────────────────────────────── -->
 <div id="progress-dots">
   <div class="prog-dot active" data-step="1"></div>
   <div class="prog-dot" data-step="2"></div>
@@ -672,10 +672,10 @@
   <div class="prog-dot" data-step="4"></div>
 </div>
 
-<!-- â”€â”€ Account Creation Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Account Creation Modal ────────────────────────────────────────────── -->
 <div id="auth-modal">
   <div class="modal-card" style="position:relative">
-    <button class="modal-close" id="modal-close">Ã—</button>
+    <button class="modal-close" id="modal-close">×</button>
     <div class="modal-title">Secure Your Vault</div>
     <div class="modal-sub">To generate your private Forensic Report, create your secure vault profile. Takes 10 seconds.</div>
 
@@ -683,15 +683,15 @@
     <input type="email" class="modal-input" id="auth-email" placeholder="Email address" autocomplete="email">
     <input type="password" class="modal-input" id="auth-pw" placeholder="Create a password" autocomplete="new-password">
     <div class="modal-error" id="modal-error"></div>
-    <button class="btn-gold" id="modal-submit">Create My Vault â†’</button>
+    <button class="btn-gold" id="modal-submit">Create My Vault →</button>
     <p style="font-size:0.7rem;color:rgba(255,255,255,0.25);margin-top:0.75rem;text-align:center">Already have an account? <a href="/login.html" style="color:#c9a227">Log in</a></p>
   </div>
 </div>
 
-<!-- â”€â”€ Exit Capture Overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Exit Capture Overlay ──────────────────────────────────────────────── -->
 <div id="exit-overlay">
   <div class="exit-card">
-    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:#c9a227;font-weight:700">Wait â€” don't lose your numbers</div>
+    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:#c9a227;font-weight:700">Wait — don't lose your numbers</div>
     <div class="exit-number" id="exit-bleed-number">$0</div>
     <p style="font-size:0.88rem;color:rgba(255,255,255,0.5);margin-bottom:1.25rem">That's your estimated lifetime leak. Enter your email to save this calculation before it resets.</p>
     <input type="email" class="modal-input" id="exit-email" placeholder="your@email.com">
@@ -700,9 +700,9 @@
   </div>
 </div>
 
-<!-- â”€â”€ Analytics + App Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+<!-- ── Analytics + App Logic ──────────────────────────────────────────────── -->
 <script>
-// â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Config ──────────────────────────────────────────────────────────────────
 const API = '/api/mod_onboarding';
 const SESSION_KEY = 'facts_funnel_session';
 
@@ -735,7 +735,7 @@ const QUESTIONS = [
   }
 ];
 
-// Bucket â†’ pillar map
+// Bucket → pillar map
 const BUCKET_MAP = {
   0: ['nec', 'lif'],
   1: ['res'],
@@ -744,7 +744,7 @@ const BUCKET_MAP = {
   4: ['legacy']
 };
 
-// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── State ───────────────────────────────────────────────────────────────────
 let state = {
   sessionId: null,
   userId: null,
@@ -761,7 +761,7 @@ let state = {
   uploadReady: false,
 };
 
-// â”€â”€â”€ A/B Variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── A/B Variants ────────────────────────────────────────────────────────────
 async function loadABVariants() {
   try {
     const resp = await fetch(`${API}/ab/variant?sessionId=${state.sessionId || Date.now()}`);
@@ -790,7 +790,7 @@ function applyABVariants() {
   }
 }
 
-// â”€â”€â”€ Analytics Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Analytics Events ─────────────────────────────────────────────────────────
 function track(event, data = {}) {
   if (!state.analyticsEnabled) return;
   data.sessionId = state.sessionId;
@@ -804,7 +804,7 @@ function fireAnalyticsEvent(eventName, data = {}) {
   track(eventName, data);
 }
 
-// â”€â”€â”€ Bleed Calculation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Bleed Calculation ────────────────────────────────────────────────────────
 function computeBleed() {
   const nm   = parseFloat(state.nmDebt)   || 0;
   const mort  = parseFloat(state.mortDebt)  || 0;
@@ -821,7 +821,7 @@ function updateBleedCounter() {
     `$${state.lifetimeBleed.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}`;
 }
 
-// â”€â”€â”€ Formatter utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Formatter utilities ──────────────────────────────────────────────────────
 function fmt(n) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
@@ -855,13 +855,13 @@ function syncSliderAndText(sliderId, textId, displayId, suffix, storeKey, format
   });
 }
 
-// â”€â”€â”€ Button state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Button state ─────────────────────────────────────────────────────────────
 function updateProceedButton() {
   const ready = state.income > 0 && state.nmDebt >= 0 && state.mortDebt >= 0 && state.blendedRate > 0;
   document.getElementById('cta-proceed').disabled = !ready;
 }
 
-// â”€â”€â”€ Forensic questions render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Forensic questions render ────────────────────────────────────────────────
 function renderForensicQuestions() {
   const container = document.getElementById('forensic-questions');
   container.innerHTML = QUESTIONS.map(q => `
@@ -869,7 +869,7 @@ function renderForensicQuestions() {
       <div class="forensic-number">${q.id + 1}</div>
       <div>
         <div class="forensic-text">${q.text}</div>
-        <div class="forensic-bucket-tag">${q.buckets.join(' Â· ')}</div>
+        <div class="forensic-bucket-tag">${q.buckets.join(' · ')}</div>
         <div class="toggle-group">
           <button class="toggle-btn yes-btn" data-q="${q.id}" data-val="yes">Yes</button>
           <button class="toggle-btn no-btn"  data-q="${q.id}" data-val="no">No</button>
@@ -913,7 +913,7 @@ function updateUnlockButton() {
   document.getElementById('cta-unlock').disabled = !answered;
 }
 
-// â”€â”€â”€ Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Navigation ───────────────────────────────────────────────────────────────
 function goToStep(n) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const screenMap = { 1: 'screen-calc', 2: 'screen-forensic', 3: 'screen-vault', 4: 'screen-dashboard' };
@@ -933,7 +933,7 @@ function updateProgressDots(step) {
   });
 }
 
-// â”€â”€â”€ Step 1 â†’ Submit + Save to localStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Step 1 → Submit + Save to localStorage ──────────────────────────────────
 async function submitCalculator() {
   const resp = await fetch(`${API}/calculator-submit`, {
     method: 'POST',
@@ -978,7 +978,7 @@ function getDebtTier(total) {
   return 'major';
 }
 
-// â”€â”€â”€ Forensic â†’ Submit answers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Forensic → Submit answers ───────────────────────────────────────────────
 async function submitForensicAnswers() {
   for (const [qId, answer] of Object.entries(state.forensicAnswers)) {
     fireAnalyticsEvent('forensic_question_answered', { questionId: parseInt(qId), answer });
@@ -992,7 +992,7 @@ async function submitForensicAnswers() {
   }
 }
 
-// â”€â”€â”€ Auth Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Auth Modal ────────────────────────────────────────────────────────────────
 function openAuthModal() {
   fireAnalyticsEvent('unlock_scan_clicked', { calculatedBleedTotal: state.lifetimeBleed });
   document.getElementById('auth-modal').classList.add('open');
@@ -1034,7 +1034,7 @@ async function submitAuth() {
       errEl.textContent = data.error || 'Something went wrong.';
       errEl.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = 'Create My Vault â†’';
+      btn.textContent = 'Create My Vault →';
       return;
     }
 
@@ -1047,11 +1047,11 @@ async function submitAuth() {
     errEl.textContent = 'Connection error. Please try again.';
     errEl.style.display = 'block';
     btn.disabled = false;
-    btn.textContent = 'Create My Vault â†’';
+    btn.textContent = 'Create My Vault →';
   }
 }
 
-// â”€â”€â”€ Vault: PDF Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Vault: PDF Upload ─────────────────────────────────────────────────────────
 function setupPDFUpload() {
   const zone  = document.getElementById('pdf-zone');
   const input = document.getElementById('pdf-input');
@@ -1087,7 +1087,7 @@ async function handlePDFFile(file) {
     const data = await resp.json();
     state.uploadReady = true;
 
-    document.getElementById('pdf-file-name').textContent = `âœ“ ${file.name}`;
+    document.getElementById('pdf-file-name').textContent = `✓ ${file.name}`;
     document.getElementById('pdf-file-name').style.display = 'block';
 
     fireAnalyticsEvent('credit_report_uploaded', {
@@ -1099,7 +1099,7 @@ async function handlePDFFile(file) {
   }
 }
 
-// â”€â”€â”€ Vault: Salary Submit â†’ Phase Zero Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Vault: Salary Submit → Phase Zero Dashboard ──────────────────────────────
 async function submitVaultSalary() {
   const salary = parseNum(document.getElementById('vault-salary').value);
   if (!salary || salary <= 0) {
@@ -1140,12 +1140,12 @@ function renderDashboard(data) {
   const buckets = data.buckets || {};
   const bucketCards = document.getElementById('bucket-cards');
   const BUCKET_ORDER = [
-    { key: 'necessities', label: 'Necessities', icon: 'ðŸ ' },
-    { key: 'velocity',    label: 'Velocity',    icon: 'âš¡' },
-    { key: 'reserve',     label: 'Reserve',     icon: 'ðŸª£' },
-    { key: 'lifestyle',   label: 'Lifestyle',   icon: 'ðŸŒ¿' },
-    { key: 'growth',      label: 'Growth',      icon: 'ðŸ“ˆ' },
-    { key: 'legacy',      label: 'Legacy',      icon: 'ðŸ›ï¸' },
+    { key: 'necessities', label: 'Necessities', icon: '🏠' },
+    { key: 'velocity',    label: 'Velocity',    icon: '⚡' },
+    { key: 'reserve',     label: 'Reserve',     icon: '🪣' },
+    { key: 'lifestyle',   label: 'Lifestyle',   icon: '🌿' },
+    { key: 'growth',      label: 'Growth',      icon: '📈' },
+    { key: 'legacy',      label: 'Legacy',      icon: '🏛️' },
   ];
 
   bucketCards.innerHTML = BUCKET_ORDER.map(b => {
@@ -1157,7 +1157,7 @@ function renderDashboard(data) {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
           <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem">${b.icon} ${b.label}</span>
           <span class="bucket-status-badge ${isStructured ? 'badge-structured' : 'badge-breached'}">
-            ${isStructured ? 'âœ“ Structured' : isBreached ? 'âœ— Breached' : '? Unknown'}
+            ${isStructured ? '✓ Structured' : isBreached ? '✗ Breached' : '? Unknown'}
           </span>
         </div>
         <div style="font-size:0.75rem;color:${isStructured ? 'rgba(16,185,129,0.7)' : isBreached ? 'rgba(220,38,38,0.7)' : 'rgba(255,255,255,0.3)'}">
@@ -1170,13 +1170,13 @@ function renderDashboard(data) {
   }).join('');
 }
 
-// â”€â”€â”€ Skip PDF Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Skip PDF Upload ──────────────────────────────────────────────────────────
 function skipUpload() {
   fireAnalyticsEvent('skip_later_clicked', { reason: 'Clicked later', sessionId: state.sessionId });
   submitVaultSalary();
 }
 
-// â”€â”€â”€ Exit Capture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Exit Capture ──────────────────────────────────────────────────────────────
 function setupExitCapture() {
   // Desktop: mouse leaving viewport
   document.addEventListener('mouseout', e => {
@@ -1226,7 +1226,7 @@ function showExitOverlay() {
   fireAnalyticsEvent('exit_overlay_viewed', {});
 }
 
-// â”€â”€â”€ Restore from localStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Restore from localStorage ───────────────────────────────────────────────
 function tryRestoreSession() {
   try {
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
@@ -1263,7 +1263,7 @@ function tryRestoreSession() {
   } catch (e) { /* ignore */ }
 }
 
-// â”€â”€â”€ Share â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Share ────────────────────────────────────────────────────────────────────
 function setupShare() {
   // Allow sharing the bleed number
   document.getElementById('cta-proceed').addEventListener('dblclick', () => {
@@ -1276,7 +1276,7 @@ function setupShare() {
   });
 }
 
-// â”€â”€â”€ Session timeout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Session timeout ──────────────────────────────────────────────────────────
 function setupSessionTracking() {
   window.addEventListener('beforeunload', () => {
     fireAnalyticsEvent('onboarding_abandoned', {
@@ -1286,7 +1286,7 @@ function setupSessionTracking() {
   });
 }
 
-// â”€â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   // Restore saved session
   tryRestoreSession();
@@ -1329,7 +1329,7 @@ async function init() {
   }, { threshold: 0.1 });
   observer.observe(document.getElementById('screen-forensic'));
 
-  // CTA: Step 1 â†’ Submit calculator
+  // CTA: Step 1 → Submit calculator
   document.getElementById('cta-proceed').addEventListener('click', submitCalculator);
 
   // CTA: Unlock (after forensic answers)

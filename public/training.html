@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Training â€” FACTS</title>
+  <title>Training — FACTS</title>
   <meta name="description" content="FACTS Protocol Training. Master the Sovereign Protocol, allocation methodology, Friday Sweep, HELOC Velocity, and more.">
 
   <!-- Sovereign Seal favicon -->
@@ -156,7 +156,7 @@
 <!-- Auth gate -->
 <div id="auth-gate" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(13,17,23,0.95);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;">
   <div class="card p-8 max-w-md w-full text-center">
-    <div class="text-5xl mb-4">ðŸŽ“</div>
+    <div class="text-5xl mb-4">🎓</div>
     <h2 class="text-xl font-bold mb-2">Sign In to Access Training</h2>
     <p class="text-gray-400 text-sm mb-6">FACTS Protocol training modules, unlocked as you progress through the Sovereign Protocol.</p>
     <div class="flex flex-col gap-3">
@@ -215,16 +215,16 @@ let completedModules = {};
 let activeFilter = 'all';
 
 const TIER_CONFIG = {
-  free:     { label: 'FREE (L1-3)',     color: '#e8a857', bgClass: 'band-free',     desc: 'Levels 1-3 â€” FACTS Free',                    icon: 'âš”ï¸' },
-  pro:      { label: 'INDIVIDUAL+ (L4-6)',      color: '#d4e1ec', bgClass: 'band-pro',      desc: 'Levels 4-6 â€” Individual ($25.99/mo)',          icon: 'ðŸ’¥' },
-  business: { label: 'BUSINESS (L7-9)', color: '#e8c96a', bgClass: 'band-business', desc: 'Levels 7-9 â€” FACTS Business ($297/mo)',        icon: 'ðŸ¹' },
-  elite:    { label: 'ELITE (L7-11)',   color: '#f0f0f0', bgClass: 'band-elite',    desc: 'Levels 7-11 â€” Elite ($197/mo Â· $1,500/yr)',  icon: 'ðŸ‘‘' },
+  free:     { label: 'FREE (L1-3)',     color: '#e8a857', bgClass: 'band-free',     desc: 'Levels 1-3 — FACTS Free',                    icon: '⚔️' },
+  pro:      { label: 'INDIVIDUAL+ (L4-6)',      color: '#d4e1ec', bgClass: 'band-pro',      desc: 'Levels 4-6 — Individual ($25.99/mo)',          icon: '💥' },
+  business: { label: 'BUSINESS (L7-9)', color: '#e8c96a', bgClass: 'band-business', desc: 'Levels 7-9 — FACTS Business ($297/mo)',        icon: '🏹' },
+  elite:    { label: 'ELITE (L7-11)',   color: '#f0f0f0', bgClass: 'band-elite',    desc: 'Levels 7-11 — Elite ($197/mo · $1,500/yr)',  icon: '👑' },
 };
 
 const UPGRADE_MSGS = {
-  pro:      { msg: 'Unlock with Individual â€” $14.99/mo', url: '/pricing.html' },
-  business: { msg: 'Unlock with FACTS Business â€” $297/mo', url: '/pricing.html' },
-  elite:    { msg: 'Unlock with Elite â€” $197/mo Â· $1,500/yr', url: '/pricing.html' },
+  pro:      { msg: 'Unlock with Individual — $14.99/mo', url: '/pricing.html' },
+  business: { msg: 'Unlock with FACTS Business — $297/mo', url: '/pricing.html' },
+  elite:    { msg: 'Unlock with Elite — $197/mo · $1,500/yr', url: '/pricing.html' },
 };
 
 function esc(s) {
@@ -256,7 +256,7 @@ function toggleComplete(id, event) {
   saveProgress();
   renderModules(getFilteredModules());
 
-  // â”€â”€ Instant visual feedback in the current modal â”€â”€
+  // ── Instant visual feedback in the current modal ──
   var isNowComplete = !!completedModules[id];
   // Find the toggle button inside the modal
   var modal = document.getElementById('module-modal');
@@ -264,7 +264,7 @@ function toggleComplete(id, event) {
     var btns = modal.querySelectorAll('button');
     btns.forEach(function(btn) {
       if (btn.onclick && btn.onclick.toString().indexOf("toggleComplete('" + id + "')") !== -1) {
-        btn.innerHTML = isNowComplete ? '&#10003; Completed â€” Mark Incomplete' : 'Mark as Completed &#10003;';
+        btn.innerHTML = isNowComplete ? '&#10003; Completed — Mark Incomplete' : 'Mark as Completed &#10003;';
         btn.style.cssText = isNowComplete
           ? 'background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);'
           : 'background:linear-gradient(135deg,#c9a227,#e8c96a);color:#0d1117;border:none;';
@@ -274,7 +274,7 @@ function toggleComplete(id, event) {
     var feedback = document.createElement('div');
     feedback.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:100001;padding:10px 24px;border-radius:12px;font-weight:700;font-size:0.88rem;animation:fadeOut 2.5s forwards;' +
       (isNowComplete ? 'background:#065f46;color:#34d399;border:1px solid rgba(52,211,153,0.3);' : 'background:#1e293b;color:#94a3b8;border:1px solid rgba(255,255,255,0.1);');
-    feedback.textContent = isNowComplete ? 'âœ… Module completed!' : 'Module marked incomplete';
+    feedback.textContent = isNowComplete ? '✅ Module completed!' : 'Module marked incomplete';
     document.body.appendChild(feedback);
     setTimeout(function() { feedback.remove(); }, 2500);
   }
@@ -449,9 +449,9 @@ function renderModuleCard(item, hasAccess) {
   }
 }
 
-/* â”€â”€ Module detail content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Module detail content ───────────────────────────────────────── */
 var MODULE_BODY = {
-  // â”€â”€ FREE MODULES â”€â”€
+  // ── FREE MODULES ──
   't-manifesto': '<h2 class="text-xl font-black text-white mb-4">The Manifesto</h2>' +
     '<p class="text-gray-300 mb-4">FACTS is not a budget app. It is a <strong class="text-yellow-400">declaration of financial independence</strong> - a system designed to break the cycle of living paycheck-to-paycheck and replace it with a disciplined, structured protocol for building wealth.</p>' +
     '<h3 class="font-bold text-white mb-2">Our Core Beliefs</h3>' +
@@ -521,7 +521,7 @@ var MODULE_BODY = {
     '</ul>' +
     '<p class="text-gray-500 text-sm">The Heartbeat Audit runs automatically. Stay engaged and it stays green.</p>',
 
-  // â”€â”€ PRO MODULES â”€â”€
+  // ── PRO MODULES ──
   't-protocol-deep': '<h2 class="text-xl font-black text-white mb-4">Sovereign Protocol Deep Dive: Levels 1-12</h2>' +
     '<p class="text-gray-300 mb-4">This is the comprehensive walkthrough of every level in the Sovereign Protocol - what\'s required, what tools unlock, and how to progress efficiently.</p>' +
     '<h3 class="font-bold text-white mb-3">Phase I: RESISTANCE (L1-3)</h3>' +
@@ -592,7 +592,7 @@ var MODULE_BODY = {
       '<li>Specific tool usage requirements</li>' +
     '</ul>',
 
-  // â”€â”€ BUSINESS MODULES â”€â”€
+  // ── BUSINESS MODULES ──
   't-friday-sweep': '<h2 class="text-xl font-black text-white mb-4">The Friday Sweep Process</h2>' +
     '<p class="text-gray-300 mb-4">Every Friday, Business users execute the <strong class="text-yellow-400">Friday Sweep</strong> - a systematic cash allocation ritual that keeps your business finances disciplined and profitable.</p>' +
     '<h3 class="font-bold text-white mb-2">The Process</h3>' +
@@ -633,7 +633,7 @@ var MODULE_BODY = {
     '<h3 class="font-bold text-white mb-2">Escrow & Cliff</h3>' +
     '<p class="text-gray-400">Business affiliate commissions are held in escrow with a 90-day cliff. The Heartbeat Audit determines eligibility - miss too many heartbeats and commissions are withheld until compliance resumes.</p>',
 
-  // â”€â”€ ELITE MODULES â”€â”€
+  // ── ELITE MODULES ──
   't-heloc-velocity': '<h2 class="text-xl font-black text-white mb-4">HELOC Velocity Overview</h2>' +
     '<p class="text-gray-300 mb-4">The HELOC Velocity strategy is FACTS\' most advanced debt elimination tool. It uses a <strong class="text-yellow-400">Home Equity Line of Credit as a checking account</strong> to dramatically reduce mortgage interest.</p>' +
     '<h3 class="font-bold text-white mb-2">The Core Concept</h3>' +
@@ -709,7 +709,7 @@ function openModule(id) {
         (isComplete
           ? 'background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);'
           : 'background:linear-gradient(135deg,#c9a227,#e8c96a);color:#0d1117;border:none;') + '">' +
-        (isComplete ? '&#10003; Completed â€” Mark Incomplete' : 'Mark as Completed &#10003;') +
+        (isComplete ? '&#10003; Completed — Mark Incomplete' : 'Mark as Completed &#10003;') +
       '</button>' +
       '<button onclick="closeModal()" class="text-xs font-medium px-4 py-2 rounded-xl" style="background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(255,255,255,0.1);">Close</button>' +
     '</div>';

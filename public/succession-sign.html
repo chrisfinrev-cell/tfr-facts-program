@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Succession Transfer â€” Sign</title>
+  <title>Succession Transfer — Sign</title>
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -163,7 +163,7 @@
 
 <div class="card">
   <div class="logo">
-    <div class="logo-icon">âšœï¸</div>
+    <div class="logo-icon">⚜️</div>
     <div>
       <div class="logo-text">FACTS</div>
       <div class="logo-sub">Future Generations Succession</div>
@@ -171,11 +171,11 @@
   </div>
 
   <!-- Loading -->
-  <div id="loading">Loading transfer detailsâ€¦</div>
+  <div id="loading">Loading transfer details…</div>
 
   <!-- Error State -->
   <div id="error-state">
-    <div class="icon">âŒ</div>
+    <div class="icon">❌</div>
     <h2 style="margin-bottom:8px;">Link Invalid</h2>
     <p id="error-message" style="color:var(--text-muted);font-size:0.9rem;line-height:1.5;"></p>
   </div>
@@ -183,7 +183,7 @@
   <!-- Already Signed -->
   <div id="already-signed-state" style="display:none;">
     <div class="already-signed">
-      <div class="icon">âœ…</div>
+      <div class="icon">✅</div>
       <h2 style="margin-bottom:8px;">Already Signed</h2>
       <p style="color:var(--text-muted);font-size:0.9rem;line-height:1.5;">
         This succession transfer has already been signed and is pending corporate approval. You'll be notified when it's processed.
@@ -193,7 +193,7 @@
 
   <!-- Sign Form -->
   <div id="sign-form">
-    <h2>âšœï¸ Succession Transfer</h2>
+    <h2>⚜️ Succession Transfer</h2>
     <p class="subtitle">
       You have been designated as the successor for a Future Generations affiliate position.
       By signing below, you accept the transfer and all associated responsibilities.
@@ -202,29 +202,29 @@
     <div class="info-grid" id="transfer-info"></div>
 
     <div class="notice">
-      âš ï¸ <strong>Before signing:</strong> You understand that after this transfer is executed by corporate, you must:
-      <br>â€¢ Become a <strong>paid subscriber</strong> within 30 days
-      <br>â€¢ Complete <strong>FACTS Certification</strong> (link accounts, upload credit report) within 60 days
-      <br>â€¢ Failure to comply within 90 days will result in node deactivation
+      ⚠️ <strong>Before signing:</strong> You understand that after this transfer is executed by corporate, you must:
+      <br>• Become a <strong>paid subscriber</strong> within 30 days
+      <br>• Complete <strong>FACTS Certification</strong> (link accounts, upload credit report) within 60 days
+      <br>• Failure to comply within 90 days will result in node deactivation
     </div>
 
     <div id="sign-alert" class="alert"></div>
 
     <div class="form-group">
-      <label for="signature-input">Digital Signature â€” Type your full legal name</label>
+      <label for="signature-input">Digital Signature — Type your full legal name</label>
       <input type="text" id="signature-input" placeholder="Your full legal name" autocomplete="off" />
       <div class="signature-hint">By typing your name, you acknowledge acceptance of this succession transfer and its terms.</div>
     </div>
 
     <button class="btn btn-primary" id="sign-btn" onclick="submitSignature()">
-      âšœï¸ Sign & Accept Transfer
+      ⚜️ Sign & Accept Transfer
     </button>
   </div>
 
   <!-- Success State -->
   <div id="success-state">
     <div class="already-signed">
-      <div class="icon">ðŸŽ‰</div>
+      <div class="icon">🎉</div>
       <h2 style="margin-bottom:8px;">Signed Successfully</h2>
       <p style="color:var(--text-muted);font-size:0.9rem;line-height:1.5;margin-bottom:16px;">
         Your signature has been recorded. This transfer is now <strong style="color:var(--accent-gold);">pending corporate approval</strong>.
@@ -308,7 +308,7 @@ async function submitSignature() {
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Signingâ€¦';
+  btn.innerHTML = '<span class="spinner"></span> Signing…';
 
   try {
     const res = await fetch(`/api/succession/sign/${encodeURIComponent(token)}`, {
@@ -321,7 +321,7 @@ async function submitSignature() {
     if (!res.ok) {
       showFormAlert('error', data.error || 'Failed to submit signature');
       btn.disabled = false;
-      btn.innerHTML = 'âšœï¸ Sign & Accept Transfer';
+      btn.innerHTML = '⚜️ Sign & Accept Transfer';
       return;
     }
 
@@ -331,7 +331,7 @@ async function submitSignature() {
   } catch (err) {
     showFormAlert('error', 'Network error. Please try again.');
     btn.disabled = false;
-    btn.innerHTML = 'âšœï¸ Sign & Accept Transfer';
+    btn.innerHTML = '⚜️ Sign & Accept Transfer';
   }
 }
 

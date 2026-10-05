@@ -1,12 +1,12 @@
 ﻿<!DOCTYPE html>
-<!-- Proprietary â€“ Financial Revolution â€“ All Rights Reserved -->
+<!-- Proprietary – Financial Revolution – All Rights Reserved -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Wallet â€” Financial Revolution</title>
-  <meta name="description" content="Track your Consistency Streak and rewards points. Earn by staying active â€” accessible to all members.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050810'/%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%2310b981' stroke-width='1.5'/%3E%3Ctext x='50%25' y='56%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%2310b981' font-family='serif'%3EðŸ’°%3C/text%3E%3C/svg%3E">
+  <title>The Wallet — Financial Revolution</title>
+  <meta name="description" content="Track your Consistency Streak and rewards points. Earn by staying active — accessible to all members.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050810'/%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%2310b981' stroke-width='1.5'/%3E%3Ctext x='50%25' y='56%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%2310b981' font-family='serif'%3E💰%3C/text%3E%3C/svg%3E">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -119,10 +119,10 @@
   <!-- Header -->
   <div style="margin-bottom:1.5rem;">
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.25rem;flex-wrap:wrap;">
-      <span style="font-size:1.75rem;">ðŸ’°</span>
+      <span style="font-size:1.75rem;">💰</span>
       <h1 style="font-size:1.5rem;font-weight:900;color:#f9fafb;letter-spacing:-0.5px;">The Wallet</h1>
       <span style="background:rgba(16,185,129,0.15);color:#34d399;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid rgba(16,185,129,0.25);letter-spacing:1px;">OPEN TO ALL</span>
-      <span id="sandbox-indicator" style="display:none;" class="sandbox-badge">âš—ï¸ SANDBOX MODE</span>
+      <span id="sandbox-indicator" style="display:none;" class="sandbox-badge">⚗️ SANDBOX MODE</span>
     </div>
     <p style="color:#6b7280;font-size:0.875rem;">Earn points for staying consistent. 100 pts = $1.00. No tier required.</p>
   </div>
@@ -142,7 +142,7 @@
   <!-- Main content -->
   <div id="main-content" style="display:none;">
 
-    <!-- â”€â”€ BALANCE HERO â”€â”€ -->
+    <!-- ── BALANCE HERO ── -->
     <div class="balance-hero" style="padding:1.75rem;margin-bottom:1rem;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
         <div>
@@ -164,12 +164,12 @@
       </div>
     </div>
 
-    <!-- â”€â”€ STREAK + SYNC â”€â”€ -->
+    <!-- ── STREAK + SYNC ── -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;" class="two-col">
 
       <!-- Streak card -->
       <div class="streak-hero" style="padding:1.25rem;">
-        <div style="font-size:0.7rem;color:#fca5a5;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">ðŸ”¥ Consistency Streak</div>
+        <div style="font-size:0.7rem;color:#fca5a5;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">🔥 Consistency Streak</div>
         <div style="display:flex;align-items:baseline;gap:0.4rem;margin-bottom:0.25rem;">
           <span class="streak-number" id="streak-current">0</span>
           <span style="color:#6b7280;font-size:0.875rem;">weeks</span>
@@ -178,7 +178,7 @@
         <div style="font-size:0.75rem;color:#6b7280;margin-top:0.5rem;" id="streak-last-activity"></div>
         <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
           <button onclick="logActivity()" style="font-size:0.75rem;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;">
-            âœ“ Log Activity
+            ✓ Log Activity
           </button>
           <span id="streak-status-badge" style="font-size:0.7rem;color:#6b7280;align-self:center;"></span>
         </div>
@@ -186,7 +186,7 @@
 
       <!-- Sync reward card -->
       <div class="card-green" style="padding:1.25rem;">
-        <div style="font-size:0.7rem;color:#6ee7b7;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">ðŸ”„ Sync Reward</div>
+        <div style="font-size:0.7rem;color:#6ee7b7;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">🔄 Sync Reward</div>
         <div style="font-size:1.75rem;font-weight:900;color:#34d399;margin-bottom:0.25rem;">+50 <span style="font-size:0.9rem;font-weight:600;">pts</span></div>
         <div style="font-size:0.78rem;color:#9ca3af;margin-bottom:1rem;" id="sync-status-text">
           Earn 50 pts for syncing your data. Once per 24 hours.
@@ -197,22 +197,22 @@
       </div>
     </div>
 
-    <!-- â”€â”€ STREAK MILESTONES â”€â”€ -->
+    <!-- ── STREAK MILESTONES ── -->
     <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
-      <div style="font-size:0.8rem;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.875rem;">ðŸ† Streak Milestones</div>
+      <div style="font-size:0.8rem;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.875rem;">🏆 Streak Milestones</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;" id="streak-milestones"></div>
     </div>
 
-    <!-- â”€â”€ HOW TO EARN â”€â”€ -->
+    <!-- ── HOW TO EARN ── -->
     <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
-      <div style="font-size:0.8rem;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.875rem;">âš¡ How to Earn Points</div>
+      <div style="font-size:0.8rem;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.875rem;">⚡ How to Earn Points</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;" class="two-col">
         <div style="display:flex;justify-content:space-between;font-size:0.82rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
           <span style="color:#d1d5db;">XP event (via Gamification)</span>
-          <span style="color:#34d399;font-weight:600;">XP â†’ pts</span>
+          <span style="color:#34d399;font-weight:600;">XP → pts</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.82rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-          <span style="color:#d1d5db;">Manual sync (1Ã—/day)</span>
+          <span style="color:#d1d5db;">Manual sync (1×/day)</span>
           <span style="color:#34d399;font-weight:600;">+50 pts</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.82rem;padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
@@ -226,16 +226,16 @@
       </div>
       <div style="margin-top:0.875rem;padding:0.75rem;background:rgba(16,185,129,0.05);border-radius:0.625rem;border:1px solid rgba(16,185,129,0.12);">
         <p style="font-size:0.78rem;color:#6b7280;margin:0;line-height:1.5;">
-          <strong style="color:#34d399;">Cent-Standard:</strong> 100 points = $1.00. All arithmetic is integer-only â€” no rounding, no decimals in the ledger.
+          <strong style="color:#34d399;">Cent-Standard:</strong> 100 points = $1.00. All arithmetic is integer-only — no rounding, no decimals in the ledger.
           Points earned in <span style="color:#a78bfa;">Sandbox Mode</span> are ring-fenced and have no real-world value.
         </p>
       </div>
     </div>
 
-    <!-- â”€â”€ RECENT ACTIVITY â”€â”€ -->
+    <!-- ── RECENT ACTIVITY ── -->
     <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
-        <div style="font-size:0.8rem;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">ðŸ“‹ Recent Activity</div>
+        <div style="font-size:0.8rem;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">📋 Recent Activity</div>
         <span id="history-count" style="font-size:0.72rem;color:#6b7280;"></span>
       </div>
       <div id="history-list">
@@ -245,10 +245,10 @@
       </div>
     </div>
 
-    <!-- â”€â”€ LENDING DESK INTEGRATION NOTE â”€â”€ -->
+    <!-- ── LENDING DESK INTEGRATION NOTE ── -->
     <div style="padding:0.875rem;background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.15);border-radius:0.875rem;margin-bottom:1rem;">
       <div style="display:flex;align-items:flex-start;gap:0.75rem;">
-        <span style="font-size:1.25rem;flex-shrink:0;">ðŸ¦</span>
+        <span style="font-size:1.25rem;flex-shrink:0;">🏦</span>
         <div>
           <div style="font-size:0.82rem;font-weight:600;color:#c4b5fd;margin-bottom:0.25rem;">Behavioral Underwriting</div>
           <div style="font-size:0.78rem;color:#6b7280;line-height:1.5;">
@@ -265,7 +265,7 @@
 <script>
 let walletData = null;
 
-// â”€â”€ Load dashboard â”€â”€
+// ── Load dashboard ──
 async function loadWallet() {
   try {
     const res = await fetch('/api/mod_rewards/dashboard', { credentials: 'same-origin' });
@@ -311,9 +311,9 @@ function renderWallet(d) {
   const isActiveThisWeek = d.streak.last_activity_week === thisWeek;
   const statusBadge = document.getElementById('streak-status-badge');
   if (isActiveThisWeek) {
-    statusBadge.innerHTML = '<span style="color:#34d399;">âœ“ Active this week</span>';
+    statusBadge.innerHTML = '<span style="color:#34d399;">✓ Active this week</span>';
   } else if (d.streak.current > 0) {
-    statusBadge.innerHTML = '<span style="color:#fbbf24;">âš  Log activity to keep streak</span>';
+    statusBadge.innerHTML = '<span style="color:#fbbf24;">⚠ Log activity to keep streak</span>';
   }
 
   // Sync button state
@@ -321,16 +321,16 @@ function renderWallet(d) {
 
   // Streak milestones
   const milestones = [
-    { weeks: 4,  label: '4-Week Streak',  icon: 'ðŸ”¥' },
-    { weeks: 8,  label: '8-Week Streak',  icon: 'ðŸ’ª' },
-    { weeks: 13, label: '13-Week Streak', icon: 'âš¡' },
-    { weeks: 26, label: '26-Week Streak', icon: 'ðŸ†' }
+    { weeks: 4,  label: '4-Week Streak',  icon: '🔥' },
+    { weeks: 8,  label: '8-Week Streak',  icon: '💪' },
+    { weeks: 13, label: '13-Week Streak', icon: '⚡' },
+    { weeks: 26, label: '26-Week Streak', icon: '🏆' }
   ];
   const msEl = document.getElementById('streak-milestones');
   msEl.innerHTML = milestones.map(m => {
     const achieved = d.streak.longest >= m.weeks || d.streak.current >= m.weeks;
     return `<div class="streak-mile ${achieved ? 'achieved' : ''}">
-      <div style="font-size:1.25rem;margin-bottom:0.25rem;">${achieved ? m.icon : 'ðŸ”’'}</div>
+      <div style="font-size:1.25rem;margin-bottom:0.25rem;">${achieved ? m.icon : '🔒'}</div>
       <div style="font-size:0.7rem;font-weight:600;color:${achieved ? '#fca5a5' : '#6b7280'};">${m.label}</div>
       <div style="font-size:0.7rem;color:${achieved ? '#f87171' : '#374151'};font-weight:700;margin-top:2px;">${m.weeks}w</div>
     </div>`;
@@ -382,7 +382,7 @@ function renderHistory(history) {
     return `<div class="history-row">
       <div>
         <div style="font-size:0.82rem;color:#d1d5db;">${h.label}</div>
-        <div style="font-size:0.7rem;color:#6b7280;">${dateStr} Â· ${timeStr}</div>
+        <div style="font-size:0.7rem;color:#6b7280;">${dateStr} · ${timeStr}</div>
       </div>
       <div class="${isEarn ? 'pts-earn' : 'pts-spend'}" style="font-size:0.9rem;">
         ${isEarn ? '+' : ''}${h.points.toLocaleString()} pts
@@ -391,11 +391,11 @@ function renderHistory(history) {
   }).join('');
 }
 
-// â”€â”€ Sync reward â”€â”€
+// ── Sync reward ──
 async function triggerSyncReward() {
   const btn = document.getElementById('sync-btn');
   btn.disabled = true;
-  btn.textContent = 'Claimingâ€¦';
+  btn.textContent = 'Claiming…';
 
   try {
     const res = await fetch('/api/mod_rewards/sync-reward', {
@@ -434,7 +434,7 @@ async function triggerSyncReward() {
   }
 }
 
-// â”€â”€ Log activity (manual streak logging) â”€â”€
+// ── Log activity (manual streak logging) ──
 async function logActivity() {
   try {
     const res = await fetch('/api/mod_rewards/activity', {
@@ -451,7 +451,7 @@ async function logActivity() {
         data.streak.longest > 0 ? `Best: ${data.streak.longest} weeks` : 'No streak yet';
 
       const statusBadge = document.getElementById('streak-status-badge');
-      statusBadge.innerHTML = '<span style="color:#34d399;">âœ“ Active this week</span>';
+      statusBadge.innerHTML = '<span style="color:#34d399;">✓ Active this week</span>';
     }
   } catch (err) {
     console.warn('Activity log failed:', err.message);

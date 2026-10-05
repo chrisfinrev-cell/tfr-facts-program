@@ -1,4 +1,4 @@
-// Proprietary â€“ Financial Revolution â€“ All Rights Reserved
+// Proprietary – Financial Revolution – All Rights Reserved
 /**
  * FACTS Finance Server
  *
@@ -25,7 +25,7 @@ const OpenAI = require('openai');
 const nodeFetch = require('node-fetch'); // r2-proxy: use node-fetch v2, not native fetch
 const FormData = require('form-data');   // r2-proxy: use form-data for correct multipart boundaries
 
-// â”€â”€â”€ Module Architecture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Module Architecture ─────────────────────────────────────────────
 const ModuleLoader = require('./module-loader');
 const createCoreAPI = require('./core-api-contract');
 let createPreviewRouter;
@@ -36,23 +36,23 @@ try {
 }
 const { moduleErrorHandler } = require('./module-error-boundary');
 
-// â”€â”€â”€ Phase Zero Deadline & Lockout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Phase Zero Deadline & Lockout ───────────────────────────────────
 const pzDeadlineModule = require('./modules/mod_pz_deadline');
 
-// â”€â”€â”€ Twilio Verify (SMS OTP) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Twilio Verify (SMS OTP) ────────────────────────────────────────
 const { isConfigured: twilioConfigured, sendVerification, checkVerification } = require('./services/twilio');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// â”€â”€â”€ Health Check (Render deploy requirement) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Health Check (Render deploy requirement) ───────────────────────────────
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'facts-finance-2' });
 });
 
 if (!process.env.DATABASE_URL) {
-  // WARN instead of crash â€” allows static files to be served while DB env is restored
-  console.error('WARNING: DATABASE_URL not set â€” database features will fail. Static files still served.');
+  // WARN instead of crash — allows static files to be served while DB env is restored
+  console.error('WARNING: DATABASE_URL not set — database features will fail. Static files still served.');
 }
 
 const pool = process.env.DATABASE_URL ? new Pool({
@@ -105,7 +105,7 @@ const pool = process.env.DATABASE_URL ? new Pool({
   }
 })();
 
-// â”€â”€â”€ Safe Pool Accessor (auto-reconnect for cron callbacks) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Safe Pool Accessor (auto-reconnect for cron callbacks) ─────────────────
 // All scheduled callbacks must use getPool() instead of direct `pool` reference.
 // This guards against the race condition where pool is null at startup
 // or becomes null after a connection drop.
@@ -127,7 +127,7 @@ function getPool() {
   }
 }
 
-// â”€â”€â”€ VAPID / Push Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── VAPID / Push Notifications ──────────────────────────
 let webPush = null;
 let vapidKeys = null;
 try {
@@ -143,7 +143,7 @@ try {
   } else {
     vapidKeys = webPush.generateVAPIDKeys();
     webPush.setVapidDetails(subject, vapidKeys.publicKey, vapidKeys.privateKey);
-    console.log('[PWA] VAPID keys not set in env â€” ephemeral keys generated (subscriptions reset on redeploy)');
+    console.log('[PWA] VAPID keys not set in env — ephemeral keys generated (subscriptions reset on redeploy)');
     console.log(`[PWA] To persist: set VAPID_PUBLIC_KEY=${vapidKeys.publicKey}`);
     console.log(`[PWA]             set VAPID_PRIVATE_KEY=${vapidKeys.privateKey}`);
   }
@@ -151,10 +151,10 @@ try {
   console.warn('[PWA] web-push not available, push notifications disabled:', err.message);
 }
 
-// â”€â”€â”€ Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Middleware ──────────────────────────────────────────
 app.set('trust proxy', 1);
 
-// â”€â”€â”€ Security Headers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Security Headers ────────────────────────────────────
 // Applied to every response before static files or routes are processed
 app.use(function (req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -178,8 +178,8 @@ app.use(function (req, res, next) {
   next();
 });
 
-// â”€â”€â”€ In-Memory Rate Limiter for /api/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// 100 requests per minute per IP â€” sliding window
+// ─── In-Memory Rate Limiter for /api/* ──────────────────
+// 100 requests per minute per IP — sliding window
 (function () {
   var WINDOW_MS = 60 * 1000;
   var MAX_REQUESTS = 100;
@@ -227,7 +227,7 @@ app.use('/api/stripe-webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '5mb' }));
 
-// Session management â€” PostgreSQL-backed when DB available, memory fallback otherwise
+// Session management — PostgreSQL-backed when DB available, memory fallback otherwise
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const sessionOpts = {
   secret: SESSION_SECRET,
@@ -273,7 +273,7 @@ app.get('/dashboard', enforceNda, (req, res) => {
   res.redirect('/app');
 });
 
-// Auth middleware â€” attaches req.user if session exists
+// Auth middleware — attaches req.user if session exists
 function requireAuth(req, res, next) {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: 'Authentication required' });
@@ -282,7 +282,7 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Optional auth â€” attaches req.userId if available but doesn't block
+// Optional auth — attaches req.userId if available but doesn't block
 function optionalAuth(req, res, next) {
   if (req.session && req.session.userId) {
     req.userId = req.session.userId;
@@ -290,18 +290,18 @@ function optionalAuth(req, res, next) {
   next();
 }
 
-// â”€â”€â”€ Phase Zero Navigation Gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Phase Zero Navigation Gate ───────────────────────────────────────────────
 // Redirects logged-in users who haven't completed Phase Zero.
 // Admin/owner emails bypass the gate for testing.
-// â”€â”€â”€ Phase Zero Deadline Lockout Gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Phase Zero Deadline Lockout Gate ────────────────────────────────────────
 // Must run BEFORE initPhaseZeroGate. Locked-out users go to /lockout, not /phase-zero.
 pzDeadlineModule.applyDeadlineLockoutMiddleware(app, pool);
 
 (function initPhaseZeroGate() {
   var PZ_BYPASS_PATHS = [
     '/', '/index.html', '/login', '/login.html', '/signup', '/signup.html',
-    '/bleed-calculator', '/stolen-calculator', '/facts-funnel', '/forensic-scan',  // Public calculators â€” no auth needed
-    '/app', '/app.html',                       // App dashboard â€” Phase Zero check inside app
+    '/bleed-calculator', '/stolen-calculator', '/facts-funnel', '/forensic-scan',  // Public calculators — no auth needed
+    '/app', '/app.html',                       // App dashboard — Phase Zero check inside app
     '/phase-zero', '/phase-zero.html', '/phase-zero-widget.js',
     '/lockout', '/lockout.html',
     '/forgot-password', '/forgot-password.html',
@@ -321,7 +321,7 @@ pzDeadlineModule.applyDeadlineLockoutMiddleware(app, pool);
     if (req.session.pzComplete === true) return next();
     var email = (req.session.email || '').toLowerCase();
     var creator = (process.env.CREATOR_EMAIL || '').toLowerCase();
-    // Admin and owner emails bypass Phase Zero â€” both get full sovereign access.
+    // Admin and owner emails bypass Phase Zero — both get full sovereign access.
     var adminEmails = (process.env.ADMIN_EMAILS || 'chris.finrev@gmail.com')
       .split(',').map(function(e) { return e.trim().toLowerCase(); }).filter(Boolean);
     var ownerEmails = (process.env.OWNER_EMAILS || process.env.FUTURE_GEN_EMAILS || 'ecci2760@gmail.com,ecci2760f@gmail.com,dianes3cps@gmail.com')
@@ -341,7 +341,7 @@ pzDeadlineModule.applyDeadlineLockoutMiddleware(app, pool);
   });
 }());
 
-// â”€â”€â”€ Audit Lockout Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Audit Lockout Middleware ──────────────────────────────────────────────────
 // Blocks POST /api/transactions for users in audit lockout (read-only mode).
 app.use(function auditLockoutGuard(req, res, next) {
   if (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') return next();
@@ -355,7 +355,7 @@ app.use(function auditLockoutGuard(req, res, next) {
       if (!u || u.audit_status !== 'locked') return next();
       var until = u.audit_lockout_until ? new Date(u.audit_lockout_until) : null;
       if (!until || until <= new Date()) {
-        // Lockout expired â€” flip back to not_started so user can retry
+        // Lockout expired — flip back to not_started so user can retry
         pool.query(
           'UPDATE users SET audit_status = $1 WHERE id = $2',
           ['not_started', req.session.userId]
@@ -371,12 +371,12 @@ app.use(function auditLockoutGuard(req, res, next) {
     .catch(function() { next(); });
 });
 
-// â”€â”€â”€ Report Issue Injection Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Report Issue Injection Middleware ─────────────────────────────────────────
 // Intercepts HTML GET requests before express.static, reads the file, injects
 // the Report Issue script tag before </body>, then sends the modified HTML.
 // Non-HTML assets fall through to express.static unchanged.
 (function () {
-  // /app and /app.html MUST be skipped â€” the /app route handler (requireAuth)
+  // /app and /app.html MUST be skipped — the /app route handler (requireAuth)
   // injects window.__SERVER_AUTHENTICATED and inline visibility styles.
   // If this middleware intercepts /app first, it serves raw app.html without
   // auth injection and the user sees the marketing page instead of the dashboard.
@@ -416,15 +416,15 @@ app.use(function auditLockoutGuard(req, res, next) {
   });
 }());
 
-// Redirect /app.html â†’ /app so all app access goes through requireAuth + auth injection.
-// MUST be before express.static â€” otherwise static middleware serves the raw file first.
+// Redirect /app.html → /app so all app access goes through requireAuth + auth injection.
+// MUST be before express.static — otherwise static middleware serves the raw file first.
 app.get('/app.html', (req, res) => res.redirect(301, '/app'));
 app.get('/admin.html', (req, res) => res.redirect(302, '/admin'));
 
 // Serve static files AFTER session middleware
 app.use(express.static(path.join(__dirname, 'public')));
 
-// â”€â”€â”€ Health check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Health check ───────────────────────────────────────
 app.get('/health', async (req, res) => {
   try {
     if (pool) { await pool.query('SELECT 1'); }
@@ -434,9 +434,9 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ FACTSMONEY.COM COMING SOON â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── FACTSMONEY.COM COMING SOON ───────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Serve factsmoney.com full marketing landing page
 app.get('/factsmoney', function (req, res) {
@@ -448,43 +448,43 @@ app.get('/coming-soon', function (req, res) {
   res.redirect(301, '/factsmoney');
 });
 
-// Forensic Credit Scan â€” public acquisition page (no auth required)
+// Forensic Credit Scan — public acquisition page (no auth required)
 app.get('/credit-analysis', function (req, res) {
   res.sendFile(path.join(__dirname, 'public', 'credit-analysis.html'));
 });
 
-// Onboarding Funnel â€” referral-to-Phase-Zero pipeline (no auth required)
+// Onboarding Funnel — referral-to-Phase-Zero pipeline (no auth required)
 // Logged-in users: redirect to app (Forensic Scan is accessible from there)
 app.get('/facts-funnel', function (req, res) {
   if (req.session && req.session.userId) return res.redirect('/app');
   res.sendFile(path.join(__dirname, 'public', 'facts-funnel.html'));
 });
 
-// Bleed Calculator â€” standalone module (same funnel, own URL)
+// Bleed Calculator — standalone module (same funnel, own URL)
 app.get('/bleed-calculator', function (req, res) {
   if (req.session && req.session.userId) return res.redirect('/app');
   res.sendFile(path.join(__dirname, 'public', 'facts-funnel.html'));
 });
 
-// Stolen Calculator â€” same funnel, Tools tab alias
+// Stolen Calculator — same funnel, Tools tab alias
 app.get('/stolen-calculator', function (req, res) {
   if (req.session && req.session.userId) return res.redirect('/app');
   res.sendFile(path.join(__dirname, 'public', 'facts-funnel.html'));
 });
 
-// Forensic Scan â€” 5 YES/NO questions (step 2 of onboarding funnel)
+// Forensic Scan — 5 YES/NO questions (step 2 of onboarding funnel)
 app.get('/forensic-scan', function (req, res) {
   if (req.session && req.session.userId) return res.redirect('/app');
   res.sendFile(path.join(__dirname, 'public', 'forensic-scan.html'));
 });
 
-// Vault Signup â€” step 3 (after forensic scan)
+// Vault Signup — step 3 (after forensic scan)
 app.get('/vault-signup', function (req, res) {
   if (req.session && req.session.userId) return res.redirect('/app');
   res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
-// Main landing â€” clean marketing page; calculator is at /bleed-calculator
+// Main landing — clean marketing page; calculator is at /bleed-calculator
 app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -494,7 +494,7 @@ app.get('/factsmoney', function (req, res) {
   res.sendFile(path.join(__dirname, 'public', 'factsmoney.html'));
 });
 
-// API: Contact form â€” forwards to chris.finrev@gmail.com via Polsia email proxy
+// API: Contact form — forwards to chris.finrev@gmail.com via Polsia email proxy
 app.post('/api/contact', async function (req, res) {
   try {
     var body    = req.body || {};
@@ -553,7 +553,7 @@ app.post('/api/contact', async function (req, res) {
     return res.json({ ok: true });
   } catch (err) {
     console.error('[Contact] Error:', err.message);
-    return res.status(500).json({ ok: false, error: 'Server error â€” please try again.' });
+    return res.status(500).json({ ok: false, error: 'Server error — please try again.' });
   }
 });
 
@@ -591,13 +591,13 @@ app.post('/api/launch-waitlist', async function (req, res) {
     return res.json({ ok: true });
   } catch (err) {
     console.error('[LaunchWaitlist] Error:', err.message);
-    return res.status(500).json({ ok: false, error: 'Server error â€” please try again.' });
+    return res.status(500).json({ ok: false, error: 'Server error — please try again.' });
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ AUTH ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── AUTH ROUTES ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 const PASSWORD_MIN_LENGTH = 10;
 const BCRYPT_ROUNDS = 12;
@@ -628,18 +628,18 @@ async function seedUserAllocations(client, userId) {
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ SINGLE SOURCE OF TRUTH: PRO ACCESS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── SINGLE SOURCE OF TRUTH: PRO ACCESS ─────────────────
+// ═══════════════════════════════════════════════════════════
 // ALL Pro access checks MUST use these functions.
 // DO NOT inline Pro logic anywhere else in this file.
 // Previous bugs: #86587, #87049, #109046, #141889, #154484
 
 const CREATOR_EMAIL = (process.env.CREATOR_EMAIL || 'owner@example.com').toLowerCase();
 
-// â”€â”€â”€ TWO-TIER ALLOWLIST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Tier 1: Admin â€” chris.finrev@gmail.com only. Full admin panel, all controls.
-// Tier 2: Owner â€” ecci2760@gmail.com, ecci2760f@gmail.com, dianes3cps@gmail.com.
+// ─── TWO-TIER ALLOWLIST ──────────────────────────────────────────────────────
+// Tier 1: Admin — chris.finrev@gmail.com only. Full admin panel, all controls.
+// Tier 2: Owner — ecci2760@gmail.com, ecci2760f@gmail.com, dianes3cps@gmail.com.
 //          Sovereign feature access for free. NO admin panel. NO affiliate eligibility.
 //
 // ADMIN_EMAILS env var: canonical source for admin-tier accounts.
@@ -651,7 +651,7 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'chris.finrev@gmail.com')
 const OWNER_EMAILS = (process.env.OWNER_EMAILS || process.env.FUTURE_GEN_EMAILS || 'ecci2760@gmail.com,ecci2760f@gmail.com,dianes3cps@gmail.com')
   .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
-// Legacy alias â€” callers that still reference FUTURE_GEN_EMAILS get OWNER_EMAILS
+// Legacy alias — callers that still reference FUTURE_GEN_EMAILS get OWNER_EMAILS
 const FUTURE_GEN_EMAILS = OWNER_EMAILS;
 
 function isAdminEmail(email) {
@@ -662,7 +662,7 @@ function isOwnerEmail(email) {
   return !!(email && OWNER_EMAILS.includes(email.toLowerCase()));
 }
 
-// Legacy alias â€” same check, kept for backward compatibility
+// Legacy alias — same check, kept for backward compatibility
 function isFutureGenEmail(email) {
   return isOwnerEmail(email);
 }
@@ -718,7 +718,7 @@ async function hasProAccess(userOrId) {
   // 1. Creator flag set in DB
   if (user.is_creator) return true;
 
-  // 1b. Owner email â€” full sovereign access, no admin rights
+  // 1b. Owner email — full sovereign access, no admin rights
   if (isOwnerEmail(user.email)) return true;
 
   // 2. Email matches CREATOR_EMAIL (belt-and-suspenders: survives flag loss)
@@ -731,7 +731,7 @@ async function hasProAccess(userOrId) {
     return true;
   }
 
-  // 3. Redeemed a promo code â€” BUT only if the post-launch grace period hasn't expired.
+  // 3. Redeemed a promo code — BUT only if the post-launch grace period hasn't expired.
   //    promo_grace_expired is set to TRUE by the daily promo-grace-manager job after
   //    the 14-day countdown runs out. Until then (or if it was never triggered) it is
   //    FALSE/null, meaning the promo still grants Pro.
@@ -743,9 +743,9 @@ async function hasProAccess(userOrId) {
   // 5. Active 21-day free trial (Habitual Handshake)
   if (user.trial_expires_at && new Date(user.trial_expires_at) > new Date()) return true;
 
-  // 6. family Pro â€” user is an active member of a NON-INCUBATOR family whose owner has Pro.
+  // 6. family Pro — user is an active member of a NON-INCUBATOR family whose owner has Pro.
   //    Owner pays; all active members inherit their Pro access automatically.
-  //    NOTE: Incubator sub-accounts are excluded here â€” they get educational (Levels 1-3) only.
+  //    NOTE: Incubator sub-accounts are excluded here — they get educational (Levels 1-3) only.
   //    Use hasIncubatorSubAccess() to check educational-tier access for sub-accounts.
   if (user.id) {
     try {
@@ -774,7 +774,7 @@ async function hasProAccess(userOrId) {
 
 /**
  * Check if a user is an active Family Incubator sub-account.
- * Sub-accounts get educational access (Levels 1â€“3) only â€” NOT full Pro.
+ * Sub-accounts get educational access (Levels 1–3) only — NOT full Pro.
  * Returns true if:
  *   - User is an active, non-broken-away sub-account of an incubator family
  *   - The head of family has an active Pro subscription
@@ -805,12 +805,12 @@ async function hasIncubatorSubAccess(userId) {
 }
 
 /**
- * â”€â”€ PRODUCT TIER HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ── PRODUCT TIER HELPERS ──────────────────────────────────────────────────────
  *
  * Maps the 5-tier product structure to the existing pricing_tier column.
  *
  * Tier hierarchy (ascending):
- *   free â†’ pro â†’ business â†’ elite â†’ sovereign
+ *   free → pro → business → elite → sovereign
  */
 
 /**
@@ -897,7 +897,7 @@ async function hasSovereignAccess(userId) {
     if (isOwnerEmail(u.email)) return true;
     const pt = u.pricing_tier || 'none';
     if (pt !== 'sovereign_executive') return false;
-    // Sovereign is a lifetime purchase â€” no paid_until check needed (but keep plan check)
+    // Sovereign is a lifetime purchase — no paid_until check needed (but keep plan check)
     // It may be set as plan='paid' with a far-future paid_until, or handled separately.
     // We trust pricing_tier = sovereign_executive as authoritative.
     return true;
@@ -927,7 +927,7 @@ async function checkCreditGate(userId) {
   }
 }
 
-// â”€â”€ END PRODUCT TIER HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── END PRODUCT TIER HELPERS ──────────────────────────────────────────────────
 
 /**
  * Check if a user is the creator.
@@ -967,9 +967,9 @@ function buildProResponse(user, hasPro) {
  *
  * Returns: { active: bool, expired: bool, daysRemaining: number|null }
  *
- * active=true  â†’ countdown is live, show banner
- * expired=true â†’ grace ended, Pro revoked (promo_grace_expired already set in DB)
- * daysRemaining â†’ days left (0 = last day, null = not started yet)
+ * active=true  → countdown is live, show banner
+ * expired=true → grace ended, Pro revoked (promo_grace_expired already set in DB)
+ * daysRemaining → days left (0 = last day, null = not started yet)
  *
  * This is purely a display helper; actual Pro-gate enforcement is done by
  * hasProAccess() checking promo_grace_expired.
@@ -980,12 +980,12 @@ function calculatePromoGraceStatus(user) {
     return { active: false, expired: false, daysRemaining: null };
   }
 
-  // Already has an active paid subscription â†’ no banner needed
+  // Already has an active paid subscription → no banner needed
   if (user.plan === 'paid' && user.paid_until && new Date(user.paid_until) > new Date()) {
     return { active: false, expired: false, daysRemaining: null };
   }
 
-  // Cron already flipped the expired flag â†’ downgraded
+  // Cron already flipped the expired flag → downgraded
   if (user.promo_grace_expired) {
     return { active: false, expired: true, daysRemaining: 0 };
   }
@@ -1021,7 +1021,7 @@ function calculatePromoGraceStatus(user) {
   const daysRemaining = Math.max(0, Math.ceil(14 - daysElapsed));
 
   if (daysRemaining === 0 && daysElapsed >= 14) {
-    // Grace ended but cron hasn't run yet â€” treat as expired for display
+    // Grace ended but cron hasn't run yet — treat as expired for display
     return { active: false, expired: true, daysRemaining: 0 };
   }
 
@@ -1032,22 +1032,22 @@ function calculatePromoGraceStatus(user) {
  * Calculate the 21-day free trial status for a user.
  * Returns: { active: bool, expired: bool, daysRemaining: number|null, planType: string|null }
  *
- * active=true  â†’ trial is live, show countdown banner
- * expired=true â†’ trial ended, user is on Free
- * daysRemaining â†’ days left (1 = last day, null = no trial)
- * planType â†’ 'individual' or 'family'
+ * active=true  → trial is live, show countdown banner
+ * expired=true → trial ended, user is on Free
+ * daysRemaining → days left (1 = last day, null = no trial)
+ * planType → 'individual' or 'family'
  */
 function calculateTrialStatus(user) {
   // No trial started
   if (!user.trial_used) return { active: false, expired: false, daysRemaining: null, planType: null };
 
-  // Creator accounts have permanent Pro â€” no trial banner
+  // Creator accounts have permanent Pro — no trial banner
   if (user.is_creator) return { active: false, expired: false, daysRemaining: null, planType: null };
   if (user.email && user.email.toLowerCase() === CREATOR_EMAIL) {
     return { active: false, expired: false, daysRemaining: null, planType: null };
   }
 
-  // Active paid subscription â€” no trial banner needed (they're already Pro)
+  // Active paid subscription — no trial banner needed (they're already Pro)
   if (user.plan === 'paid' && user.paid_until && new Date(user.paid_until) > new Date()) {
     return { active: false, expired: false, daysRemaining: null, planType: null };
   }
@@ -1069,7 +1069,7 @@ function calculateTrialStatus(user) {
 
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
-  // Guard: database unavailable â†’ return 503 instead of crashing
+  // Guard: database unavailable → return 503 instead of crashing
   if (!pool) {
     return res.status(503).json({ error: 'Service temporarily unavailable. Please try again in a moment.' });
   }
@@ -1110,9 +1110,9 @@ app.post('/api/auth/signup', async (req, res) => {
     // Determine if this is the creator email (for is_creator flag on new users)
     const isCreatorEmail = normalizedEmail === CREATOR_EMAIL;
 
-    // â”€â”€â”€ INVITE CODE: Optional â€” validate only if provided â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── INVITE CODE: Optional — validate only if provided ───────────────
     // Invite/promo code is always optional. If provided, we validate it.
-    // (Launch gate removed â€” app is live, signup must work without a code.)
+    // (Launch gate removed — app is live, signup must work without a code.)
     if (invite_code && invite_code.trim()) {
       const promoCheck = await pool.query(
         'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
@@ -1127,7 +1127,7 @@ app.post('/api/auth/signup', async (req, res) => {
         return res.status(400).json({ error: 'This invite code has already been used.' });
       }
     }
-    // No code provided â€” that's fine, proceed with signup
+    // No code provided — that's fine, proceed with signup
 
     // Check if user already exists with a password (registered account)
     const existingUser = await pool.query(
@@ -1147,7 +1147,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
       let userId;
       if (existingUser.rows.length > 0) {
-        // User exists (maybe from subscription) but no password â€” set password
+        // User exists (maybe from subscription) but no password — set password
         await client.query(
           `UPDATE users SET password_hash = $1, name = $2, user_id = $3, updated_at = NOW() WHERE id = $4`,
           [passwordHash, name || null, normalizedUserId, existingUser.rows[0].id]
@@ -1167,7 +1167,7 @@ app.post('/api/auth/signup', async (req, res) => {
       // Seed default allocation percentages for this user
       await seedUserAllocations(client, userId);
 
-      // â”€â”€â”€ Redeem invite code if provided â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ─── Redeem invite code if provided ───────────────────────────────
       if (invite_code && invite_code.trim()) {
         // Re-validate code in transaction (double-check it's still active)
         const promoResult = await client.query(
@@ -1196,7 +1196,7 @@ app.post('/api/auth/signup', async (req, res) => {
         }
       }
 
-      // â”€â”€â”€ Generate unique referral code for new user â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ─── Generate unique referral code for new user ───────────────────
       try {
         const refCode = await generateUniqueReferralCode();
         await client.query(
@@ -1205,10 +1205,10 @@ app.post('/api/auth/signup', async (req, res) => {
         );
       } catch (refErr) {
         console.error('[Signup] Failed to generate referral code:', refErr.message);
-        // Non-fatal â€” user can still sign up; code generated on next login
+        // Non-fatal — user can still sign up; code generated on next login
       }
 
-      // â”€â”€â”€ Set referred_by_user_id if a valid referral code was provided â”€â”€
+      // ─── Set referred_by_user_id if a valid referral code was provided ──
       let signupReferrerId = null; // hoisted so we can use it after COMMIT
       if (ref_code && ref_code.trim() && !isCreatorEmail) {
         try {
@@ -1219,7 +1219,7 @@ app.post('/api/auth/signup', async (req, res) => {
           if (refOwner.rows.length > 0) {
             signupReferrerId = refOwner.rows[0].id;
             if (signupReferrerId !== userId) {
-              // â”€â”€ Beta Phase Invite Taper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              // ── Beta Phase Invite Taper ──────────────────────────────────────
               // Check the referrer's affiliate invite quota (5-4-3-2-1 by tier).
               // If they've used all their invites (beta_invites_remaining = 0),
               // the new user goes to the orphan pool instead of being linked.
@@ -1235,11 +1235,11 @@ app.post('/api/auth/signup', async (req, res) => {
                 if (refAff.rows.length > 0) {
                   const { id: affId, beta_invites_remaining } = refAff.rows[0];
                   if (beta_invites_remaining !== null && beta_invites_remaining <= 0) {
-                    // Quota exhausted â€” decouple from this referrer; user goes to orphan pool
-                    console.log(`[InviteTaper] Referrer affiliate #${affId} has no invites left â€” orphan-pooling new user ${userId}`);
+                    // Quota exhausted — decouple from this referrer; user goes to orphan pool
+                    console.log(`[InviteTaper] Referrer affiliate #${affId} has no invites left — orphan-pooling new user ${userId}`);
                     signupReferrerId = null;
                   } else {
-                    // Quota OK â€” link and decrement
+                    // Quota OK — link and decrement
                     await client.query(
                       `UPDATE users SET referred_by_user_id = $1, updated_at = NOW()
                        WHERE id = $2 AND referred_by_user_id IS NULL`,
@@ -1257,7 +1257,7 @@ app.post('/api/auth/signup', async (req, res) => {
                     }
                   }
                 } else {
-                  // Referrer is not an affiliate â€” still link the user (no quota to check)
+                  // Referrer is not an affiliate — still link the user (no quota to check)
                   await client.query(
                     `UPDATE users SET referred_by_user_id = $1, updated_at = NOW()
                      WHERE id = $2 AND referred_by_user_id IS NULL`,
@@ -1266,7 +1266,7 @@ app.post('/api/auth/signup', async (req, res) => {
                 }
               } catch (taperErr) {
                 console.error('[InviteTaper] quota check error (non-fatal):', taperErr.message);
-                // Fall through â€” still link the user if quota check fails
+                // Fall through — still link the user if quota check fails
                 await client.query(
                   `UPDATE users SET referred_by_user_id = $1, updated_at = NOW()
                    WHERE id = $2 AND referred_by_user_id IS NULL`,
@@ -1281,7 +1281,7 @@ app.post('/api/auth/signup', async (req, res) => {
         }
       }
 
-      // â”€â”€â”€ Log disclaimer acceptance if provided â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ─── Log disclaimer acceptance if provided ────────────────────────
       if (disclaimer_accepted) {
         try {
           await client.query(
@@ -1295,19 +1295,19 @@ app.post('/api/auth/signup', async (req, res) => {
           );
         } catch (disclaimerErr) {
           console.error('[Signup] Failed to log disclaimer acceptance:', disclaimerErr.message);
-          // Non-fatal â€” don't block signup
+          // Non-fatal — don't block signup
         }
       }
 
       await client.query('COMMIT');
 
-      // â”€â”€â”€ Ghost Slot / Orphan Pool â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ─── Ghost Slot / Orphan Pool ─────────────────────────────────────────
       // After signup: place free users in tree or holding tank (non-fatal, async)
       if (signupReferrerId && signupReferrerId !== userId) {
-        // User came via referral link â†’ ghost slot in referrer's tree
+        // User came via referral link → ghost slot in referrer's tree
         createGhostSlotForReferral(userId, signupReferrerId).catch(() => {});
       } else if (!isCreatorEmail) {
-        // No referral â†’ add to Holding Tank (orphan pool)
+        // No referral → add to Holding Tank (orphan pool)
         addToOrphanPool(userId).catch(() => {});
       }
 
@@ -1370,14 +1370,14 @@ app.post('/api/disclaimer/tool-acknowledge', async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    // Non-fatal â€” don't break the user experience
+    // Non-fatal — don't break the user experience
     console.error('[Disclaimer] tool-acknowledge error:', err.message);
     res.json({ success: true });
   }
 });
 
 // POST /api/auth/login
-// â”€â”€ 2FA HELPER FUNCTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── 2FA HELPER FUNCTIONS ──────────────────────────────────────────────────────
 
 // Parse a specific cookie from the Cookie header (no cookie-parser dependency)
 function getCookieValue(req, name) {
@@ -1544,7 +1544,7 @@ async function completeLogin(req, res, user) {
         );
         await pool.query(
           `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-           VALUES ($1, 'daily_login', 'Daily login â€” 10 FACTS Points', $2)`,
+           VALUES ($1, 'daily_login', 'Daily login — 10 FACTS Points', $2)`,
           [user.id, pointsToAward]
         );
       } else {
@@ -1562,7 +1562,7 @@ async function completeLogin(req, res, user) {
         );
       }
 
-      // Login streak bonuses: 7-day â†’ 50 pts, 14-day â†’ 100 pts, 30-day â†’ 250 pts
+      // Login streak bonuses: 7-day → 50 pts, 14-day → 100 pts, 30-day → 250 pts
       const LOGIN_STREAK_BONUSES = { 7: 50, 14: 100, 30: 250 };
       if (LOGIN_STREAK_BONUSES[newLoginStreak]) {
         const bonusPts = LOGIN_STREAK_BONUSES[newLoginStreak];
@@ -1595,7 +1595,7 @@ async function completeLogin(req, res, user) {
       }
     }
   } catch (pointsErr) {
-    // Non-fatal â€” don't block login if points award fails
+    // Non-fatal — don't block login if points award fails
     console.error('[Rewards] daily login points error:', pointsErr.message);
   }
 
@@ -1605,7 +1605,7 @@ async function completeLogin(req, res, user) {
   // Explicitly save session to PostgreSQL BEFORE responding.
   // Without this, the session store write is async and the browser's
   // next request (to /app) can arrive before the session row exists,
-  // causing requireAuth to see an empty session â€” especially on mobile
+  // causing requireAuth to see an empty session — especially on mobile
   // where round-trips are fast relative to DB write latency.
   await new Promise((resolve, reject) => {
     req.session.save(err => err ? reject(err) : resolve());
@@ -1618,10 +1618,10 @@ async function completeLogin(req, res, user) {
   return res.json({ success: true, redirect: '/app' });
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 app.post('/api/auth/login', async (req, res) => {
-  // Guard: database unavailable â†’ return 503 instead of crashing
+  // Guard: database unavailable → return 503 instead of crashing
   if (!pool) {
     return res.status(503).json({ error: 'Service temporarily unavailable. Please try again in a moment.' });
   }
@@ -1665,14 +1665,14 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email/User ID or password' });
     }
 
-    // â”€â”€ 2FA CHECK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 2FA CHECK ──────────────────────────────────────────────────────────────
     if (user.two_factor_enabled) {
-      // Admin bypass â€” is_creator accounts always skip 2FA for operational access
+      // Admin bypass — is_creator accounts always skip 2FA for operational access
       if (user.is_creator) {
         return await completeLogin(req, res, user);
       }
 
-      // Check "remember this device" cookie â€” skip 2FA if trusted
+      // Check "remember this device" cookie — skip 2FA if trusted
       const trustCookie = getCookieValue(req, 'facts_trust');
       if (trustCookie) {
         const trustResult = await pool.query(
@@ -1681,7 +1681,7 @@ app.post('/api/auth/login', async (req, res) => {
           [user.id, trustCookie]
         );
         if (trustResult.rows.length > 0) {
-          // Trusted device â€” complete login without 2FA
+          // Trusted device — complete login without 2FA
           return await completeLogin(req, res, user);
         }
       }
@@ -1692,12 +1692,12 @@ app.post('/api/auth/login', async (req, res) => {
       req.session.pending2faMethod = user.verification_method || 'email';
       req.session.pending2faPhone = user.verified_phone || null;
 
-      // Auto-send code â€” email or SMS based on user preference
+      // Auto-send code — email or SMS based on user preference
       const method2fa = user.verification_method || 'email';
       if (method2fa === 'sms' && user.verified_phone) {
         const smsResult = await sendVerification(user.verified_phone);
         if (!smsResult.success && !smsResult.stub) {
-          // SMS failed â€” fall back to email and notify user
+          // SMS failed — fall back to email and notify user
           console.error('[2FA] SMS send failed, falling back to email for user', user.id);
           req.session.pending2faMethod = 'email';
           await send2faCode(user.id);
@@ -1721,7 +1721,7 @@ app.post('/api/auth/login', async (req, res) => {
           : null
       });
     }
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ──────────────────────────────────────────────────────────────────────────
 
     await completeLogin(req, res, user);
   } catch (err) {
@@ -1743,10 +1743,10 @@ app.post('/api/auth/logout', (req, res) => {
   });
 });
 
-// POST /api/auth/sandbox-login â€” Switch into sandbox training account
+// POST /api/auth/sandbox-login — Switch into sandbox training account
 // Only available to the creator account (is_creator = true).
-// Does NOT require a password â€” it switches the current session to the sandbox user.
-// âš ï¸ ENGINEER NOTE: This endpoint is intentionally limited to creator accounts.
+// Does NOT require a password — it switches the current session to the sandbox user.
+// ⚠️ ENGINEER NOTE: This endpoint is intentionally limited to creator accounts.
 //    The sandbox account is seeded by scripts/seed-sandbox.js on every deploy.
 //    See: SANDBOX_ACCOUNT.md for details.
 app.post('/api/auth/sandbox-login', requireAuth, async (req, res) => {
@@ -1801,7 +1801,7 @@ app.post('/api/auth/sandbox-login', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/auth/sandbox-exit â€” Return to original account from sandbox mode
+// POST /api/auth/sandbox-exit — Return to original account from sandbox mode
 app.post('/api/auth/sandbox-exit', requireAuth, async (req, res) => {
   try {
     if (!req.session.sandboxMode || !req.session.originalUserId) {
@@ -1826,7 +1826,7 @@ app.post('/api/auth/sandbox-exit', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/auth/forgot-password â€” Send password reset email
+// POST /api/auth/forgot-password — Send password reset email
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -1935,7 +1935,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-// POST /api/auth/reset-password â€” Reset password with token
+// POST /api/auth/reset-password — Reset password with token
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const { token, password } = req.body;
@@ -2012,7 +2012,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-// GET /api/auth/me â€” Check current session
+// GET /api/auth/me — Check current session
 app.get('/api/auth/me', async (req, res) => {
   if (!req.session || !req.session.userId) {
     return res.json({ authenticated: false });
@@ -2052,7 +2052,7 @@ app.get('/api/auth/me', async (req, res) => {
       ndaAccepted = ndaResult.rows.length > 0;
     }
 
-    // Check Family Incubator sub-account status (educational access only â€” Levels 1-3)
+    // Check Family Incubator sub-account status (educational access only — Levels 1-3)
     const isIncubatorSub = !hasPro ? await hasIncubatorSubAccess(user.id) : false;
     let incubatorSubInfo = null;
     if (isIncubatorSub) {
@@ -2104,7 +2104,7 @@ app.get('/api/auth/me', async (req, res) => {
         // Family Incubator sub-account status
         is_incubator_sub: isIncubatorSub,
         incubator_info: incubatorSubInfo,
-        // Pricing tier â€” used for feature gating
+        // Pricing tier — used for feature gating
         pricing_tier: user.pricing_tier || 'none',
         // Individual plan: family features are disabled (single-user only)
         has_household_features: user.pricing_tier !== 'individual_pro',
@@ -2126,9 +2126,9 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ 21-Day Free Trial Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 21-Day Free Trial Endpoints ─────────────────────────────────────────────
 
-// POST /api/trial/activate â€” Start the 21-day free Pro trial (once per user)
+// POST /api/trial/activate — Start the 21-day free Pro trial (once per user)
 // No credit card required. Full Pro access for 21 days.
 // plan_type: 'individual' (default) | 'family'
 app.post('/api/trial/activate', requireAuth, async (req, res) => {
@@ -2152,17 +2152,17 @@ app.post('/api/trial/activate', requireAuth, async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Creator/admin accounts already have permanent Pro â€” no trial needed
+    // Creator/admin accounts already have permanent Pro — no trial needed
     if (user.is_creator || (user.email && user.email.toLowerCase() === CREATOR_EMAIL)) {
       return res.status(400).json({ success: false, message: 'Your account already has permanent Pro access.' });
     }
 
-    // Already on a paid subscription â€” no trial needed
+    // Already on a paid subscription — no trial needed
     if (user.plan === 'paid' && user.paid_until && new Date(user.paid_until) > new Date()) {
       return res.status(400).json({ success: false, message: 'You already have an active Pro subscription.' });
     }
 
-    // Trial already used â€” prevent re-trials
+    // Trial already used — prevent re-trials
     if (user.trial_used) {
       // Check if trial is still active (already running)
       if (user.trial_expires_at && new Date(user.trial_expires_at) > new Date()) {
@@ -2198,7 +2198,7 @@ app.post('/api/trial/activate', requireAuth, async (req, res) => {
       [trialStartedAt.toISOString(), trialExpiresAt.toISOString(), plan_type, userId]
     );
 
-    console.log(`[Trial] Activated ${plan_type} trial for user ${userId} â€” expires ${trialExpiresAt.toISOString()}`);
+    console.log(`[Trial] Activated ${plan_type} trial for user ${userId} — expires ${trialExpiresAt.toISOString()}`);
 
     res.json({
       success: true,
@@ -2215,7 +2215,7 @@ app.post('/api/trial/activate', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/trial/status â€” Check current user's trial status
+// GET /api/trial/status — Check current user's trial status
 app.get('/api/trial/status', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -2243,22 +2243,22 @@ app.get('/api/trial/status', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ Business Pro Onboarding Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Business Pro Onboarding Endpoints ───────────────────────────────────────
 //
 // Path Selection (mandatory for business_core / business_bundle users on first login):
 //   PATH_TYPE: A (Side-Hustle), B (Full-Timer), C (Funded Baby), D (Legacy Pivot)
 //   SURVIVAL_BURN: business fixed costs + personal necessities (B) OR + debt service (A/C/D)
-//   SOVEREIGNTY_FLOOR: SURVIVAL_BURN Ã— 6
+//   SOVEREIGNTY_FLOOR: SURVIVAL_BURN × 6
 //
 // 5-Bucket Protocol (bank confirmation gate):
-//   Bucket 1: Clearing (Checking) â€” all revenue intake
-//   Bucket 2: Tax Shield (HYSA/MM) â€” 25% allocation
-//   Bucket 3: Operating Reserve (HYSA/MM) â€” safety until SOVEREIGNTY_FLOOR met
-//   Bucket 4: Growth & Innovation (HYSA/MM) â€” 15% marketing / 10% R&D
-//   Bucket 5: Wealth Bridge (Checking) â€” sweep point for brokerage transfers
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//   Bucket 1: Clearing (Checking) — all revenue intake
+//   Bucket 2: Tax Shield (HYSA/MM) — 25% allocation
+//   Bucket 3: Operating Reserve (HYSA/MM) — safety until SOVEREIGNTY_FLOOR met
+//   Bucket 4: Growth & Innovation (HYSA/MM) — 15% marketing / 10% R&D
+//   Bucket 5: Wealth Bridge (Checking) — sweep point for brokerage transfers
+// ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/business-pro/onboarding â€” Return current onboarding status
+// GET /api/business-pro/onboarding — Return current onboarding status
 app.get('/api/business-pro/onboarding', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -2293,7 +2293,7 @@ app.get('/api/business-pro/onboarding', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/business-pro/onboarding â€” Save path type + survival burn
+// POST /api/business-pro/onboarding — Save path type + survival burn
 // Body: { path_type: 'A'|'B'|'C'|'D', survival_burn_cents: number }
 app.post('/api/business-pro/onboarding', requireAuth, async (req, res) => {
   try {
@@ -2338,7 +2338,7 @@ app.post('/api/business-pro/onboarding', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/business-pro/bucket-cert â€” Mark bucket certification complete
+// POST /api/business-pro/bucket-cert — Mark bucket certification complete
 // Body: { confirmed: true }
 app.post('/api/business-pro/bucket-cert', requireAuth, async (req, res) => {
   try {
@@ -2376,12 +2376,12 @@ app.post('/api/business-pro/bucket-cert', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€ BUSINESS PRO LOGIC ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// ─── BUSINESS PRO LOGIC ENGINE ────────────────────────────────────────────
 //   Friday Sweep, Heartbeat Audit, Wealth Bridge
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/business-pro/dashboard â€” summary data for Business Pro command center
+// GET /api/business-pro/dashboard — summary data for Business Pro command center
 app.get('/api/business-pro/dashboard', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -2416,7 +2416,7 @@ app.get('/api/business-pro/dashboard', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/business-pro/sweep â€” Record a Friday Sweep allocation
+// POST /api/business-pro/sweep — Record a Friday Sweep allocation
 // Body: { gross_revenue_cents: number, bucket3_balance_cents: number, notes?: string }
 app.post('/api/business-pro/sweep', requireAuth, async (req, res) => {
   try {
@@ -2442,11 +2442,11 @@ app.post('/api/business-pro/sweep', requireAuth, async (req, res) => {
 
     const sovereigntyFloor = (user.survival_burn_cents || 0) * 6;
 
-    // â”€â”€ Friday Sweep Allocation Math â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Friday Sweep Allocation Math ────────────────────────────────────────
     const gross          = gross_revenue_cents;
-    const taxShield      = Math.round(gross * 0.25);   // 25% â†’ Bucket 2
-    const growth         = Math.round(gross * 0.15);   // 15% â†’ Bucket 4 (marketing)
-    const innovation     = Math.round(gross * 0.10);   // 10% â†’ Bucket 4 (R&D)
+    const taxShield      = Math.round(gross * 0.25);   // 25% → Bucket 2
+    const growth         = Math.round(gross * 0.15);   // 15% → Bucket 4 (marketing)
+    const innovation     = Math.round(gross * 0.10);   // 10% → Bucket 4 (R&D)
     const reserveFill    = gross - taxShield - growth - innovation; // Remaining 50%
 
     // Route Reserve Fill based on Bucket 3 vs SOVEREIGNTY_FLOOR
@@ -2499,7 +2499,7 @@ app.post('/api/business-pro/sweep', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/business-pro/sweeps â€” List recent Friday Sweeps
+// GET /api/business-pro/sweeps — List recent Friday Sweeps
 app.get('/api/business-pro/sweeps', requireAuth, async (req, res) => {
   try {
     const { limit = 10 } = req.query;
@@ -2517,7 +2517,7 @@ app.get('/api/business-pro/sweeps', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/business-pro/heartbeat/status â€” Get current Business Pro heartbeat status
+// GET /api/business-pro/heartbeat/status — Get current Business Pro heartbeat status
 app.get('/api/business-pro/heartbeat/status', requireAuth, async (req, res) => {
   try {
     const uRes = await pool.query(
@@ -2565,7 +2565,7 @@ app.get('/api/business-pro/heartbeat/status', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/business-pro/heartbeat â€” Submit Business Pro monthly heartbeat audit
+// POST /api/business-pro/heartbeat — Submit Business Pro monthly heartbeat audit
 // Body: { bank_balance_cents: number, ledger_balance_cents: number, signer_name: string }
 app.post('/api/business-pro/heartbeat', requireAuth, async (req, res) => {
   try {
@@ -2598,7 +2598,7 @@ app.post('/api/business-pro/heartbeat', requireAuth, async (req, res) => {
 
     // Enforce window: 1st-7th only
     if (dayOfMonth < 1 || dayOfMonth > 7) {
-      return res.status(400).json({ success: false, message: 'Heartbeat Audit window is the 1stâ€“7th of each month.' });
+      return res.status(400).json({ success: false, message: 'Heartbeat Audit window is the 1st–7th of each month.' });
     }
 
     // Check if already completed this month
@@ -2645,8 +2645,8 @@ app.post('/api/business-pro/heartbeat', requireAuth, async (req, res) => {
       heartbeat_consecutive_passes: newPasses,
       vesting_complete: newPasses >= 3,
       message: inTruth
-        ? `In Truth âœ“ â€” ${newPasses} of 3 consecutive pass${newPasses !== 1 ? 'es' : ''} recorded.`
-        : 'Out of Truth â€” commissions frozen until 3 consecutive passes achieved.'
+        ? `In Truth ✓ — ${newPasses} of 3 consecutive pass${newPasses !== 1 ? 'es' : ''} recorded.`
+        : 'Out of Truth — commissions frozen until 3 consecutive passes achieved.'
     });
   } catch (err) {
     console.error('[BusinessPro] heartbeat submit error:', err.message);
@@ -2654,9 +2654,9 @@ app.post('/api/business-pro/heartbeat', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// POST /api/auth/migrate-data â€” Migrate localStorage data to server
+// POST /api/auth/migrate-data — Migrate localStorage data to server
 app.post('/api/auth/migrate-data', requireAuth, async (req, res) => {
   try {
     const { transactions } = req.body;
@@ -2717,9 +2717,9 @@ app.post('/api/auth/migrate-data', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ CATEGORIES (per-user allocations) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── CATEGORIES (per-user allocations) ───────────────────
+// ═══════════════════════════════════════════════════════════
 
 app.get('/api/categories', requireAuth, async (req, res) => {
   try {
@@ -2754,7 +2754,7 @@ app.get('/api/categories', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ ALLOCATION CONFIG (per-user) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ALLOCATION CONFIG (per-user) ──────────────────────────
 // PUT /api/allocations/permanent - Save as permanent allocation (default for all future transactions)
 app.put('/api/allocations/permanent', requireAuth, async (req, res) => {
   const { allocations } = req.body;
@@ -2868,7 +2868,7 @@ app.put('/api/allocations', requireAuth, async (req, res) => {
   return app._router.handle({ ...req, url: '/api/allocations/permanent', method: 'PUT' }, res);
 });
 
-// â”€â”€â”€ SUBCATEGORIES (per-user) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SUBCATEGORIES (per-user) ──────────────────────────────
 app.get('/api/subcategories', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -2965,7 +2965,7 @@ app.delete('/api/subcategories/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ TRANSACTIONS (per-user) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── TRANSACTIONS (per-user) ──────────────────────────────
 app.get('/api/transactions', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -3123,7 +3123,7 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
     if (type === 'income') {
       if (brokerage_income) {
         // Brokerage income (dividends, interest, deposits): snapshot as 100% Financial Freedom
-        // Money already in a brokerage account is already "invested" â€” no 6-category split needed
+        // Money already in a brokerage account is already "invested" — no 6-category split needed
         const ffResult = await client.query(
           `SELECT id FROM categories WHERE slug IN ('growth','ff','financial-freedom') OR name ILIKE '%financial freedom%' LIMIT 1`
         );
@@ -3133,7 +3133,7 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
             [transaction.id, ffResult.rows[0].id, 100]
           );
         }
-        // Temporary allocations are NOT consumed â€” they remain for the next non-brokerage income
+        // Temporary allocations are NOT consumed — they remain for the next non-brokerage income
       } else {
         // Normal income: snapshot current allocations (temporary if active, otherwise permanent)
         const allocations = await client.query(`
@@ -3179,8 +3179,8 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
 
     await client.query('COMMIT');
 
-    // â”€â”€ Auto-complete transaction-based challenges (fire-and-forget) â”€â”€
-    // Don't block the response â€” run in background
+    // ── Auto-complete transaction-based challenges (fire-and-forget) ──
+    // Don't block the response — run in background
     const txUserId = userId;
     setImmediate(async () => {
       try {
@@ -3230,7 +3230,7 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
             );
             await pool.query(
               `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-               VALUES ($1, 'transaction_logged', 'Transaction logged â€” 5 FACTS Points', $2)`,
+               VALUES ($1, 'transaction_logged', 'Transaction logged — 5 FACTS Points', $2)`,
               [txUserId, txPts]
             );
           }
@@ -3257,7 +3257,7 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
               );
               await pool.query(
                 `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-                 VALUES ($1, 'achievement', 'Achievement: First Transaction Logged â€” 25 FACTS Points', $2)`,
+                 VALUES ($1, 'achievement', 'Achievement: First Transaction Logged — 25 FACTS Points', $2)`,
                 [txUserId, achPts]
               );
             }
@@ -3319,7 +3319,7 @@ app.delete('/api/transactions/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ BULK EDIT TRANSACTIONS (full parity with individual edit) â”€â”€â”€
+// ─── BULK EDIT TRANSACTIONS (full parity with individual edit) ───
 app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -3352,9 +3352,9 @@ app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
     const transactions = txnResult.rows;
 
     const INVESTMENT_TYPES = new Set([
-      'Investment / Brokerage', 'Retirement â€“ 401(k)', 'Retirement â€“ IRA',
-      'Retirement â€“ Roth IRA', 'Retirement â€“ 403(b)', 'Retirement â€“ 457',
-      'Crypto â€“ Exchange', 'Crypto â€“ Hot Wallet', 'Crypto â€“ Cold Wallet', 'Crypto â€“ DeFi / On-chain'
+      'Investment / Brokerage', 'Retirement – 401(k)', 'Retirement – IRA',
+      'Retirement – Roth IRA', 'Retirement – 403(b)', 'Retirement – 457',
+      'Crypto – Exchange', 'Crypto – Hot Wallet', 'Crypto – Cold Wallet', 'Crypto – DeFi / On-chain'
     ]);
 
     // Detect complex changes that require per-transaction processing
@@ -3420,7 +3420,7 @@ app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
     const needsPerTxn = hasTypeChange || hasBankChange || hasSplitChange;
 
     if (!needsPerTxn) {
-      // â”€â”€â”€ SIMPLE BATCH UPDATE (category, subcategory, description, payment_method, date) â”€â”€â”€
+      // ─── SIMPLE BATCH UPDATE (category, subcategory, description, payment_method, date) ───
       const allowed = ['category_id', 'subcategory', 'description', 'payment_method', 'transaction_date'];
       const sets = [];
       const params = [];
@@ -3445,7 +3445,7 @@ app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
         params
       );
     } else {
-      // â”€â”€â”€ PER-TRANSACTION PROCESSING (type/bank/transfer/split changes) â”€â”€â”€
+      // ─── PER-TRANSACTION PROCESSING (type/bank/transfer/split changes) ───
       // Pre-fetch allocation config once (for income/investment transfers)
       let allocConfig = null;
 
@@ -3465,7 +3465,7 @@ app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
         const newSub = Object.prototype.hasOwnProperty.call(changes, 'subcategory') ? (changes.subcategory || null) : old.subcategory;
         const newPay = Object.prototype.hasOwnProperty.call(changes, 'payment_method') ? (changes.payment_method || null) : old.payment_method;
 
-        // â”€â”€ Reverse old balance impact â”€â”€
+        // ── Reverse old balance impact ──
         if (old.bank_account_id && old.type !== 'transfer') {
           const reversal = old.type === 'income' ? -oldAmount : oldAmount;
           await client.query('UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2', [reversal, old.bank_account_id]);
@@ -3478,7 +3478,7 @@ app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
         }
 
         if (newType === 'transfer' && isTransfer) {
-          // â”€â”€ TRANSFER â”€â”€
+          // ── TRANSFER ──
           const fromTbl = tfFrom.source === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
           const toTbl = tfTo.source === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
           const fromBankId = tfFrom.source === 'bank' ? tfFrom.id : null;
@@ -3524,7 +3524,7 @@ app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
           `, [userId, tfFrom.id, tfTo.id, oldAmount, newDesc, newDate || new Date().toISOString().split('T')[0]]);
 
         } else {
-          // â”€â”€ EXPENSE / INCOME â”€â”€
+          // ── EXPENSE / INCOME ──
           const isSplit = hasSplitChange && newType === 'expense';
           const newCatId = isSplit ? null : (Object.prototype.hasOwnProperty.call(changes, 'category_id') ? (changes.category_id || null) : old.category_id);
           const newBankId = hasBankChange ? (changes.bank_account_id ? parseInt(changes.bank_account_id) : null) : old.bank_account_id;
@@ -3584,7 +3584,7 @@ app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ EDIT TRANSACTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── EDIT TRANSACTION ───────────────────────────────────────
 app.put('/api/transactions/:id', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -3633,7 +3633,7 @@ app.put('/api/transactions/:id', requireAuth, async (req, res) => {
       }
     }
 
-    // â”€â”€â”€ TRANSFER TYPE HANDLING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── TRANSFER TYPE HANDLING ─────────────────────────────
     if (newType === 'transfer') {
       const fromAcctId = transfer_from_account_id ? parseInt(transfer_from_account_id) : null;
       const toAcctId = transfer_to_account_id ? parseInt(transfer_to_account_id) : null;
@@ -3680,9 +3680,9 @@ app.put('/api/transactions/:id', requireAuth, async (req, res) => {
 
       // Investment account types (must match client-side INVESTMENT_ACCOUNT_TYPES)
       const INVESTMENT_TYPES = new Set([
-        'Investment / Brokerage', 'Retirement â€“ 401(k)', 'Retirement â€“ IRA',
-        'Retirement â€“ Roth IRA', 'Retirement â€“ 403(b)', 'Retirement â€“ 457',
-        'Crypto â€“ Exchange', 'Crypto â€“ Hot Wallet', 'Crypto â€“ Cold Wallet', 'Crypto â€“ DeFi / On-chain'
+        'Investment / Brokerage', 'Retirement – 401(k)', 'Retirement – IRA',
+        'Retirement – Roth IRA', 'Retirement – 403(b)', 'Retirement – 457',
+        'Crypto – Exchange', 'Crypto – Hot Wallet', 'Crypto – Cold Wallet', 'Crypto – DeFi / On-chain'
       ]);
       const fromIsInvestment = fromSrc === 'brokerage' || INVESTMENT_TYPES.has(fromAccountType);
       const toIsInvestment = toSrc === 'brokerage' || INVESTMENT_TYPES.has(toAccountType);
@@ -3744,7 +3744,7 @@ app.put('/api/transactions/:id', requireAuth, async (req, res) => {
       await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
 
       if (fromIsInvestment && toIsInvestment) {
-        // Investment â†’ Investment: auto-categorize as Financial Freedom (100%)
+        // Investment → Investment: auto-categorize as Financial Freedom (100%)
         const ffCat = await client.query("SELECT id FROM categories WHERE slug IN ('growth','ff','financial-freedom') OR name ILIKE '%financial freedom%' LIMIT 1");
         if (ffCat.rows.length > 0) {
           await client.query(
@@ -3753,7 +3753,7 @@ app.put('/api/transactions/:id', requireAuth, async (req, res) => {
           );
         }
       } else if (fromIsInvestment && !toIsInvestment) {
-        // Investment â†’ Non-Investment (withdrawal): triggers 6-category allocation
+        // Investment → Non-Investment (withdrawal): triggers 6-category allocation
         const allocations = await client.query(`
           SELECT c.id as category_id,
                  COALESCE(ua.percentage, pa.percentage, ac.percentage) as percentage
@@ -3785,7 +3785,7 @@ app.put('/api/transactions/:id', requireAuth, async (req, res) => {
       return res.json(result.rows[0]);
     }
 
-    // â”€â”€â”€ EXPENSE / INCOME HANDLING (existing logic) â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── EXPENSE / INCOME HANDLING (existing logic) ─────────
 
     // Category required for regular expense
     const newCategoryId = isSplit ? null : (category_id !== undefined ? (category_id || null) : old.category_id);
@@ -3925,7 +3925,7 @@ app.put('/api/transactions/:id', requireAuth, async (req, res) => {
         );
       }
     } else if ((newType === 'expense' && !isSplit && (old.type === 'income' || wasSplit)) || old.type === 'transfer') {
-      // Changed away from income, split, or transfer â†’ plain expense: remove allocations
+      // Changed away from income, split, or transfer → plain expense: remove allocations
       await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
     } else if (isSplit) {
       // Re-write split allocations
@@ -3953,7 +3953,7 @@ app.put('/api/transactions/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ FIND SIMILAR TRANSACTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── FIND SIMILAR TRANSACTIONS ──────────────────────────────
 app.get('/api/transactions/similar', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -3995,7 +3995,7 @@ app.get('/api/transactions/similar', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ CSV EXPORT (Pro feature) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CSV EXPORT (Pro feature) ───────────────────────────────
 app.get('/api/transactions/export', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -4075,7 +4075,7 @@ app.get('/api/transactions/export', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ RECURRING BILLS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── RECURRING BILLS ────────────────────────────────────────
 // Get all recurring bills for user
 app.get('/api/bills', requireAuth, async (req, res) => {
   try {
@@ -4116,7 +4116,7 @@ app.post('/api/bills', requireAuth, async (req, res) => {
       `, [userId, name, amount, due_day, frequency, category_id || null, account_id || null, notes || null]);
       return res.json({ bill: result.rows[0] });
     } catch (colErr) {
-      // Column might not exist yet â€” fall back to original schema
+      // Column might not exist yet — fall back to original schema
       const result = await pool.query(`
         INSERT INTO recurring_bills (user_id, name, amount, due_day, frequency, category_id, notes)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -4156,7 +4156,7 @@ app.put('/api/bills/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Toggle paid status â€” when marking paid, also create an expense transaction
+// Toggle paid status — when marking paid, also create an expense transaction
 app.patch('/api/bills/:id/toggle-paid', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -4211,9 +4211,9 @@ app.delete('/api/bills/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ DEBT REDUCTION CALCULATOR (PRO FEATURE) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── DEBT REDUCTION CALCULATOR (PRO FEATURE) ──────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get all debts for user
 app.get('/api/debts', requireAuth, async (req, res) => {
@@ -4543,7 +4543,7 @@ app.post('/api/debts/personalized-tips', requireAuth, async (req, res) => {
 
         tips.push({
           type: 'income_increase',
-          icon: 'ðŸ“ˆ',
+          icon: '📈',
           title: 'Your Income is Growing!',
           message: `Your income increased ${incomeIncrease.toFixed(0)}% over the last 3 months. Applying the extra $${extraPerMonth.toFixed(0)}/mo to your highest-interest debt using avalanche method could save you ${projectedMonthsSaved} months and $${interestSaved.toFixed(0)} in interest.`,
           impact: 'high'
@@ -4573,7 +4573,7 @@ app.post('/api/debts/personalized-tips', requireAuth, async (req, res) => {
 
         tips.push({
           type: 'spending_gap',
-          icon: 'ðŸ’¡',
+          icon: '💡',
           title: `${actualSpending[slug].name} Spending Above Target`,
           message: `You're spending ${actual.toFixed(0)}% on ${actualSpending[slug].name} vs your ${target.toFixed(0)}% target. Redirecting half of that excess ($${redirectAmount.toFixed(0)}/mo) to your highest-interest debt could save ${monthsSaved} months and $${interestSaved.toFixed(0)} in interest.`,
           impact: gap > 15 ? 'high' : 'medium'
@@ -4589,9 +4589,9 @@ app.post('/api/debts/personalized-tips', requireAuth, async (req, res) => {
       if (monthsSaved > 6 || interestSaved > 500) {
         tips.push({
           type: 'strategy_optimization',
-          icon: 'âš¡',
+          icon: '⚡',
           title: 'Optimize Your Debt Strategy',
-          message: `Switching from your current payment plan to the avalanche method (paying highest-interest debts first) would save you ${monthsSaved} months and $${interestSaved.toFixed(0)} in interest. No extra money neededâ€”just redirect what you're already paying!`,
+          message: `Switching from your current payment plan to the avalanche method (paying highest-interest debts first) would save you ${monthsSaved} months and $${interestSaved.toFixed(0)} in interest. No extra money needed—just redirect what you're already paying!`,
           impact: 'high'
         });
       }
@@ -4601,7 +4601,7 @@ app.post('/api/debts/personalized-tips', requireAuth, async (req, res) => {
     if (tips.length === 0 && (incomeCount > 0 || totalExpenses > 0)) {
       tips.push({
         type: 'encouragement',
-        icon: 'âœ…',
+        icon: '✅',
         title: 'You\'re On Track!',
         message: 'Your spending aligns well with your allocation targets. Keep up the great work! Continue making your current payments and you\'ll be debt-free on schedule.',
         impact: 'low'
@@ -4612,7 +4612,7 @@ app.post('/api/debts/personalized-tips', requireAuth, async (req, res) => {
     if (incomeCount === 0 && totalExpenses === 0) {
       tips.push({
         type: 'no_data',
-        icon: 'â„¹ï¸',
+        icon: 'ℹ️',
         title: 'Add Transactions for Personalized Tips',
         message: 'Start tracking your income and expenses in the Transactions tab to get personalized debt payoff tips based on your actual spending habits.',
         impact: 'low'
@@ -4746,9 +4746,9 @@ function calculatePayoffSchedule(debts, extraPayment, strategy) {
   };
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ GIFT CARD WALLET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── GIFT CARD WALLET ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get all gift cards for user
 app.get('/api/gift-cards', requireAuth, async (req, res) => {
@@ -4809,7 +4809,7 @@ app.post('/api/gift-cards', requireAuth, async (req, res) => {
   }
 });
 
-// Update gift card (name, notes only â€” balance is managed by transactions)
+// Update gift card (name, notes only — balance is managed by transactions)
 app.put('/api/gift-cards/:id', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -4886,7 +4886,7 @@ app.delete('/api/gift-cards/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Spend from gift card â€” this does NOT create a real expense (prevents double-dip)
+// Spend from gift card — this does NOT create a real expense (prevents double-dip)
 app.post('/api/gift-cards/:id/spend', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -4927,7 +4927,7 @@ app.post('/api/gift-cards/:id/spend', requireAuth, async (req, res) => {
       });
     }
 
-    // Create gift card transaction (NOT a real expense â€” the expense was recorded when the card was purchased)
+    // Create gift card transaction (NOT a real expense — the expense was recorded when the card was purchased)
     const gctResult = await client.query(`
       INSERT INTO gift_card_transactions (gift_card_id, user_id, amount, description, transaction_date)
       VALUES ($1, $2, $3, $4, $5)
@@ -5021,9 +5021,9 @@ app.post('/api/gift-cards/:id/add-balance', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ LOANS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── LOANS ───────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get all loans
 app.get('/api/loans', requireAuth, async (req, res) => {
@@ -5101,9 +5101,9 @@ app.delete('/api/loans/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ CREDIT CARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── CREDIT CARDS ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get all credit cards
 app.get('/api/credit-cards', requireAuth, async (req, res) => {
@@ -5173,9 +5173,9 @@ app.delete('/api/credit-cards/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ CREDIT SCORES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── CREDIT SCORES ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get all credit score entries for user
 app.get('/api/credit-scores', requireAuth, async (req, res) => {
@@ -5250,9 +5250,9 @@ app.delete('/api/credit-scores/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ BROKERAGE ACCOUNTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── BROKERAGE ACCOUNTS ───────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get all brokerage accounts
 app.get('/api/brokerage-accounts', requireAuth, async (req, res) => {
@@ -5268,7 +5268,7 @@ app.get('/api/brokerage-accounts', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/accounts/all â€” Returns all accounts (bank + brokerage) in a unified format.
+// GET /api/accounts/all — Returns all accounts (bank + brokerage) in a unified format.
 // Used by the import flow to populate the "Select Account" dropdown with every account type.
 app.get('/api/accounts/all', requireAuth, async (req, res) => {
   try {
@@ -5375,8 +5375,8 @@ app.delete('/api/brokerage-accounts/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ BROKERAGE HOLDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ─── BROKERAGE HOLDINGS ──────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get holdings for a brokerage account
 app.get('/api/brokerage-accounts/:id/holdings', requireAuth, async (req, res) => {
@@ -5479,7 +5479,7 @@ app.delete('/api/brokerage-holdings/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ STOCK QUOTE API (for brokerage holdings ticker prices) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STOCK QUOTE API (for brokerage holdings ticker prices) ─────────────────
 // Fetches real-time stock prices from Yahoo Finance v8 (free, no key)
 app.get('/api/stock-quotes', requireAuth, async (req, res) => {
   try {
@@ -5542,7 +5542,7 @@ app.get('/api/stock-quotes', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ ALL ACCOUNTS (for account switcher) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ALL ACCOUNTS (for account switcher) ─────────────────
 // Returns a unified list of all user accounts for the account switcher
 app.get('/api/all-accounts', requireAuth, async (req, res) => {
   try {
@@ -5562,8 +5562,8 @@ app.get('/api/all-accounts', requireAuth, async (req, res) => {
     ]);
     res.json({
       accounts: [
-        ...bankResult.rows.map(a => ({ ...a, icon: 'ðŸ¦' })),
-        ...brokerageResult.rows.map(a => ({ ...a, icon: 'ðŸ“ˆ' }))
+        ...bankResult.rows.map(a => ({ ...a, icon: '🏦' })),
+        ...brokerageResult.rows.map(a => ({ ...a, icon: '📈' }))
       ]
     });
   } catch (err) {
@@ -5597,9 +5597,9 @@ app.get('/api/brokerage-accounts/:id/transactions', requireAuth, async (req, res
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ BANK ACCOUNT SOURCE TRACKING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── BANK ACCOUNT SOURCE TRACKING ────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 const BUILT_IN_INSTITUTIONS = [
   // Major Banks
@@ -5633,24 +5633,24 @@ const BUILT_IN_ACCOUNT_TYPES = [
   'Savings',
   'Credit Card',
   'Investment / Brokerage',
-  'Retirement â€“ 401(k)',
-  'Retirement â€“ IRA',
-  'Retirement â€“ Roth IRA',
-  'Retirement â€“ 403(b)',
-  'Retirement â€“ 457',
-  'Loan â€“ Mortgage',
-  'Loan â€“ HELOC (Home Equity Line of Credit)',
-  'Loan â€“ Auto',
-  'Loan â€“ Student',
-  'Loan â€“ Personal',
+  'Retirement – 401(k)',
+  'Retirement – IRA',
+  'Retirement – Roth IRA',
+  'Retirement – 403(b)',
+  'Retirement – 457',
+  'Loan – Mortgage',
+  'Loan – HELOC (Home Equity Line of Credit)',
+  'Loan – Auto',
+  'Loan – Student',
+  'Loan – Personal',
   'HSA',
   'FSA',
   'Money Market',
   'CD (Certificate of Deposit)',
-  'Crypto â€“ Exchange',
-  'Crypto â€“ Hot Wallet',
-  'Crypto â€“ Cold Wallet',
-  'Crypto â€“ DeFi / On-chain',
+  'Crypto – Exchange',
+  'Crypto – Hot Wallet',
+  'Crypto – Cold Wallet',
+  'Crypto – DeFi / On-chain',
   'Cash / Physical',
   'Other',
 ];
@@ -5964,7 +5964,7 @@ app.post('/api/bank-accounts/transfer', requireAuth, async (req, res) => {
   }
 });
 
-// Unified transfer endpoint â€” supports bank + brokerage accounts
+// Unified transfer endpoint — supports bank + brokerage accounts
 app.post('/api/accounts/transfer', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -6029,7 +6029,7 @@ app.post('/api/accounts/transfer', requireAuth, async (req, res) => {
       [transferAmount, parseInt(to_account_id)]
     );
 
-    // Record transfer â€” store in account_transfers if both are bank accounts (FK constraint)
+    // Record transfer — store in account_transfers if both are bank accounts (FK constraint)
     // Otherwise just record the transaction without the FK-constrained table
     let transferRecord = null;
     if (fromSrc === 'bank' && toSrc === 'bank') {
@@ -6044,7 +6044,7 @@ app.post('/api/accounts/transfer', requireAuth, async (req, res) => {
 
     // Also create a transaction record for the transfer
     const txnDate = transfer_date || new Date().toISOString().split('T')[0];
-    const txnDesc = description || `Transfer: ${fromAccount.name} â†’ ${toAccount.name}`;
+    const txnDesc = description || `Transfer: ${fromAccount.name} → ${toAccount.name}`;
 
     // Only set bank_account_id and transfer_to_account_id if they're bank accounts (FK constraint)
     const fromBankId = fromSrc === 'bank' ? parseInt(from_account_id) : null;
@@ -6129,9 +6129,9 @@ app.get('/api/bank-accounts/:id/transactions', requireAuth, async (req, res) => 
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ FINANCIAL FREEDOM CALCULATOR (PRO FEATURE) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── FINANCIAL FREEDOM CALCULATOR (PRO FEATURE) ───────────
+// ═══════════════════════════════════════════════════════════
 
 // Get FI Calculator data for user
 app.get('/api/fi-calculator', requireAuth, async (req, res) => {
@@ -6291,7 +6291,7 @@ function calculateFIProjections(params) {
     inflationRate
   } = params;
 
-  // FI Number = Annual expenses Ã— 25 (4% rule)
+  // FI Number = Annual expenses × 25 (4% rule)
   const annualExpenses = monthlyExpenses * 12;
   const fiNumber = annualExpenses * 25;
 
@@ -6360,7 +6360,7 @@ function calculateFIProjections(params) {
   };
 }
 
-// â”€â”€â”€ family FINANCIAL FREEDOM CALCULATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── family FINANCIAL FREEDOM CALCULATOR ────────────────────────────
 
 // Helper: check if user is member of a family
 async function isHouseholdMember(userId, householdId) {
@@ -6609,7 +6609,7 @@ app.get('/api/households/:household_id/fi-calculator/aggregate', requireAuth, as
   }
 });
 
-// â”€â”€â”€ DASHBOARD STATS (per-user) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DASHBOARD STATS (per-user) ────────────────────────────
 app.get('/api/dashboard', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -6771,9 +6771,9 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ family SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── family SYSTEM ────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Create a new family
 app.post('/api/households/create', requireAuth, async (req, res) => {
@@ -6807,7 +6807,7 @@ app.post('/api/households/create', requireAuth, async (req, res) => {
         [family.id, req.userId, 'owner']
       );
 
-      // Clear any lingering offboarding records â€” user is back in a family
+      // Clear any lingering offboarding records — user is back in a family
       await client.query(
         `UPDATE household_offboarding_records SET reintegrated_at = NOW() WHERE user_id = $1 AND reintegrated_at IS NULL`,
         [req.userId]
@@ -6914,7 +6914,7 @@ app.get('/api/households/:id/members', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ family INVITE HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── family INVITE HELPERS ──────────────────────────────────────────────────
 
 const HOUSEHOLD_MAX_MEMBERS = 6;
 // Family Incubator: 1 head + up to 5 sub-accounts = 6 total (matches HOUSEHOLD_MAX_MEMBERS)
@@ -6947,11 +6947,11 @@ async function sendHouseholdInviteEmail({ toEmail, inviterName, householdName, i
             </p>
             ${noteHtml}
             <p style="font-size:14px;color:#a89a7e;margin:0 0 28px;line-height:1.6">
-              FACTS is the financial system built for families â€” track budgets, share insights, and build wealth together.
+              FACTS is the financial system built for families — track budgets, share insights, and build wealth together.
               This invite expires in 7 days.
             </p>
             <a href="${inviteUrl}" style="display:inline-block;background:#c9a84c;color:#0a0f1a;font-weight:700;font-size:15px;padding:14px 28px;border-radius:8px;text-decoration:none">
-              Accept Invite â†’
+              Accept Invite →
             </a>
             <p style="font-size:12px;color:#6b5c44;margin-top:28px">
               If you didn't expect this invite, you can safely ignore this email.
@@ -7130,7 +7130,7 @@ app.delete('/api/households/:id/invites/:invite_id', requireAuth, async (req, re
   }
 });
 
-// â”€â”€â”€ PUBLIC: Get invite details by token (no auth needed â€” shows join page) â”€â”€â”€â”€â”€
+// ─── PUBLIC: Get invite details by token (no auth needed — shows join page) ─────
 app.get('/api/family-invite/:token', async (req, res) => {
   try {
     const { token } = req.params;
@@ -7175,7 +7175,7 @@ app.get('/api/family-invite/:token', async (req, res) => {
   }
 });
 
-// Accept invite by token (requires auth â€” user must be logged in or just signed up)
+// Accept invite by token (requires auth — user must be logged in or just signed up)
 app.post('/api/family-invite/:token/accept', requireAuth, async (req, res) => {
   const { token } = req.params;
   const client = await pool.connect();
@@ -7253,7 +7253,7 @@ app.post('/api/family-invite/:token/accept', requireAuth, async (req, res) => {
       }
     }
 
-    // Add member â€” mark as sub-account if this is an incubator family
+    // Add member — mark as sub-account if this is an incubator family
     const isSubAccount = invite.is_incubator && invite.role !== 'co_admin';
     await client.query(
       `INSERT INTO household_members (household_id, user_id, role, status, joined_at, is_sub_account)
@@ -7275,7 +7275,7 @@ app.post('/api/family-invite/:token/accept', requireAuth, async (req, res) => {
       [invite.id]
     );
 
-    // â”€â”€ Family Affiliate Setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Family Affiliate Setup ────────────────────────────────────────────────
     // When member joins family plan:
     // 1. Set referred_by_user_id to the family owner (makes them a direct leg)
     // 2. Create/update their affiliate record with family_household_id (if 18+)
@@ -7339,7 +7339,7 @@ app.post('/api/family-invite/:token/accept', requireAuth, async (req, res) => {
       // Non-fatal: affiliate setup failure doesn't block invite acceptance
       console.error('[FamilyPlan] Affiliate setup on invite accept failed:', affiliateErr.message);
     }
-    // â”€â”€ End Family Affiliate Setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── End Family Affiliate Setup ────────────────────────────────────────────
 
     await client.query('COMMIT');
 
@@ -7378,7 +7378,7 @@ app.post('/api/family-invite/:token/decline', requireAuth, async (req, res) => {
   }
 });
 
-// Join family via legacy invite code (backward-compat â€” kept for old links)
+// Join family via legacy invite code (backward-compat — kept for old links)
 app.post('/api/households/join', requireAuth, async (req, res) => {
   try {
     const { invite_code } = req.body;
@@ -7436,7 +7436,7 @@ app.post('/api/households/join', requireAuth, async (req, res) => {
         [invite.id]
       );
 
-      // Clear any lingering offboarding records â€” user is back in a family
+      // Clear any lingering offboarding records — user is back in a family
       await client.query(
         `UPDATE household_offboarding_records SET reintegrated_at = NOW() WHERE user_id = $1 AND reintegrated_at IS NULL`,
         [req.userId]
@@ -7461,14 +7461,14 @@ app.post('/api/households/join', requireAuth, async (req, res) => {
   }
 });
 
-// Remove member from family (owner/co-admin) â€” records offboarding with 30-day grace period
+// Remove member from family (owner/co-admin) — records offboarding with 30-day grace period
 app.delete('/api/households/:household_id/members/:user_id', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     const { household_id, user_id } = req.params;
     const targetUserId = parseInt(user_id);
 
-    // Load family â€” verify existence and check requester permissions
+    // Load family — verify existence and check requester permissions
     const hhResult = await client.query(
       'SELECT id, name, owner_id, co_admin_id FROM households WHERE id = $1',
       [household_id]
@@ -7519,7 +7519,7 @@ app.delete('/api/households/:household_id/members/:user_id', requireAuth, async 
     );
 
     // Affiliate offboarding: clear family_household_id from their affiliate record
-    // Their affiliate network belongs to THEM â€” stays with them after removal
+    // Their affiliate network belongs to THEM — stays with them after removal
     // Once they leave they remain a direct leg in the owner's affiliate tree
     await client.query(
       `UPDATE affiliates SET family_household_id = NULL, updated_at = NOW()
@@ -7625,7 +7625,7 @@ app.delete('/api/households/:household_id/leave', requireAuth, async (req, res) 
     await client.query('BEGIN');
 
     if (memberCount === 1) {
-      // Last member â€” dissolve the family completely
+      // Last member — dissolve the family completely
       await client.query('DELETE FROM household_notifications WHERE household_id = $1', [household_id]);
       await client.query('DELETE FROM household_offboarding_records WHERE household_id = $1', [household_id]);
       await client.query('DELETE FROM household_permissions WHERE household_id = $1', [household_id]);
@@ -7643,7 +7643,7 @@ app.delete('/api/households/:household_id/leave', requireAuth, async (req, res) 
       return res.json({ success: true, action: 'dissolved', household_name: householdName });
     }
 
-    // Owner cannot leave if there are other members â€” must transfer ownership first
+    // Owner cannot leave if there are other members — must transfer ownership first
     if (role === 'owner') {
       await client.query('ROLLBACK');
       return res.status(403).json({
@@ -7714,9 +7714,9 @@ app.delete('/api/households/:household_id/leave', requireAuth, async (req, res) 
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ FAMILY INCUBATOR (1+5 MODEL) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── FAMILY INCUBATOR (1+5 MODEL) ──────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 /**
  * POST /api/households/:id/enable-incubator
@@ -7934,7 +7934,7 @@ app.post('/api/households/:id/breakaway', requireAuth, async (req, res) => {
     );
 
     // 2. Activate full commission eligibility on their affiliate record
-    //    Their referral tree position is preserved â€” they remain in the same leg
+    //    Their referral tree position is preserved — they remain in the same leg
     await client.query(
       `UPDATE affiliates
        SET family_household_id = NULL, status = 'active', updated_at = NOW()
@@ -8105,9 +8105,9 @@ app.post('/api/households/:id/invite-sub-account', requireAuth, async (req, res)
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ family OFFBOARDING & DATA PORTABILITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── family OFFBOARDING & DATA PORTABILITY ──────────────
+// ═══════════════════════════════════════════════════════════
 
 // Transfer family ownership (owner must do this before leaving if others exist)
 app.post('/api/households/:household_id/transfer-ownership', requireAuth, async (req, res) => {
@@ -8181,18 +8181,18 @@ app.post('/api/households/:household_id/transfer-ownership', requireAuth, async 
   }
 });
 
-// â”€â”€â”€ Family Plan Affiliate System â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Family Plan Affiliate System ────────────────────────────────────────────
 
 // Helper: send grace period email when member is released or owner cancels
 async function sendGracePeriodEmail({ toEmail, toName, householdName, graceExpiry, reason }) {
   try {
     const graceDate = new Date(graceExpiry).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const subjectMap = {
-      removed: `You've been removed from ${householdName} â€” 30-day grace period`,
-      owner_cancelled: `Your Family Plan is ending â€” 30-day grace period`,
-      left: `You've left ${householdName} â€” 30-day grace period`
+      removed: `You've been removed from ${householdName} — 30-day grace period`,
+      owner_cancelled: `Your Family Plan is ending — 30-day grace period`,
+      left: `You've left ${householdName} — 30-day grace period`
     };
-    const subject = subjectMap[reason] || `Family Plan change â€” 30-day grace period`;
+    const subject = subjectMap[reason] || `Family Plan change — 30-day grace period`;
 
     const messageMap = {
       removed: `You've been removed from the <strong>${householdName}</strong> Family Plan. You have a 30-day grace period (until <strong>${graceDate}</strong>) to either join another Family Plan or upgrade to individual Pro to keep full access to your account.`,
@@ -8221,7 +8221,7 @@ async function sendGracePeriodEmail({ toEmail, toName, householdName, graceExpir
             <p style="font-size:14px;line-height:1.6;color:#a89a7e;margin:0 0 24px">${messageBody}</p>
             <a href="${appUrl}/pricing.html"
                style="display:inline-block;background:#c9a84c;color:#0a0f1a;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none">
-              View Plans â†’
+              View Plans →
             </a>
           </div>
         `
@@ -8453,7 +8453,7 @@ app.post('/api/households/:id/gift-commission', requireAuth, async (req, res) =>
 });
 
 // POST /api/households/:id/cascade-cancellation-grace
-// Called when billing owner cancels their subscription â€” all members get 30-day grace
+// Called when billing owner cancels their subscription — all members get 30-day grace
 app.post('/api/households/:id/cascade-cancellation-grace', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -8777,7 +8777,7 @@ async function checkAndGrantAffiliateAccess(userId) {
     );
     if (existingAffiliate.rows.length > 0) return; // Already active
 
-    // Grant affiliate access â€” generate referral code and create record
+    // Grant affiliate access — generate referral code and create record
     const referralCode = await generateUniqueReferralCode();
     await pool.query(
       `INSERT INTO affiliates (user_id, email, referral_code, status, is_minor, age_verified_at)
@@ -8792,7 +8792,7 @@ async function checkAndGrantAffiliateAccess(userId) {
       [userId]
     );
 
-    console.log(`[AffiliateUnlock] User ${userId} unlocked affiliate access â€” code: ${referralCode}`);
+    console.log(`[AffiliateUnlock] User ${userId} unlocked affiliate access — code: ${referralCode}`);
   } catch (err) {
     console.error('[AffiliateUnlock] checkAndGrantAffiliateAccess error:', err.message);
   }
@@ -8873,9 +8873,9 @@ app.get('/api/affiliate/family-frozen', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Get offboarding status for current user â€” used to show welcome screen after departure
+// Get offboarding status for current user — used to show welcome screen after departure
 app.get('/api/user/offboarding-status', requireAuth, async (req, res) => {
   try {
     // Find the most recent un-acknowledged offboarding record
@@ -8927,7 +8927,7 @@ app.post('/api/user/offboarding/:record_id/welcome-shown', requireAuth, async (r
   }
 });
 
-// Export personal data as CSV (available to all users â€” data fairness)
+// Export personal data as CSV (available to all users — data fairness)
 app.get('/api/user/personal-data-export', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -9091,9 +9091,9 @@ app.post('/api/households/notifications/read-all', requireAuth, async (req, res)
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ family LINKING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── family LINKING ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Link two households together (owner only)
 // Allows viewing data across linked households (max 3 households total)
@@ -9249,9 +9249,9 @@ app.delete('/api/households/:household_id/link/:target_household_id', requireAut
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ family DASHBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── family DASHBOARD ──────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get combined family dashboard (all members' financial data aggregated)
 app.get('/api/households/:household_id/dashboard', requireAuth, async (req, res) => {
@@ -9627,9 +9627,9 @@ app.get('/api/households/:household_id/linked-dashboard', requireAuth, async (re
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ family PERMISSIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── family PERMISSIONS ──────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get user's permission settings (what they've shared with others)
 app.get('/api/permissions/mine', requireAuth, async (req, res) => {
@@ -9820,11 +9820,11 @@ app.delete('/api/permissions/revoke', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ family SHARING SETTINGS (Broadcast privacy) â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── family SHARING SETTINGS (Broadcast privacy) ─────
+// ═══════════════════════════════════════════════════════════
 
-// GET /api/households/:id/sharing-settings â€” my broadcast sharing preferences
+// GET /api/households/:id/sharing-settings — my broadcast sharing preferences
 app.get('/api/households/:household_id/sharing-settings', requireAuth, async (req, res) => {
   try {
     const { household_id } = req.params;
@@ -9848,7 +9848,7 @@ app.get('/api/households/:household_id/sharing-settings', requireAuth, async (re
   }
 });
 
-// POST /api/households/:id/sharing-settings â€” upsert sharing settings
+// POST /api/households/:id/sharing-settings — upsert sharing settings
 app.post('/api/households/:household_id/sharing-settings', requireAuth, async (req, res) => {
   try {
     const { household_id } = req.params;
@@ -9879,7 +9879,7 @@ app.post('/api/households/:household_id/sharing-settings', requireAuth, async (r
   }
 });
 
-// GET /api/households/:id/members-sharing â€” all members' sharing settings (what they've unlocked)
+// GET /api/households/:id/members-sharing — all members' sharing settings (what they've unlocked)
 app.get('/api/households/:household_id/members-sharing', requireAuth, async (req, res) => {
   try {
     const { household_id } = req.params;
@@ -9909,7 +9909,7 @@ app.get('/api/households/:household_id/members-sharing', requireAuth, async (req
   }
 });
 
-// GET /api/households/:id/unlocked-data/:member_user_id â€” fetch a member's unlocked category data
+// GET /api/households/:id/unlocked-data/:member_user_id — fetch a member's unlocked category data
 app.get('/api/households/:household_id/unlocked-data/:member_user_id', requireAuth, async (req, res) => {
   try {
     const { household_id, member_user_id } = req.params;
@@ -10006,11 +10006,11 @@ app.get('/api/households/:household_id/unlocked-data/:member_user_id', requireAu
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ TRANSACTION TAGGING (Mine / Theirs / Ours) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── TRANSACTION TAGGING (Mine / Theirs / Ours) ──────────
+// ═══════════════════════════════════════════════════════════
 
-// POST /api/transactions/:id/tag â€” update Mine/Theirs/Ours tag
+// POST /api/transactions/:id/tag — update Mine/Theirs/Ours tag
 app.post('/api/transactions/:id/tag', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -10036,12 +10036,12 @@ app.post('/api/transactions/:id/tag', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/transactions â€” enhance to include txn_tag in response (already returns all columns)
+// GET /api/transactions — enhance to include txn_tag in response (already returns all columns)
 // The existing endpoint already returns all transaction columns including txn_tag after migration
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ SHARED family GOALS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── SHARED family GOALS ──────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Helper: verify user is a family member, return role
 async function getHouseholdMembership(householdId, userId) {
@@ -10069,7 +10069,7 @@ async function getGoalProgress(goalId) {
   return { total_contributed: total, contributors: r.rows };
 }
 
-// GET /api/households/:id/goals â€” list active + paused goals with progress
+// GET /api/households/:id/goals — list active + paused goals with progress
 app.get('/api/households/:id/goals', requireAuth, async (req, res) => {
   try {
     const { id: householdId } = req.params;
@@ -10101,7 +10101,7 @@ app.get('/api/households/:id/goals', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/households/:id/goals/achieved â€” list completed/archived goals
+// GET /api/households/:id/goals/achieved — list completed/archived goals
 app.get('/api/households/:id/goals/achieved', requireAuth, async (req, res) => {
   try {
     const { id: householdId } = req.params;
@@ -10127,7 +10127,7 @@ app.get('/api/households/:id/goals/achieved', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/households/:id/goals â€” create a new goal (any member can propose)
+// POST /api/households/:id/goals — create a new goal (any member can propose)
 app.post('/api/households/:id/goals', requireAuth, async (req, res) => {
   try {
     const { id: householdId } = req.params;
@@ -10140,7 +10140,7 @@ app.post('/api/households/:id/goals', requireAuth, async (req, res) => {
 
     const validCategories = ['vacation','emergency','car','home','education','wedding','baby','retirement','custom'];
     const cat = validCategories.includes(category) ? category : 'custom';
-    const emojiVal = emoji || 'ðŸŽ¯';
+    const emojiVal = emoji || '🎯';
 
     const result = await pool.query(
       `INSERT INTO shared_goals (household_id, created_by, name, target_amount, target_date, category, emoji, description)
@@ -10155,7 +10155,7 @@ app.post('/api/households/:id/goals', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/goals/:id â€” edit goal (owner only)
+// PUT /api/goals/:id — edit goal (owner only)
 app.put('/api/goals/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -10200,7 +10200,7 @@ app.put('/api/goals/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/goals/:id/pause â€” toggle pause/resume (owner only)
+// POST /api/goals/:id/pause — toggle pause/resume (owner only)
 app.post('/api/goals/:id/pause', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -10229,7 +10229,7 @@ app.post('/api/goals/:id/pause', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/goals/:id/complete â€” mark goal as completed/archived (owner only)
+// POST /api/goals/:id/complete — mark goal as completed/archived (owner only)
 app.post('/api/goals/:id/complete', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -10258,7 +10258,7 @@ app.post('/api/goals/:id/complete', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/goals/:id â€” delete goal (owner only)
+// DELETE /api/goals/:id — delete goal (owner only)
 app.delete('/api/goals/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -10283,7 +10283,7 @@ app.delete('/api/goals/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/goals/:id/contribute â€” add a contribution (any member)
+// POST /api/goals/:id/contribute — add a contribution (any member)
 app.post('/api/goals/:id/contribute', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -10343,7 +10343,7 @@ app.post('/api/goals/:id/contribute', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/goals/:id/contributions â€” contribution history with member info
+// GET /api/goals/:id/contributions — contribution history with member info
 app.get('/api/goals/:id/contributions', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -10371,7 +10371,7 @@ app.get('/api/goals/:id/contributions', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/goals/:id/member-target â€” set per-member monthly target (owner only)
+// PUT /api/goals/:id/member-target — set per-member monthly target (owner only)
 app.put('/api/goals/:id/member-target', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -10401,9 +10401,9 @@ app.put('/api/goals/:id/member-target', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ SHARED BUDGETS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── SHARED BUDGETS ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // GET all shared budget categories with monthly spend + member breakdown
 app.get('/api/households/:id/shared-budgets', requireAuth, async (req, res) => {
@@ -10493,7 +10493,7 @@ app.post('/api/households/:id/shared-budgets', requireAuth, async (req, res) => 
     const result = await pool.query(
       `INSERT INTO shared_budget_categories (household_id, name, emoji, monthly_target, sort_order, created_by)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [id, name.trim(), emoji || 'ðŸ’°', parseFloat(monthly_target), sortOrder, req.userId]
+      [id, name.trim(), emoji || '💰', parseFloat(monthly_target), sortOrder, req.userId]
     );
     res.json({ success: true, budget: result.rows[0] });
   } catch (err) {
@@ -10511,12 +10511,12 @@ app.post('/api/households/:id/shared-budgets/seed-defaults', requireAuth, async 
     if (householdRow.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can seed defaults' });
 
     const defaults = [
-      { name: 'Rent/Mortgage', emoji: 'ðŸ ', monthly_target: 0 },
-      { name: 'Utilities', emoji: 'âš¡', monthly_target: 0 },
-      { name: 'Groceries', emoji: 'ðŸ›’', monthly_target: 0 },
-      { name: 'Insurance', emoji: 'ðŸ›¡ï¸', monthly_target: 0 },
-      { name: 'family Supplies', emoji: 'ðŸ§¹', monthly_target: 0 },
-      { name: 'Shared Savings', emoji: 'ðŸ’Ž', monthly_target: 0 },
+      { name: 'Rent/Mortgage', emoji: '🏠', monthly_target: 0 },
+      { name: 'Utilities', emoji: '⚡', monthly_target: 0 },
+      { name: 'Groceries', emoji: '🛒', monthly_target: 0 },
+      { name: 'Insurance', emoji: '🛡️', monthly_target: 0 },
+      { name: 'family Supplies', emoji: '🧹', monthly_target: 0 },
+      { name: 'Shared Savings', emoji: '💎', monthly_target: 0 },
     ];
 
     for (let i = 0; i < defaults.length; i++) {
@@ -10694,11 +10694,11 @@ app.put('/api/households/:id/shared-budgets/:budgetId/member-targets', requireAu
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ SUBSCRIPTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ STRIPE PAYMENT LINKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Individual Pro â€” $14.99/mo or $149/yr (single user, all levels, no family features)
+// ═══════════════════════════════════════════════════════════
+// ─── SUBSCRIPTIONS ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// ─── STRIPE PAYMENT LINKS ─────────────────────────────────────────────────────
+// Individual Pro — $14.99/mo or $149/yr (single user, all levels, no family features)
 const STRIPE_INDIVIDUAL_MONTHLY_LINK = process.env.STRIPE_INDIVIDUAL_MONTHLY_LINK || null;
 const STRIPE_INDIVIDUAL_ANNUAL_LINK  = process.env.STRIPE_INDIVIDUAL_ANNUAL_LINK  || null;
 
@@ -10712,22 +10712,22 @@ const STRIPE_TFR_ELITE_MONTHLY_LINK       = process.env.STRIPE_TFR_ELITE_MONTHLY
 const STRIPE_TFR_ELITE_ANNUAL_LINK        = process.env.STRIPE_TFR_ELITE_ANNUAL_LINK || null;
 const STRIPE_SOVEREIGN_LINK               = process.env.STRIPE_SOVEREIGN_LINK || null;
 
-// â”€â”€â”€ PRICING CONSTANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Individual Pro â€” $14.99/mo | $149.90/yr
+// ─── PRICING CONSTANTS ────────────────────────────────────────────────────────
+// Individual Pro — $14.99/mo | $149.90/yr
 const INDIVIDUAL_MONTHLY_CENTS = 1499;     // $14.99/month
 const INDIVIDUAL_ANNUAL_CENTS  = 14990;    // $149.90/year (~$12.49/mo, 2 months free)
 
-// 6-Tier Pricing â€” tier names map to pricing_tier field in users table
-const TFR_PRO_MONTHLY_CENTS          = 2599;     // $25.99/month  â€” Family Pro    (Levels 3-6, Most Popular)
-const TFR_PRO_ANNUAL_CENTS           = 25990;    // $259.90/year  â€” Family Pro Annual (~$21.66/mo, 2 months free)
-const BUSINESS_CORE_MONTHLY_CENTS    = 9700;     // $97/month     â€” Business Core (legacy, kept for backward compat)
-const BUSINESS_BUNDLE_MONTHLY_CENTS  = 29700;    // $297/month    â€” Business      (Levels 7-11, Best Value)
-const BUSINESS_BUNDLE_ANNUAL_CENTS   = 297000;   // $2,970/year   â€” Business Annual ($247.50/mo, 2 months free)
-const TFR_ELITE_MONTHLY_CENTS        = 19700;    // $197/month    â€” Elite         (Levels 7-11, HELOC Engine)
-const TFR_ELITE_ANNUAL_CENTS         = 150000;   // $1,500/year   â€” Elite Annual  ($125/mo, 36% off)
-const SOVEREIGN_EXEC_CENTS           = 1999700;  // $19,997 one-time â€” Sovereign Executive (Level 12, lifetime)
+// 6-Tier Pricing — tier names map to pricing_tier field in users table
+const TFR_PRO_MONTHLY_CENTS          = 2599;     // $25.99/month  — Family Pro    (Levels 3-6, Most Popular)
+const TFR_PRO_ANNUAL_CENTS           = 25990;    // $259.90/year  — Family Pro Annual (~$21.66/mo, 2 months free)
+const BUSINESS_CORE_MONTHLY_CENTS    = 9700;     // $97/month     — Business Core (legacy, kept for backward compat)
+const BUSINESS_BUNDLE_MONTHLY_CENTS  = 29700;    // $297/month    — Business      (Levels 7-11, Best Value)
+const BUSINESS_BUNDLE_ANNUAL_CENTS   = 297000;   // $2,970/year   — Business Annual ($247.50/mo, 2 months free)
+const TFR_ELITE_MONTHLY_CENTS        = 19700;    // $197/month    — Elite         (Levels 7-11, HELOC Engine)
+const TFR_ELITE_ANNUAL_CENTS         = 150000;   // $1,500/year   — Elite Annual  ($125/mo, 36% off)
+const SOVEREIGN_EXEC_CENTS           = 1999700;  // $19,997 one-time — Sovereign Executive (Level 12, lifetime)
 
-// Map plan identifier â†’ pricing_tier string (single source of truth)
+// Map plan identifier → pricing_tier string (single source of truth)
 const PLAN_TO_PRICING_TIER = {
   'pro':                  'individual_pro',       // legacy 'pro' plan now maps to individual_pro
   'household_pro':        'tfr_pro',              // legacy 'household_pro' now maps to tfr_pro (Family Pro)
@@ -10739,7 +10739,7 @@ const PLAN_TO_PRICING_TIER = {
   'sovereign_executive':  'sovereign_executive',
 };
 
-// Map plan identifier â†’ amount_cents (monthly, for new tiers)
+// Map plan identifier → amount_cents (monthly, for new tiers)
 const NEW_TIER_AMOUNT_CENTS = {
   'individual_pro':      INDIVIDUAL_MONTHLY_CENTS,
   'tfr_pro':             TFR_PRO_MONTHLY_CENTS,
@@ -10749,7 +10749,7 @@ const NEW_TIER_AMOUNT_CENTS = {
   'sovereign_executive': SOVEREIGN_EXEC_CENTS,
 };
 
-// Map plan identifier â†’ annual amount_cents
+// Map plan identifier → annual amount_cents
 const ANNUAL_TIER_AMOUNT_CENTS = {
   'individual_pro':  INDIVIDUAL_ANNUAL_CENTS,
   'tfr_pro':         TFR_PRO_ANNUAL_CENTS,
@@ -10757,7 +10757,7 @@ const ANNUAL_TIER_AMOUNT_CENTS = {
   'tfr_elite':       TFR_ELITE_ANNUAL_CENTS,
 };
 
-// Map plan identifier â†’ Stripe payment link (annual variant)
+// Map plan identifier → Stripe payment link (annual variant)
 const ANNUAL_TIER_STRIPE_LINKS = {
   'individual_pro':  () => STRIPE_INDIVIDUAL_ANNUAL_LINK,
   'tfr_pro':         () => STRIPE_TFR_PRO_ANNUAL_LINK,
@@ -10765,7 +10765,7 @@ const ANNUAL_TIER_STRIPE_LINKS = {
   'tfr_elite':       () => STRIPE_TFR_ELITE_ANNUAL_LINK,
 };
 
-// Map plan identifier â†’ Stripe payment link (monthly)
+// Map plan identifier → Stripe payment link (monthly)
 const NEW_TIER_STRIPE_LINKS = {
   'individual_pro':      () => STRIPE_INDIVIDUAL_MONTHLY_LINK,
   'tfr_pro':             () => STRIPE_TFR_PRO_MONTHLY_LINK,
@@ -10847,7 +10847,7 @@ app.post('/api/subscriptions/create', async (req, res) => {
     const isIndividualPro = plan === 'individual_pro';
     const isNewTier = NEW_TIER_AMOUNT_CENTS.hasOwnProperty(plan);
 
-    // â”€â”€ Credit Gate Check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Credit Gate Check ─────────────────────────────────────────────────────
     // Personal paid tiers (individual_pro, tfr_pro, tfr_elite) require credit report.
     // Business tiers (business_core, business_bundle) are exempt.
     const CREDIT_GATE_REQUIRED_PLANS = ['individual_pro', 'tfr_pro', 'tfr_elite'];
@@ -10862,7 +10862,7 @@ app.post('/api/subscriptions/create', async (req, res) => {
       }
     }
 
-    // Business tiers are exempt from credit gate â€” set not_required if user is logged in
+    // Business tiers are exempt from credit gate — set not_required if user is logged in
     const CREDIT_GATE_EXEMPT_PLANS = ['business_core', 'business_bundle'];
     if (CREDIT_GATE_EXEMPT_PLANS.includes(plan) && req.session && req.session.userId) {
       pool.query(
@@ -11007,7 +11007,7 @@ app.post('/api/subscriptions/create', async (req, res) => {
           [normalizedPlanType, activatePricingTier, email]
         );
 
-        // â”€â”€ family Pro: mark owner tier + link family â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── family Pro: mark owner tier + link family ──────────────────
         if (isHouseholdPro) {
           await client.query(
             `UPDATE users SET subscription_tier = 'family' WHERE LOWER(email) = LOWER($1)`,
@@ -11039,7 +11039,7 @@ app.post('/api/subscriptions/create', async (req, res) => {
           console.error('Commission processing error:', err.message);
         });
 
-        // â”€â”€ Orphan/Ghost lifecycle hooks (balance payment path) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Orphan/Ghost lifecycle hooks (balance payment path) ───────────
         pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email])
           .then(r => {
             const uid = r.rows.length > 0 ? r.rows[0].id : null;
@@ -11186,7 +11186,7 @@ app.post('/api/subscriptions/verify', async (req, res) => {
         [verifyPlanType, verifyPricingTier, subscription.email]
       );
 
-      // â”€â”€ family Pro: mark owner tier + grant Pro to all active members â”€â”€
+      // ── family Pro: mark owner tier + grant Pro to all active members ──
       if (subscription.plan === 'household_pro') {
         // Mark owner as family tier
         await client.query(
@@ -11227,10 +11227,10 @@ app.post('/api/subscriptions/verify', async (req, res) => {
         console.error('Commission processing error:', err.message);
       });
 
-      // â”€â”€ Orphan/Ghost lifecycle hooks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Orphan/Ghost lifecycle hooks ──────────────────────────────────────
       // Run async, non-blocking, non-fatal
       if (subUserId) {
-        // Ghost â†’ Gold: if this user was a ghost slot, activate them
+        // Ghost → Gold: if this user was a ghost slot, activate them
         convertGhostToGold(subUserId).catch(() => {});
         // Orphan placement: if this user was in the holding tank, run placement
         processOrphanUpgrade(subUserId).catch(() => {});
@@ -11249,9 +11249,9 @@ app.post('/api/subscriptions/verify', async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ STRIPE WEBHOOK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── STRIPE WEBHOOK ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 // Handles automatic subscription renewals, cancellations, and payment failures.
 // Requires STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET env vars.
 // Register this URL in the Stripe Dashboard: https://financial-revolution.polsia.app/api/stripe-webhook
@@ -11266,12 +11266,12 @@ app.post('/api/stripe-webhook', async (req, res) => {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
-    console.warn('[Stripe Webhook] STRIPE_WEBHOOK_SECRET not set â€” rejecting event');
+    console.warn('[Stripe Webhook] STRIPE_WEBHOOK_SECRET not set — rejecting event');
     return res.status(400).json({ error: 'Webhook not configured' });
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {
-    console.warn('[Stripe Webhook] STRIPE_SECRET_KEY not set â€” cannot initialize Stripe');
+    console.warn('[Stripe Webhook] STRIPE_SECRET_KEY not set — cannot initialize Stripe');
     return res.status(400).json({ error: 'Stripe not configured' });
   }
 
@@ -11289,7 +11289,7 @@ app.post('/api/stripe-webhook', async (req, res) => {
   try {
     switch (event.type) {
 
-      // â”€â”€ checkout.session.completed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── checkout.session.completed ──────────────────────────────────────────
       // Fires when a customer pays via a Stripe payment link.
       // We use client_reference_id=sub_{subscriptionId} to link back to our DB.
       // Auto-verifies the subscription (replaces manual /api/subscriptions/verify call).
@@ -11346,7 +11346,7 @@ app.post('/api/stripe-webhook', async (req, res) => {
         }
 
         // Determine billing period
-        // sovereign_executive is a one-time payment â€” access for 100 years
+        // sovereign_executive is a one-time payment — access for 100 years
         const isSovereign = sub.plan === 'sovereign_executive';
         const isAnnual = !isSovereign && (
           sub.plan_type === 'annual' ||
@@ -11472,13 +11472,13 @@ app.post('/api/stripe-webhook', async (req, res) => {
         break;
       }
 
-      // â”€â”€ invoice.payment_succeeded â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── invoice.payment_succeeded ────────────────────────────────────────────
       // Fires on every successful renewal payment.
       // Extends paid_until by 1 month or 1 year based on the subscription plan.
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object;
 
-        // First payment is handled by checkout.session.completed â€” skip here
+        // First payment is handled by checkout.session.completed — skip here
         if (invoice.billing_reason === 'subscription_create') {
           console.log('[Stripe Webhook] invoice.payment_succeeded: billing_reason=subscription_create, handled by checkout.session.completed, skipping');
           break;
@@ -11553,15 +11553,15 @@ app.post('/api/stripe-webhook', async (req, res) => {
         );
 
         // family Pro note: member access inherits from owner's paid_until via hasProAccess()
-        // No additional action needed â€” the owner's paid_until extension covers all members.
+        // No additional action needed — the owner's paid_until extension covers all members.
 
         console.log(`[Stripe Webhook] invoice.payment_succeeded: extended Pro for ${renewUser.email} until ${newPaidUntil.toISOString()} (${planType})`);
         break;
       }
 
-      // â”€â”€ customer.subscription.deleted â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── customer.subscription.deleted ────────────────────────────────────────
       // Fires when a subscription is cancelled (immediately or at period end).
-      // We mark the subscription cancelled but leave paid_until intact â€”
+      // We mark the subscription cancelled but leave paid_until intact —
       // access expires naturally when paid_until is reached.
       case 'customer.subscription.deleted': {
         const deletedSub = event.data.object;
@@ -11595,7 +11595,7 @@ app.post('/api/stripe-webhook', async (req, res) => {
         break;
       }
 
-      // â”€â”€ invoice.payment_failed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── invoice.payment_failed ───────────────────────────────────────────────
       // Fires when a renewal payment fails.
       // We flag the account as past_due. Stripe will retry automatically.
       // Access continues until paid_until expires naturally.
@@ -11617,7 +11617,7 @@ app.post('/api/stripe-webhook', async (req, res) => {
 
         if (STRIPE_EXEMPT_EMAILS.includes(failUser.email.toLowerCase())) break;
 
-        // Flag as past_due â€” access still continues until paid_until expires
+        // Flag as past_due — access still continues until paid_until expires
         await pool.query(
           `UPDATE users SET subscription_status = 'past_due', updated_at = NOW() WHERE id = $1`,
           [failUser.id]
@@ -11675,7 +11675,7 @@ app.get('/api/subscriptions/status', async (req, res) => {
   }
 });
 
-// Pricing info â€” returns current tier pricing
+// Pricing info — returns current tier pricing
 app.get('/api/pricing/info', async (req, res) => {
   try {
     res.json({
@@ -11683,12 +11683,12 @@ app.get('/api/pricing/info', async (req, res) => {
       monthly_cents: INDIVIDUAL_MONTHLY_CENTS,
       annual_cents: INDIVIDUAL_ANNUAL_CENTS,
       annual_savings_pct: Math.round((1 - (INDIVIDUAL_ANNUAL_CENTS / 12) / INDIVIDUAL_MONTHLY_CENTS) * 100),
-      // â”€â”€ All tiers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── All tiers ────────────────────────────────────────────────────────
       new_tiers: [
         {
           id: 'individual_pro',
           name: 'Individual Pro',
-          levels: 'Levels 3â€“6 â€” Single User',
+          levels: 'Levels 3–6 — Single User',
           monthly_cents: INDIVIDUAL_MONTHLY_CENTS,
           annual_cents: INDIVIDUAL_ANNUAL_CENTS,
           billing: 'monthly_or_annual',
@@ -11698,7 +11698,7 @@ app.get('/api/pricing/info', async (req, res) => {
         {
           id: 'tfr_pro',
           name: 'Family Pro',
-          levels: 'Levels 3â€“6',
+          levels: 'Levels 3–6',
           monthly_cents: TFR_PRO_MONTHLY_CENTS,
           billing: 'monthly',
           stripe_link_available: !!STRIPE_TFR_PRO_MONTHLY_LINK,
@@ -11706,7 +11706,7 @@ app.get('/api/pricing/info', async (req, res) => {
         {
           id: 'business_core',
           name: 'Business Core',
-          levels: 'Levels 7â€“9',
+          levels: 'Levels 7–9',
           monthly_cents: BUSINESS_CORE_MONTHLY_CENTS,
           billing: 'monthly',
           stripe_link_available: !!STRIPE_BUSINESS_CORE_MONTHLY_LINK,
@@ -11714,7 +11714,7 @@ app.get('/api/pricing/info', async (req, res) => {
         {
           id: 'business_bundle',
           name: 'Full Business Bundle',
-          levels: 'Levels 7â€“9 + All Add-Ons',
+          levels: 'Levels 7–9 + All Add-Ons',
           monthly_cents: BUSINESS_BUNDLE_MONTHLY_CENTS,
           billing: 'monthly',
           stripe_link_available: !!STRIPE_BUSINESS_BUNDLE_MONTHLY_LINK,
@@ -11722,7 +11722,7 @@ app.get('/api/pricing/info', async (req, res) => {
         {
           id: 'tfr_elite',
           name: 'Elite Pro',
-          levels: 'Levels 10â€“12',
+          levels: 'Levels 10–12',
           monthly_cents: TFR_ELITE_MONTHLY_CENTS,
           billing: 'monthly',
           stripe_link_available: !!STRIPE_TFR_ELITE_MONTHLY_LINK,
@@ -11730,7 +11730,7 @@ app.get('/api/pricing/info', async (req, res) => {
         {
           id: 'sovereign_executive',
           name: 'Sovereign Executive',
-          levels: 'Level 12 â€” Lifetime Access',
+          levels: 'Level 12 — Lifetime Access',
           monthly_cents: null,
           one_time_cents: SOVEREIGN_EXEC_CENTS,
           billing: 'one_time',
@@ -11744,10 +11744,10 @@ app.get('/api/pricing/info', async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ AFFILIATE SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// Old 50%/10% model removed â€” all commission rates are in FG_INITIAL_RATES / FG_RECURRING_RATES below
+// ═══════════════════════════════════════════════════════════
+// ─── AFFILIATE SYSTEM ────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// Old 50%/10% model removed — all commission rates are in FG_INITIAL_RATES / FG_RECURRING_RATES below
 const PAYOUT_MINIMUM_CENTS = 5000;
 
 // Future Generations 5-Level Commission Rates (percentage of payment)
@@ -11757,7 +11757,7 @@ const PAYOUT_MINIMUM_CENTS = 5000;
 const FG_INITIAL_RATES = [16, 8, 4, 2, 1]; // Levels 1-5 (= STANDARD_COMMISSION_RATES)
 const FG_RECURRING_RATES = [16, 8, 4, 2, 1]; // Levels 1-5 (same as initial)
 
-// Legacy Placement Startup Rates â€” Month 1 ONLY (20-5-3-2-1 = 31% total)
+// Legacy Placement Startup Rates — Month 1 ONLY (20-5-3-2-1 = 31% total)
 // Enroller (who recruited) = 20%, Placement Parent = 5%,
 // Tree L3 = 3%, Tree L4 = 2%, Tree L5 = 1%
 const FG_LEGACY_ENROLLER_RATE = 20;       // Enroller gets this on Month 1
@@ -11769,7 +11769,7 @@ function generateReferralCode(email) {
   return `${username.substring(0, 8).toUpperCase()}${random}`;
 }
 
-// â”€â”€â”€ MLM TREE PLACEMENT HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── MLM TREE PLACEMENT HELPERS ─────────────────────────────────────────────
 
 // Count all Level-1 (first-line, directly under company) affiliates.
 // During seed phase: first 100 codeless joiners get Level 1.
@@ -11866,10 +11866,10 @@ async function findWeakestLeg(affiliateId) {
 // Determine where a joining user should be placed in the affiliate tree.
 // 4x5 Gated Progression rules:
 //   1. Referral code (referred_by_user_id set):
-//      a. Referrer has capacity in current phase (< current_phase * 4 legs) â†’ place directly
-//      b. Referrer at phase capacity â†’ Legacy Placement: drop to weakest leg
-//   2. Seed phase (< 100 Level-1 affiliates) â†’ Level 1 (corporate/seed)
-//   3. Post-seed â†’ BFS auto-placement under corporate node
+//      a. Referrer has capacity in current phase (< current_phase * 4 legs) → place directly
+//      b. Referrer at phase capacity → Legacy Placement: drop to weakest leg
+//   2. Seed phase (< 100 Level-1 affiliates) → Level 1 (corporate/seed)
+//   3. Post-seed → BFS auto-placement under corporate node
 async function determineAffiliatePlacement(userId) {
   const userResult = await pool.query(
     'SELECT id, referred_by_user_id FROM users WHERE id = $1', [userId]
@@ -11880,7 +11880,7 @@ async function determineAffiliatePlacement(userId) {
 
   const referredByUserId = userResult.rows[0].referred_by_user_id;
 
-  // â”€â”€ Case 1: User was referred via a referral code â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Case 1: User was referred via a referral code ─────────────────────────
   if (referredByUserId) {
     const parentAff = await pool.query(
       `SELECT id, affiliate_level, current_phase FROM affiliates
@@ -11896,7 +11896,7 @@ async function determineAffiliatePlacement(userId) {
       const currentWidth = await getAffiliateFrontLineWidth(p.id);
 
       if (currentWidth < maxWidth) {
-        // â”€â”€ Direct placement: referrer has capacity in current phase â”€â”€â”€â”€â”€â”€
+        // ── Direct placement: referrer has capacity in current phase ──────
         const nextPos = await getNextLegPosition(p.id);
         return {
           parentAffiliateId: p.id,
@@ -11908,10 +11908,10 @@ async function determineAffiliatePlacement(userId) {
           legPosition: nextPos
         };
       } else {
-        // â”€â”€ Legacy Placement: referrer at phase capacity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Legacy Placement: referrer at phase capacity ──────────────────
         // Drop recruit into the referrer's weakest leg (fewest descendants).
         // Enroller earns 20% Month 1 (vs standard 16%).
-        console.log(`[Placement] ${referredByUserId} at phase capacity (${currentWidth}/${maxWidth}) â†’ Legacy Placement for user ${userId}`);
+        console.log(`[Placement] ${referredByUserId} at phase capacity (${currentWidth}/${maxWidth}) → Legacy Placement for user ${userId}`);
         const weakestLeg = await findWeakestLeg(p.id);
 
         if (weakestLeg) {
@@ -11941,7 +11941,7 @@ async function determineAffiliatePlacement(userId) {
       }
     }
 
-    // Referrer exists but isn't an affiliate yet â€” place under them at level 2
+    // Referrer exists but isn't an affiliate yet — place under them at level 2
     return {
       parentAffiliateId: null,
       affiliateLevel: 2,
@@ -11953,24 +11953,24 @@ async function determineAffiliatePlacement(userId) {
     };
   }
 
-  // â”€â”€ Case 2: No referral code â€” check seed phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Case 2: No referral code — check seed phase ───────────────────────────
   // Corporate/seed placements have unlimited width (Master Node has no phase cap).
   const firstLineCount = await getFirstLineAffiliateCount();
   if (firstLineCount < 100) {
     return { parentAffiliateId: null, affiliateLevel: 1, placementMethod: 'seed', parentUserId: null, isLegacyPlacement: false, enrollerId: null };
   }
 
-  // â”€â”€ Case 3: Post-seed â€” BFS placement â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Case 3: Post-seed — BFS placement ────────────────────────────────────
   // BFS under the corporate node has no width cap (infinite Master Node width).
   const bfsResult = await bfsAffiliatePlacement();
   return { ...bfsResult, isLegacyPlacement: false, enrollerId: null };
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ ORPHAN PLACEMENT SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── ORPHAN PLACEMENT SYSTEM ─────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
-// â”€â”€ MERIT GATE â€” Company Gift Slot Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── MERIT GATE — Company Gift Slot Mapping ────────────────────────────────────
 //
 // Under the 3:1 Merit Gate system, each affiliate receives a maximum of 3 company
 // gifts, placed at slots 1, 5, and 9.  Slots 2-4, 6-8 are user-recruited.
@@ -11981,14 +11981,14 @@ async function determineAffiliatePlacement(userId) {
 // has been permanently disabled.  Orphans without an eligible merit-queue
 // recipient remain in the pool until a qualifying affiliate earns placement.
 //
-//   Slot 1 : 1st company gift  (merit queue â€” no auto-fill)
+//   Slot 1 : 1st company gift  (merit queue — no auto-fill)
 //   Slot 5 : 2nd company gift  (gate: active_personals >= 3 required)
-//   Slot 9 : 3rd company gift  (final â€” no gate beyond personals from Slot 5)
+//   Slot 9 : 3rd company gift  (final — no gate beyond personals from Slot 5)
 //   > Slot 9 : no more company gifts (returns null)
 //
 // Width limit: 20 total slots per affiliate (preserved from 4x5 system).
 function getOrphanSlotForPhase(phase) {
-  // Maps phase â†’ first available company gift slot for that phase.
+  // Maps phase → first available company gift slot for that phase.
   // Only phases 1-3 have company gifts under the 3:1 Merit Gate.
   if (phase === 1) return 1;
   if (phase === 2) return 5;
@@ -11998,22 +11998,22 @@ function getOrphanSlotForPhase(phase) {
 }
 
 // Returns the next company gift slot after the current one.
-// After 3 gifts (slot 9) â†’ null (eligibility ends).
+// After 3 gifts (slot 9) → null (eligibility ends).
 function getNextCompanyGiftSlot(currentSlot) {
   if (currentSlot === 1) return 5;
   if (currentSlot === 5) return 9;
   return null; // slot 9 was the 3rd and final gift
 }
 
-// â”€â”€ MASTER VALVE â€” Sliding-Scale Orphan Distribution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── MASTER VALVE — Sliding-Scale Orphan Distribution ─────────────────────────
 //
 // The cycle length is cached in orphan_placement_config.current_cycle_length and
 // updated weekly by the recalculateMasterValve() job in affiliate-jobs.js.
 //
 // Tiers (based on active legs from Company Master Node):
-//   Startup  (1-20  legs): cycle=5  â†’ 4 field + 1 corp per cycle
-//   Growth   (21-50 legs): cycle=3  â†’ 2 field + 1 corp per cycle
-//   Sovereign (51+  legs): cycle=50 â†’ 49 field + 1 corp per cycle
+//   Startup  (1-20  legs): cycle=5  → 4 field + 1 corp per cycle
+//   Growth   (21-50 legs): cycle=3  → 2 field + 1 corp per cycle
+//   Sovereign (51+  legs): cycle=50 → 49 field + 1 corp per cycle
 //
 // Returns the cycle length for the current valve tier.
 // Reads from DB cache; falls back to 5 (startup) if table/row not yet seeded.
@@ -12066,10 +12066,10 @@ async function determineOrphanDestination(client) {
 
 // Find the longest-waiting eligible affiliate for orphan placement.
 // Merit Gate eligibility rules:
-//   âœ… Active, non-ghost, orphan_placement_eligible, FACTS certified
-//   âœ… Has an open orphan slot queued (next_orphan_slot IS NOT NULL)
-//   âœ… Has received fewer than 3 company gifts (company_gifts_received < 3)
-//   âœ… Slot 5 gate: if requesting Slot 5, must have personal_recruit_count >= 3
+//   ✅ Active, non-ghost, orphan_placement_eligible, FACTS certified
+//   ✅ Has an open orphan slot queued (next_orphan_slot IS NOT NULL)
+//   ✅ Has received fewer than 3 company gifts (company_gifts_received < 3)
+//   ✅ Slot 5 gate: if requesting Slot 5, must have personal_recruit_count >= 3
 async function findNextEligibleAffiliateForOrphan(client) {
   const result = await client.query(`
     SELECT a.id, a.user_id, a.next_orphan_slot, a.orphan_waiting_since,
@@ -12086,7 +12086,7 @@ async function findNextEligibleAffiliateForOrphan(client) {
       AND (
         a.next_orphan_slot != 5
         OR a.personal_recruit_count >= 3
-        -- Slot 5 Merit Gate: must have â‰¥3 active personals before receiving 2nd gift
+        -- Slot 5 Merit Gate: must have ≥3 active personals before receiving 2nd gift
       )
     ORDER BY a.orphan_waiting_since ASC
     LIMIT 1
@@ -12094,7 +12094,7 @@ async function findNextEligibleAffiliateForOrphan(client) {
   return result.rows.length > 0 ? result.rows[0] : null;
 }
 
-// Full orphan placement flow â€” called when a holding-tank user upgrades to Pro.
+// Full orphan placement flow — called when a holding-tank user upgrades to Pro.
 // Determines Field vs Corp via Master Valve sliding scale, then applies Merit Gate.
 async function processOrphanUpgrade(userId) {
   const client = await pool.connect();
@@ -12136,12 +12136,12 @@ async function processOrphanUpgrade(userId) {
         if (orphanUser.rows.length === 0) { await client.query('ROLLBACK'); return; }
         const orphanEmail = orphanUser.rows[0].email;
 
-        // Check if orphan is already in affiliates (ghost slot from a previous referral â€” edge case)
+        // Check if orphan is already in affiliates (ghost slot from a previous referral — edge case)
         const existingAff = await client.query(
           'SELECT id FROM affiliates WHERE user_id = $1', [userId]
         );
         if (existingAff.rows.length === 0) {
-          // Place orphan in the affiliate's tree (no level cap â€” 4x5 supports deep chains)
+          // Place orphan in the affiliate's tree (no level cap — 4x5 supports deep chains)
           const orphanLevel = (eligibleAffiliate.affiliate_level || 1) + 1;
           const orphanNextPos = await getNextLegPosition(eligibleAffiliate.id);
           await client.query(
@@ -12166,8 +12166,8 @@ async function processOrphanUpgrade(userId) {
           [eligibleAffiliate.id, slotNum, userId]
         );
 
-        // â”€â”€ Merit Gate: Advance orphan slot to next company gift position â”€â”€â”€â”€â”€â”€
-        // Company gift slots: 1 â†’ 5 â†’ 9 â†’ null (max 3 gifts)
+        // ── Merit Gate: Advance orphan slot to next company gift position ──────
+        // Company gift slots: 1 → 5 → 9 → null (max 3 gifts)
         const nextSlot = getNextCompanyGiftSlot(slotNum);
 
         await client.query(
@@ -12181,7 +12181,7 @@ async function processOrphanUpgrade(userId) {
           [nextSlot, eligibleAffiliate.id]
         );
 
-        // â”€â”€ Audit Log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Audit Log ─────────────────────────────────────────────────────────
         await client.query(
           `INSERT INTO assignment_log
              (orphan_user_id, assigned_affiliate_id, slot_number, destination,
@@ -12190,9 +12190,9 @@ async function processOrphanUpgrade(userId) {
           [userId, eligibleAffiliate.id, slotNum, valveTier, activeLegCount]
         );
 
-        console.log(`[Orphan] Field placement: user ${userId} â†’ affiliate ${eligibleAffiliate.id} slot ${slotNum} [${valveTier}]`);
+        console.log(`[Orphan] Field placement: user ${userId} → affiliate ${eligibleAffiliate.id} slot ${slotNum} [${valveTier}]`);
       } else {
-        // No eligible affiliates â†’ fallback to Corp (all field slots blocked by Merit Gate)
+        // No eligible affiliates → fallback to Corp (all field slots blocked by Merit Gate)
         await client.query(
           `UPDATE orphan_pool SET status = 'corp_placed', placed_at = NOW() WHERE user_id = $1`, [userId]
         );
@@ -12206,7 +12206,7 @@ async function processOrphanUpgrade(userId) {
            VALUES ($1, NULL, NULL, 'corp_fallback', $2, $3, false, false)`,
           [userId, valveTier, activeLegCount]
         );
-        console.log(`[Orphan] No eligible affiliates (Merit Gate) â€” corp fallback for user ${userId} [${valveTier}]`);
+        console.log(`[Orphan] No eligible affiliates (Merit Gate) — corp fallback for user ${userId} [${valveTier}]`);
       }
     } else {
       // Corp placement by Master Valve scaling split
@@ -12235,9 +12235,9 @@ async function processOrphanUpgrade(userId) {
   }
 }
 
-// â”€â”€â”€ GHOST SLOT CREATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GHOST SLOT CREATION ─────────────────────────────────────────────────────
 // Called at signup when a free user signs up via a referral link.
-// Creates a ghost affiliate record â€” they hold a tree position but earn $0 commission.
+// Creates a ghost affiliate record — they hold a tree position but earn $0 commission.
 async function createGhostSlotForReferral(userId, referrerId) {
   try {
     // Don't double-create
@@ -12252,7 +12252,7 @@ async function createGhostSlotForReferral(userId, referrerId) {
       [referrerId]
     );
     if (referrerAff.rows.length === 0) {
-      // Referrer isn't an affiliate â€” add to orphan pool instead
+      // Referrer isn't an affiliate — add to orphan pool instead
       await pool.query(
         `INSERT INTO orphan_pool (user_id, status, created_at) VALUES ($1, 'waiting_upgrade', NOW()) ON CONFLICT (user_id) DO NOTHING`,
         [userId]
@@ -12263,18 +12263,18 @@ async function createGhostSlotForReferral(userId, referrerId) {
     const referrerAffiliate = referrerAff.rows[0];
     const ghostLevel = (referrerAffiliate.affiliate_level || 1) + 1;
 
-    // Check if referrer is at 4x5 phase capacity â€” ghost slots count toward width
+    // Check if referrer is at 4x5 phase capacity — ghost slots count toward width
     const referrerPhase = referrerAffiliate.current_phase || 1;
     const referrerMaxWidth = referrerPhase * 4;
     const referrerCurrentWidth = await getAffiliateFrontLineWidth(referrerAffiliate.id);
 
     if (referrerCurrentWidth >= referrerMaxWidth) {
-      // Referrer at capacity â€” ghost goes to orphan pool instead
+      // Referrer at capacity — ghost goes to orphan pool instead
       await pool.query(
         `INSERT INTO orphan_pool (user_id, status, created_at) VALUES ($1, 'waiting_upgrade', NOW()) ON CONFLICT (user_id) DO NOTHING`,
         [userId]
       );
-      console.log(`[Ghost] Referrer ${referrerAffiliate.id} at capacity (${referrerCurrentWidth}/${referrerMaxWidth}) â†’ orphan pool`);
+      console.log(`[Ghost] Referrer ${referrerAffiliate.id} at capacity (${referrerCurrentWidth}/${referrerMaxWidth}) → orphan pool`);
       return;
     }
 
@@ -12294,7 +12294,7 @@ async function createGhostSlotForReferral(userId, referrerId) {
     );
 
     // Increment referrer's personal_recruit_count (they personally referred this person)
-    // Ghost slots DO count as personal recruits â€” they just don't earn commission until upgraded.
+    // Ghost slots DO count as personal recruits — they just don't earn commission until upgraded.
     await pool.query(
       `UPDATE affiliates SET personal_recruit_count = personal_recruit_count + 1 WHERE id = $1`,
       [referrerAffiliate.id]
@@ -12307,7 +12307,7 @@ async function createGhostSlotForReferral(userId, referrerId) {
   }
 }
 
-// â”€â”€â”€ GHOST â†’ GOLD CONVERSION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GHOST → GOLD CONVERSION ─────────────────────────────────────────────────
 // Called when a ghost slot user upgrades to Pro.
 // Removes ghost status, activates the slot, triggers commission chain.
 async function convertGhostToGold(userId) {
@@ -12328,15 +12328,15 @@ async function convertGhostToGold(userId) {
        WHERE id = $1`,
       [ghostResult.rows[0].id]
     );
-    console.log(`[Ghostâ†’Gold] User ${userId} converted â€” commission chain now active`);
+    console.log(`[Ghost→Gold] User ${userId} converted — commission chain now active`);
     return true;
   } catch (err) {
-    console.error('[Ghostâ†’Gold] convertGhostToGold error:', err.message);
+    console.error('[Ghost→Gold] convertGhostToGold error:', err.message);
     return false;
   }
 }
 
-// â”€â”€ 4x5 DEPTH GATE CHECKER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── 4x5 DEPTH GATE CHECKER ────────────────────────────────────────────────────
 //
 // For a given affiliate ID and one of their direct children (legs), check if
 // that leg's subtree has an active non-ghost member at exactly N hops depth.
@@ -12372,7 +12372,7 @@ async function checkLegDepth(affiliateId, legId, targetDepth = 5) {
   };
 }
 
-// â”€â”€ CHECK AND UPDATE DEPTH GATES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CHECK AND UPDATE DEPTH GATES ─────────────────────────────────────────────
 //
 // Runs daily (via affiliate-jobs.js). For every active affiliate:
 //   1. Get the 4 legs in their CURRENT phase
@@ -12427,7 +12427,7 @@ async function checkAndUpdateDepthGates(pool) {
       // Gate cannot be met if the phase doesn't have all 4 legs yet
       if (phaseLegs.length < 4) {
         if (currentGateMet) {
-          // Was met â€” re-lock
+          // Was met — re-lock
           await pool.query(
             `UPDATE affiliates SET ${fieldName} = false, updated_at = NOW() WHERE id = $1`,
             [aff.id]
@@ -12460,11 +12460,11 @@ async function checkAndUpdateDepthGates(pool) {
           relocks++;
           console.log(`[DepthGate] Phase ${phase} RE-LOCKED for ${aff.email} (leg dropped below 5 deep)`);
         } else if (allLegsDeep && !currentGateMet) {
-          console.log(`[DepthGate] Phase ${phase} GATE MET for ${aff.email} âœ…`);
+          console.log(`[DepthGate] Phase ${phase} GATE MET for ${aff.email} ✅`);
         }
       }
 
-      // â”€â”€ Phase advancement check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Phase advancement check ───────────────────────────────────────────
       // Criteria: gate met + personal_recruit_count >= phase * 3
       // Only advance if currently ON this phase (not already past it)
       const personalsRequired = phase * 3;
@@ -12481,7 +12481,7 @@ async function checkAndUpdateDepthGates(pool) {
 
         if (advanceResult.rowCount > 0) {
           phaseAdvances++;
-          console.log(`[DepthGate] ðŸŽ‰ ${aff.email} ADVANCED to Phase ${phase + 1}! (${personalsActual} personals, gate met)`);
+          console.log(`[DepthGate] 🎉 ${aff.email} ADVANCED to Phase ${phase + 1}! (${personalsActual} personals, gate met)`);
         }
       } else if (allLegsDeep && personalsActual < personalsRequired && phase < 5) {
         console.log(`[DepthGate] ${aff.email}: gate met but needs ${personalsRequired - personalsActual} more personals for Phase ${phase + 1}`);
@@ -12497,8 +12497,8 @@ async function checkAndUpdateDepthGates(pool) {
   }
 }
 
-// â”€â”€â”€ ADD TO ORPHAN POOL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Called at signup for users with no referral code â€” they go to the Holding Tank.
+// ─── ADD TO ORPHAN POOL ───────────────────────────────────────────────────────
+// Called at signup for users with no referral code — they go to the Holding Tank.
 async function addToOrphanPool(userId) {
   try {
     await pool.query(
@@ -12586,13 +12586,13 @@ app.post('/api/affiliate/join', async (req, res) => {
 
     const newAffiliate = result.rows[0];
 
-    // â”€â”€ Beta Phase Invite Taper: set beta_invites_remaining based on tier â”€â”€â”€â”€
+    // ── Beta Phase Invite Taper: set beta_invites_remaining based on tier ────
     // Tier = affiliate_level (Tier 0 = master node = unlimited, Tier 1-5+ = 5-1)
     // This is set immediately so the affiliate has their invite quota from day 1.
     const inviteLevel = placement.affiliateLevel || 1;
     const betaInvitesRemaining = (inviteLevel <= 0)
       ? null  // Tier 0 / master node = unlimited
-      : Math.max(1, 6 - inviteLevel);  // Level 1â†’5, Level 2â†’4, â€¦, Level 5+â†’1
+      : Math.max(1, 6 - inviteLevel);  // Level 1→5, Level 2→4, …, Level 5+→1
     await pool.query(
       `UPDATE affiliates
        SET beta_invites_remaining = $1, updated_at = NOW()
@@ -12698,7 +12698,7 @@ app.get('/api/affiliate/dashboard', async (req, res) => {
       [affiliate.id]
     );
 
-    // â”€â”€ 30-Day Vesting Wallet data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 30-Day Vesting Wallet data ──────────────────────────────────────────
     // Oldest pending commission date (drives the countdown timer)
     // Vesting window: 30 days after referral signup (updated from 90d)
     let vestingData = {
@@ -12853,7 +12853,7 @@ app.post('/api/affiliate/request-payout', async (req, res) => {
   }
 });
 
-// Affiliate tier tree â€” returns the affiliate's 5-level downline for dashboard visualization
+// Affiliate tier tree — returns the affiliate's 5-level downline for dashboard visualization
 app.get('/api/affiliate/tier-tree', async (req, res) => {
   try {
     const { email } = req.query;
@@ -12868,7 +12868,7 @@ app.get('/api/affiliate/tier-tree', async (req, res) => {
 
     const { user_id: rootUserId } = affResult.rows[0];
 
-    // Recursive BFS â€” walk up to 5 levels deep
+    // Recursive BFS — walk up to 5 levels deep
     async function getChildren(userId, depth) {
       if (depth > 5) return [];
       const kids = await pool.query(
@@ -12922,7 +12922,7 @@ app.get('/api/affiliate/tier-tree', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ ORPHAN & PHASE ENDPOINTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ORPHAN & PHASE ENDPOINTS ────────────────────────────────────────────────
 
 // Returns holding tank count (shown on affiliate dashboard as "X Free Users Waiting")
 app.get('/api/affiliate/orphan-tank-count', async (req, res) => {
@@ -13098,7 +13098,7 @@ app.get('/api/affiliate/phase-status', async (req, res) => {
   }
 });
 
-// Enter orphan queue â€” affiliate opts in to receive orphan placements
+// Enter orphan queue — affiliate opts in to receive orphan placements
 // Called when they complete Phase 1 certification and want to be eligible
 app.post('/api/affiliate/enter-orphan-queue', async (req, res) => {
   try {
@@ -13291,7 +13291,7 @@ app.post('/api/affiliate/stripe-connect/complete', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ Heartbeat Compliance API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Heartbeat Compliance API ──────────────────────────────────────────────────
 
 /**
  * GET /api/affiliate/heartbeat/status
@@ -13410,7 +13410,7 @@ app.post('/api/affiliate/heartbeat/complete', requireAuth, async (req, res) => {
     const today = new Date();
     const dayOfMonth = today.getUTCDate();
 
-    // Allow submission during window (1stâ€“7th) but also accept late submissions
+    // Allow submission during window (1st–7th) but also accept late submissions
     // Late submissions restore hold but are flagged in notes
     const lateSubmission = dayOfMonth > 7;
 
@@ -13477,7 +13477,7 @@ app.post('/api/affiliate/heartbeat/complete', requireAuth, async (req, res) => {
         }
       } catch (escrowErr) {
         console.error(`[HeartbeatV2] Escrow release error for user ${req.userId}:`, escrowErr.message);
-        // Non-fatal: heartbeat is recorded, escrow release failed â€” log and continue
+        // Non-fatal: heartbeat is recorded, escrow release failed — log and continue
       }
     }
 
@@ -13779,7 +13779,7 @@ app.post('/api/admin/legacy-placement', requireAuth, async (req, res) => {
   }
 });
 
-// Admin: Affiliate seed-phase status â€” X/100 first-line slots filled
+// Admin: Affiliate seed-phase status — X/100 first-line slots filled
 app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -13932,10 +13932,10 @@ async function trackReferral(email, referralCode, subscriptionId) {
   }
 }
 
-// â”€â”€â”€ Commission Helper: insert one commission record â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Commission Helper: insert one commission record ────────────────────────
 // Deduplication-safe: silently skips if an identical record exists.
 // Returns true if inserted, false if duplicate.
-// â”€â”€ Unfreeze family-frozen commissions when a member upgrades to individual Pro â”€â”€
+// ── Unfreeze family-frozen commissions when a member upgrades to individual Pro ──
 async function unfreezeCommissionsAfterProUpgrade(userId) {
   try {
     // Find affiliate for this user
@@ -13967,7 +13967,7 @@ async function unfreezeCommissionsAfterProUpgrade(userId) {
          family_household_id = NULL, updated_at = NOW() WHERE id = $2`,
         [totalUnfrozenCents, aff.id]
       );
-      console.log(`[FamilyPlan] Unfroze ${totalUnfrozenCents}Â¢ for affiliate ${aff.id} (user ${userId}) on Pro upgrade`);
+      console.log(`[FamilyPlan] Unfroze ${totalUnfrozenCents}¢ for affiliate ${aff.id} (user ${userId}) on Pro upgrade`);
     }
   } catch (err) {
     console.error('[FamilyPlan] unfreezeCommissionsAfterProUpgrade error:', err.message);
@@ -13985,7 +13985,7 @@ async function insertCommissionRecord(client, {
   );
   if (existing.rows.length > 0) return false;
 
-  // â”€â”€ Family Plan 50/50 Split â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Family Plan 50/50 Split ───────────────────────────────────────────────
   // If the affiliate is currently a member of a family family,
   // split the commission: 50% to billing owner, 50% frozen for the member
   const affResult = await client.query(
@@ -14009,7 +14009,7 @@ async function insertCommissionRecord(client, {
     const ownerHalf = Math.floor(amountCents / 2);
     const memberHalf = amountCents - ownerHalf; // Handle odd cents
 
-    // 1. Owner's 50% â€” goes to owner's affiliate balance (normal pending)
+    // 1. Owner's 50% — goes to owner's affiliate balance (normal pending)
     if (ownerAffiliateId && ownerHalf > 0) {
       const ownerExisting = await client.query(
         `SELECT id FROM commissions WHERE subscription_id = $1 AND affiliate_id = $2 AND type = $3 AND level = $4 AND family_split_type = 'owner_share'`,
@@ -14031,7 +14031,7 @@ async function insertCommissionRecord(client, {
       }
     }
 
-    // 2. Member's 50% â€” frozen until they upgrade to individual Pro
+    // 2. Member's 50% — frozen until they upgrade to individual Pro
     if (memberHalf > 0) {
       const memberExisting = await client.query(
         `SELECT id FROM commissions WHERE subscription_id = $1 AND affiliate_id = $2 AND type = $3 AND level = $4 AND family_split_type = 'member_frozen'`,
@@ -14051,10 +14051,10 @@ async function insertCommissionRecord(client, {
       }
     }
 
-    console.log(`[Commission] Family split for affiliate ${affiliateId} (family ${familyHouseholdId}): owner gets ${ownerHalf}Â¢, member frozen ${memberHalf}Â¢`);
+    console.log(`[Commission] Family split for affiliate ${affiliateId} (family ${familyHouseholdId}): owner gets ${ownerHalf}¢, member frozen ${memberHalf}¢`);
     return true;
   }
-  // â”€â”€ End Family Plan 50/50 Split â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── End Family Plan 50/50 Split ───────────────────────────────────────────
 
   // Standard (non-family) commission
   await client.query(
@@ -14070,9 +14070,9 @@ async function insertCommissionRecord(client, {
   return true;
 }
 
-// â”€â”€â”€ Legacy Startup Commission (Month 1 only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Legacy Startup Commission (Month 1 only) ───────────────────────────────
 // Structure: Enroller=20%, Placement Parent=5%, L3=3%, L4=2%, L5=1%
-// Unclaimed levels: Sovereign Vacuum â€” retained by company (Master Node).
+// Unclaimed levels: Sovereign Vacuum — retained by company (Master Node).
 async function processLegacyStartupCommission(client, recruitAffiliate, subscriptionId, referralId, sourceUser, subscription) {
   const commissionType = 'initial';
 
@@ -14098,8 +14098,8 @@ async function processLegacyStartupCommission(client, recruitAffiliate, subscrip
         console.log(`[LegacyCommission] Enroller (id:${enrollerResult.rows[0].id}) receives 20% ($${(amount / 100).toFixed(2)})`);
       }
     } else {
-      // Enroller is ghost/inactive â€” Sovereign Vacuum: company retains 20%
-      console.log(`[LegacyCommission] Enroller slot empty/ghost â€” Sovereign Vacuum absorbs 20%`);
+      // Enroller is ghost/inactive — Sovereign Vacuum: company retains 20%
+      console.log(`[LegacyCommission] Enroller slot empty/ghost — Sovereign Vacuum absorbs 20%`);
     }
   }
 
@@ -14118,8 +14118,8 @@ async function processLegacyStartupCommission(client, recruitAffiliate, subscrip
     const node = nodeResult.rows[0];
 
     if (node.is_ghost_slot || node.status !== 'active') {
-      // Ghost or inactive: Sovereign Vacuum â€” skip (but still walk up for next level)
-      console.log(`[LegacyCommission] Level ${levelOffset} slot (id:${node.id}) ghost/inactive â€” Sovereign Vacuum absorbs ${placementRates[i]}%`);
+      // Ghost or inactive: Sovereign Vacuum — skip (but still walk up for next level)
+      console.log(`[LegacyCommission] Level ${levelOffset} slot (id:${node.id}) ghost/inactive — Sovereign Vacuum absorbs ${placementRates[i]}%`);
     } else {
       const amount = Math.floor((subscription.amount_cents * placementRates[i]) / 100);
       const inserted = await insertCommissionRecord(client, {
@@ -14143,7 +14143,7 @@ async function processLegacyStartupCommission(client, recruitAffiliate, subscrip
   }
 }
 
-// â”€â”€â”€ Legacy Renewal Commission (Month 2+) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Legacy Renewal Commission (Month 2+) ───────────────────────────────────
 // Uses TREE POSITION (parent_affiliate_id chain) with standard 16-8-4-2-1 rates.
 // Ghost slot compression still applies.
 async function processLegacyRenewalCommission(client, recruitAffiliate, subscriptionId, referralId, sourceUser, subscription) {
@@ -14165,7 +14165,7 @@ async function processLegacyRenewalCommission(client, recruitAffiliate, subscrip
     const node = nodeResult.rows[0];
 
     if (node.is_ghost_slot) {
-      // Ghost Slot: compress past â€” don't consume a level
+      // Ghost Slot: compress past — don't consume a level
       console.log(`[LegacyRenewal] Compressing past ghost slot affiliate ${node.id}`);
       currentAffiliateId = node.parent_affiliate_id;
       continue; // Don't increment level
@@ -14199,14 +14199,14 @@ async function processCommission(subscriptionId, isRenewal = false) {
     try {
       await client.query('BEGIN');
 
-      // â”€â”€ Load subscription â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Load subscription ─────────────────────────────────────────────────
       const subResult = await client.query(
         'SELECT * FROM subscriptions WHERE id = $1', [subscriptionId]
       );
       if (subResult.rows.length === 0) { await client.query('ROLLBACK'); return; }
       const subscription = subResult.rows[0];
 
-      // â”€â”€ Find the payer user â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Find the payer user ───────────────────────────────────────────────
       const userResult = await client.query(
         'SELECT id, referred_by_user_id FROM users WHERE LOWER(email) = LOWER($1)',
         [subscription.email]
@@ -14214,14 +14214,14 @@ async function processCommission(subscriptionId, isRenewal = false) {
       if (userResult.rows.length === 0) { await client.query('ROLLBACK'); return; }
       const sourceUser = userResult.rows[0];
 
-      // â”€â”€ Find the referral record linked to this subscription â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Find the referral record linked to this subscription ──────────────
       const referralResult = await client.query(
         'SELECT id, affiliate_id FROM referrals WHERE subscription_id = $1 LIMIT 1',
         [subscriptionId]
       );
       const referralId = referralResult.rows.length > 0 ? referralResult.rows[0].id : null;
 
-      // â”€â”€ Check if recruit has a Legacy Placement â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Check if recruit has a Legacy Placement ─────────────────────────────
       const recruitAffResult = await client.query(
         `SELECT id, enrollment_type, enroller_id, parent_affiliate_id, enrolled_at
          FROM affiliates WHERE user_id = $1`,
@@ -14232,15 +14232,15 @@ async function processCommission(subscriptionId, isRenewal = false) {
       const isLegacy = recruitAffiliate && recruitAffiliate.enrollment_type === 'legacy';
 
       if (isLegacy && !isRenewal) {
-        // â”€â”€ Legacy Month 1: 20-5-3-2-1 startup bonus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Legacy Month 1: 20-5-3-2-1 startup bonus ─────────────────────────
         console.log(`[Commission] Legacy startup commission for user ${sourceUser.id} (sub ${subscriptionId})`);
         await processLegacyStartupCommission(client, recruitAffiliate, subscriptionId, referralId, sourceUser, subscription);
       } else if (isLegacy && isRenewal) {
-        // â”€â”€ Legacy Month 2+: standard rates via placement tree â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Legacy Month 2+: standard rates via placement tree ────────────────
         console.log(`[Commission] Legacy renewal commission for user ${sourceUser.id} (sub ${subscriptionId})`);
         await processLegacyRenewalCommission(client, recruitAffiliate, subscriptionId, referralId, sourceUser, subscription);
       } else {
-        // â”€â”€ Standard commission: walk up referred_by_user_id chain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Standard commission: walk up referred_by_user_id chain ────────────
         const rates = isRenewal ? FG_RECURRING_RATES : FG_INITIAL_RATES;
         const commissionType = isRenewal ? 'renewal' : 'initial';
 
@@ -14265,7 +14265,7 @@ async function processCommission(subscriptionId, isRenewal = false) {
           // Block admin (CREATOR_EMAIL) and Future Generations accounts from receiving commissions.
           // Future Generations get free sovereign access but are not eligible for affiliate payouts.
           if (isAdminIncomeBlockedUser(ancestor)) {
-            console.log(`[Commission] Skipping ineligible email â€” blocked from payout (user ${ancestor.id})`);
+            console.log(`[Commission] Skipping ineligible email — blocked from payout (user ${ancestor.id})`);
             level++;
             currentUserId = ancestor.referred_by_user_id;
             continue;
@@ -14281,10 +14281,10 @@ async function processCommission(subscriptionId, isRenewal = false) {
           const isGhostSlot = affiliateRecord && affiliateRecord.is_ghost_slot;
 
           if (isGhostSlot) {
-            // Ghost Slot: compress past â€” don't award commission, don't consume a level
+            // Ghost Slot: compress past — don't award commission, don't consume a level
             console.log(`[Commission] Compressing past ghost slot user ${ancestor.id} at depth ${hops}`);
             currentUserId = ancestor.referred_by_user_id;
-            continue; // Skip level++ â€” ghost doesn't consume a level
+            continue; // Skip level++ — ghost doesn't consume a level
           }
 
           if (affiliateRecord && referralId) {
@@ -14301,7 +14301,7 @@ async function processCommission(subscriptionId, isRenewal = false) {
             });
           }
 
-          // Move up the tree â€” consume one commission level
+          // Move up the tree — consume one commission level
           level++;
           currentUserId = ancestor.referred_by_user_id;
         }
@@ -14312,7 +14312,7 @@ async function processCommission(subscriptionId, isRenewal = false) {
         accumulatedPct += WATERFALL_RATES[i];
       }
 
-      // â”€â”€ Step 3: Deposit vacuum remainder to Master Node â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Step 3: Deposit vacuum remainder to Master Node ───────────────────
       if (accumulatedPct > 0) {
         const masterCents = Math.floor((subscription.amount_cents * accumulatedPct) / 100);
         if (masterCents > 0) {
@@ -14322,7 +14322,7 @@ async function processCommission(subscriptionId, isRenewal = false) {
         }
       }
 
-      // â”€â”€ Step 4: Mark referral as converted (initial subscriptions only) â”€â”€â”€
+      // ── Step 4: Mark referral as converted (initial subscriptions only) ───
       if (!isRenewal && referralId) {
         await client.query(
           `UPDATE referrals
@@ -14336,7 +14336,7 @@ async function processCommission(subscriptionId, isRenewal = false) {
 
       const totalPct = WATERFALL_RATES.reduce((a, b) => a + b, 0); // = 31
       console.log(
-        `[Commission] Subscription #${subscriptionId} (${commissionType}) processed â€” ` +
+        `[Commission] Subscription #${subscriptionId} (${commissionType}) processed — ` +
         `${totalPct}% pool fully distributed across ${uplineChain.length} level(s) + Master Node`
       );
 
@@ -14351,11 +14351,11 @@ async function processCommission(subscriptionId, isRenewal = false) {
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ FUTURE GENERATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── FUTURE GENERATIONS ─────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
-// Join Future Generations â€” any authenticated user can join
+// Join Future Generations — any authenticated user can join
 app.post('/api/future-generations/join', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -14416,7 +14416,7 @@ app.post('/api/future-generations/join', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('POST /api/future-generations/join error:', err.message);
     if (err.code === '23505') {
-      // Unique constraint â€” already exists
+      // Unique constraint — already exists
       const existing = await pool.query('SELECT * FROM affiliates WHERE user_id = $1', [req.userId]);
       if (existing.rows.length > 0) {
         return res.json({ message: 'Already a member', affiliate: existing.rows[0] });
@@ -14590,9 +14590,9 @@ app.get('/api/future-generations/dashboard', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ PROMO CODE SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── PROMO CODE SYSTEM ────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // NOTE: hasProAccess(), isCreator(), and CREATOR_EMAIL are defined at the top of this file
 // (search for "SINGLE SOURCE OF TRUTH: PRO ACCESS")
@@ -14685,7 +14685,7 @@ app.get('/api/admin/promo-codes/list', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/admin/trial-stats â€” Trial system metrics for admin panel
+// GET /api/admin/trial-stats — Trial system metrics for admin panel
 app.get('/api/admin/trial-stats', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -14887,9 +14887,9 @@ app.get('/api/pro-status', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ ELITE STATUS (L10-12 GATE) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── ELITE STATUS (L10-12 GATE) ───────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // GET /api/elite-status
 // Returns whether the current user has TFR Elite Pro access (Levels 10-12).
@@ -14933,7 +14933,7 @@ app.get('/api/elite-status', requireAuth, async (req, res) => {
   }
 });
 
-// GET /heloc-velocity-engine â€” clean URL (no .html)
+// GET /heloc-velocity-engine — clean URL (no .html)
 app.get('/heloc-velocity-engine', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'heloc-velocity-engine.html'));
 });
@@ -15033,9 +15033,9 @@ app.get('/api/heloc-velocity/debt-data', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ USER PREFERENCES (TIMEOUT) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── USER PREFERENCES (TIMEOUT) ──────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Get user's timeout preference
 app.get('/api/user/timeout-preference', requireAuth, async (req, res) => {
@@ -15086,9 +15086,9 @@ app.put('/api/user/timeout-preference', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ CSV IMPORT (PRO TIER ONLY) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── CSV IMPORT (PRO TIER ONLY) ──────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 const multer = require('multer');
 const { parse } = require('csv-parse/sync');
@@ -15109,12 +15109,12 @@ const upload = multer({
   }
 });
 
-// â”€â”€ OFX / QFX parser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── OFX / QFX parser ─────────────────────────────────────────
 // OFX is an SGML/XML hybrid. Strip SGML headers and regex-extract transactions.
 function parseOFX(fileContent) {
   const text = fileContent.toString('utf-8');
   const xmlStart = text.indexOf('<OFX>');
-  if (xmlStart === -1) throw new Error('Not a valid OFX/QFX file â€” missing <OFX> tag');
+  if (xmlStart === -1) throw new Error('Not a valid OFX/QFX file — missing <OFX> tag');
   const xmlBody = text.slice(xmlStart);
 
   const transactions = [];
@@ -15147,9 +15147,9 @@ function parseOFX(fileContent) {
   return transactions;
 }
 
-// â”€â”€ Extract a normalized merchant key from a transaction description â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Used for merchant-learning: "NETFLIX.COM 866-579-7172" â†’ "netflix"
-// "STARBUCKS #4567 SEATTLE WA" â†’ "starbucks"
+// ── Extract a normalized merchant key from a transaction description ──────────
+// Used for merchant-learning: "NETFLIX.COM 866-579-7172" → "netflix"
+// "STARBUCKS #4567 SEATTLE WA" → "starbucks"
 function extractMerchantKey(description) {
   if (!description) return '';
   let s = description.toLowerCase().trim();
@@ -15172,8 +15172,8 @@ function extractMerchantKey(description) {
 // Auto-categorize transaction based on description keywords.
 // Priority order: specific categories first, Necessities last as catch-all.
 // Returns { category_id, category_name, is_default }
-// is_default=true means it fell through to Necessities â€” flag for user review.
-// Module-level category ID cache â€” populated at startup and refreshed every 5 min
+// is_default=true means it fell through to Necessities — flag for user review.
+// Module-level category ID cache — populated at startup and refreshed every 5 min
 let _catIdCache = { bySlug: {}, loaded: false };
 async function loadCategoryCache() {
   try {
@@ -15181,7 +15181,7 @@ async function loadCategoryCache() {
     const bySlug = {};
     for (const r of res.rows) bySlug[r.slug] = { id: r.id, name: r.name };
     _catIdCache = { bySlug, loaded: true };
-  } catch (e) { /* ignore â€” will retry next tick */ }
+  } catch (e) { /* ignore — will retry next tick */ }
 }
 // Refresh every 5 minutes (categories rarely change)
 setInterval(loadCategoryCache, 5 * 60 * 1000);
@@ -15198,7 +15198,7 @@ function autoCategorizeFACTS(description) {
     return c ? { category_id: c.id, category_name: c.name } : { category_id: fallbackId, category_name: fallbackName };
   }
 
-  // â”€â”€ Velocity â€” debt payoff patterns (check FIRST â€” highest intent signal) â”€â”€
+  // ── Velocity — debt payoff patterns (check FIRST — highest intent signal) ──
   const velocityPatterns = [
     /\bloan payment\b/, /\bloan payoff\b/, /\bdebt payoff\b/,
     /\bcredit card payment\b/, /\bcredit card payoff\b/,
@@ -15207,7 +15207,7 @@ function autoCategorizeFACTS(description) {
     /debt.*target/, /extra.*payment/, /\bpayoff\b/
   ];
 
-  // â”€â”€ Growth (id=6) â€” investment/brokerage deposits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Growth (id=6) — investment/brokerage deposits ────────────────────────
   // Check BEFORE Necessities so investment transfers aren't caught elsewhere
   const ffPatterns = [
     /\bvanguard\b/, /\bfidelity\b/, /\bschwab\b/, /\btd ameritrade\b/, /\betrade\b/,
@@ -15222,7 +15222,7 @@ function autoCategorizeFACTS(description) {
     /transfer to investment/, /transfer to retirement/
   ];
 
-  // â”€â”€ Fun (id=5) â€” entertainment, dining, hobbies, travel, streaming â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fun (id=5) — entertainment, dining, hobbies, travel, streaming ──────────
   // Streaming services before Necessities catches "NETFLIX BILL" etc.
   const funPatterns = [
     // Streaming / subscriptions
@@ -15272,7 +15272,7 @@ function autoCategorizeFACTS(description) {
     /\bmassage\b/
   ];
 
-  // â”€â”€ Give (id=3) â€” charity, donations, church, gifts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Give (id=3) — charity, donations, church, gifts ───────────────────────
   const givePatterns = [
     /\bdonat(e|ion)\b/, /\bcharity\b/, /\bcharitable\b/, /\bnonprofit\b/, /\bnon.?profit\b/,
     /\bred cross\b/, /\bsalvation army\b/, /\bgoodwill\b/, /\bunited way\b/,
@@ -15284,8 +15284,8 @@ function autoCategorizeFACTS(description) {
     /\bgift\b.*card/, /\bpresent\b/, /\bbirthday.*gift\b/
   ];
 
-  // â”€â”€ Save (id=4) â€” savings transfers, emergency fund â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // (Investment-specific savings â†’ Financial Freedom, handled above)
+  // ── Save (id=4) — savings transfers, emergency fund ───────────────────────
+  // (Investment-specific savings → Financial Freedom, handled above)
   const savePatterns = [
     /transfer to savings/, /savings transfer/, /\bsavings account\b/,
     /\bemergency fund\b/, /\bsinking fund\b/, /\bcd\b.*savings/,
@@ -15294,7 +15294,7 @@ function autoCategorizeFACTS(description) {
     /\bsave\b.*transfer/, /auto.?save/, /\bautomatic savings\b/
   ];
 
-  // â”€â”€ Education (id=2) â€” courses, books, tuition â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Education (id=2) — courses, books, tuition ───────────────────────────
   const educationPatterns = [
     /\budemy\b/, /\bcoursera\b/, /\bmasterclass\b/, /\bskillshare\b/,
     /\blinkedin learning\b/, /\bpluralsight\b/, /\begghead\b/, /\bfrontendmaster/,
@@ -15311,8 +15311,8 @@ function autoCategorizeFACTS(description) {
     /\bpiano lesson\b/, /\bguitar lesson\b/, /\bmusic lesson\b/, /\btutor\b/
   ];
 
-  // â”€â”€ Necessities (id=1) â€” housing, utilities, groceries, transport, insurance â”€
-  // Checked LAST â€” catch-all for everyday required expenses
+  // ── Necessities (id=1) — housing, utilities, groceries, transport, insurance ─
+  // Checked LAST — catch-all for everyday required expenses
   const necessitiesPatterns = [
     // Housing
     /\brent\b/, /\bmortgage\b/, /\blandlord\b/, /\bproperty\b.*mgmt/, /\blease\b/,
@@ -15358,11 +15358,11 @@ function autoCategorizeFACTS(description) {
     /\bprescription\b/, /\bco.?pay\b/, /\bhealth(care)?\b.*payment/,
     // Childcare / misc necessities
     /\bdaycare\b/, /\bchildcare\b/, /\bnursery\b/, /\bpreschool\b.*tuition/,
-    // Home improvement (maintenance, not discretionary reno â†’ Necessities)
+    // Home improvement (maintenance, not discretionary reno → Necessities)
     /\bhome depot\b/, /\blowe.?s\b/, /\bhardware\b/
   ];
 
-  // Check in priority order â€” most specific first
+  // Check in priority order — most specific first
   if (velocityPatterns.some(p => p.test(desc))) {
     return { ...bySlug('velocity', 7, 'Velocity'), is_default: false };
   }
@@ -15386,11 +15386,11 @@ function autoCategorizeFACTS(description) {
     return { category_id: 1, category_name: 'Necessities', is_default: false };
   }
 
-  // True default â€” couldn't match anything, flag for user review
+  // True default — couldn't match anything, flag for user review
   return { category_id: 1, category_name: 'Necessities', is_default: true };
 }
 
-// â”€â”€ Brokerage / bank format detector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Brokerage / bank format detector ─────────────────────────
 // Returns { format: 'fidelity'|'schwab'|'chase'|'generic', columns: {...} }
 function detectCSVFormat(headers) {
   const hs = headers.map(h => h.toLowerCase().trim());
@@ -15444,7 +15444,7 @@ app.post('/api/import/csv', requireAuth, upload.single('file'), async (req, res)
       merchantRules[row.merchant_key] = row.category_id;
     }
 
-    // Category id â†’ name map (updated for FACTS Core bucket renames)
+    // Category id → name map (updated for FACTS Core bucket renames)
     const catNames = {
       1: 'Necessities', 2: 'Legacy', 3: 'Legacy',
       4: 'The Reserve', 5: 'Lifestyle', 6: 'Growth', 7: 'Velocity'
@@ -15567,7 +15567,7 @@ app.post('/api/import/csv', requireAuth, upload.single('file'), async (req, res)
     if (!descCol) descCol = headers[1];
     if (!amountCol && !hasSeparateDebitCredit) amountCol = headers[headers.length > 2 ? 2 : 1];
 
-    // Schwab/Fidelity: "Amount ($)" or "Amount" with currency suffix â€” prefer clean amount column
+    // Schwab/Fidelity: "Amount ($)" or "Amount" with currency suffix — prefer clean amount column
     if (!amountCol && !hasSeparateDebitCredit) {
       const amtHeader = headers.find(h => /amount/i.test(h));
       if (amtHeader) amountCol = amtHeader;
@@ -15616,7 +15616,7 @@ app.post('/api/import/csv', requireAuth, upload.single('file'), async (req, res)
             continue;
           }
         } else {
-          // Single amount column â€” negative = expense, positive = income
+          // Single amount column — negative = expense, positive = income
           const amountStr = row[amountCol] || '';
 
           amount = parseFloat(
@@ -15645,7 +15645,7 @@ app.post('/api/import/csv', requireAuth, upload.single('file'), async (req, res)
           } else if (/\bcredit\b|deposit|refund/i.test(txTypeVal)) {
             type = 'income';
           }
-          // "payment", "transfer", etc. â†’ keep sign-based detection
+          // "payment", "transfer", etc. → keep sign-based detection
         }
 
         // Parse date
@@ -15685,7 +15685,7 @@ app.post('/api/import/csv', requireAuth, upload.single('file'), async (req, res)
       }
     }
 
-    // â”€â”€ Duplicate detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Duplicate detection ──────────────────────────────────
     // 1. Flag intra-CSV duplicates (same date + amount + description)
     const seenInCsv = new Map();
     for (const tx of parsedTransactions) {
@@ -15735,7 +15735,7 @@ app.post('/api/import/csv', requireAuth, upload.single('file'), async (req, res)
         }
       }
     }
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─────────────────────────────────────────────────────────
 
     const duplicateCount = parsedTransactions.filter(t => t.is_duplicate).length;
 
@@ -15775,7 +15775,7 @@ app.post('/api/import/csv/save', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'transactions array is required and must not be empty' });
     }
 
-    // Account selection is required â€” must provide either bank_account_id or brokerage_account_id
+    // Account selection is required — must provide either bank_account_id or brokerage_account_id
     if (!bank_account_id && !brokerage_account_id) {
       return res.status(400).json({ error: 'Please select an account to import transactions into.' });
     }
@@ -15970,7 +15970,7 @@ app.post('/api/import/csv/save', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/import/history â€” list past import batches for the user
+// GET /api/import/history — list past import batches for the user
 app.get('/api/import/history', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -15988,7 +15988,7 @@ app.get('/api/import/history', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/import/merchant-rules â€” list user's learned merchantâ†’category mappings
+// GET /api/import/merchant-rules — list user's learned merchant→category mappings
 app.get('/api/import/merchant-rules', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -16008,7 +16008,7 @@ app.get('/api/import/merchant-rules', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/import/merchant-rules â€” save / update a single merchant rule
+// POST /api/import/merchant-rules — save / update a single merchant rule
 app.post('/api/import/merchant-rules', requireAuth, async (req, res) => {
   try {
     const { merchant_key, category_id } = req.body;
@@ -16016,7 +16016,7 @@ app.post('/api/import/merchant-rules', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'merchant_key is required' });
     }
     if (!category_id || !Number.isInteger(category_id) || category_id < 1 || category_id > 6) {
-      return res.status(400).json({ error: 'category_id must be 1â€“6' });
+      return res.status(400).json({ error: 'category_id must be 1–6' });
     }
     const mKey = merchant_key.toLowerCase().trim().substring(0, 100);
     const result = await pool.query(
@@ -16034,7 +16034,7 @@ app.post('/api/import/merchant-rules', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/import/merchant-rules/:id â€” delete a single merchant rule
+// DELETE /api/import/merchant-rules/:id — delete a single merchant rule
 app.delete('/api/import/merchant-rules/:id', requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -16050,7 +16050,7 @@ app.delete('/api/import/merchant-rules/:id', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/import/batch/:id â€” undo an import (delete all transactions from that batch)
+// DELETE /api/import/batch/:id — undo an import (delete all transactions from that batch)
 app.delete('/api/import/batch/:id', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -16095,9 +16095,9 @@ app.delete('/api/import/batch/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ PLAID INTEGRATION (PRO TIER ONLY) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── PLAID INTEGRATION (PRO TIER ONLY) ───────────────────
+// ═══════════════════════════════════════════════════════════
 
 const { Configuration, PlaidApi, PlaidEnvironments, Products, CountryCode } = require('plaid');
 
@@ -16599,13 +16599,13 @@ app.delete('/api/plaid/accounts/:id', requireAuth, requirePlaid, async (req, res
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ PAGE ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── PAGE ROUTES ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
-// TFR Brand Hub landing page â€” logged-in users go straight to the app
+// TFR Brand Hub landing page — logged-in users go straight to the app
 app.get('/', optionalAuth, (req, res) => {
-  // Already authenticated â†’ skip the intro, go to dashboard
+  // Already authenticated → skip the intro, go to dashboard
   if (req.userId) {
     return res.redirect('/app');
   }
@@ -16618,13 +16618,13 @@ app.get('/', optionalAuth, (req, res) => {
     html = html.replace('__POLSIA_SLUG__', slug);
     res.type('html').send(html);
   } else {
-    res.json({ message: 'FACTS â€” Brand Hub' });
+    res.json({ message: 'FACTS — Brand Hub' });
   }
 });
 
-// FACTS App â€” requires authentication; Phase Zero check handled inside the app
+// FACTS App — requires authentication; Phase Zero check handled inside the app
 // IMPORTANT: The Report Issue Injection middleware (line ~268) MUST skip /app
-// and /app.html â€” otherwise it intercepts the request, serves raw app.html
+// and /app.html — otherwise it intercepts the request, serves raw app.html
 // without auth injection, and the user sees the marketing page. This was the
 // root cause of the post-login redirect bug (4 attempts to fix).
 app.get('/app', requireAuth, enforceNda, (req, res) => {
@@ -16635,11 +16635,11 @@ app.get('/app', requireAuth, enforceNda, (req, res) => {
     let html = fs.readFileSync(htmlPath, 'utf8');
     html = html.replace('__POLSIA_SLUG__', slug);
 
-    // â”€â”€ Nuclear fix: server-side view swap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Nuclear fix: server-side view swap ──────────────────────────────────
     // Instead of relying on client-side JS to toggle visibility (which failed
     // in 3 prior attempts), the server directly sets inline styles on the HTML
     // elements. This eliminates ALL dependency on JavaScript for initial view.
-    // The authenticated user sees the dashboard immediately â€” no flash, no race.
+    // The authenticated user sees the dashboard immediately — no flash, no race.
     const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};</script>`;
     html = html.replace('</head>', authScript + '</head>');
 
@@ -16660,9 +16660,9 @@ app.get('/app', requireAuth, enforceNda, (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ BACKGROUND JOBS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── BACKGROUND JOBS ────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 const cron = require('node-cron');
 const { runInactivityJob } = require('./jobs/inactivity-manager');
@@ -16705,7 +16705,7 @@ function initializeInactivityScheduler() {
   };
 }
 
-// Initialize scheduler on startup â€” skip if in-process crons are disabled
+// Initialize scheduler on startup — skip if in-process crons are disabled
 let scheduler = null;
 if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
@@ -16859,7 +16859,7 @@ if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
   console.log('[TrialExpiry] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
 }
 
-// POST /api/admin/trigger-trial-expiry â€” Manual trigger for trial expiry job (admin only)
+// POST /api/admin/trigger-trial-expiry — Manual trigger for trial expiry job (admin only)
 app.post('/api/admin/trigger-trial-expiry', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -16937,7 +16937,7 @@ const {
 } = require('./jobs/heartbeat-compliance');
 
 function initializeHeartbeatComplianceScheduler() {
-  // 1st of every month at 08:00 UTC â€” Day 1 heartbeat window open reminders
+  // 1st of every month at 08:00 UTC — Day 1 heartbeat window open reminders
   const schedule1st = '0 8 1 * *';
   if (!cron.validate(schedule1st)) {
     console.error('[HeartbeatV2] Invalid cron schedule (Day 1):', schedule1st);
@@ -16952,7 +16952,7 @@ function initializeHeartbeatComplianceScheduler() {
     });
   }, { scheduled: true, timezone: 'UTC' });
 
-  // 5th of every month at 09:00 UTC â€” squad health report + family alerts
+  // 5th of every month at 09:00 UTC — squad health report + family alerts
   const schedule5th = '0 9 5 * *';
   const task5th = cron.schedule(schedule5th, () => {
     const p = getPool();
@@ -16963,18 +16963,18 @@ function initializeHeartbeatComplianceScheduler() {
     });
   }, { scheduled: true, timezone: 'UTC' });
 
-  // 8th of every month at 00:30 UTC â€” main compliance check: pending + escrow
+  // 8th of every month at 00:30 UTC — main compliance check: pending + escrow
   const schedule8th = '30 0 8 * *';
   const task8th = cron.schedule(schedule8th, () => {
     const p = getPool();
     if (!p) { console.error('[HeartbeatV2] Compliance check skipped: pool unavailable'); return; }
-    console.log('[HeartbeatV2] Running monthly compliance check (8th) â€” escrow + cliff');
+    console.log('[HeartbeatV2] Running monthly compliance check (8th) — escrow + cliff');
     runHeartbeatComplianceCheck(p).catch(err => {
       console.error('[HeartbeatV2] 8th compliance check error:', err.message);
     });
   }, { scheduled: true, timezone: 'UTC' });
 
-  // Daily at 10:00 UTC â€” Day 60/90 cliff warning checks
+  // Daily at 10:00 UTC — Day 60/90 cliff warning checks
   const scheduleDailyCliff = '0 10 * * *';
   const taskDailyCliff = cron.schedule(scheduleDailyCliff, () => {
     const p = getPool();
@@ -17009,9 +17009,9 @@ if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
   console.log('[HeartbeatV2] Schedulers skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ SOVEREIGN LENS NIGHTLY CYCLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── SOVEREIGN LENS NIGHTLY CYCLE ───────────────────────────
+// ═══════════════════════════════════════════════════════════
 // Runs at 12:01 AM UTC daily for all active lending deals.
 // Checks Plaid balances, enforces discipline (Locked-Open),
 // triggers auto-revokes on $0 balance, and runs 9 Asset Shield monitors.
@@ -17073,8 +17073,8 @@ try {
   console.error('[SovereignLens] Failed to initialize scheduler:', err.message);
 }
 
-// â”€â”€â”€ Vault health endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// GET /api/vault/health â€” module health including last cycle status
+// ─── Vault health endpoint ────────────────────────────────────────────────────
+// GET /api/vault/health — module health including last cycle status
 
 app.get('/api/vault/health', async (req, res) => {
   try {
@@ -17110,8 +17110,8 @@ app.get('/api/vault/health', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ Manual trigger endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// POST /api/vault/admin/trigger-nightly-cycle â€” trigger cycle immediately (admin only)
+// ─── Manual trigger endpoint ──────────────────────────────────────────────────
+// POST /api/vault/admin/trigger-nightly-cycle — trigger cycle immediately (admin only)
 
 app.post('/api/vault/admin/trigger-nightly-cycle', requireAuth, async (req, res) => {
   try {
@@ -17120,7 +17120,7 @@ app.post('/api/vault/admin/trigger-nightly-cycle', requireAuth, async (req, res)
 
     console.log('[SovereignLens] Manual cycle trigger by admin:', req.userId);
 
-    // Fire-and-forget in background â€” returns immediately
+    // Fire-and-forget in background — returns immediately
     runSovereignLensNightlyCycle(pool)
       .then(summary => {
         sovereignLensLastCycle = {
@@ -17145,8 +17145,8 @@ app.post('/api/vault/admin/trigger-nightly-cycle', requireAuth, async (req, res)
   }
 });
 
-// â”€â”€â”€ Admin cycle history endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// GET /api/vault/admin/cycle-history â€” last 30 days of nightly cycle runs (admin only)
+// ─── Admin cycle history endpoint ────────────────────────────────────────────
+// GET /api/vault/admin/cycle-history — last 30 days of nightly cycle runs (admin only)
 
 app.get('/api/vault/admin/cycle-history', requireAuth, async (req, res) => {
   try {
@@ -17204,7 +17204,7 @@ app.get('/api/vault/admin/cycle-history', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ Admin/Test endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Admin/Test endpoints ──────────────────────────────────
 
 // Manual trigger for inactivity job (creator/admin only, for testing)
 app.post('/api/admin/trigger-inactivity-job', async (req, res) => {
@@ -17381,9 +17381,9 @@ app.post('/api/admin/trigger-heartbeat-day5', async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ ADMIN AFFILIATE TREE BUILDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── ADMIN AFFILIATE TREE BUILDER ─────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Helper: check creator access (reuses isCreator from above)
 async function requireCreator(req, res) {
@@ -17395,7 +17395,7 @@ async function requireCreator(req, res) {
   return true;
 }
 
-// GET /api/admin/affiliate-tree â€” Full affiliate referral tree
+// GET /api/admin/affiliate-tree — Full affiliate referral tree
 app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -17456,7 +17456,7 @@ app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/admin/affiliate-tree/place â€” Place user under a parent in the tree
+// POST /api/admin/affiliate-tree/place — Place user under a parent in the tree
 app.post('/api/admin/affiliate-tree/place', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -17474,7 +17474,7 @@ app.post('/api/admin/affiliate-tree/place', requireAuth, async (req, res) => {
     const visited = new Set();
     while (currentId) {
       if (currentId === user_id) {
-        return res.status(400).json({ error: 'Circular reference detected â€” parent is already a descendant of this user' });
+        return res.status(400).json({ error: 'Circular reference detected — parent is already a descendant of this user' });
       }
       if (visited.has(currentId)) break; // safety net
       visited.add(currentId);
@@ -17553,7 +17553,7 @@ app.post('/api/admin/affiliate-tree/place', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/admin/affiliate-tree/create-test-user â€” Create test user quickly
+// POST /api/admin/affiliate-tree/create-test-user — Create test user quickly
 app.post('/api/admin/affiliate-tree/create-test-user', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -17586,7 +17586,7 @@ app.post('/api/admin/affiliate-tree/create-test-user', requireAuth, async (req, 
   }
 });
 
-// POST /api/admin/affiliate-tree/simulate-payment â€” Simulate subscription payment
+// POST /api/admin/affiliate-tree/simulate-payment — Simulate subscription payment
 app.post('/api/admin/affiliate-tree/simulate-payment', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -17602,7 +17602,7 @@ app.post('/api/admin/affiliate-tree/simulate-payment', requireAuth, async (req, 
     const user = userResult.rows[0];
 
     if (!user.referred_by_user_id) {
-      return res.status(400).json({ error: 'User has no referrer â€” place them in the tree first' });
+      return res.status(400).json({ error: 'User has no referrer — place them in the tree first' });
     }
 
     // Make user Pro (simulate subscription)
@@ -17676,7 +17676,7 @@ app.post('/api/admin/affiliate-tree/simulate-payment', requireAuth, async (req, 
   }
 });
 
-// GET /api/admin/affiliate-tree/commissions â€” View all commissions with breakdown
+// GET /api/admin/affiliate-tree/commissions — View all commissions with breakdown
 app.get('/api/admin/affiliate-tree/commissions', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -17727,7 +17727,7 @@ app.get('/api/admin/affiliate-tree/commissions', requireAuth, async (req, res) =
   }
 });
 
-// DELETE /api/admin/affiliate-tree/reset-test-data â€” Remove test users and their data
+// DELETE /api/admin/affiliate-tree/reset-test-data — Remove test users and their data
 app.delete('/api/admin/affiliate-tree/reset-test-data', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -17813,7 +17813,7 @@ app.delete('/api/admin/affiliate-tree/reset-test-data', requireAuth, async (req,
   }
 });
 
-// POST /api/admin/affiliate-tree/detach â€” Remove user from tree (set referred_by to null)
+// POST /api/admin/affiliate-tree/detach — Remove user from tree (set referred_by to null)
 app.post('/api/admin/affiliate-tree/detach', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -17833,9 +17833,9 @@ app.post('/api/admin/affiliate-tree/detach', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ 2FA ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── 2FA ROUTES ────────────────────────────────────────────────────────────────
 
-// GET /api/auth/2fa/status â€” Return 2FA enabled state for current user
+// GET /api/auth/2fa/status — Return 2FA enabled state for current user
 app.get('/api/auth/2fa/status', requireAuth, async (req, res) => {
   try {
     const result = await pool.query('SELECT two_factor_enabled FROM users WHERE id = $1', [req.userId]);
@@ -17847,7 +17847,7 @@ app.get('/api/auth/2fa/status', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/auth/2fa/enable â€” Enable 2FA (requires password confirmation)
+// POST /api/auth/2fa/enable — Enable 2FA (requires password confirmation)
 app.post('/api/auth/2fa/enable', requireAuth, async (req, res) => {
   try {
     const { password } = req.body;
@@ -17870,7 +17870,7 @@ app.post('/api/auth/2fa/enable', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/auth/2fa/disable â€” Disable 2FA (requires current 2FA code or password)
+// POST /api/auth/2fa/disable — Disable 2FA (requires current 2FA code or password)
 app.post('/api/auth/2fa/disable', requireAuth, async (req, res) => {
   try {
     const { password } = req.body;
@@ -17892,7 +17892,7 @@ app.post('/api/auth/2fa/disable', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/auth/2fa/send-code â€” Resend verification code (during pending 2FA login)
+// POST /api/auth/2fa/send-code — Resend verification code (during pending 2FA login)
 app.post('/api/auth/2fa/send-code', async (req, res) => {
   try {
     const userId = req.session && req.session.pending2faUserId;
@@ -17920,7 +17920,7 @@ app.post('/api/auth/2fa/send-code', async (req, res) => {
   }
 });
 
-// POST /api/auth/2fa/verify â€” Verify 6-digit code and complete login
+// POST /api/auth/2fa/verify — Verify 6-digit code and complete login
 app.post('/api/auth/2fa/verify', async (req, res) => {
   try {
     const { code, remember_device } = req.body;
@@ -17936,7 +17936,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
 
     const cleanCode = code.toString().trim();
 
-    // â”€â”€ SMS path via Twilio Verify â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── SMS path via Twilio Verify ─────────────────────────────────────────
     if (method2fa === 'sms' && phone2fa) {
       const smsCheck = await checkVerification(phone2fa, cleanCode);
       if (!smsCheck.success) {
@@ -17965,7 +17965,7 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
       return await completeLogin(req, res, userResult.rows[0]);
     }
 
-    // â”€â”€ Email path via two_factor_codes table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Email path via two_factor_codes table ──────────────────────────────
 
     // Get the latest valid (unused, unexpired) code for this user
     const codeResult = await pool.query(
@@ -17993,10 +17993,10 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
       return res.status(401).json({ error: `Incorrect code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.` });
     }
 
-    // Code matches â€” mark as used
+    // Code matches — mark as used
     await pool.query('UPDATE two_factor_codes SET used = TRUE WHERE id = $1', [record.id]);
 
-    // "Remember this device" â€” 30-day trust token stored in HttpOnly cookie
+    // "Remember this device" — 30-day trust token stored in HttpOnly cookie
     if (remember_device) {
       const trustToken = crypto.randomBytes(40).toString('hex');
       const trustExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -18027,9 +18027,9 @@ app.post('/api/auth/2fa/verify', async (req, res) => {
   }
 });
 
-// â”€â”€ VERIFICATION METHOD SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── VERIFICATION METHOD SETTINGS ──────────────────────────────────────────
 
-// GET /api/user/verification-method â€” Get current 2FA delivery method
+// GET /api/user/verification-method — Get current 2FA delivery method
 app.get('/api/user/verification-method', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -18050,7 +18050,7 @@ app.get('/api/user/verification-method', requireAuth, async (req, res) => {
   }
 });
 
-// PATCH /api/user/verification-method â€” Update 2FA delivery method (email or sms)
+// PATCH /api/user/verification-method — Update 2FA delivery method (email or sms)
 app.patch('/api/user/verification-method', requireAuth, async (req, res) => {
   try {
     const { method, phone } = req.body;
@@ -18085,14 +18085,14 @@ app.patch('/api/user/verification-method', requireAuth, async (req, res) => {
       return res.json({
         success: true,
         message: smsResult.stub
-          ? 'Phone saved (SMS in test mode â€” any 6-digit code will be accepted on your next login).'
+          ? 'Phone saved (SMS in test mode — any 6-digit code will be accepted on your next login).'
           : 'Saved. SMS verification is now active for your account.',
         method: 'sms',
         phone: cleanPhone
       });
     }
 
-    // Switching to email â€” keep phone stored but change method
+    // Switching to email — keep phone stored but change method
     await pool.query(
       `UPDATE users SET verification_method = 'email', updated_at = NOW() WHERE id = $1`,
       [req.userId]
@@ -18104,11 +18104,11 @@ app.patch('/api/user/verification-method', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ FINANCIAL NEWS HUB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── FINANCIAL NEWS HUB ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 
 const NEWS_CACHE = { data: null, timestamp: 0 };
 const NEWS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -18175,7 +18175,7 @@ function categorizeNews(title, description) {
   return 'Economy';
 }
 
-// GET /api/news â€” Aggregated financial news from RSS feeds
+// GET /api/news — Aggregated financial news from RSS feeds
 app.get('/api/news', async (req, res) => {
   try {
     const now = Date.now();
@@ -18210,7 +18210,7 @@ app.get('/api/news', async (req, res) => {
           category: categorizeNews(item.title, item.description)
         }));
       } catch (err) {
-        console.warn(`[News] Feed failed: ${feed.source} â€” ${err.message}`);
+        console.warn(`[News] Feed failed: ${feed.source} — ${err.message}`);
         return [];
       }
     };
@@ -18262,23 +18262,23 @@ app.get('/api/news', async (req, res) => {
   }
 });
 
-// GET /news â€” Financial News Hub page
+// GET /news — Financial News Hub page
 app.get('/news', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'news.html'));
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ NET WORTH DASHBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── NET WORTH DASHBOARD ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 
-// GET /net-worth â€” Net Worth Dashboard page
+// GET /net-worth — Net Worth Dashboard page
 app.get('/net-worth', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'net-worth.html'));
 });
 
-// GET /api/net-worth â€” Get all entries for the logged-in user (enhanced with category)
+// GET /api/net-worth — Get all entries for the logged-in user (enhanced with category)
 app.get('/api/net-worth', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -18324,7 +18324,7 @@ app.get('/api/net-worth', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/net-worth â€” Create a new asset or debt entry
+// POST /api/net-worth — Create a new asset or debt entry
 app.post('/api/net-worth', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -18358,7 +18358,7 @@ app.post('/api/net-worth', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/net-worth/:id â€” Update an existing entry
+// PUT /api/net-worth/:id — Update an existing entry
 app.put('/api/net-worth/:id', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -18395,7 +18395,7 @@ app.put('/api/net-worth/:id', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/net-worth/:id â€” Delete an entry
+// DELETE /api/net-worth/:id — Delete an entry
 app.delete('/api/net-worth/:id', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -18416,7 +18416,7 @@ app.delete('/api/net-worth/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/net-worth/snapshot â€” Save today's net worth snapshot
+// POST /api/net-worth/snapshot — Save today's net worth snapshot
 app.post('/api/net-worth/snapshot', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -18451,7 +18451,7 @@ app.post('/api/net-worth/snapshot', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/net-worth/snapshots â€” Get historical snapshots for trend chart
+// GET /api/net-worth/snapshots — Get historical snapshots for trend chart
 app.get('/api/net-worth/snapshots', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -18477,11 +18477,11 @@ app.get('/api/net-worth/snapshots', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ FUTURE GENERATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── FUTURE GENERATIONS ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 
 // Helper: ensure fg_points_balances row exists for user
 async function ensureFgBalance(userId) {
@@ -18493,27 +18493,27 @@ async function ensureFgBalance(userId) {
   );
 }
 
-// GET /future-generations â€” Info landing page
+// GET /future-generations — Info landing page
 app.get('/future-generations', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'future-generations.html'));
 });
 
-// GET /future-generations/dashboard â€” Points dashboard
+// GET /future-generations/dashboard — Points dashboard
 app.get('/future-generations/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'future-generations-dashboard.html'));
 });
 
-// GET /sovereign-dashboard â€” Sovereign Command Center (affiliate 4x5 map, wallets, compliance)
+// GET /sovereign-dashboard — Sovereign Command Center (affiliate 4x5 map, wallets, compliance)
 app.get('/sovereign-dashboard', optionalAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sovereign-dashboard.html'));
 });
 
-// GET /future-generations/sovereign â€” alias
+// GET /future-generations/sovereign — alias
 app.get('/future-generations/sovereign', optionalAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sovereign-dashboard.html'));
 });
 
-// GET /api/future-generations/status â€” Auth + Pro status for the current user
+// GET /api/future-generations/status — Auth + Pro status for the current user
 app.get('/api/future-generations/status', optionalAuth, async (req, res) => {
   try {
     if (!req.userId) {
@@ -18536,7 +18536,7 @@ app.get('/api/future-generations/status', optionalAuth, async (req, res) => {
   }
 });
 
-// GET /api/future-generations/points â€” Points summary (all authenticated users; cashout requires Pro)
+// GET /api/future-generations/points — Points summary (all authenticated users; cashout requires Pro)
 app.get('/api/future-generations/points', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -18564,7 +18564,7 @@ app.get('/api/future-generations/points', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/future-generations/earnings â€” Earning history (all authenticated users)
+// GET /api/future-generations/earnings — Earning history (all authenticated users)
 app.get('/api/future-generations/earnings', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -18582,7 +18582,7 @@ app.get('/api/future-generations/earnings', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/future-generations/redemptions â€” Redemption history (all authenticated users)
+// GET /api/future-generations/redemptions — Redemption history (all authenticated users)
 app.get('/api/future-generations/redemptions', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -18600,7 +18600,7 @@ app.get('/api/future-generations/redemptions', requireAuth, async (req, res) => 
   }
 });
 
-// POST /api/future-generations/cashout â€” Pro users cash out points to bank ($1/point)
+// POST /api/future-generations/cashout — Pro users cash out points to bank ($1/point)
 const FG_CASHOUT_MINIMUM_POINTS = 10; // minimum 10 points ($10) per cashout
 
 app.post('/api/future-generations/cashout', requireAuth, async (req, res) => {
@@ -18674,7 +18674,7 @@ app.post('/api/future-generations/cashout', requireAuth, async (req, res) => {
 
       res.json({
         success: true,
-        message: `Cashout of ${pointsToCash} point${pointsToCash === 1 ? '' : 's'} ($${(amountCents / 100).toFixed(2)}) requested. Processing typically takes 3â€“5 business days.`,
+        message: `Cashout of ${pointsToCash} point${pointsToCash === 1 ? '' : 's'} ($${(amountCents / 100).toFixed(2)}) requested. Processing typically takes 3–5 business days.`,
         cashout: cashoutResult.rows[0]
       });
     } catch (txErr) {
@@ -18689,7 +18689,7 @@ app.post('/api/future-generations/cashout', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/future-generations/cashouts â€” Cashout history for current user
+// GET /api/future-generations/cashouts — Cashout history for current user
 app.get('/api/future-generations/cashouts', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -18705,9 +18705,9 @@ app.get('/api/future-generations/cashouts', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // DUPLICATE DETECTION
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 // GET /api/duplicates/scan?type=all|transactions|debts|net_worth|bills|bank_accounts|gift_cards
 app.get('/api/duplicates/scan', requireAuth, async (req, res) => {
@@ -18881,7 +18881,7 @@ app.get('/api/duplicates/scan', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/duplicates/bulk â€” delete selected duplicate entries
+// DELETE /api/duplicates/bulk — delete selected duplicate entries
 app.delete('/api/duplicates/bulk', requireAuth, async (req, res) => {
   try {
     const { deletions } = req.body; // Array of { type, ids: [...] }
@@ -18950,14 +18950,14 @@ app.delete('/api/duplicates/bulk', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ PORTFOLIO TRACKER (Pro Feature) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── PORTFOLIO TRACKER (Pro Feature) ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 
-// GET /portfolio â€” serve portfolio HTML (handled by static + SPA redirect is not needed,
+// GET /portfolio — serve portfolio HTML (handled by static + SPA redirect is not needed,
 // the tab is inside app.html directly)
 
-// â”€â”€ Helper: ensure user has portfolio accounts initialized â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helper: ensure user has portfolio accounts initialized ───────────────
 async function ensurePortfolioAccounts(userId) {
   const accountTypes = [
     { type: 'ira',       name: 'Traditional IRA' },
@@ -18974,7 +18974,7 @@ async function ensurePortfolioAccounts(userId) {
   }
 }
 
-// GET /api/portfolio/accounts â€” list the 3 accounts for this user
+// GET /api/portfolio/accounts — list the 3 accounts for this user
 app.get('/api/portfolio/accounts', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -18996,7 +18996,7 @@ app.get('/api/portfolio/accounts', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/portfolio/accounts/:id â€” update starting value / starting date
+// PUT /api/portfolio/accounts/:id — update starting value / starting date
 app.put('/api/portfolio/accounts/:id', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -19021,7 +19021,7 @@ app.put('/api/portfolio/accounts/:id', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/portfolio/transactions â€” list transactions
+// GET /api/portfolio/transactions — list transactions
 // ?account_id= &ticker= &account_type= &sort=date|ticker|action
 app.get('/api/portfolio/transactions', requireAuth, async (req, res) => {
   try {
@@ -19061,7 +19061,7 @@ app.get('/api/portfolio/transactions', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/portfolio/transactions â€” add a trade
+// POST /api/portfolio/transactions — add a trade
 // Valid transaction_type: buy, sell, sto, btc, dividend, transfer, expired, interest, lending, deposit, withdrawal
 app.post('/api/portfolio/transactions', requireAuth, async (req, res) => {
   try {
@@ -19082,7 +19082,7 @@ app.post('/api/portfolio/transactions', requireAuth, async (req, res) => {
     const acct = await pool.query('SELECT id FROM portfolio_accounts WHERE id = $1 AND user_id = $2', [account_id, req.userId]);
     if (!acct.rows.length) return res.status(404).json({ success: false, error: 'Account not found' });
 
-    // Cost = amount, or auto-calc from shares Ã— price if not provided
+    // Cost = amount, or auto-calc from shares × price if not provided
     const computedAmount = (amount != null && amount !== '') ? parseFloat(amount) : (parseFloat(shares || 0) * parseFloat(price_per_share || 0));
 
     const result = await pool.query(
@@ -19119,7 +19119,7 @@ app.post('/api/portfolio/transactions', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/portfolio/transactions/:id â€” update a trade
+// PUT /api/portfolio/transactions/:id — update a trade
 app.put('/api/portfolio/transactions/:id', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -19187,7 +19187,7 @@ app.put('/api/portfolio/transactions/:id', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/portfolio/transactions/:id â€” delete a trade
+// DELETE /api/portfolio/transactions/:id — delete a trade
 app.delete('/api/portfolio/transactions/:id', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -19205,7 +19205,7 @@ app.delete('/api/portfolio/transactions/:id', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/portfolio/prices â€” get latest prices for all user's tickers
+// GET /api/portfolio/prices — get latest prices for all user's tickers
 app.get('/api/portfolio/prices', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -19222,7 +19222,7 @@ app.get('/api/portfolio/prices', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/portfolio/prices â€” batch upsert current prices (and create price snapshot)
+// PUT /api/portfolio/prices — batch upsert current prices (and create price snapshot)
 app.put('/api/portfolio/prices', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -19270,9 +19270,9 @@ app.put('/api/portfolio/prices', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/portfolio/holdings â€” computed holdings per account (or combined)
+// GET /api/portfolio/holdings — computed holdings per account (or combined)
 // ?account_type=ira|roth_ira|brokerage|combined  (default: combined)
-// ?ticker=SOC  (optional â€” filter to a specific ticker)
+// ?ticker=SOC  (optional — filter to a specific ticker)
 app.get('/api/portfolio/holdings', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -19379,10 +19379,10 @@ app.get('/api/portfolio/holdings', requireAuth, async (req, res) => {
           cashMap[acctKey] -= (amount + feeAmt);
           break;
         case 'expired':
-          // Option expires worthless â€” no cash change (premium already captured via STO)
+          // Option expires worthless — no cash change (premium already captured via STO)
           break;
         case 'transfer':
-          // Transfer shares in/out â€” share count changes, treated like buy cost-basis-wise
+          // Transfer shares in/out — share count changes, treated like buy cost-basis-wise
           if (shares > 0) {
             holdingsMap[key].shares     += shares;
             holdingsMap[key].cost_basis += amount;
@@ -19496,7 +19496,7 @@ app.get('/api/portfolio/holdings', requireAuth, async (req, res) => {
 });
 
 
-// GET /api/portfolio/closed-positions â€” FIFO-computed closed positions for the current calendar year
+// GET /api/portfolio/closed-positions — FIFO-computed closed positions for the current calendar year
 // ?account_type=ira|roth_ira|brokerage|combined  (default: combined)
 app.get('/api/portfolio/closed-positions', requireAuth, async (req, res) => {
   try {
@@ -19690,7 +19690,7 @@ app.get('/api/portfolio/closed-positions', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/portfolio/performance â€” historical performance data for chart
+// GET /api/portfolio/performance — historical performance data for chart
 // Returns: { tickers: [...], series: { TICKER: [{date, price_pct}] } }
 // price_pct = % change from first price point (or avg_cost as baseline)
 app.get('/api/portfolio/performance', requireAuth, async (req, res) => {
@@ -19789,11 +19789,11 @@ app.get('/api/portfolio/performance', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // Annual Performance Goals
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/portfolio/annual-goal â€” get user's target return %
+// GET /api/portfolio/annual-goal — get user's target return %
 app.get('/api/portfolio/annual-goal', requireAuth, async (req, res) => {
   try {
     if (!await hasProAccess(req.userId)) return res.status(403).json({ success: false, error: 'Paid plan required' });
@@ -19805,7 +19805,7 @@ app.get('/api/portfolio/annual-goal', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/portfolio/annual-goal â€” upsert user's target return %
+// PUT /api/portfolio/annual-goal — upsert user's target return %
 app.put('/api/portfolio/annual-goal', requireAuth, async (req, res) => {
   try {
     if (!await hasProAccess(req.userId)) return res.status(403).json({ success: false, error: 'Paid plan required' });
@@ -19824,7 +19824,7 @@ app.put('/api/portfolio/annual-goal', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/portfolio/annual-performance â€” full year-by-year table
+// GET /api/portfolio/annual-performance — full year-by-year table
 // ?account_type=combined|ira|roth_ira|brokerage  (default: combined)
 app.get('/api/portfolio/annual-performance', requireAuth, async (req, res) => {
   try {
@@ -19856,7 +19856,7 @@ app.get('/api/portfolio/annual-performance', requireAuth, async (req, res) => {
       `SELECT * FROM portfolio_annual_records WHERE user_id = $1 AND account_type = ANY($2) ORDER BY year, account_type`,
       [req.userId, types]
     );
-    // Index by year â†’ account_type
+    // Index by year → account_type
     const recMap = {}; // recMap[year][account_type] = record
     for (const r of recRows.rows) {
       if (!recMap[r.year]) recMap[r.year] = {};
@@ -19881,7 +19881,7 @@ app.get('/api/portfolio/annual-performance', requireAuth, async (req, res) => {
        GROUP BY a.account_type`,
       [req.userId]
     );
-    // Get total current value from holdings endpoint logic â€” simplified: use account starting + cash flow + equity value
+    // Get total current value from holdings endpoint logic — simplified: use account starting + cash flow + equity value
     // We'll compute via the same approach as the holdings endpoint but summarised
     const holdingsSummary = await pool.query(
       `WITH tx AS (
@@ -19927,7 +19927,7 @@ app.get('/api/portfolio/annual-performance', requireAuth, async (req, res) => {
       [req.userId]
     );
 
-    // Live value map: account_type â†’ {equity, cash, total}
+    // Live value map: account_type → {equity, cash, total}
     const liveValueMap = {};
     for (const a of acctRows.rows) {
       const sv = parseFloat(a.starting_value) || 0;
@@ -20118,7 +20118,7 @@ function getProjectedEnd(acctType, year, currentYear, goalPct, recMap, liveValue
   return prevEnd * (1 + goalPct / 100);
 }
 
-// POST /api/portfolio/annual-records â€” save/upsert a historical year record
+// POST /api/portfolio/annual-records — save/upsert a historical year record
 app.post('/api/portfolio/annual-records', requireAuth, async (req, res) => {
   try {
     if (!await hasProAccess(req.userId)) return res.status(403).json({ success: false, error: 'Paid plan required' });
@@ -20151,7 +20151,7 @@ app.post('/api/portfolio/annual-records', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/portfolio/annual-records/:id â€” remove a historical record
+// DELETE /api/portfolio/annual-records/:id — remove a historical record
 app.delete('/api/portfolio/annual-records/:id', requireAuth, async (req, res) => {
   try {
     if (!await hasProAccess(req.userId)) return res.status(403).json({ success: false, error: 'Paid plan required' });
@@ -20163,11 +20163,11 @@ app.delete('/api/portfolio/annual-records/:id', requireAuth, async (req, res) =>
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // Custom Payment Methods
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/payment-methods/custom â€” list user's custom payment methods
+// GET /api/payment-methods/custom — list user's custom payment methods
 app.get('/api/payment-methods/custom', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -20181,7 +20181,7 @@ app.get('/api/payment-methods/custom', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/payment-methods/custom â€” create a custom payment method
+// POST /api/payment-methods/custom — create a custom payment method
 app.post('/api/payment-methods/custom', requireAuth, async (req, res) => {
   try {
     const { name } = req.body;
@@ -20203,7 +20203,7 @@ app.post('/api/payment-methods/custom', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/payment-methods/custom/:id â€” rename a custom payment method
+// PUT /api/payment-methods/custom/:id — rename a custom payment method
 app.put('/api/payment-methods/custom/:id', requireAuth, async (req, res) => {
   try {
     const { name } = req.body;
@@ -20228,7 +20228,7 @@ app.put('/api/payment-methods/custom/:id', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/payment-methods/custom/:id â€” delete a custom payment method
+// DELETE /api/payment-methods/custom/:id — delete a custom payment method
 app.delete('/api/payment-methods/custom/:id', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -20245,15 +20245,15 @@ app.delete('/api/payment-methods/custom/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  JUNIOR REVOLUTIONARIES â€” Kid Command Console, Missions & Family Panel
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  JUNIOR REVOLUTIONARIES — Kid Command Console, Missions & Family Panel
+// ═══════════════════════════════════════════════════════════════════════════
 
 // Level thresholds (XP required to *reach* each level)
 const JR_LEVEL_THRESHOLDS = [0, 0, 100, 300, 600, 1000, 1500];
 const JR_LEVEL_NAMES      = ['', 'Recruit', 'Cadet', 'Specialist', 'Sergeant', 'Commander', 'General'];
-const JR_LEVEL_EMOJIS     = ['', 'ðŸ•ï¸', 'â›º', 'ðŸ—¼', 'ðŸ¯', 'ðŸ°', 'ðŸ°'];
+const JR_LEVEL_EMOJIS     = ['', '🏕️', '⛺', '🗼', '🏯', '🏰', '🏰'];
 const JR_FORTRESS_NAMES   = ['', 'Base Camp', 'Forward Outpost', 'Watchtower', 'Border Fort', 'Fortress', 'Grand Citadel'];
 
 function calcJrLevel(xp) {
@@ -20274,16 +20274,16 @@ function genAccessCode() {
 
 // Badge definitions
 const BADGE_DEFS = [
-  { key: 'first_mission',     name: 'First Mission',    emoji: 'ðŸŽ¯', desc: 'Complete your very first mission' },
-  { key: 'on_fire',           name: 'On Fire',          emoji: 'ðŸ”¥', desc: 'Complete 3 missions in a row' },
-  { key: 'speed_demon',       name: 'Speed Demon',      emoji: 'âš¡', desc: 'Complete a mission quickly' },
-  { key: 'champion',          name: 'Champion',         emoji: 'ðŸ†', desc: 'Reach Specialist rank (Level 3)' },
-  { key: 'money_mind',        name: 'Money Mind',       emoji: 'ðŸ’°', desc: 'Complete 5 money-related missions' },
-  { key: 'fortress_builder',  name: 'Fortress Builder', emoji: 'ðŸ°', desc: 'Reach the highest rank: General' },
-  { key: 'star_cadet',        name: 'Star Cadet',       emoji: 'â­', desc: 'Complete 10 missions total' },
-  { key: 'legend',            name: 'Legend',           emoji: 'ðŸŒŸ', desc: 'Complete 25 missions total' },
-  { key: 'quick_learner',     name: 'Quick Learner',    emoji: 'ðŸ“š', desc: 'Unlock 3 Knowledge Vault entries' },
-  { key: 'dedicated',         name: 'Dedicated',        emoji: 'ðŸ’ª', desc: 'Maintain a 5-mission streak' },
+  { key: 'first_mission',     name: 'First Mission',    emoji: '🎯', desc: 'Complete your very first mission' },
+  { key: 'on_fire',           name: 'On Fire',          emoji: '🔥', desc: 'Complete 3 missions in a row' },
+  { key: 'speed_demon',       name: 'Speed Demon',      emoji: '⚡', desc: 'Complete a mission quickly' },
+  { key: 'champion',          name: 'Champion',         emoji: '🏆', desc: 'Reach Specialist rank (Level 3)' },
+  { key: 'money_mind',        name: 'Money Mind',       emoji: '💰', desc: 'Complete 5 money-related missions' },
+  { key: 'fortress_builder',  name: 'Fortress Builder', emoji: '🏰', desc: 'Reach the highest rank: General' },
+  { key: 'star_cadet',        name: 'Star Cadet',       emoji: '⭐', desc: 'Complete 10 missions total' },
+  { key: 'legend',            name: 'Legend',           emoji: '🌟', desc: 'Complete 25 missions total' },
+  { key: 'quick_learner',     name: 'Quick Learner',    emoji: '📚', desc: 'Unlock 3 Knowledge Vault entries' },
+  { key: 'dedicated',         name: 'Dedicated',        emoji: '💪', desc: 'Maintain a 5-mission streak' },
 ];
 
 async function checkAndAwardBadges(kid_id) {
@@ -20326,7 +20326,7 @@ async function checkAndAwardBadges(kid_id) {
   }
 }
 
-// â”€â”€â”€ Page routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Page routes ───────────────────────────────────────────────────────────
 app.get('/junior-command', (req, res) => {
   res.sendFile(__dirname + '/public/junior-command.html');
 });
@@ -20334,9 +20334,9 @@ app.get('/junior-parent', (req, res) => {
   res.sendFile(__dirname + '/public/junior-parent.html');
 });
 
-// â”€â”€â”€ PARENT ROUTES (requireAuth) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PARENT ROUTES (requireAuth) ──────────────────────────────────────────
 
-// GET /api/junior/profiles â€” list parent's kids
+// GET /api/junior/profiles — list parent's kids
 app.get('/api/junior/profiles', requireAuth, async (req, res) => {
   try {
     const r = await pool.query(
@@ -20350,10 +20350,10 @@ app.get('/api/junior/profiles', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/junior/profiles â€” create kid profile
+// POST /api/junior/profiles — create kid profile
 app.post('/api/junior/profiles', requireAuth, async (req, res) => {
   try {
-    const { name, avatar_emoji = 'ðŸ§’' } = req.body;
+    const { name, avatar_emoji = '🧒' } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
     const code = genAccessCode();
     const r = await pool.query(
@@ -20368,7 +20368,7 @@ app.post('/api/junior/profiles', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/junior/profiles/:id â€” update kid profile
+// PUT /api/junior/profiles/:id — update kid profile
 app.put('/api/junior/profiles/:id', requireAuth, async (req, res) => {
   try {
     const { name, avatar_emoji } = req.body;
@@ -20383,7 +20383,7 @@ app.put('/api/junior/profiles/:id', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/junior/profiles/:id â€” delete kid profile
+// DELETE /api/junior/profiles/:id — delete kid profile
 app.delete('/api/junior/profiles/:id', requireAuth, async (req, res) => {
   try {
     const r = await pool.query(
@@ -20397,7 +20397,7 @@ app.delete('/api/junior/profiles/:id', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/junior/family-progress â€” full family dashboard for parent
+// GET /api/junior/family-progress — full family dashboard for parent
 app.get('/api/junior/family-progress', requireAuth, async (req, res) => {
   try {
     const kids = (await pool.query('SELECT * FROM junior_profiles WHERE parent_user_id = $1 ORDER BY created_at ASC', [req.userId])).rows;
@@ -20449,7 +20449,7 @@ app.get('/api/junior/missions/pending-confirmations', requireAuth, async (req, r
   }
 });
 
-// POST /api/junior/missions â€” assign mission to kid
+// POST /api/junior/missions — assign mission to kid
 app.post('/api/junior/missions', requireAuth, async (req, res) => {
   try {
     const { kid_id, title, description, xp_reward = 50, mission_type = 'real_world' } = req.body;
@@ -20467,7 +20467,7 @@ app.post('/api/junior/missions', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/junior/missions/:id/confirm â€” parent confirms or rejects
+// PUT /api/junior/missions/:id/confirm — parent confirms or rejects
 app.put('/api/junior/missions/:id/confirm', requireAuth, async (req, res) => {
   try {
     const { action = 'approve', notes } = req.body;
@@ -20528,7 +20528,7 @@ app.get('/api/junior/mission-templates', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ KNOWLEDGE VAULT (Parent) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── KNOWLEDGE VAULT (Parent) ─────────────────────────────────────────────
 app.get('/api/junior/vault', requireAuth, async (req, res) => {
   try {
     const r = await pool.query(
@@ -20543,7 +20543,7 @@ app.get('/api/junior/vault', requireAuth, async (req, res) => {
 
 app.post('/api/junior/vault', requireAuth, async (req, res) => {
   try {
-    const { title, content, level_required = 1, emoji = 'ðŸ“–' } = req.body;
+    const { title, content, level_required = 1, emoji = '📖' } = req.body;
     if (!title?.trim() || !content?.trim()) return res.status(400).json({ error: 'Title and content required' });
     const r = await pool.query(
       'INSERT INTO knowledge_vault_entries (parent_user_id, title, content, level_required, emoji) VALUES ($1,$2,$3,$4,$5) RETURNING *',
@@ -20568,7 +20568,7 @@ app.delete('/api/junior/vault/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ KID ROUTES (access_code based, no JWT required) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── KID ROUTES (access_code based, no JWT required) ─────────────────────
 
 // GET /api/junior/kid-dashboard
 app.get('/api/junior/kid-dashboard', async (req, res) => {
@@ -20606,7 +20606,7 @@ app.get('/api/junior/kid-dashboard', async (req, res) => {
   }
 });
 
-// GET /api/junior/vault-entry/:id â€” kid reads unlocked vault entry
+// GET /api/junior/vault-entry/:id — kid reads unlocked vault entry
 app.get('/api/junior/vault-entry/:id', async (req, res) => {
   try {
     const { kid_id, code } = req.query;
@@ -20625,7 +20625,7 @@ app.get('/api/junior/vault-entry/:id', async (req, res) => {
   }
 });
 
-// POST /api/junior/missions/:id/request-confirm â€” kid requests parent confirmation
+// POST /api/junior/missions/:id/request-confirm — kid requests parent confirmation
 app.post('/api/junior/missions/:id/request-confirm', async (req, res) => {
   try {
     const { kid_id, code } = req.body;
@@ -20644,10 +20644,10 @@ app.post('/api/junior/missions/:id/request-confirm', async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  TFR ENGAGEMENT SYSTEM â€” Command Console, Rank/XP, Leak Detector, Micro-Wins
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ─────────────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+//  TFR ENGAGEMENT SYSTEM — Command Console, Rank/XP, Leak Detector, Micro-Wins
+// ══════════════════════════════════════════════════════════════════════════════
 
 const TFR_RANKS = [
   { level: 1,  name: 'THE INITIATE',   phase: 1, xp_required: 0     },
@@ -20687,7 +20687,7 @@ function tfrXpToNext(xp, level) {
   return next.xp_required - xp;
 }
 
-// â”€â”€ Timezone-aware date helpers for daily check-in â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Timezone-aware date helpers for daily check-in ────────────────────────
 function getUserLocalDate(timezone) {
   // Returns the user's local date as "YYYY-MM-DD" using their IANA timezone.
   // Falls back to UTC if timezone is missing or invalid.
@@ -20771,7 +20771,7 @@ app.get('/sovereign', optionalAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'command-console.html'));
 });
 
-// GET /command-console â†’ redirect to /sovereign (backward compat)
+// GET /command-console → redirect to /sovereign (backward compat)
 app.get('/command-console', (req, res) => {
   res.redirect(301, '/sovereign');
 });
@@ -20874,7 +20874,7 @@ app.get('/api/tfr/status', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/tfr/checkin â€” open to all users (free=5 XP, pro=25 XP)
+// POST /api/tfr/checkin — open to all users (free=5 XP, pro=25 XP)
 app.post('/api/tfr/checkin', requireAuth, async (req, res) => {
   const isPro = await hasProAccess(req.userId);
   const client = await pool.connect();
@@ -20910,7 +20910,7 @@ app.post('/api/tfr/checkin', requireAuth, async (req, res) => {
       WHERE user_id = $4
     `, [newStreak, newLongest, today, userId]);
 
-    // Pro gets 25 XP; free gets 5 XP â€” both track streaks
+    // Pro gets 25 XP; free gets 5 XP — both track streaks
     const baseXp = isPro ? 25 : 5;
     const result = await tfrAwardXp(userId, 'daily_checkin', 'Daily check-in', baseXp, client);
 
@@ -20934,7 +20934,7 @@ app.post('/api/tfr/checkin', requireAuth, async (req, res) => {
       }
     }
 
-    // Check streak milestones (7, 30, 90, 365) â€” award achievement + bonus XP
+    // Check streak milestones (7, 30, 90, 365) — award achievement + bonus XP
     const STREAK_MILESTONES = { 7: 50, 30: 150, 90: 300, 365: 1000 };
     if (STREAK_MILESTONES[newStreak]) {
       const achKey = `streak_${newStreak}`;
@@ -20985,7 +20985,7 @@ app.post('/api/tfr/checkin', requireAuth, async (req, res) => {
         );
         await client.query(
           `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-           VALUES ($1, 'daily_checkin', 'Daily check-in â€” 15 FACTS Points', $2)`,
+           VALUES ($1, 'daily_checkin', 'Daily check-in — 15 FACTS Points', $2)`,
           [userId, toAward2]
         );
         checkinPointsAwarded = toAward2;
@@ -21003,7 +21003,7 @@ app.post('/api/tfr/checkin', requireAuth, async (req, res) => {
     await client.query('COMMIT');
     res.json({
       success: true,
-      message: newStreak >= 3 ? `Day ${newStreak} â€” 1.5x XP ACTIVE` : `Day ${newStreak} streak`,
+      message: newStreak >= 3 ? `Day ${newStreak} — 1.5x XP ACTIVE` : `Day ${newStreak} streak`,
       streak: newStreak, xp_earned: result.xp_earned, multiplier: result.multiplier,
       leveled_up: result.leveled_up, level: result.level, new_rank: result.new_rank,
       milestone_unlocked: result.milestone_unlocked || null,
@@ -21079,7 +21079,7 @@ app.get('/api/tfr/leaks', requireAuth, async (req, res) => {
         id: key, merchant: r.merchant, amount: parseFloat(r.amount),
         leak_type: isPhantom ? 'phantom' : 'subscription',
         monthly_cost: parseFloat(r.amount), occurrences: parseInt(r.occurrences),
-        note: isPhantom ? 'Phantom charge â€” small recurring amount' : `Charged ${r.occurrences}Ã— in 90 days`,
+        note: isPhantom ? 'Phantom charge — small recurring amount' : `Charged ${r.occurrences}× in 90 days`,
         user_decision: decisionMap[key] || null,
       });
     }
@@ -21091,7 +21091,7 @@ app.get('/api/tfr/leaks', requireAuth, async (req, res) => {
         id: key, merchant: s.category, amount: parseFloat(s.this_month),
         leak_type: 'spike', monthly_cost: Math.max(0, parseFloat(s.this_month) - parseFloat(s.last_month)),
         pct_increase: parseInt(s.pct_increase),
-        note: `Up ${s.pct_increase}% vs last month ($${parseFloat(s.last_month).toFixed(0)} â†’ $${parseFloat(s.this_month).toFixed(0)})`,
+        note: `Up ${s.pct_increase}% vs last month ($${parseFloat(s.last_month).toFixed(0)} → $${parseFloat(s.this_month).toFixed(0)})`,
         user_decision: decisionMap[key] || null,
       });
     }
@@ -21135,7 +21135,7 @@ app.post('/api/tfr/leaks/decision', requireAuth, async (req, res) => {
       const stats = (await client.query('SELECT * FROM tfr_user_stats WHERE user_id = $1', [userId])).rows[0];
       if (stats && !stats.first_blood_done && stats.first_blood_deadline && new Date() <= new Date(stats.first_blood_deadline)) {
         await client.query(`UPDATE tfr_user_stats SET first_blood_done = TRUE, updated_at = NOW() WHERE user_id = $1`, [userId]);
-        await tfrAwardXp(userId, 'first_blood', 'FIRST BLOOD â€” First leak eliminated within 48 hours', 150, client);
+        await tfrAwardXp(userId, 'first_blood', 'FIRST BLOOD — First leak eliminated within 48 hours', 150, client);
         await client.query(`INSERT INTO tfr_micro_wins (user_id, win_type, xp_awarded) VALUES ($1, 'first_blood', 150) ON CONFLICT DO NOTHING`, [userId]);
         await client.query(`INSERT INTO tfr_achievements (user_id, achievement_key) VALUES ($1, 'first_blood') ON CONFLICT DO NOTHING`, [userId]);
         if (xp_result) xp_result.first_blood_achieved = true;
@@ -21206,7 +21206,7 @@ app.get('/api/tfr/all-ranks', (req, res) => {
   res.json({ success: true, ranks: TFR_RANKS, phases: TFR_PHASE_NAMES, themes: TFR_PHASE_THEMES });
 });
 
-// GET /api/tfr/tier-map â€” returns the full 12-level tier mapping
+// GET /api/tfr/tier-map — returns the full 12-level tier mapping
 app.get('/api/tfr/tier-map', async (req, res) => {
   try {
     const rows = (await pool.query('SELECT * FROM level_tier_map ORDER BY level ASC')).rows;
@@ -21224,7 +21224,7 @@ app.get('/api/tfr/tier-map', async (req, res) => {
   }
 });
 
-// GET /api/tfr/credit-gate/status â€” check credit gate for current user
+// GET /api/tfr/credit-gate/status — check credit gate for current user
 app.get('/api/tfr/credit-gate/status', requireAuth, async (req, res) => {
   try {
     const gate = await checkCreditGate(req.userId);
@@ -21250,7 +21250,7 @@ app.get('/api/tfr/credit-gate/status', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/tfr/credit-gate/satisfy â€” called when user uploads credit report
+// POST /api/tfr/credit-gate/satisfy — called when user uploads credit report
 // This is triggered from document-vault.html after a credit_report upload
 app.post('/api/tfr/credit-gate/satisfy', requireAuth, async (req, res) => {
   try {
@@ -21265,12 +21265,12 @@ app.post('/api/tfr/credit-gate/satisfy', requireAuth, async (req, res) => {
   }
 });
 
-// GET /knowledge-vault â€” serve the knowledge vault page
+// GET /knowledge-vault — serve the knowledge vault page
 app.get('/knowledge-vault', optionalAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'knowledge-vault.html'));
 });
 
-// GET /api/knowledge-vault/content â€” returns level-gated content for current user
+// GET /api/knowledge-vault/content — returns level-gated content for current user
 app.get('/api/knowledge-vault/content', requireAuth, async (req, res) => {
   try {
     const isPro = await hasProAccess(req.userId);
@@ -21278,44 +21278,44 @@ app.get('/api/knowledge-vault/content', requireAuth, async (req, res) => {
     const isElite = await hasEliteAccess(req.userId);
     const isSovereign = await hasSovereignAccess(req.userId);
 
-    // Content library â€” gated by tier_band
+    // Content library — gated by tier_band
     const VAULT_CONTENT = [
-      // â”€â”€ FREE (L1-3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-      { id: 'f1', tier: 'free', title: 'The FACTS Method: Your Financial Foundation', type: 'guide', icon: 'ðŸ“‹', desc: 'Master zero-based budgeting â€” allocate every dollar before you spend it.', tags: ['budgeting','foundational'], read_time: '12 min' },
-      { id: 'f2', tier: 'free', title: 'Day Zero: Your Debt Baseline Snapshot', type: 'guide', icon: 'ðŸ—‚ï¸', desc: 'Understand exactly where you stand financially before charting a new course.', tags: ['debt','foundational'], read_time: '8 min' },
-      { id: 'f3', tier: 'free', title: 'The 4 Phases of Financial Revolution', type: 'guide', icon: 'âš”ï¸', desc: 'Resistance â†’ Uprising â†’ Expansion â†’ Liberation. Know the path ahead.', tags: ['strategy','phases'], read_time: '10 min' },
-      { id: 'f4', tier: 'free', title: 'Phantom Charges: The Silent Budget Killers', type: 'guide', icon: 'ðŸ‘»', desc: 'How to find and eliminate the recurring charges draining your account.', tags: ['leaks','budgeting'], read_time: '6 min' },
-      { id: 'f5', tier: 'free', title: 'The XP System: Gamify Your Finances', type: 'guide', icon: 'ðŸŽ–ï¸', desc: 'How the TFR Engagement System works and how to maximize your XP.', tags: ['gamification','levels'], read_time: '5 min' },
-      { id: 'f6', tier: 'free', title: 'Emergency Fund Protocol', type: 'guide', icon: 'ðŸ›¡ï¸', desc: 'Build your financial defense layer before going on financial offense.', tags: ['savings','foundational'], read_time: '9 min' },
+      // ── FREE (L1-3) ──────────────────────────────────────────────────────
+      { id: 'f1', tier: 'free', title: 'The FACTS Method: Your Financial Foundation', type: 'guide', icon: '📋', desc: 'Master zero-based budgeting — allocate every dollar before you spend it.', tags: ['budgeting','foundational'], read_time: '12 min' },
+      { id: 'f2', tier: 'free', title: 'Day Zero: Your Debt Baseline Snapshot', type: 'guide', icon: '🗂️', desc: 'Understand exactly where you stand financially before charting a new course.', tags: ['debt','foundational'], read_time: '8 min' },
+      { id: 'f3', tier: 'free', title: 'The 4 Phases of Financial Revolution', type: 'guide', icon: '⚔️', desc: 'Resistance → Uprising → Expansion → Liberation. Know the path ahead.', tags: ['strategy','phases'], read_time: '10 min' },
+      { id: 'f4', tier: 'free', title: 'Phantom Charges: The Silent Budget Killers', type: 'guide', icon: '👻', desc: 'How to find and eliminate the recurring charges draining your account.', tags: ['leaks','budgeting'], read_time: '6 min' },
+      { id: 'f5', tier: 'free', title: 'The XP System: Gamify Your Finances', type: 'guide', icon: '🎖️', desc: 'How the TFR Engagement System works and how to maximize your XP.', tags: ['gamification','levels'], read_time: '5 min' },
+      { id: 'f6', tier: 'free', title: 'Emergency Fund Protocol', type: 'guide', icon: '🛡️', desc: 'Build your financial defense layer before going on financial offense.', tags: ['savings','foundational'], read_time: '9 min' },
 
-      // â”€â”€ PRO (L4-6) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-      { id: 'p1', tier: 'pro', title: 'Advanced Debt Payoff: Avalanche vs. Velocity', type: 'strategy', icon: 'ðŸ’¥', desc: 'The mathematical case for interest rate ordering vs. the psychological case for quick wins.', tags: ['debt','advanced'], read_time: '15 min' },
-      { id: 'p2', tier: 'pro', title: 'Credit Score Architecture', type: 'strategy', icon: 'ðŸ“Š', desc: 'Understand your credit score components and build a systematic improvement plan.', tags: ['credit','advanced'], read_time: '18 min' },
-      { id: 'p3', tier: 'pro', title: 'SDIRA Wealth Hub: Self-Directed IRA Basics', type: 'strategy', icon: 'ðŸ›ï¸', desc: 'How to use an SDIRA to invest in real estate, private equity, and more inside a tax-advantaged account.', tags: ['investing','retirement'], read_time: '22 min' },
-      { id: 'p4', tier: 'pro', title: 'The Automation Playbook', type: 'strategy', icon: 'âš¡', desc: 'Automate savings, debt payoff, and investment contributions to remove willpower from the equation.', tags: ['automation','systems'], read_time: '12 min' },
-      { id: 'p5', tier: 'pro', title: 'Reading Your Credit Report: Day Zero Analysis', type: 'guide', icon: 'ðŸ”', desc: 'A line-by-line breakdown of what your credit report reveals and what actions to take.', tags: ['credit','debt'], read_time: '20 min' },
-      { id: 'p6', tier: 'pro', title: 'Debt Consolidation: When It Makes Sense', type: 'strategy', icon: 'ðŸ”€', desc: 'The conditions under which consolidating debt accelerates payoff vs. when it extends it.', tags: ['debt','advanced'], read_time: '14 min' },
+      // ── PRO (L4-6) ───────────────────────────────────────────────────────
+      { id: 'p1', tier: 'pro', title: 'Advanced Debt Payoff: Avalanche vs. Velocity', type: 'strategy', icon: '💥', desc: 'The mathematical case for interest rate ordering vs. the psychological case for quick wins.', tags: ['debt','advanced'], read_time: '15 min' },
+      { id: 'p2', tier: 'pro', title: 'Credit Score Architecture', type: 'strategy', icon: '📊', desc: 'Understand your credit score components and build a systematic improvement plan.', tags: ['credit','advanced'], read_time: '18 min' },
+      { id: 'p3', tier: 'pro', title: 'SDIRA Wealth Hub: Self-Directed IRA Basics', type: 'strategy', icon: '🏛️', desc: 'How to use an SDIRA to invest in real estate, private equity, and more inside a tax-advantaged account.', tags: ['investing','retirement'], read_time: '22 min' },
+      { id: 'p4', tier: 'pro', title: 'The Automation Playbook', type: 'strategy', icon: '⚡', desc: 'Automate savings, debt payoff, and investment contributions to remove willpower from the equation.', tags: ['automation','systems'], read_time: '12 min' },
+      { id: 'p5', tier: 'pro', title: 'Reading Your Credit Report: Day Zero Analysis', type: 'guide', icon: '🔍', desc: 'A line-by-line breakdown of what your credit report reveals and what actions to take.', tags: ['credit','debt'], read_time: '20 min' },
+      { id: 'p6', tier: 'pro', title: 'Debt Consolidation: When It Makes Sense', type: 'strategy', icon: '🔀', desc: 'The conditions under which consolidating debt accelerates payoff vs. when it extends it.', tags: ['debt','advanced'], read_time: '14 min' },
 
-      // â”€â”€ BUSINESS (L7-9) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-      { id: 'b1', tier: 'business', title: 'Profit First: The Business Allocation Framework', type: 'masterclass', icon: 'ðŸ’¼', desc: 'Mike Michalowicz\'s system for ensuring your business is always profitable from day one.', tags: ['business','profitfirst'], read_time: '25 min' },
-      { id: 'b2', tier: 'business', title: 'The Friday Sweep System', type: 'masterclass', icon: 'ðŸ§¹', desc: 'Every Friday: sweep excess cash into designated accounts. How to implement and automate it.', tags: ['automation','business'], read_time: '15 min' },
-      { id: 'b3', tier: 'business', title: 'Business Tax Strategy 101', type: 'strategy', icon: 'ðŸ“‘', desc: 'Legitimate tax reduction strategies for small business owners â€” depreciation, home office, vehicle.', tags: ['tax','business'], read_time: '30 min' },
-      { id: 'b4', tier: 'business', title: 'S-Corp vs. LLC: The Tax Decision', type: 'guide', icon: 'ðŸ¢', desc: 'When to elect S-Corp status to reduce self-employment taxes and how to implement payroll.', tags: ['tax','structure'], read_time: '20 min' },
-      { id: 'b5', tier: 'business', title: 'The Business Allocation Percentages', type: 'masterclass', icon: 'ðŸ“', desc: 'How to allocate business revenue across Operating Expenses, Owner\'s Pay, Taxes, and Profit accounts.', tags: ['business','allocation'], read_time: '18 min' },
-      { id: 'b6', tier: 'business', title: 'AI Receipt Scanner: Getting the Most Out of It', type: 'guide', icon: 'ðŸ¤–', desc: 'Best practices for using TFR\'s AI receipt scanner for expense categorization and tax prep.', tags: ['tools','automation'], read_time: '8 min' },
+      // ── BUSINESS (L7-9) ──────────────────────────────────────────────────
+      { id: 'b1', tier: 'business', title: 'Profit First: The Business Allocation Framework', type: 'masterclass', icon: '💼', desc: 'Mike Michalowicz\'s system for ensuring your business is always profitable from day one.', tags: ['business','profitfirst'], read_time: '25 min' },
+      { id: 'b2', tier: 'business', title: 'The Friday Sweep System', type: 'masterclass', icon: '🧹', desc: 'Every Friday: sweep excess cash into designated accounts. How to implement and automate it.', tags: ['automation','business'], read_time: '15 min' },
+      { id: 'b3', tier: 'business', title: 'Business Tax Strategy 101', type: 'strategy', icon: '📑', desc: 'Legitimate tax reduction strategies for small business owners — depreciation, home office, vehicle.', tags: ['tax','business'], read_time: '30 min' },
+      { id: 'b4', tier: 'business', title: 'S-Corp vs. LLC: The Tax Decision', type: 'guide', icon: '🏢', desc: 'When to elect S-Corp status to reduce self-employment taxes and how to implement payroll.', tags: ['tax','structure'], read_time: '20 min' },
+      { id: 'b5', tier: 'business', title: 'The Business Allocation Percentages', type: 'masterclass', icon: '📐', desc: 'How to allocate business revenue across Operating Expenses, Owner\'s Pay, Taxes, and Profit accounts.', tags: ['business','allocation'], read_time: '18 min' },
+      { id: 'b6', tier: 'business', title: 'AI Receipt Scanner: Getting the Most Out of It', type: 'guide', icon: '🤖', desc: 'Best practices for using TFR\'s AI receipt scanner for expense categorization and tax prep.', tags: ['tools','automation'], read_time: '8 min' },
 
-      // â”€â”€ ELITE (L10-12) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-      { id: 'e1', tier: 'elite', title: 'HELOC Velocity: The Mortgage Acceleration Strategy', type: 'masterclass', icon: 'ðŸ ', desc: 'How to use a Home Equity Line of Credit as a checking account to slash mortgage interest.', tags: ['heloc','wealth'], read_time: '35 min' },
-      { id: 'e2', tier: 'elite', title: 'Interest Recapture: Getting Back What the Bank Took', type: 'masterclass', icon: 'ðŸ’°', desc: 'The math behind interest recapture using the HELOC velocity strategy.', tags: ['heloc','interest'], read_time: '28 min' },
-      { id: 'e3', tier: 'elite', title: 'The Infinite Banking Concept', type: 'strategy', icon: 'ðŸ¦', desc: 'Using whole life insurance as a private banking system for tax-free wealth accumulation.', tags: ['wealth','insurance'], read_time: '40 min' },
-      { id: 'e4', tier: 'elite', title: 'Real Estate Wealth Acceleration', type: 'masterclass', icon: 'ðŸ—ï¸', desc: 'Using equity velocity and cash-out refinancing to scale a real estate portfolio.', tags: ['realestate','wealth'], read_time: '45 min' },
-      { id: 'e5', tier: 'elite', title: 'Tax-Advantaged Wealth Vehicles at Scale', type: 'strategy', icon: 'ðŸŒŸ', desc: 'Backdoor Roth IRA, Mega Backdoor Roth, Solo 401(k), SEP IRA â€” the full spectrum.', tags: ['tax','retirement','wealth'], read_time: '38 min' },
-      { id: 'e6', tier: 'elite', title: 'The Prestige Protocol: Life at Level 12', type: 'guide', icon: 'ðŸ‘‘', desc: 'What it means to reach THE SOVEREIGN rank â€” and what comes next.', tags: ['sovereign','prestige'], read_time: '10 min' },
+      // ── ELITE (L10-12) ───────────────────────────────────────────────────
+      { id: 'e1', tier: 'elite', title: 'HELOC Velocity: The Mortgage Acceleration Strategy', type: 'masterclass', icon: '🏠', desc: 'How to use a Home Equity Line of Credit as a checking account to slash mortgage interest.', tags: ['heloc','wealth'], read_time: '35 min' },
+      { id: 'e2', tier: 'elite', title: 'Interest Recapture: Getting Back What the Bank Took', type: 'masterclass', icon: '💰', desc: 'The math behind interest recapture using the HELOC velocity strategy.', tags: ['heloc','interest'], read_time: '28 min' },
+      { id: 'e3', tier: 'elite', title: 'The Infinite Banking Concept', type: 'strategy', icon: '🏦', desc: 'Using whole life insurance as a private banking system for tax-free wealth accumulation.', tags: ['wealth','insurance'], read_time: '40 min' },
+      { id: 'e4', tier: 'elite', title: 'Real Estate Wealth Acceleration', type: 'masterclass', icon: '🏗️', desc: 'Using equity velocity and cash-out refinancing to scale a real estate portfolio.', tags: ['realestate','wealth'], read_time: '45 min' },
+      { id: 'e5', tier: 'elite', title: 'Tax-Advantaged Wealth Vehicles at Scale', type: 'strategy', icon: '🌟', desc: 'Backdoor Roth IRA, Mega Backdoor Roth, Solo 401(k), SEP IRA — the full spectrum.', tags: ['tax','retirement','wealth'], read_time: '38 min' },
+      { id: 'e6', tier: 'elite', title: 'The Prestige Protocol: Life at Level 12', type: 'guide', icon: '👑', desc: 'What it means to reach THE SOVEREIGN rank — and what comes next.', tags: ['sovereign','prestige'], read_time: '10 min' },
 
-      // â”€â”€ SOVEREIGN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-      { id: 's1', tier: 'sovereign', title: 'Legacy Architecture: Building Generational Wealth', type: 'exclusive', icon: 'ðŸ°', desc: 'The full framework for creating a wealth system that outlasts you â€” trusts, succession planning, heir preparation.', tags: ['legacy','sovereign'], read_time: '60 min' },
-      { id: 's2', tier: 'sovereign', title: 'Sovereign P2P Lending Strategies', type: 'exclusive', icon: 'ðŸ¤', desc: 'How to deploy capital into peer-to-peer lending for passive income diversification.', tags: ['investing','p2p'], read_time: '45 min' },
-      { id: 's3', tier: 'sovereign', title: 'The Mastermind Playbook', type: 'exclusive', icon: 'ðŸ§ ', desc: 'Exclusive strategies discussed in the Sovereign Executive mastermind group.', tags: ['mastermind','exclusive'], read_time: '50 min' },
+      // ── SOVEREIGN ────────────────────────────────────────────────────────
+      { id: 's1', tier: 'sovereign', title: 'Legacy Architecture: Building Generational Wealth', type: 'exclusive', icon: '🏰', desc: 'The full framework for creating a wealth system that outlasts you — trusts, succession planning, heir preparation.', tags: ['legacy','sovereign'], read_time: '60 min' },
+      { id: 's2', tier: 'sovereign', title: 'Sovereign P2P Lending Strategies', type: 'exclusive', icon: '🤝', desc: 'How to deploy capital into peer-to-peer lending for passive income diversification.', tags: ['investing','p2p'], read_time: '45 min' },
+      { id: 's3', tier: 'sovereign', title: 'The Mastermind Playbook', type: 'exclusive', icon: '🧠', desc: 'Exclusive strategies discussed in the Sovereign Executive mastermind group.', tags: ['mastermind','exclusive'], read_time: '50 min' },
     ];
 
     // Filter to what the user can access
@@ -21346,106 +21346,106 @@ app.get('/api/knowledge-vault/content', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // TFR TRAINING (Program-Specific Content)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Serve the training page
 app.get('/training', optionalAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'training.html'));
 });
 
-// GET /api/training/content â€” returns tier-gated training modules for current user
+// GET /api/training/content — returns tier-gated training modules for current user
 app.get('/api/training/content', requireAuth, async (req, res) => {
   try {
     const isPro = await hasProAccess(req.userId);
     const isBusiness = await hasBusinessAccess(req.userId);
     const isElite = await hasEliteAccess(req.userId);
 
-    // TFR Protocol Training Modules â€” gated by tier
+    // TFR Protocol Training Modules — gated by tier
     const TRAINING_MODULES = [
-      // â”€â”€ FREE (L1-3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── FREE (L1-3) ──────────────────────────────────────────────────────
       {
         id: 't-manifesto', tier: 'free', title: 'The Manifesto',
-        module_type: 'manifesto', icon: 'ðŸ“œ',
+        module_type: 'manifesto', icon: '📜',
         desc: 'The founding principles of FACTS. Why we exist, what we believe, and the mission ahead.',
         duration: '8 min read',
       },
       {
         id: 't-protocol-overview', tier: 'free', title: 'Sovereign Protocol Overview',
-        module_type: 'protocol', icon: 'âš”ï¸',
+        module_type: 'protocol', icon: '⚔️',
         desc: 'A walkthrough of the 12-Level Sovereign Protocol system. Understand the path from Level 1 to Financial Sovereignty.',
         duration: '12 min read',
       },
       {
         id: 't-allocation-intro', tier: 'free', title: 'Allocation Methodology: The Basics',
-        module_type: 'methodology', icon: 'ðŸ“Š',
+        module_type: 'methodology', icon: '📊',
         desc: 'Why every dollar gets a mission. The default allocation splits and how custom percentages work.',
         duration: '10 min read',
       },
       {
         id: 't-heartbeat-intro', tier: 'free', title: 'How the Heartbeat Audit Works',
-        module_type: 'system', icon: 'ðŸ’“',
+        module_type: 'system', icon: '💓',
         desc: 'The accountability engine behind TFR. Daily check-ins, weekly reviews, monthly reconciliation.',
         duration: '7 min read',
       },
 
-      // â”€â”€ PRO (L4-6) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── PRO (L4-6) ───────────────────────────────────────────────────────
       {
         id: 't-protocol-deep', tier: 'pro', title: 'Sovereign Protocol Deep Dive: All 12 Levels',
-        module_type: 'protocol', icon: 'ðŸ—ºï¸',
-        desc: 'Comprehensive walkthrough of every level â€” requirements, tool unlocks, phase transitions, and time estimates.',
+        module_type: 'protocol', icon: '🗺️',
+        desc: 'Comprehensive walkthrough of every level — requirements, tool unlocks, phase transitions, and time estimates.',
         duration: '25 min read',
       },
       {
         id: 't-allocation-adv', tier: 'pro', title: 'Advanced Allocation: Custom Splits & the 10/10/10/70 Model',
-        module_type: 'methodology', icon: 'ðŸ“',
+        module_type: 'methodology', icon: '📐',
         desc: 'Phase-based allocation strategies and the Business Pro revenue split explained in detail.',
         duration: '18 min read',
       },
       {
         id: 't-xp-levels', tier: 'pro', title: 'XP & Level Progression System',
-        module_type: 'system', icon: 'ðŸŽ–ï¸',
+        module_type: 'system', icon: '🎖️',
         desc: 'How experience points work, streak mechanics, level gates, and credit gate requirements.',
         duration: '15 min read',
       },
 
-      // â”€â”€ BUSINESS (L7-9) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── BUSINESS (L7-9) ──────────────────────────────────────────────────
       {
         id: 't-friday-sweep', tier: 'business', title: 'Friday Sweep Process Guide',
-        module_type: 'process', icon: 'ðŸ§¹',
+        module_type: 'process', icon: '🧹',
         desc: 'Step-by-step guide to the weekly cash allocation ritual. Check, calculate, sweep, log, review.',
         duration: '15 min read',
       },
       {
         id: 't-5bucket', tier: 'business', title: 'The 5-Bucket Protocol',
-        module_type: 'methodology', icon: 'ðŸª£',
+        module_type: 'methodology', icon: '🪣',
         desc: 'Set up and operate the 5 business allocation accounts: Profit, Tax, Owner Pay, Operating, Growth.',
         duration: '20 min read',
       },
       {
         id: 't-heartbeat-biz', tier: 'business', title: 'Heartbeat Audit: Business Pro Edition',
-        module_type: 'system', icon: 'ðŸ’¼',
+        module_type: 'system', icon: '💼',
         desc: 'Extended compliance checks for business users: sweep compliance, profit health, tax reserves, escrow rules.',
         duration: '12 min read',
       },
 
-      // â”€â”€ ELITE (L10-12) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── ELITE (L10-12) ───────────────────────────────────────────────────
       {
         id: 't-heloc-velocity', tier: 'elite', title: 'HELOC Velocity Overview',
-        module_type: 'masterclass', icon: 'ðŸ ',
+        module_type: 'masterclass', icon: '🏠',
         desc: 'The mortgage acceleration strategy that turns your HELOC into a checking account. Full walkthrough with math.',
         duration: '30 min read',
       },
       {
         id: 't-interest-recapture', tier: 'elite', title: 'Interest Recapture: The Deep Dive',
-        module_type: 'masterclass', icon: 'ðŸ’°',
+        module_type: 'masterclass', icon: '💰',
         desc: 'Simple vs. compound interest arbitrage. How HELOC Velocity actually recaptures mortgage interest with real numbers.',
         duration: '25 min read',
       },
       {
         id: 't-wealth-accel', tier: 'elite', title: 'Wealth Acceleration Framework',
-        module_type: 'masterclass', icon: 'ðŸš€',
+        module_type: 'masterclass', icon: '🚀',
         desc: 'Tax-advantaged accounts at scale, real estate equity strategies, and business scaling for permanent wealth.',
         duration: '35 min read',
       },
@@ -21476,16 +21476,16 @@ app.get('/api/training/content', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // CRYPTO WALLET TRACKER (Pro tier)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Serve the crypto tracker page
 app.get('/crypto-tracker', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'crypto-tracker.html'));
 });
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 const PRICE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -21526,7 +21526,7 @@ async function refreshCryptoPrices(coinIds) {
   }
 }
 
-// Get prices â€” from cache if fresh, else fetch from CoinGecko
+// Get prices — from cache if fresh, else fetch from CoinGecko
 async function getCryptoPrices(coinIds) {
   if (!coinIds || coinIds.length === 0) return {};
   const uniqueIds = [...new Set(coinIds)];
@@ -21643,7 +21643,7 @@ async function fetchEthTokenBalances(address) {
       const resp = await fetch(url);
       const json = await resp.json();
       if (json.status === '1' && json.result && json.result !== '0') {
-        // Most ERC-20 use 6 or 18 decimals â€” we'll check CoinGecko decimals or assume 18
+        // Most ERC-20 use 6 or 18 decimals — we'll check CoinGecko decimals or assume 18
         const decimals = ['USDT','USDC'].includes(token.symbol) ? 6 : 18;
         const balance = Number(BigInt(json.result)) / Math.pow(10, decimals);
         if (balance > 0.0001) {
@@ -21655,7 +21655,7 @@ async function fetchEthTokenBalances(address) {
   return results;
 }
 
-// â”€â”€ GET /api/crypto/holdings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/crypto/holdings ──────────────────────────────────────────────────
 app.get('/api/crypto/holdings', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Crypto Tracker is a paid feature. Upgrade to access it.', code: 'PRO_REQUIRED' });
@@ -21684,7 +21684,7 @@ app.get('/api/crypto/holdings', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/crypto/holdings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/crypto/holdings ─────────────────────────────────────────────────
 app.post('/api/crypto/holdings', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
@@ -21713,7 +21713,7 @@ app.post('/api/crypto/holdings', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ PUT /api/crypto/holdings/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUT /api/crypto/holdings/:id ──────────────────────────────────────────────
 app.put('/api/crypto/holdings/:id', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
@@ -21750,7 +21750,7 @@ app.put('/api/crypto/holdings/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ DELETE /api/crypto/holdings/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DELETE /api/crypto/holdings/:id ──────────────────────────────────────────
 app.delete('/api/crypto/holdings/:id', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
@@ -21766,7 +21766,7 @@ app.delete('/api/crypto/holdings/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ GET /api/crypto/search-coins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/crypto/search-coins ──────────────────────────────────────────────
 app.get('/api/crypto/search-coins', requireAuth, async (req, res) => {
   const q = (req.query.q || '').trim();
   if (!q) return res.json({ success: true, coins: [] });
@@ -21787,7 +21787,7 @@ app.get('/api/crypto/search-coins', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/crypto/wallet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/crypto/wallet ───────────────────────────────────────────────────
 app.post('/api/crypto/wallet', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
@@ -21879,7 +21879,7 @@ app.post('/api/crypto/wallet', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/crypto/wallet/:id/sync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/crypto/wallet/:id/sync ─────────────────────────────────────────
 app.post('/api/crypto/wallet/:id/sync', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
@@ -21924,7 +21924,7 @@ app.post('/api/crypto/wallet/:id/sync', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ DELETE /api/crypto/wallet/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DELETE /api/crypto/wallet/:id ─────────────────────────────────────────────
 app.delete('/api/crypto/wallet/:id', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
@@ -21944,7 +21944,7 @@ app.delete('/api/crypto/wallet/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/crypto/snapshot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/crypto/snapshot ─────────────────────────────────────────────────
 app.post('/api/crypto/snapshot', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
@@ -21968,7 +21968,7 @@ app.post('/api/crypto/snapshot', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ GET /api/crypto/portfolio-history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/crypto/portfolio-history ─────────────────────────────────────────
 app.get('/api/crypto/portfolio-history', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
     return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
@@ -21988,7 +21988,7 @@ app.get('/api/crypto/portfolio-history', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ GET /api/crypto/net-worth-value â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/crypto/net-worth-value ───────────────────────────────────────────
 // Called by net-worth.html to include crypto in net worth total
 app.get('/api/crypto/net-worth-value', requireAuth, async (req, res) => {
   if (!await hasProAccess(req.userId)) {
@@ -22003,15 +22003,15 @@ app.get('/api/crypto/net-worth-value', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ EDUCATION CONTENT SYSTEM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── EDUCATION CONTENT SYSTEM ─────────────────────────────
+// ═══════════════════════════════════════════════════════════
 // Available to all users (Free + Pro). No tier gate.
 // Admin CRUD restricted to creator only.
 
-// GET /api/education/content â€” all published content, grouped by category
+// GET /api/education/content — all published content, grouped by category
 app.get('/api/education/content', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -22027,7 +22027,7 @@ app.get('/api/education/content', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/admin/education/content â€” all content including unpublished (creator only)
+// GET /api/admin/education/content — all content including unpublished (creator only)
 app.get('/api/admin/education/content', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -22045,7 +22045,7 @@ app.get('/api/admin/education/content', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/admin/education/content â€” create new education item (creator only)
+// POST /api/admin/education/content — create new education item (creator only)
 app.post('/api/admin/education/content', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -22083,7 +22083,7 @@ app.post('/api/admin/education/content', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/admin/education/content/:id â€” update existing item (creator only)
+// PUT /api/admin/education/content/:id — update existing item (creator only)
 app.put('/api/admin/education/content/:id', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -22128,7 +22128,7 @@ app.put('/api/admin/education/content/:id', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/admin/education/content/:id â€” delete item (creator only)
+// DELETE /api/admin/education/content/:id — delete item (creator only)
 app.delete('/api/admin/education/content/:id', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -22143,11 +22143,11 @@ app.delete('/api/admin/education/content/:id', requireAuth, async (req, res) => 
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// SHOP & SAVE â€” Affiliate Link Hub
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// SHOP & SAVE — Affiliate Link Hub
+// ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/shop/links â€” all active shop links (all authenticated users)
+// GET /api/shop/links — all active shop links (all authenticated users)
 app.get('/api/shop/links', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -22163,7 +22163,7 @@ app.get('/api/shop/links', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/admin/shop/links â€” all links including inactive (creator only)
+// GET /api/admin/shop/links — all links including inactive (creator only)
 app.get('/api/admin/shop/links', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -22180,7 +22180,7 @@ app.get('/api/admin/shop/links', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/admin/shop/links/:id â€” update a shop link (creator only)
+// PUT /api/admin/shop/links/:id — update a shop link (creator only)
 app.put('/api/admin/shop/links/:id', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -22223,7 +22223,7 @@ app.put('/api/admin/shop/links/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/admin/shop/links â€” create a new shop link category (creator only)
+// POST /api/admin/shop/links — create a new shop link category (creator only)
 app.post('/api/admin/shop/links', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -22241,7 +22241,7 @@ app.post('/api/admin/shop/links', requireAuth, async (req, res) => {
       [
         category_key.trim(),
         category_name.trim(),
-        (icon || 'ðŸ”—').trim(),
+        (icon || '🔗').trim(),
         (description || '').trim(),
         (url || '#').trim(),
         (button_text || 'Compare & Save').trim(),
@@ -22258,7 +22258,7 @@ app.post('/api/admin/shop/links', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/admin/shop/links/:id â€” delete a shop link (creator only)
+// DELETE /api/admin/shop/links/:id — delete a shop link (creator only)
 app.delete('/api/admin/shop/links/:id', requireAuth, async (req, res) => {
   try {
     const creatorCheck = await isCreator(req.userId);
@@ -22271,12 +22271,12 @@ app.delete('/api/admin/shop/links/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ NDA / BETA AGREEMENT ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// ─── NDA / BETA AGREEMENT ROUTES ──────────────────────────
+// ═══════════════════════════════════════════════════════════
 
-// GET /api/nda/status â€” check if current user needs to accept NDA and whether they have
+// GET /api/nda/status — check if current user needs to accept NDA and whether they have
 app.get('/api/nda/status', requireAuth, async (req, res) => {
   try {
     const now = new Date();
@@ -22311,7 +22311,7 @@ app.get('/api/nda/status', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/nda/accept â€” record user's NDA acceptance
+// POST /api/nda/accept — record user's NDA acceptance
 app.post('/api/nda/accept', requireAuth, async (req, res) => {
   try {
     const ipAddress = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().split(',')[0].trim();
@@ -22330,11 +22330,11 @@ app.post('/api/nda/accept', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ REFERRAL CODE ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── REFERRAL CODE ROUTES ─────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
-// GET /api/user/referral-code â€” get (or generate) current user's referral code
+// GET /api/user/referral-code — get (or generate) current user's referral code
 app.get('/api/user/referral-code', requireAuth, async (req, res) => {
   try {
     const userResult = await pool.query(
@@ -22378,11 +22378,11 @@ app.get('/api/user/referral-code', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ ADMIN NDA STATUS ROUTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── ADMIN NDA STATUS ROUTE ───────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
-// GET /api/admin/nda-status â€” list all users with their NDA acceptance status
+// GET /api/admin/nda-status — list all users with their NDA acceptance status
 app.get('/api/admin/nda-status', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -22421,9 +22421,9 @@ app.get('/api/admin/nda-status', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ Admin: Account Deletion & User Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Admin: Account Deletion & User Management ───────────────────────────────
 
-// GET /api/admin/users/search?q=<email_or_name> â€” search users by email or name
+// GET /api/admin/users/search?q=<email_or_name> — search users by email or name
 app.get('/api/admin/users/search', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -22460,7 +22460,7 @@ app.get('/api/admin/users/search', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/admin/users/:id/details â€” full account details before deletion
+// GET /api/admin/users/:id/details — full account details before deletion
 app.get('/api/admin/users/:id/details', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -22510,7 +22510,7 @@ app.get('/api/admin/users/:id/details', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/admin/users/:id â€” hard delete user with affiliate tree re-linking
+// DELETE /api/admin/users/:id — hard delete user with affiliate tree re-linking
 app.delete('/api/admin/users/:id', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -22546,7 +22546,7 @@ app.delete('/api/admin/users/:id', requireAuth, async (req, res) => {
     const txCountRes = await pool.query('SELECT COUNT(*) AS count FROM transactions WHERE user_id = $1', [targetUserId]);
     const txCount = parseInt(txCountRes.rows[0].count, 10);
 
-    // â”€â”€ Affiliate tree re-linking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Affiliate tree re-linking ──────────────────────────────────────────────
     // When we delete user X who sits in the tree:
     //   - X's parent = X.referred_by_user_id (upline)
     //   - X's children = users WHERE referred_by_user_id = X.id
@@ -22586,10 +22586,10 @@ app.delete('/api/admin/users/:id', requireAuth, async (req, res) => {
     const treeRelinked = (childCount + affiliateChildrenCount) > 0;
     const totalChildrenRelinked = childCount + affiliateChildrenCount;
 
-    // â”€â”€ Delete user (cascades all related data via FK constraints) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Delete user (cascades all related data via FK constraints) ─────────────
     await pool.query('DELETE FROM users WHERE id = $1', [targetUserId]);
 
-    // â”€â”€ Write audit log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Write audit log ────────────────────────────────────────────────────────
     try {
       await pool.query(`
         INSERT INTO admin_deletion_log
@@ -22611,7 +22611,7 @@ app.delete('/api/admin/users/:id', requireAuth, async (req, res) => {
         req.body.notes || null
       ]);
     } catch (logErr) {
-      // Audit log failure is non-fatal â€” user is already deleted
+      // Audit log failure is non-fatal — user is already deleted
       console.error('[Admin Delete] Audit log insert failed:', logErr.message);
     }
 
@@ -22629,7 +22629,7 @@ app.delete('/api/admin/users/:id', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/admin/deletion-log â€” audit log of admin-deleted accounts
+// GET /api/admin/deletion-log — audit log of admin-deleted accounts
 app.get('/api/admin/deletion-log', requireAuth, async (req, res) => {
   try {
     if (!(await requireCreator(req, res))) return;
@@ -22659,7 +22659,7 @@ app.get('/api/admin/deletion-log', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ PWA: Push Notification Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PWA: Push Notification Endpoints ────────────────────────────────────────
 
 // Returns the VAPID public key for the client to use when subscribing
 app.get('/api/push/vapid-public-key', (req, res) => {
@@ -22737,7 +22737,7 @@ app.post('/api/push/send', async (req, res) => {
         sent++;
       } catch (pushErr) {
         if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
-          // Subscription expired â€” clean it up
+          // Subscription expired — clean it up
           await pool.query('DELETE FROM push_subscriptions WHERE endpoint = $1', [sub.endpoint]);
         } else {
           console.warn('[PWA] Push send error:', pushErr.message);
@@ -22751,9 +22751,9 @@ app.post('/api/push/send', async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ YEAR-END ARCHIVE ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── YEAR-END ARCHIVE ROUTES ──────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 /**
  * GET /api/year-archive/years
@@ -23181,7 +23181,7 @@ app.post('/api/year-archive/warnings/acknowledge-all', requireAuth, async (req, 
 /**
  * GET /api/year-archive/export/:year
  * Export all transactions for a given year as CSV.
- * Pro feature â€” free users see a prompt to upgrade.
+ * Pro feature — free users see a prompt to upgrade.
  */
 app.get('/api/year-archive/export/:year', requireAuth, async (req, res) => {
   try {
@@ -23347,9 +23347,9 @@ app.get('/api/year-archive/summary/:year', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â”€â”€ Startup hook: ensure PWA icons exist with CORRECT DIMENSIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Startup hook: ensure PWA icons exist with CORRECT DIMENSIONS ─────────────
 // Icons are committed to git, so they should always exist. This is a safety net
 // that also validates actual PNG dimensions match manifest declarations.
 // Chrome rejects icons where declared sizes don't match actual dimensions,
@@ -23459,7 +23459,7 @@ function ensurePWAIconsSync() {
   }
 }
 
-// â”€â”€ PWA Diagnostic Endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PWA Diagnostic Endpoint ─────────────────────────────────────────────────
 // Helps debug install issues: verifies all PWA install criteria are met
 app.get('/api/pwa/diagnostic', (req, res) => {
   const iconDir = path.join(__dirname, 'public', 'icons');
@@ -23532,9 +23532,9 @@ app.get('/api/pwa/diagnostic', (req, res) => {
   res.json(checks);
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ ACCOUNT SETTINGS ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── ACCOUNT SETTINGS ROUTES ──────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 // Route: serve settings page at /settings
 app.get('/settings', (req, res) => {
@@ -23556,7 +23556,7 @@ app.get('/family-dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'family-dashboard.html'));
 });
 
-// GET /api/settings/all â€” Get all settings data in one request
+// GET /api/settings/all — Get all settings data in one request
 app.get('/api/settings/all', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -23699,7 +23699,7 @@ app.get('/api/settings/all', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/settings/profile â€” Update display name and avatar
+// PUT /api/settings/profile — Update display name and avatar
 app.put('/api/settings/profile', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -23755,7 +23755,7 @@ app.put('/api/settings/profile', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/settings/change-password â€” Change password
+// POST /api/settings/change-password — Change password
 app.post('/api/settings/change-password', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -23803,7 +23803,7 @@ app.post('/api/settings/change-password', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/settings/change-email/request â€” Request email change
+// POST /api/settings/change-email/request — Request email change
 app.post('/api/settings/change-email/request', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -23942,7 +23942,7 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
   }
 });
 
-// GET /api/settings/change-email/confirm â€” Confirm email change via token
+// GET /api/settings/change-email/confirm — Confirm email change via token
 app.get('/api/settings/change-email/confirm', async (req, res) => {
   try {
     const { token } = req.query;
@@ -24004,7 +24004,7 @@ app.get('/api/settings/change-email/confirm', async (req, res) => {
   }
 });
 
-// PUT /api/settings/notifications â€” Update notification preferences
+// PUT /api/settings/notifications — Update notification preferences
 app.put('/api/settings/notifications', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -24034,7 +24034,7 @@ app.put('/api/settings/notifications', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/settings/plaid-accounts/:id â€” Disconnect a Plaid account
+// DELETE /api/settings/plaid-accounts/:id — Disconnect a Plaid account
 app.delete('/api/settings/plaid-accounts/:id', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -24068,7 +24068,7 @@ app.delete('/api/settings/plaid-accounts/:id', requireAuth, async (req, res) => 
   }
 });
 
-// POST /api/settings/delete-account â€” Delete account with safeguards
+// POST /api/settings/delete-account — Delete account with safeguards
 app.post('/api/settings/delete-account', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -24150,7 +24150,7 @@ app.post('/api/settings/delete-account', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/settings/avatar/upload â€” Upload profile photo (stored as data URL or R2)
+// POST /api/settings/avatar/upload — Upload profile photo (stored as data URL or R2)
 // For now: accept a base64 image and store as avatar_url (small-scale approach)
 // Note: For production scale, move to R2 upload
 app.post('/api/settings/avatar', requireAuth, async (req, res) => {
@@ -24186,11 +24186,11 @@ app.post('/api/settings/avatar', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ DISCOVERY SCAN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── DISCOVERY SCAN ───────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 // Mandatory 7-screen onboarding questionnaire for the Future
 // Generations affiliate program. Maps the user's financial
 // footprint before Certification begins.
@@ -24245,7 +24245,7 @@ app.post('/api/discovery-scan/complete', requireAuth, async (req, res) => {
       completed               // boolean: true = mark as done
     } = req.body;
 
-    // Convert dollar amounts â†’ cents (integer)
+    // Convert dollar amounts → cents (integer)
     const debtCents  = estimated_total_debt  != null ? Math.round(parseFloat(estimated_total_debt)  * 100) : null;
     const burnCents  = monthly_burn          != null ? Math.round(parseFloat(monthly_burn)          * 100) : null;
     const goalCents  = master_goal_monthly   != null ? Math.round(parseFloat(master_goal_monthly)   * 100) : null;
@@ -24257,11 +24257,11 @@ app.post('/api/discovery-scan/complete', requireAuth, async (req, res) => {
     if (survival_runway_months != null) {
       const r = parseInt(survival_runway_months);
       if (isNaN(r) || r < 0 || r > 25) {
-        return res.status(400).json({ error: 'survival_runway_months must be 0â€“25' });
+        return res.status(400).json({ error: 'survival_runway_months must be 0–25' });
       }
     }
 
-    // Build dynamic SET clause â€” only update fields that were sent
+    // Build dynamic SET clause — only update fields that were sent
     const updates = [];
     const values  = [];
     let   idx     = 1;
@@ -24302,10 +24302,10 @@ app.post('/api/discovery-scan/complete', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  SOVEREIGN DASHBOARD â€” Future Generations Command Center
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ─────────────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+//  SOVEREIGN DASHBOARD — Future Generations Command Center
+// ══════════════════════════════════════════════════════════════════════════════
 
 const SOVEREIGN_PHASES = [
   { phase: 1, label: 'Phase 1', slots: [1, 2, 3, 4] },
@@ -24341,12 +24341,12 @@ async function computeLegDepth(rootUserId, maxDepth = 5) {
 
 // GET /api/affiliate/sovereign-dashboard
 // Returns the complete aggregated data set for the Sovereign Command Center UI.
-// Uses session auth â€” no email param needed.
+// Uses session auth — no email param needed.
 app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
 
-    // â”€â”€ 1. User + Discovery Scan data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 1. User + Discovery Scan data ───────────────────────────────────────
     const userRes = await pool.query(`
       SELECT id, email, name, plan, paid_until,
              survival_runway_months, monthly_burn_cents,
@@ -24360,7 +24360,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
     }
     const user = userRes.rows[0];
 
-    // â”€â”€ 2. Affiliate record â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 2. Affiliate record ─────────────────────────────────────────────────
     const affRes = await pool.query(`
       SELECT * FROM affiliates WHERE user_id = $1
     `, [userId]);
@@ -24374,7 +24374,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
     }
     const aff = affRes.rows[0];
 
-    // â”€â”€ 3. TFR Game level â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 3. TFR Game level ───────────────────────────────────────────────────
     let tfrLevel = 1, tfrRankName = 'THE INITIATE', tfrPhase = 1, tfrXp = 0, tfrXpProgress = 0;
     try {
       const tfrRes = await pool.query(
@@ -24394,7 +24394,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
       }
     } catch (e) { /* tfr_user_stats might not exist in test envs */ }
 
-    // â”€â”€ 4. Heartbeat status for current month â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 4. Heartbeat status for current month ───────────────────────────────
     const now = new Date();
     const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 7);
@@ -24413,7 +24413,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
       }
     } catch (e) { /* table may not exist yet if migration pending */ }
 
-    // â”€â”€ 5. Wallet / vesting data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 5. Wallet / vesting data ────────────────────────────────────────────
     const PAYOUT_MIN = 5000; // $50.00
     let oldestPendingDate = null;
     let vestingDay = 0;
@@ -24436,7 +24436,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
     const nextPayoutDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     nextPayoutDate.setDate(nextPayoutDate.getDate() + 30);
 
-    // â”€â”€ 6. Direct referrals for 4x5 leg map (up to 20) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 6. Direct referrals for 4x5 leg map (up to 20) ─────────────────────
     const directRes = await pool.query(`
       SELECT u.id, u.name, u.email, u.plan, u.paid_until, u.last_login,
              a.status AS affiliate_status, a.placement_method,
@@ -24495,7 +24495,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
       });
     }
 
-    // â”€â”€ 7. Phase unlock status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 7. Phase unlock status ──────────────────────────────────────────────
     const phaseStatus = SOVEREIGN_PHASES.map(p => {
       const phaseLegSlots = legMap.filter(l => l.phase === p.phase);
       const filled = phaseLegSlots.filter(l => !l.empty).length;
@@ -24518,7 +24518,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
       };
     });
 
-    // â”€â”€ 8. Family Legacy members â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 8. Family Legacy members ────────────────────────────────────────────
     // Direct referrals with family_intent = true from the users table
     const familyRes = await pool.query(`
       SELECT u.id, u.name, u.email, u.plan, u.paid_until, u.last_login,
@@ -24546,7 +24546,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
       };
     });
 
-    // â”€â”€ 9. Orphan pool (company-level free-user holding tank) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 9. Orphan pool (company-level free-user holding tank) ───────────────
     let holdingTankCount = 0;
     try {
       const tankRes = await pool.query(`
@@ -24561,12 +24561,12 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
       holdingTankCount = parseInt(tankRes.rows[0]?.cnt || 0);
     } catch (e) { /* non-fatal */ }
 
-    // "Next orphan" â€” user needs recruits to qualify; show first empty slot >= slot 9
+    // "Next orphan" — user needs recruits to qualify; show first empty slot >= slot 9
     const firstEmptySlot = legMap.find(l => l.empty);
     const directPersonalCount = directReferrals.filter(r => !['bfs', 'seed'].includes(r.placement_method)).length;
     const recruitsNeededForNextOrphan = Math.max(0, 2 - (directPersonalCount % 20));
 
-    // â”€â”€ 10. Compliance lights (direct team members) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── 10. Compliance lights (direct team members) ─────────────────────────
     const complianceLights = legMap
       .filter(l => !l.empty)
       .slice(0, 20)
@@ -24598,7 +24598,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
         };
       });
 
-    // â”€â”€ Build response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Build response ───────────────────────────────────────────────────────
     res.json({
       authenticated: true,
       is_affiliate: true,
@@ -24664,7 +24664,7 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/affiliate/heartbeat â€” mark current month's heartbeat complete
+// POST /api/affiliate/heartbeat — mark current month's heartbeat complete
 app.post('/api/affiliate/heartbeat', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -24697,7 +24697,7 @@ app.post('/api/affiliate/heartbeat', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/affiliate/referral-link-mode â€” toggle referral link mode
+// POST /api/affiliate/referral-link-mode — toggle referral link mode
 app.post('/api/affiliate/referral-link-mode', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -24718,17 +24718,17 @@ app.post('/api/affiliate/referral-link-mode', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  FUTURE GENERATIONS â€” SUCCESSION & TRANSFERABILITY SYSTEM
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ─────────────────────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+//  FUTURE GENERATIONS — SUCCESSION & TRANSFERABILITY SYSTEM
+// ════════════════════════════════════════════════════════════════════════════
 
-// â”€â”€â”€ Helper: generate secure random token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helper: generate secure random token ──────────────────────────────────
 function generateSuccessionToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-// â”€â”€â”€ GET /api/affiliate/succession â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /api/affiliate/succession ─────────────────────────────────────────
 // Returns the current user's succession plan (designation) + any active transfer
 app.get('/api/affiliate/succession', requireAuth, async (req, res) => {
   try {
@@ -24785,7 +24785,7 @@ app.get('/api/affiliate/succession', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ POST /api/affiliate/succession â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST /api/affiliate/succession ────────────────────────────────────────
 // Save / update the succession designation (the account holder signs here)
 app.post('/api/affiliate/succession', requireAuth, async (req, res) => {
   try {
@@ -24842,7 +24842,7 @@ app.post('/api/affiliate/succession', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ POST /api/affiliate/succession/initiate-transfer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST /api/affiliate/succession/initiate-transfer ──────────────────────
 // Account holder initiates a voluntary transfer (creates a succession_transfer record)
 app.post('/api/affiliate/succession/initiate-transfer', requireAuth, async (req, res) => {
   try {
@@ -24923,13 +24923,13 @@ app.post('/api/affiliate/succession/initiate-transfer', requireAuth, async (req,
   }
 });
 
-// â”€â”€â”€ GET /succession-sign â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /succession-sign ───────────────────────────────────────────────────
 // Public page for successor to review and sign a transfer
 app.get('/succession-sign', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'succession-sign.html'));
 });
 
-// â”€â”€â”€ GET /api/succession/sign/:token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /api/succession/sign/:token ───────────────────────────────────────
 // Get transfer details for the sign page (public, no auth)
 app.get('/api/succession/sign/:token', async (req, res) => {
   try {
@@ -24965,8 +24965,8 @@ app.get('/api/succession/sign/:token', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ POST /api/succession/sign/:token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Successor signs the transfer (public, no auth â€” verified by token)
+// ─── POST /api/succession/sign/:token ──────────────────────────────────────
+// Successor signs the transfer (public, no auth — verified by token)
 app.post('/api/succession/sign/:token', async (req, res) => {
   try {
     const { token } = req.params;
@@ -25005,7 +25005,7 @@ app.post('/api/succession/sign/:token', async (req, res) => {
       : { rows: [] };
     const successorUserId = succUserResult.rows[0]?.id || null;
 
-    // Record successor signature â†’ move to pending_admin_approval
+    // Record successor signature → move to pending_admin_approval
     await pool.query(
       `UPDATE succession_transfers SET
         successor_signed_at = NOW(),
@@ -25027,7 +25027,7 @@ app.post('/api/succession/sign/:token', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ GET /api/admin/succession/plans â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /api/admin/succession/plans ───────────────────────────────────────
 // Admin: list all affiliate succession plans
 app.get('/api/admin/succession/plans', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
@@ -25052,7 +25052,7 @@ app.get('/api/admin/succession/plans', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ GET /api/admin/succession/transfers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /api/admin/succession/transfers ───────────────────────────────────
 // Admin: list all succession transfers
 app.get('/api/admin/succession/transfers', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
@@ -25084,7 +25084,7 @@ app.get('/api/admin/succession/transfers', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ POST /api/admin/succession/transfers/:id/execute â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST /api/admin/succession/transfers/:id/execute ──────────────────────
 // Admin: execute a voluntary transfer (both parties have signed)
 app.post('/api/admin/succession/transfers/:id/execute', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
@@ -25135,7 +25135,7 @@ app.post('/api/admin/succession/transfers/:id/execute', requireAuth, async (req,
     const newUserId = transfer.successor_id;
     const affiliateId = transfer.affiliate_id;
 
-    // CRITICAL: Swap the user_id on the affiliate record (node_id stays same â€” all legs intact)
+    // CRITICAL: Swap the user_id on the affiliate record (node_id stays same — all legs intact)
     await client.query(
       `UPDATE affiliates SET user_id = $1, updated_at = NOW() WHERE id = $2`,
       [newUserId, affiliateId]
@@ -25187,7 +25187,7 @@ app.post('/api/admin/succession/transfers/:id/execute', requireAuth, async (req,
 
     await client.query('COMMIT');
 
-    console.log(`[Succession] Transfer #${transferId} executed by admin ${adminUserId}. Node ${affiliateId}: ${originalUserId} â†’ ${newUserId}`);
+    console.log(`[Succession] Transfer #${transferId} executed by admin ${adminUserId}. Node ${affiliateId}: ${originalUserId} → ${newUserId}`);
 
     res.json({
       success: true,
@@ -25207,7 +25207,7 @@ app.post('/api/admin/succession/transfers/:id/execute', requireAuth, async (req,
   }
 });
 
-// â”€â”€â”€ POST /api/admin/succession/transfers/:id/reject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST /api/admin/succession/transfers/:id/reject ───────────────────────
 // Admin: reject a transfer
 app.post('/api/admin/succession/transfers/:id/reject', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
@@ -25239,7 +25239,7 @@ app.post('/api/admin/succession/transfers/:id/reject', requireAuth, async (req, 
   }
 });
 
-// â”€â”€â”€ POST /api/admin/succession/transfers/:id/death-override â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST /api/admin/succession/transfers/:id/death-override ───────────────
 // Admin: corporate override for death/incapacitation (no successor signature required)
 // This swaps legal_name + tax_id on the account, keeping node_id intact
 app.post('/api/admin/succession/death-override', requireAuth, async (req, res) => {
@@ -25329,7 +25329,7 @@ app.post('/api/admin/succession/death-override', requireAuth, async (req, res) =
       [
         affiliate_id,
         successorUserId, successor_email, successor_name, successor_relationship || 'other',
-        adminUserId, notes || 'Corporate override â€” death/incapacitation',
+        adminUserId, notes || 'Corporate override — death/incapacitation',
         originalUserId,
         proDeadline, certDeadline, deactivationDeadline
       ]
@@ -25347,7 +25347,7 @@ app.post('/api/admin/succession/death-override', requireAuth, async (req, res) =
 
     await client.query('COMMIT');
 
-    console.log(`[Succession] Death override on affiliate ${affiliate_id} by admin ${adminUserId}. ${originalUserId} â†’ ${successorUserId}`);
+    console.log(`[Succession] Death override on affiliate ${affiliate_id} by admin ${adminUserId}. ${originalUserId} → ${successorUserId}`);
 
     res.json({
       success: true,
@@ -25367,7 +25367,7 @@ app.post('/api/admin/succession/death-override', requireAuth, async (req, res) =
   }
 });
 
-// â”€â”€â”€ GET /api/admin/succession/probation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /api/admin/succession/probation ───────────────────────────────────
 // Admin: list transfers in probation (monitoring successor compliance)
 app.get('/api/admin/succession/probation', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
@@ -25393,12 +25393,12 @@ app.get('/api/admin/succession/probation', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€ RETAIL-TO-AFFILIATE CONVERSION FLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// ─── RETAIL-TO-AFFILIATE CONVERSION FLOW ─────────────────────────────────────
 // Phase 2 / Task 4 of Future Generations rebuild.
 // These routes power the Graduation Screen that appears when a Pro user
 // completes their FACTS Certification and has not yet joined as an affiliate.
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 // GET /api/affiliate/graduation-check
 // Returns whether the graduation modal should be shown for the current user.
@@ -25455,7 +25455,7 @@ app.get('/api/affiliate/graduation-check', requireAuth, async (req, res) => {
       });
     }
 
-    // Already explicitly chose retail â€” don't show again (they can unlock via settings)
+    // Already explicitly chose retail — don't show again (they can unlock via settings)
     if (user.retail_choice_logged) {
       return res.json({
         should_show: false,
@@ -25501,7 +25501,7 @@ app.post('/api/affiliate/graduation-shown', requireAuth, async (req, res) => {
 
 // POST /api/affiliate/retail-choice
 // Logs that the user explicitly chose to remain a Retail user.
-// Critical for FTC compliance â€” proves opt-in is voluntary and people use
+// Critical for FTC compliance — proves opt-in is voluntary and people use
 // the software independently of the affiliate opportunity.
 app.post('/api/affiliate/retail-choice', requireAuth, async (req, res) => {
   try {
@@ -25529,7 +25529,7 @@ app.post('/api/affiliate/retail-choice', requireAuth, async (req, res) => {
 });
 
 // POST /api/affiliate/sign-oath
-// Signs the Sovereign Oath â€” a prerequisite for activating affiliate status.
+// Signs the Sovereign Oath — a prerequisite for activating affiliate status.
 // Records signature with timestamp and IP for audit trail.
 app.post('/api/affiliate/sign-oath', requireAuth, async (req, res) => {
   try {
@@ -25548,7 +25548,7 @@ app.post('/api/affiliate/sign-oath', requireAuth, async (req, res) => {
     if (!userRes.rows.length) return res.status(404).json({ error: 'User not found' });
     if (userRes.rows[0].is_creator) return res.status(403).json({ error: 'Account not eligible.' });
 
-    // Idempotent â€” already signed is fine
+    // Idempotent — already signed is fine
     if (userRes.rows[0].sovereign_oath_signed) {
       return res.json({ success: true, already_signed: true });
     }
@@ -25697,8 +25697,8 @@ app.post('/api/affiliate/graduate', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€ CERTIFICATION GATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// ─── CERTIFICATION GATE ──────────────────────────────────────────────────────
 // Controls access to the Future Generations referral link.
 // All 5 conditions must be met before the referral link is revealed.
 //
@@ -25710,7 +25710,7 @@ app.post('/api/affiliate/graduate', requireAuth, async (req, res) => {
 //
 // AI Sweep: once bank is linked, scan plaid_transactions for outgoing payments
 // to financial institutions not covered by a linked plaid_account.
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Known financial institution keywords for AI Sweep transaction matching
 const FINANCIAL_INSTITUTION_KEYWORDS = [
@@ -25797,7 +25797,7 @@ async function runCertificationAISweep(userId) {
     return flagged;
   } catch (err) {
     console.error('[Certification] AI Sweep error:', err.message);
-    return []; // Non-fatal â€” sweep failure doesn't block certification
+    return []; // Non-fatal — sweep failure doesn't block certification
   }
 }
 
@@ -25824,13 +25824,13 @@ app.get('/api/certification/status', requireAuth, async (req, res) => {
 
     const user = userRes.rows[0];
 
-    // â”€â”€ Gate 1: Pro subscription â”€â”€
+    // ── Gate 1: Pro subscription ──
     const isPro = await hasProAccess(userId);
 
-    // â”€â”€ Gate 2: Discovery Scan â”€â”€
+    // ── Gate 2: Discovery Scan ──
     const discoveryDone = user.discovery_scan_completed === true;
 
-    // â”€â”€ Gate 3: Bank Linked (Plaid) â”€â”€
+    // ── Gate 3: Bank Linked (Plaid) ──
     const plaidRes = await pool.query(
       'SELECT COUNT(*) AS cnt FROM plaid_accounts WHERE user_id = $1',
       [userId]
@@ -25842,13 +25842,13 @@ app.get('/api/certification/status', requireAuth, async (req, res) => {
       await pool.query('UPDATE users SET bank_linked = $1 WHERE id = $2', [bankLinked, userId]);
     }
 
-    // â”€â”€ Gate 4: Credit Report Uploaded â”€â”€
+    // ── Gate 4: Credit Report Uploaded ──
     const creditReportUploaded = user.credit_report_uploaded === true;
 
-    // â”€â”€ Gate 5: Sovereign Oath Signed â”€â”€
+    // ── Gate 5: Sovereign Oath Signed ──
     const oathSigned = user.sovereign_oath_signed === true;
 
-    // â”€â”€ AI Sweep (only if bank is linked) â”€â”€
+    // ── AI Sweep (only if bank is linked) ──
     let sweepAlerts = [];
     let currentFlagged = user.flagged_institutions || [];
 
@@ -25863,7 +25863,7 @@ app.get('/api/certification/status', requireAuth, async (req, res) => {
       );
     }
 
-    // â”€â”€ Compute certification gate â”€â”€
+    // ── Compute certification gate ──
     const allGatesMet = isPro && discoveryDone && bankLinked && creditReportUploaded && oathSigned && sweepAlerts.length === 0;
 
     let certStatus = user.certification_status || 'incomplete';
@@ -25881,7 +25881,7 @@ app.get('/api/certification/status', requireAuth, async (req, res) => {
       );
       console.log(`[Certification] User ${userId} earned Sovereign Certification`);
     } else if (!allGatesMet && certStatus === 'certified') {
-      // Lost certification (e.g., subscription lapsed) â€” downgrade gracefully
+      // Lost certification (e.g., subscription lapsed) — downgrade gracefully
       certStatus = 'incomplete';
       await pool.query(
         `UPDATE users
@@ -25890,7 +25890,7 @@ app.get('/api/certification/status', requireAuth, async (req, res) => {
           WHERE id = $1`,
         [userId]
       );
-      console.log(`[Certification] User ${userId} lost Sovereign Certification â€” gate condition no longer met`);
+      console.log(`[Certification] User ${userId} lost Sovereign Certification — gate condition no longer met`);
     }
 
     res.json({
@@ -25998,15 +25998,15 @@ app.post('/api/certification/acknowledge-sweep', requireAuth, async (req, res) =
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ SOVEREIGN OATH â€” DIGITAL SIGNING FLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── SOVEREIGN OATH — DIGITAL SIGNING FLOW ───────────────
+// ═══════════════════════════════════════════════════════════
 // The mandatory digital contract every user must sign before
 // their Future Generations referral link is revealed.
 // This is the final step of the Certification Gate.
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 // GET /api/sovereign-oath/status
 // Returns current oath status for the authenticated user.
@@ -26050,7 +26050,7 @@ app.get('/api/sovereign-oath/status', requireAuth, async (req, res) => {
 // POST /api/sovereign-oath/sign
 // Records the user's digital signature for the Sovereign Oath.
 // Requires: typed legal name, both checkboxes confirmed, version identifier.
-// Idempotent â€” calling again after signing returns the existing record.
+// Idempotent — calling again after signing returns the existing record.
 app.post('/api/sovereign-oath/sign', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -26072,7 +26072,7 @@ app.post('/api/sovereign-oath/sign', requireAuth, async (req, res) => {
     const cleanName = legal_name.trim();
     const oathVersion = (version && typeof version === 'string') ? version.trim() : 'v1';
 
-    // Check if already signed â€” idempotent
+    // Check if already signed — idempotent
     const existing = await pool.query(
       'SELECT sovereign_oath_signed, sovereign_oath_signed_at, sovereign_oath_legal_name FROM users WHERE id = $1',
       [userId]
@@ -26103,8 +26103,8 @@ app.post('/api/sovereign-oath/sign', requireAuth, async (req, res) => {
 
     console.log(`[SovereignOath] User ${userId} signed Sovereign Oath (name: "${cleanName}", version: ${oathVersion})`);
 
-    // Trigger certification gate re-check â€” promotes to 'certified' if all gates met
-    // (fires async, non-blocking â€” user gets instant success response)
+    // Trigger certification gate re-check — promotes to 'certified' if all gates met
+    // (fires async, non-blocking — user gets instant success response)
     pool.query(
       `SELECT certification_status, discovery_scan_completed, bank_linked, credit_report_uploaded
          FROM users WHERE id = $1`,
@@ -26184,13 +26184,13 @@ app.get('/api/sovereign-oath/view', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ RESOURCE CENTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── RESOURCE CENTER ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
-// Multer for resource file uploads (PDF, images, documents â€” up to 20MB)
+// Multer for resource file uploads (PDF, images, documents — up to 20MB)
 const resourceUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
@@ -26206,7 +26206,7 @@ const resourceUpload = multer({
   }
 });
 
-// GET /api/resources â€” list active resources (filtered by pro access)
+// GET /api/resources — list active resources (filtered by pro access)
 app.get('/api/resources', requireAuth, async (req, res) => {
   try {
     const user = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
@@ -26262,7 +26262,7 @@ app.get('/api/resources', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/resources/:id/download â€” stream file or redirect to URL
+// GET /api/resources/:id/download — stream file or redirect to URL
 app.get('/api/resources/:id/download', requireAuth, async (req, res) => {
   try {
     const user = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
@@ -26307,7 +26307,7 @@ app.get('/api/resources/:id/download', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/admin/resources â€” create resource (creator only)
+// POST /api/admin/resources — create resource (creator only)
 app.post('/api/admin/resources', requireAuth, resourceUpload.single('file'), async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26347,7 +26347,7 @@ app.post('/api/admin/resources', requireAuth, resourceUpload.single('file'), asy
       fileName,
       fileSize,
       fileMime,
-      thumbnail_emoji || 'ðŸ“„',
+      thumbnail_emoji || '📄',
       is_pro_only === 'true' || is_pro_only === true,
       parseInt(sort_order) || 0,
       req.userId
@@ -26360,7 +26360,7 @@ app.post('/api/admin/resources', requireAuth, resourceUpload.single('file'), asy
   }
 });
 
-// PUT /api/admin/resources/:id â€” update resource (creator only)
+// PUT /api/admin/resources/:id — update resource (creator only)
 app.put('/api/admin/resources/:id', requireAuth, resourceUpload.single('file'), async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26426,7 +26426,7 @@ app.put('/api/admin/resources/:id', requireAuth, resourceUpload.single('file'), 
   }
 });
 
-// DELETE /api/admin/resources/:id â€” delete resource (creator only)
+// DELETE /api/admin/resources/:id — delete resource (creator only)
 app.delete('/api/admin/resources/:id', requireAuth, async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26445,7 +26445,7 @@ app.delete('/api/admin/resources/:id', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/admin/resources â€” list ALL resources including inactive (creator only)
+// GET /api/admin/resources — list ALL resources including inactive (creator only)
 app.get('/api/admin/resources', requireAuth, async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26467,11 +26467,11 @@ app.get('/api/admin/resources', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ CONTENT FEED ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── CONTENT FEED ROUTES ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// GET /api/feed/posts â€” public paginated feed
+// GET /api/feed/posts — public paginated feed
 app.get('/api/feed/posts', optionalAuth, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -26520,7 +26520,7 @@ app.get('/api/feed/posts', optionalAuth, async (req, res) => {
   }
 });
 
-// GET /api/feed/bookmarks â€” user's saved posts
+// GET /api/feed/bookmarks — user's saved posts
 app.get('/api/feed/bookmarks', requireAuth, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -26552,7 +26552,7 @@ app.get('/api/feed/bookmarks', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/feed/posts/:id/like â€” toggle like
+// POST /api/feed/posts/:id/like — toggle like
 app.post('/api/feed/posts/:id/like', requireAuth, async (req, res) => {
   try {
     const postId = parseInt(req.params.id);
@@ -26574,7 +26574,7 @@ app.post('/api/feed/posts/:id/like', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/feed/posts/:id/bookmark â€” toggle bookmark
+// POST /api/feed/posts/:id/bookmark — toggle bookmark
 app.post('/api/feed/posts/:id/bookmark', requireAuth, async (req, res) => {
   try {
     const postId = parseInt(req.params.id);
@@ -26596,7 +26596,7 @@ app.post('/api/feed/posts/:id/bookmark', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/feed/posts/:id/comments â€” load comments for a post
+// GET /api/feed/posts/:id/comments — load comments for a post
 app.get('/api/feed/posts/:id/comments', optionalAuth, async (req, res) => {
   try {
     const postId = parseInt(req.params.id);
@@ -26622,7 +26622,7 @@ app.get('/api/feed/posts/:id/comments', optionalAuth, async (req, res) => {
   }
 });
 
-// POST /api/feed/posts/:id/comments â€” add comment (Pro only)
+// POST /api/feed/posts/:id/comments — add comment (Pro only)
 app.post('/api/feed/posts/:id/comments', requireAuth, async (req, res) => {
   try {
     const postId = parseInt(req.params.id);
@@ -26655,9 +26655,9 @@ app.post('/api/feed/posts/:id/comments', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ Admin feed management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Admin feed management ─────────────────────────────────────────────────────
 
-// GET /api/admin/feed/posts â€” list all posts (creator only)
+// GET /api/admin/feed/posts — list all posts (creator only)
 app.get('/api/admin/feed/posts', requireAuth, async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26676,7 +26676,7 @@ app.get('/api/admin/feed/posts', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/admin/feed/posts â€” create post (creator only)
+// POST /api/admin/feed/posts — create post (creator only)
 app.post('/api/admin/feed/posts', requireAuth, async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26701,7 +26701,7 @@ app.post('/api/admin/feed/posts', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/admin/feed/posts/:id â€” update post (creator only)
+// PUT /api/admin/feed/posts/:id — update post (creator only)
 app.put('/api/admin/feed/posts/:id', requireAuth, async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26728,7 +26728,7 @@ app.put('/api/admin/feed/posts/:id', requireAuth, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/feed/posts/:id/toggle â€” toggle is_active (creator only)
+// PATCH /api/admin/feed/posts/:id/toggle — toggle is_active (creator only)
 app.patch('/api/admin/feed/posts/:id/toggle', requireAuth, async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26746,7 +26746,7 @@ app.patch('/api/admin/feed/posts/:id/toggle', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/admin/feed/posts/:id â€” delete post (creator only)
+// DELETE /api/admin/feed/posts/:id — delete post (creator only)
 app.delete('/api/admin/feed/posts/:id', requireAuth, async (req, res) => {
   try {
     const creator = await isCreator(req.userId);
@@ -26761,11 +26761,11 @@ app.delete('/api/admin/feed/posts/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// DAILY ENGAGEMENT LOOP â€” Streaks, Challenges, Tips, Points
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// DAILY ENGAGEMENT LOOP — Streaks, Challenges, Tips, Points
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â”€â”€ Activity Event Tracking (for view-based challenge verification) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Activity Event Tracking (for view-based challenge verification) ──────────
 // Lightweight table: user_activity_events (user_id, event_type, event_date)
 // Created via ensureActivityTable() on first use; no migration needed.
 let _activityTableReady = false;
@@ -26785,7 +26785,7 @@ async function ensureActivityTable() {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_user_activity_events_lookup ON user_activity_events(user_id, event_type, event_date)');
     _activityTableReady = true;
   } catch (e) {
-    // Table might already exist from a prior run â€” that's fine
+    // Table might already exist from a prior run — that's fine
     if (e.code === '42P07' || e.message?.includes('already exists')) {
       _activityTableReady = true;
     } else {
@@ -26803,7 +26803,7 @@ async function recordActivity(userId, eventType) {
       VALUES ($1, $2, CURRENT_DATE)
       ON CONFLICT (user_id, event_type, event_date) DO NOTHING
     `, [userId, eventType]);
-  } catch (e) { /* silent â€” non-critical */ }
+  } catch (e) { /* silent — non-critical */ }
 }
 
 // Check if user performed activity today
@@ -26817,7 +26817,7 @@ async function hasActivityToday(userId, eventType) {
   return r.rows.length > 0;
 }
 
-// POST /api/engagement/activity â€” track user view/visit events (for challenge verification)
+// POST /api/engagement/activity — track user view/visit events (for challenge verification)
 app.post('/api/engagement/activity', requireAuth, async (req, res) => {
   try {
     const { event_type } = req.body;
@@ -26836,7 +26836,7 @@ app.post('/api/engagement/activity', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ Challenge Verification System â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Challenge Verification System ────────────────────────────────────────────
 
 /**
  * Verify if a user has actually completed the action required by a challenge.
@@ -26854,7 +26854,7 @@ async function verifyChallengeCompletion(userId, criteriaKey, client, userTimezo
   const weekStartStr = weekStart.toISOString().split('T')[0];
 
   switch (criteriaKey) {
-    // â”€â”€ DAILY challenges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── DAILY challenges ─────────────────────────────────────────────
     case 'log_transaction': {
       const r = await db.query(
         'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date=$2',
@@ -26882,7 +26882,7 @@ async function verifyChallengeCompletion(userId, criteriaKey, client, userTimezo
         : { verified: false, reason: 'Visit the Allocations tab to complete this challenge.' };
     }
     case 'daily_checkin': {
-      // Auto-completed by check-in endpoint â€” verify via tfr_user_stats
+      // Auto-completed by check-in endpoint — verify via tfr_user_stats
       const statsRow = await db.query(
         'SELECT last_activity_date, checkin_timezone FROM tfr_user_stats WHERE user_id=$1', [userId]
       );
@@ -26896,7 +26896,7 @@ async function verifyChallengeCompletion(userId, criteriaKey, client, userTimezo
         : { verified: false, reason: 'Hit the Check-In button to complete this challenge.' };
     }
     case 'read_tip': {
-      // Auto-completed by tip read endpoint â€” check user_challenges directly
+      // Auto-completed by tip read endpoint — check user_challenges directly
       return { verified: true }; // If they get here, the tip endpoint already handles it
     }
     case 'view_dashboard': {
@@ -26934,7 +26934,7 @@ async function verifyChallengeCompletion(userId, criteriaKey, client, userTimezo
         : { verified: false, reason: 'View your Education budget in the Allocations tab to complete this challenge.' };
     }
 
-    // â”€â”€ WEEKLY challenges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── WEEKLY challenges ────────────────────────────────────────────
     case 'weekly_7day_streak': {
       const stats = await db.query('SELECT streak_days FROM tfr_user_stats WHERE user_id=$1', [userId]);
       const streak = stats.rows[0]?.streak_days || 0;
@@ -26975,7 +26975,7 @@ async function verifyChallengeCompletion(userId, criteriaKey, client, userTimezo
         : { verified: false, reason: 'Check your Savings allocation this week.' };
     }
 
-    // â”€â”€ MONTHLY challenges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── MONTHLY challenges ───────────────────────────────────────────
     case 'monthly_30day_streak': {
       const stats = await db.query('SELECT streak_days FROM tfr_user_stats WHERE user_id=$1', [userId]);
       return (stats.rows[0]?.streak_days || 0) >= 30
@@ -27051,7 +27051,7 @@ async function verifyChallengeCompletion(userId, criteriaKey, client, userTimezo
     }
 
     default:
-      // Unknown criteria â€” allow completion (backwards compatible)
+      // Unknown criteria — allow completion (backwards compatible)
       return { verified: true };
   }
 }
@@ -27130,7 +27130,7 @@ async function tryAutoCompleteChallenge(userId, criteriaKey) {
           await client.query(
             `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
              VALUES ($1, 'challenge_complete', $2, $3)`,
-            [userId, `Challenge: ${challenge.title} â€” ${rpToAward} FACTS Points`, rpToAward]
+            [userId, `Challenge: ${challenge.title} — ${rpToAward} FACTS Points`, rpToAward]
           );
           pointsAwarded = rpToAward;
         }
@@ -27180,7 +27180,7 @@ async function engEnsureStats(userId) {
   return row;
 }
 
-// GET /api/engagement/today â€” fetch today's tip, challenges, streak, points
+// GET /api/engagement/today — fetch today's tip, challenges, streak, points
 app.get('/api/engagement/today', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -27193,7 +27193,7 @@ app.get('/api/engagement/today', requireAuth, async (req, res) => {
       'SELECT id, content, author, category FROM daily_tips WHERE tip_index = $1 AND active = TRUE', [tipIndex]
     )).rows[0] || null;
 
-    // Today's daily challenges (rotating â€” pick 3 based on day of year)
+    // Today's daily challenges (rotating — pick 3 based on day of year)
     const allDailyChallenges = (await pool.query(
       "SELECT * FROM engagement_challenges WHERE type = 'daily' AND active = TRUE ORDER BY sort_order"
     )).rows;
@@ -27269,7 +27269,7 @@ app.get('/api/engagement/today', requireAuth, async (req, res) => {
       "SELECT achievement_key FROM tfr_achievements WHERE user_id = $1", [userId]
     )).rows.map(r => r.achievement_key);
 
-    // TFR Reward Points (Aura Restored loyalty balance) â€” separate from Financial XP
+    // TFR Reward Points (Aura Restored loyalty balance) — separate from Financial XP
     await ensureFgBalance(userId);
     const fgPointsRow = (await pool.query(
       'SELECT balance, total_earned, total_redeemed FROM fg_points_balances WHERE user_id = $1',
@@ -27304,7 +27304,7 @@ app.get('/api/engagement/today', requireAuth, async (req, res) => {
       },
       achievements,
       xp_multiplier_active: streak.multiplier > 1,
-      pro_multiplier: isPro ? '2Ã— User Points bonus active for Pro' : null,
+      pro_multiplier: isPro ? '2× User Points bonus active for Pro' : null,
       user_timezone: userTz || 'UTC',
     });
   } catch (err) {
@@ -27313,7 +27313,7 @@ app.get('/api/engagement/today', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/engagement/challenge/:id/complete â€” mark a challenge as done (with verification)
+// POST /api/engagement/challenge/:id/complete — mark a challenge as done (with verification)
 app.post('/api/engagement/challenge/:id/complete', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -27341,7 +27341,7 @@ app.post('/api/engagement/challenge/:id/complete', requireAuth, async (req, res)
       return res.json({ success: false, already_done: true, message: 'Challenge already completed' });
     }
 
-    // â”€â”€ Automated verification: check if user actually performed the required action â”€â”€
+    // ── Automated verification: check if user actually performed the required action ──
     const verification = await verifyChallengeCompletion(userId, challenge.criteria_key, client);
     if (!verification.verified) {
       await client.query('ROLLBACK');
@@ -27365,7 +27365,7 @@ app.post('/api/engagement/challenge/:id/complete', requireAuth, async (req, res)
         SET status = 'completed', completed_at = NOW(), xp_awarded = $4
     `, [userId, challengeId, periodKey, pointsEarned]);
 
-    // Award TFR Reward Points (fg_points_balances) â€” NOT Financial XP
+    // Award TFR Reward Points (fg_points_balances) — NOT Financial XP
     // Challenges feed the Aura Restored loyalty system, not the financial progression system.
     await ensureFgBalance(userId);
     await client.query(
@@ -27380,7 +27380,7 @@ app.post('/api/engagement/challenge/:id/complete', requireAuth, async (req, res)
       [userId, `Challenge: ${challenge.title}`, pointsEarned]
     );
 
-    // Get current XP stats (unchanged â€” challenges no longer affect Financial XP)
+    // Get current XP stats (unchanged — challenges no longer affect Financial XP)
     await tfrEnsureStats(userId, client);
     const currentStatsRow = (await client.query(
       'SELECT xp, level FROM tfr_user_stats WHERE user_id = $1', [userId]
@@ -27437,7 +27437,7 @@ app.post('/api/engagement/challenge/:id/complete', requireAuth, async (req, res)
       leveled_up: false, // Challenges don't affect Financial XP / level progression
       new_rank: null,
       pro_bonus: isPro,
-      message: isPro ? `+${pointsEarned} FACTS Points (2Ã— Pro bonus!)` : `+${pointsEarned} FACTS Points`,
+      message: isPro ? `+${pointsEarned} FACTS Points (2× Pro bonus!)` : `+${pointsEarned} FACTS Points`,
     });
   } catch (err) {
     await client.query('ROLLBACK');
@@ -27446,7 +27446,7 @@ app.post('/api/engagement/challenge/:id/complete', requireAuth, async (req, res)
   } finally { client.release(); }
 });
 
-// POST /api/engagement/streak/freeze â€” burn a streak freeze (Pro only)
+// POST /api/engagement/streak/freeze — burn a streak freeze (Pro only)
 app.post('/api/engagement/streak/freeze', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -27490,7 +27490,7 @@ app.post('/api/engagement/streak/freeze', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/engagement/tips â€” tips archive (last 14 days rotating)
+// GET /api/engagement/tips — tips archive (last 14 days rotating)
 app.get('/api/engagement/tips', requireAuth, async (req, res) => {
   try {
     const tips = (await pool.query(
@@ -27503,7 +27503,7 @@ app.get('/api/engagement/tips', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/engagement/tip/:id/read â€” mark tip as read (awards XP for read_tip challenge)
+// POST /api/engagement/tip/:id/read — mark tip as read (awards XP for read_tip challenge)
 app.post('/api/engagement/tip/:id/read', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -27546,7 +27546,7 @@ app.post('/api/engagement/tip/:id/read', requireAuth, async (req, res) => {
   } finally { client.release(); }
 });
 
-// GET /api/engagement/leaderboard â€” top 10 by XP (Pro only, anonymous)
+// GET /api/engagement/leaderboard — top 10 by XP (Pro only, anonymous)
 app.get('/api/engagement/leaderboard', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -27569,10 +27569,10 @@ app.get('/api/engagement/leaderboard', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ FINANCIAL RESPONSIBILITY SCORECARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ─────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── FINANCIAL RESPONSIBILITY SCORECARD ───────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Calculate the Financial Responsibility Scorecard for a given user.
@@ -27583,7 +27583,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
   const ninetyDaysAgo = new Date(now - 90 * 24 * 60 * 60 * 1000);
   const twelveMonthsAgo = new Date(now - 365 * 24 * 60 * 60 * 1000);
 
-  // â”€â”€ 1. Allocation Adherence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 1. Allocation Adherence ────────────────────────────────────────────────
   // Compare actual spending distribution vs target allocations (last 90 days)
   let allocationScore = 50;
   let allocationData = { target: {}, actual: {}, deviation: 0 };
@@ -27633,7 +27633,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
     }
   } catch (e) { console.error('[Scorecard] allocationScore error:', e.message); }
 
-  // â”€â”€ 2. Savings Consistency â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 2. Savings Consistency ─────────────────────────────────────────────────
   // % of months in past 12 months where Save category has transactions
   let savingsScore = 0;
   let savingsData = { months_with_savings: 0, total_months: 12, trend: 'flat', monthly_data: [] };
@@ -27674,7 +27674,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
     }
   } catch (e) { console.error('[Scorecard] savingsScore error:', e.message); }
 
-  // â”€â”€ 3. Debt Reduction Progress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 3. Debt Reduction Progress ─────────────────────────────────────────────
   let debtScore = 100;
   let debtData = { has_debt: false, debt_count: 0, strategy: null, trajectory: 'none' };
   try {
@@ -27716,7 +27716,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
     }
   } catch (e) { console.error('[Scorecard] debtScore error:', e.message); }
 
-  // â”€â”€ 4. Income vs Expense Ratio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 4. Income vs Expense Ratio ─────────────────────────────────────────────
   let incomeExpenseScore = 50;
   let incomeExpenseData = { months_living_within_means: 0, total_months_tracked: 0, avg_ratio: null };
   try {
@@ -27757,7 +27757,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
     }
   } catch (e) { console.error('[Scorecard] incomeExpenseScore error:', e.message); }
 
-  // â”€â”€ 5. Financial Freedom Progress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 5. Financial Freedom Progress ─────────────────────────────────────────
   let ffScore = 0;
   let ffData = { has_ff_activity: false, trend: 'none', months_active: 0 };
   try {
@@ -27793,7 +27793,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
     }
   } catch (e) { console.error('[Scorecard] ffScore error:', e.message); }
 
-  // â”€â”€ 6. App Engagement Streak â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 6. App Engagement Streak ───────────────────────────────────────────────
   let engagementScore = 0;
   let engagementData = { streak_days: 0, level: 1, xp: 0, total_transactions: 0 };
   try {
@@ -27821,7 +27821,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
     if (engagementData.total_transactions > 500) engagementScore = Math.min(100, engagementScore + 10);
   } catch (e) { console.error('[Scorecard] engagementScore error:', e.message); }
 
-  // â”€â”€ 7. Composite Score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 7. Composite Score ────────────────────────────────────────────────────
   const weights = {
     allocation: 0.25,
     savings: 0.20,
@@ -27840,7 +27840,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
     engagementScore * weights.engagement
   );
 
-  // â”€â”€ 8. Integrity Multiplier (Plaid verification status) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── 8. Integrity Multiplier (Plaid verification status) ──────────────────
   // 1.0 = all Plaid-verified within 7 days
   // 0.85 = mixed (some verified, some manual)
   // 0.70 = all manual / stale (> 7 days or never synced)
@@ -27871,16 +27871,16 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
     } else {
       integrityMultiplier = 0.70; integrityLabel = 'Manual only';
     }
-  } catch (e) { /* non-fatal â€” integrity check failed, use 0.70 */ }
+  } catch (e) { /* non-fatal — integrity check failed, use 0.70 */ }
 
   const compositeScore = Math.min(100, Math.round(rawCompositeScore * integrityMultiplier));
 
   function getTier(score) {
-    if (score >= 81) return { tier: 'Legacy-Ready', color: '#7C3AED', emoji: 'ðŸ†', description: 'Exceptional financial discipline â€” a true model for generational wealth.' };
-    if (score >= 61) return { tier: 'Exceptional', color: '#059669', emoji: 'â­', description: 'Strong financial habits consistently applied. In the top tier.' };
-    if (score >= 41) return { tier: 'Strong', color: '#0891B2', emoji: 'ðŸ’ª', description: 'Solid foundation with good financial discipline.' };
-    if (score >= 21) return { tier: 'Building', color: '#D97706', emoji: 'ðŸ“ˆ', description: 'Making progress. Keep consistent and results compound.' };
-    return { tier: 'Emerging', color: '#DC2626', emoji: 'ðŸŒ±', description: 'Early stage. Every positive habit you build now matters.' };
+    if (score >= 81) return { tier: 'Legacy-Ready', color: '#7C3AED', emoji: '🏆', description: 'Exceptional financial discipline — a true model for generational wealth.' };
+    if (score >= 61) return { tier: 'Exceptional', color: '#059669', emoji: '⭐', description: 'Strong financial habits consistently applied. In the top tier.' };
+    if (score >= 41) return { tier: 'Strong', color: '#0891B2', emoji: '💪', description: 'Solid foundation with good financial discipline.' };
+    if (score >= 21) return { tier: 'Building', color: '#D97706', emoji: '📈', description: 'Making progress. Keep consistent and results compound.' };
+    return { tier: 'Emerging', color: '#DC2626', emoji: '🌱', description: 'Early stage. Every positive habit you build now matters.' };
   }
 
   const tier = getTier(compositeScore);
@@ -27939,7 +27939,7 @@ async function calculateScorecard(userId, showDollarAmounts = false) {
   };
 }
 
-// â”€â”€ GET /api/scorecard/me â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/scorecard/me ─────────────────────────────────────────────────────
 app.get('/api/scorecard/me', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -27981,7 +27981,7 @@ app.get('/api/scorecard/me', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/scorecard/share-links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/scorecard/share-links ───────────────────────────────────────────
 app.post('/api/scorecard/share-links', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -28003,7 +28003,7 @@ app.post('/api/scorecard/share-links', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ PATCH /api/scorecard/share-links/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PATCH /api/scorecard/share-links/:id ──────────────────────────────────────
 app.patch('/api/scorecard/share-links/:id', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -28028,7 +28028,7 @@ app.patch('/api/scorecard/share-links/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ DELETE /api/scorecard/share-links/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DELETE /api/scorecard/share-links/:id ─────────────────────────────────────
 app.delete('/api/scorecard/share-links/:id', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -28040,8 +28040,8 @@ app.delete('/api/scorecard/share-links/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ GET /api/scorecard/view/:token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Public endpoint â€” no auth required (link-based sharing)
+// ── GET /api/scorecard/view/:token ────────────────────────────────────────────
+// Public endpoint — no auth required (link-based sharing)
 app.get('/api/scorecard/view/:token', optionalAuth, async (req, res) => {
   try {
     const { token } = req.params;
@@ -28076,7 +28076,7 @@ app.get('/api/scorecard/view/:token', optionalAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/scorecard/request-access â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/scorecard/request-access ───────────────────────────────────────
 // Request access to another user's scorecard (by email)
 app.post('/api/scorecard/request-access', requireAuth, async (req, res) => {
   try {
@@ -28092,7 +28092,7 @@ app.post('/api/scorecard/request-access', requireAuth, async (req, res) => {
     const validExpiry = ['30days', '90days', 'permanent'];
     const expiresType = validExpiry.includes(expires_type) ? expires_type : '30days';
 
-    // Upsert â€” if already exists, update message and reset to pending
+    // Upsert — if already exists, update message and reset to pending
     const existing = (await pool.query(
       'SELECT id, status FROM scorecard_access_requests WHERE requester_id = $1 AND target_user_id = $2',
       [requesterId, target.id]
@@ -28120,7 +28120,7 @@ app.post('/api/scorecard/request-access', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ GET /api/scorecard/access-requests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/scorecard/access-requests ───────────────────────────────────────
 app.get('/api/scorecard/access-requests', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -28149,7 +28149,7 @@ app.get('/api/scorecard/access-requests', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ PUT /api/scorecard/access-requests/:id/approve â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUT /api/scorecard/access-requests/:id/approve ───────────────────────────
 app.put('/api/scorecard/access-requests/:id/approve', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -28176,7 +28176,7 @@ app.put('/api/scorecard/access-requests/:id/approve', requireAuth, async (req, r
   }
 });
 
-// â”€â”€ PUT /api/scorecard/access-requests/:id/deny â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUT /api/scorecard/access-requests/:id/deny ──────────────────────────────
 app.put('/api/scorecard/access-requests/:id/deny', requireAuth, async (req, res) => {
   try {
     const userId = req.userId;
@@ -28191,7 +28191,7 @@ app.put('/api/scorecard/access-requests/:id/deny', requireAuth, async (req, res)
   }
 });
 
-// â”€â”€ DELETE /api/scorecard/access-requests/:id/revoke â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DELETE /api/scorecard/access-requests/:id/revoke ─────────────────────────
 // Target user revokes previously-approved access
 app.delete('/api/scorecard/access-requests/:id/revoke', requireAuth, async (req, res) => {
   try {
@@ -28207,7 +28207,7 @@ app.delete('/api/scorecard/access-requests/:id/revoke', requireAuth, async (req,
   }
 });
 
-// â”€â”€ GET /api/scorecard/user/:targetUserId â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/scorecard/user/:targetUserId ─────────────────────────────────────
 // View another user's scorecard (only if you have approved access)
 app.get('/api/scorecard/user/:targetUserId', requireAuth, async (req, res) => {
   try {
@@ -28245,11 +28245,11 @@ app.get('/api/scorecard/user/:targetUserId', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ DOCUMENT VAULT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
+// ─── DOCUMENT VAULT ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
 
 const vaultUpload = multer({
   storage: multer.memoryStorage(),
@@ -28267,7 +28267,7 @@ const vaultUpload = multer({
 
 const VAULT_CATEGORIES = ['receipts', 'financial_transactions', 'credit_reports', 'benefits_packages'];
 
-// GET /api/vault/summary â€” count + last upload per category
+// GET /api/vault/summary — count + last upload per category
 app.get('/api/vault/summary', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -28290,7 +28290,7 @@ app.get('/api/vault/summary', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/vault/documents â€” list documents, optionally by category
+// GET /api/vault/documents — list documents, optionally by category
 app.get('/api/vault/documents', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -28314,7 +28314,7 @@ app.get('/api/vault/documents', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/vault/documents â€” upload a document
+// POST /api/vault/documents — upload a document
 app.post('/api/vault/documents', requireAuth, vaultUpload.single('file'), async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -28367,7 +28367,7 @@ app.post('/api/vault/documents', requireAuth, vaultUpload.single('file'), async 
   }
 });
 
-// GET /api/vault/documents/:id/download â€” serve file inline
+// GET /api/vault/documents/:id/download — serve file inline
 app.get('/api/vault/documents/:id/download', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -28390,7 +28390,7 @@ app.get('/api/vault/documents/:id/download', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/vault/documents/:id â€” delete a document
+// DELETE /api/vault/documents/:id — delete a document
 app.delete('/api/vault/documents/:id', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -28408,9 +28408,9 @@ app.delete('/api/vault/documents/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ Benefits Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Benefits Data ───────────────────────────────────────────────────────────
 
-// GET /api/vault/benefits-data â€” get user's saved benefits package data
+// GET /api/vault/benefits-data — get user's saved benefits package data
 app.get('/api/vault/benefits-data', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -28460,7 +28460,7 @@ app.get('/api/vault/benefits-data', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/vault/benefits-data â€” save/update benefits package data
+// POST /api/vault/benefits-data — save/update benefits package data
 app.post('/api/vault/benefits-data', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -28485,7 +28485,7 @@ app.post('/api/vault/benefits-data', requireAuth, async (req, res) => {
       base_salary_cents
     } = req.body;
 
-    // Upsert â€” one record per user
+    // Upsert — one record per user
     const result = await pool.query(
       `INSERT INTO user_benefits_data (
         user_id, document_id, employer_name,
@@ -28544,11 +28544,11 @@ app.post('/api/vault/benefits-data', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// SOVEREIGN EXECUTIVE â€” Heir Designation, Vantage Point, Sovereign Flags
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════
+// SOVEREIGN EXECUTIVE — Heir Designation, Vantage Point, Sovereign Flags
+// ════════════════════════════════════════════════════════════════════════════
 
-// â”€â”€ Helper: check if user has sovereign_executive tier â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helper: check if user has sovereign_executive tier ──────────────────────
 function isSovereignExecutive(user) {
   return (
     user.pricing_tier === 'sovereign_executive' ||
@@ -28557,7 +28557,7 @@ function isSovereignExecutive(user) {
   );
 }
 
-// â”€â”€ GET /api/sovereign/flags â€” Get sovereign feature flags for current user â”€â”€
+// ── GET /api/sovereign/flags — Get sovereign feature flags for current user ──
 app.get('/api/sovereign/flags', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -28580,7 +28580,7 @@ app.get('/api/sovereign/flags', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/admin/sovereign/flags/:userId â€” Admin sets sovereign flags â”€â”€â”€â”€â”€
+// ── POST /api/admin/sovereign/flags/:userId — Admin sets sovereign flags ─────
 app.post('/api/admin/sovereign/flags/:userId', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
   const targetId = parseInt(req.params.userId);
@@ -28622,11 +28622,11 @@ app.post('/api/admin/sovereign/flags/:userId', requireAuth, async (req, res) => 
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════
 // HEIR DESIGNATION (Succession Key)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════
 
-// â”€â”€ GET /api/profile/heir-designation â€” Get current heir designation â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/profile/heir-designation — Get current heir designation ─────────
 app.get('/api/profile/heir-designation', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -28666,7 +28666,7 @@ app.get('/api/profile/heir-designation', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/profile/heir-designation â€” Save / update heir designation â”€â”€â”€â”€â”€â”€
+// ── POST /api/profile/heir-designation — Save / update heir designation ──────
 app.post('/api/profile/heir-designation', requireAuth, async (req, res) => {
   const { heir_email, relationship } = req.body;
   if (!heir_email) return res.status(400).json({ error: 'heir_email is required' });
@@ -28740,7 +28740,7 @@ app.post('/api/profile/heir-designation', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ DELETE /api/profile/heir-designation â€” Revoke designation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DELETE /api/profile/heir-designation — Revoke designation ─────────────────
 app.delete('/api/profile/heir-designation', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -28778,7 +28778,7 @@ app.delete('/api/profile/heir-designation', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/admin/succession/activate-heir/:designationId â€” Admin activates â”€
+// ── POST /api/admin/succession/activate-heir/:designationId — Admin activates ─
 app.post('/api/admin/succession/activate-heir/:designationId', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
   const designationId = parseInt(req.params.designationId);
@@ -28821,7 +28821,7 @@ app.post('/api/admin/succession/activate-heir/:designationId', requireAuth, asyn
       ['tfr_pro','individual_pro','business_core','business_bundle','tfr_elite','sovereign_executive'].includes(d.heir_pricing_tier);
 
     if (!heirHasPro) {
-      // Log it but don't hard-block â€” admin can override
+      // Log it but don't hard-block — admin can override
       console.warn(`[Succession] Heir ${d.heir_email} does not have active Pro. Admin activating anyway with note.`);
     }
 
@@ -28902,7 +28902,7 @@ app.post('/api/admin/succession/activate-heir/:designationId', requireAuth, asyn
 
     res.json({
       success: true,
-      message: `Succession activated. ${affiliateTransferred ? 'Affiliate node transferred.' : 'No active affiliate node found.'} ${heirHasPro ? 'Commission engine active.' : 'âš ï¸ Commission engine PAUSED â€” heir must activate Pro subscription.'}`,
+      message: `Succession activated. ${affiliateTransferred ? 'Affiliate node transferred.' : 'No active affiliate node found.'} ${heirHasPro ? 'Commission engine active.' : '⚠️ Commission engine PAUSED — heir must activate Pro subscription.'}`,
       designation_id: designationId,
       affiliate_transferred: affiliateTransferred,
       commission_paused: !heirHasPro
@@ -28916,7 +28916,7 @@ app.post('/api/admin/succession/activate-heir/:designationId', requireAuth, asyn
   }
 });
 
-// â”€â”€ GET /api/admin/succession/heir-designations â€” Admin list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/admin/succession/heir-designations — Admin list ─────────────────
 app.get('/api/admin/succession/heir-designations', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
   try {
@@ -28946,11 +28946,11 @@ app.get('/api/admin/succession/heir-designations', requireAuth, async (req, res)
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// THE VANTAGE POINT â€” Read-Only Data Shares
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════════════════════
+// THE VANTAGE POINT — Read-Only Data Shares
+// ════════════════════════════════════════════════════════════════════════════
 
-// â”€â”€ GET /api/vantage-point/shares â€” List current user's active shares â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/vantage-point/shares — List current user's active shares ─────────
 app.get('/api/vantage-point/shares', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -28970,7 +28970,7 @@ app.get('/api/vantage-point/shares', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/vantage-point/shares â€” Create a new share link â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/vantage-point/shares — Create a new share link ─────────────────
 app.post('/api/vantage-point/shares', requireAuth, async (req, res) => {
   const { viewer_email, label, permissions, expires_days } = req.body;
   if (!viewer_email) return res.status(400).json({ error: 'viewer_email is required' });
@@ -29014,7 +29014,7 @@ app.post('/api/vantage-point/shares', requireAuth, async (req, res) => {
       success: true,
       share,
       share_url: shareUrl,
-      message: `Vantage Point share created for ${viewer_email}. Share the link â€” it expires ${expiresAt ? expiresAt.toLocaleDateString() : 'never'}.`
+      message: `Vantage Point share created for ${viewer_email}. Share the link — it expires ${expiresAt ? expiresAt.toLocaleDateString() : 'never'}.`
     });
   } catch (err) {
     console.error('[VantagePoint] POST share error:', err.message);
@@ -29022,7 +29022,7 @@ app.post('/api/vantage-point/shares', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ DELETE /api/vantage-point/shares/:id â€” Revoke a share â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DELETE /api/vantage-point/shares/:id — Revoke a share ────────────────────
 app.delete('/api/vantage-point/shares/:id', requireAuth, async (req, res) => {
   const shareId = parseInt(req.params.id);
   try {
@@ -29041,7 +29041,7 @@ app.delete('/api/vantage-point/shares/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ GET /api/vantage/:token â€” Public shared view (validates token) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/vantage/:token — Public shared view (validates token) ────────────
 app.get('/api/vantage/:token', async (req, res) => {
   const { token } = req.params;
   try {
@@ -29154,14 +29154,14 @@ app.get('/api/vantage/:token', async (req, res) => {
   }
 });
 
-// â”€â”€ GET /vantage-point â€” Serve the Vantage Point read-only view page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /vantage-point — Serve the Vantage Point read-only view page ──────────
 app.get('/vantage-point', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'vantage-point.html'));
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
-// â”€â”€â”€ RECEIPT SCANNER (L7-9 Business Pro Part 3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── RECEIPT SCANNER (L7-9 Business Pro Part 3) ──────────────────────────────
 // In-memory temp store for scanned receipt images (expires in 10 minutes)
 const receiptScanCache = new Map();
 setInterval(() => {
@@ -29185,11 +29185,11 @@ const receiptScanUpload = multer({
   }
 });
 
-// FACTS category slug â†’ 5-Bucket pillar mapping
-// Updated to use current FACTS slugs (post-Giveâ†’Legacy merge + bucket renames)
+// FACTS category slug → 5-Bucket pillar mapping
+// Updated to use current FACTS slugs (post-Give→Legacy merge + bucket renames)
 const CATEGORY_PILLAR_MAP = {
   'necessities':  'operating_reserve',
-  'legacy':       'tax_shield',      // Education merged with Give â†’ Legacy
+  'legacy':       'tax_shield',      // Education merged with Give → Legacy
   'reserve':      'wealth_bridge',   // The Reserve
   'lifestyle':    'clearing',        // Lifestyle
   'growth':       'growth_innovation',
@@ -29204,7 +29204,7 @@ const PILLAR_LABELS = {
 };
 const VALID_PILLARS = Object.keys(PILLAR_LABELS);
 
-// POST /api/receipts/scan â€” upload receipt image, OCR via AI vision, return extracted fields
+// POST /api/receipts/scan — upload receipt image, OCR via AI vision, return extracted fields
 app.post('/api/receipts/scan', requireAuth, receiptScanUpload.single('file'), async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
@@ -29317,7 +29317,7 @@ Return ONLY the JSON object, no other text.`
   }
 });
 
-// POST /api/receipts/save â€” confirm extracted data â†’ save to vault + FACTS ledger atomically
+// POST /api/receipts/save — confirm extracted data → save to vault + FACTS ledger atomically
 app.post('/api/receipts/save', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -29403,7 +29403,7 @@ app.post('/api/receipts/save', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/receipts/categories â€” list FACTS categories (used by receipt scanner UI)
+// GET /api/receipts/categories — list FACTS categories (used by receipt scanner UI)
 app.get('/api/receipts/categories', requireAuth, async (req, res) => {
   try {
     const result = await pool.query('SELECT id, name, slug, color, icon FROM categories ORDER BY sort_order');
@@ -29417,30 +29417,30 @@ app.get('/api/receipts/categories', requireAuth, async (req, res) => {
   }
 });
 
-// GET /receipt-scanner â€” serve the Receipt Scanner page
+// GET /receipt-scanner — serve the Receipt Scanner page
 app.get('/receipt-scanner', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'receipt-scanner.html'));
 });
 
-// â”€â”€ Shopping Calculator Ecosystem â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// GET /shopping-calculator â€” Ultimate Calculator (public lead magnet)
+// ── Shopping Calculator Ecosystem ─────────────────────────────────────────────
+// GET /shopping-calculator — Ultimate Calculator (public lead magnet)
 app.get('/shopping-calculator', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'shopping-calculator.html'));
 });
 
-// GET /ssc â€” Sovereign Shopping Calculator (Sovereignty tier)
+// GET /ssc — Sovereign Shopping Calculator (Sovereignty tier)
 app.get('/ssc', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'ssc.html'));
 });
 
-// GET /rate-radar â€” Rate Radar standalone page (Tier 2+)
+// GET /rate-radar — Rate Radar standalone page (Tier 2+)
 app.get('/rate-radar', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'rate-radar.html'));
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// LEVEL 1 â€” GROUND ZERO INTELLIGENCE GATE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
+// LEVEL 1 — GROUND ZERO INTELLIGENCE GATE
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // Helper: ensure a level1_intake_status row exists for user
 async function ensureLevel1Status(userId) {
@@ -29507,7 +29507,7 @@ async function refreshLevel1Status(userId) {
   return { dailyLeakDollars, allDone };
 }
 
-// GET /api/level1/status â€” full intake progress for current user
+// GET /api/level1/status — full intake progress for current user
 app.get('/api/level1/status', requireAuth, async (req, res) => {
   try {
     await ensureLevel1Status(req.userId);
@@ -29544,7 +29544,7 @@ app.get('/api/level1/status', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/level1/credit-intake â€” save credit data
+// POST /api/level1/credit-intake — save credit data
 // Body: { credit_score, total_debt_cents, creditors: [{name, balance_cents, apr, account_type, min_payment_cents}], source_type, notes }
 app.post('/api/level1/credit-intake', requireAuth, async (req, res) => {
   try {
@@ -29585,7 +29585,7 @@ app.post('/api/level1/credit-intake', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/level1/cashflow-intake â€” save income + spending data
+// POST /api/level1/cashflow-intake — save income + spending data
 // Body: { monthly_income_cents, income_sources: [{label, amount_cents, frequency}], monthly_expenses: [{category, label, amount_cents}], notes }
 app.post('/api/level1/cashflow-intake', requireAuth, async (req, res) => {
   try {
@@ -29623,7 +29623,7 @@ app.post('/api/level1/cashflow-intake', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/level1/liability-sync â€” save bill/liability items
+// POST /api/level1/liability-sync — save bill/liability items
 // Body: { items: [{liability_type, creditor_name, balance_cents, apr, min_payment_cents, due_day}] }
 app.post('/api/level1/liability-sync', requireAuth, async (req, res) => {
   try {
@@ -29681,7 +29681,7 @@ app.post('/api/level1/liability-sync', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/level1/asset-audit â€” save manual asset entries
+// POST /api/level1/asset-audit — save manual asset entries
 // Body: { items: [{asset_type, label, value_cents}] }
 app.post('/api/level1/asset-audit', requireAuth, async (req, res) => {
   try {
@@ -29734,7 +29734,7 @@ app.post('/api/level1/asset-audit', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/level1/reality-check-seen â€” mark the interest leak screen as acknowledged
+// POST /api/level1/reality-check-seen — mark the interest leak screen as acknowledged
 app.post('/api/level1/reality-check-seen', requireAuth, async (req, res) => {
   try {
     await ensureLevel1Status(req.userId);
@@ -29765,14 +29765,14 @@ app.post('/api/level1/reality-check-seen', requireAuth, async (req, res) => {
   }
 });
 
-// GET /level1 â€” serve the Level 1 Ground Zero intake page
+// GET /level1 — serve the Level 1 Ground Zero intake page
 app.get('/level1', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'level1-intake.html'));
 });
 
-// â”€â”€â”€ Feature Waitlist â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// POST /api/waitlist/feature â€” capture email interest for upcoming features
-// Deduplicates by (feature_name, email) â€” returns success either way
+// ─── Feature Waitlist ───────────────────────────────────────────────────────
+// POST /api/waitlist/feature — capture email interest for upcoming features
+// Deduplicates by (feature_name, email) — returns success either way
 app.post('/api/waitlist/feature', async (req, res) => {
   try {
     const { feature_name, email } = req.body;
@@ -29796,7 +29796,7 @@ app.post('/api/waitlist/feature', async (req, res) => {
         const decoded = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
         userId = decoded.userId || decoded.id || null;
       }
-    } catch (_) { /* non-fatal â€” anonymous sign-up is fine */ }
+    } catch (_) { /* non-fatal — anonymous sign-up is fine */ }
 
     await pool.query(
       `INSERT INTO feature_waitlist (feature_name, email, user_id)
@@ -29805,7 +29805,7 @@ app.post('/api/waitlist/feature', async (req, res) => {
       [cleanFeature, cleanEmail, userId]
     );
 
-    console.log(`[Waitlist] ${cleanFeature} â€” ${cleanEmail}`);
+    console.log(`[Waitlist] ${cleanFeature} — ${cleanEmail}`);
     res.json({ success: true, message: "You're on the list!" });
   } catch (err) {
     console.error('[Waitlist] error:', err.message);
@@ -29848,7 +29848,7 @@ app.get('/api/admin/waitlist', async (req, res) => {
   }
 });
 
-// â”€â”€ GET /api/admin/launch-waitlist â€” View factsmoney.com launch waitlist signups â”€â”€
+// ── GET /api/admin/launch-waitlist — View factsmoney.com launch waitlist signups ──
 app.get('/api/admin/launch-waitlist', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
   try {
@@ -29865,7 +29865,7 @@ app.get('/api/admin/launch-waitlist', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ GET /api/admin/phase-zero â€” Overview of all users' Phase Zero status â”€â”€â”€â”€â”€â”€
+// ── GET /api/admin/phase-zero — Overview of all users' Phase Zero status ──────
 app.get('/api/admin/phase-zero', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
   try {
@@ -29897,7 +29897,7 @@ app.get('/api/admin/phase-zero', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/admin/phase-zero/reset â€” Admin reset a user's Phase Zero audit â”€â”€
+// ── POST /api/admin/phase-zero/reset — Admin reset a user's Phase Zero audit ──
 app.post('/api/admin/phase-zero/reset', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
   const { userId } = req.body;
@@ -29921,7 +29921,7 @@ app.post('/api/admin/phase-zero/reset', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/admin/phase-zero/complete â€” Admin mark a user's Phase Zero as complete â”€â”€
+// ── POST /api/admin/phase-zero/complete — Admin mark a user's Phase Zero as complete ──
 app.post('/api/admin/phase-zero/complete', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
   const { userId } = req.body;
@@ -29943,16 +29943,16 @@ app.post('/api/admin/phase-zero/complete', requireAuth, async (req, res) => {
   }
 });
 
-// GET /terms-of-service â€” Terms of Service page
+// GET /terms-of-service — Terms of Service page
 app.get('/terms-of-service', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'terms-of-service.html'));
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ COMPLIANCE DISCLAIMER & ONBOARDING TOUR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── COMPLIANCE DISCLAIMER & ONBOARDING TOUR ─────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// Current TOS version â€” bump this string to re-trigger acknowledgment for all users
+// Current TOS version — bump this string to re-trigger acknowledgment for all users
 const FACTS_TOS_VERSION = process.env.FACTS_TOS_VERSION || 'v1';
 const EDUCATIONAL_DISCLAIMER_VERSION = process.env.EDUCATIONAL_DISCLAIMER_VERSION || 'edu-v1';
 
@@ -30005,13 +30005,13 @@ app.post('/api/user/tos-acknowledge', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ Educational Disclaimer (Timed Recurrence) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Educational Disclaimer (Timed Recurrence) ──────────────────────────────
 
 /**
  * GET /api/user/educational-disclaimer-status
  * Returns whether the educational disclaimer needs to be shown.
  *
- * Logic â€” show if ANY of:
+ * Logic — show if ANY of:
  *   1. Never shown before
  *   2. EDUCATIONAL_DISCLAIMER_VERSION changed (deploy trigger)
  *   3. Elapsed time since last shown > user's chosen interval
@@ -30079,7 +30079,7 @@ app.post('/api/user/educational-disclaimer-acknowledge', requireAuth, async (req
 
 /**
  * PATCH /api/user/educational-disclaimer-interval
- * Updates the user's preferred recurrence interval (30â€“180 days).
+ * Updates the user's preferred recurrence interval (30–180 days).
  * Body: { interval_days: number }
  */
 app.patch('/api/user/educational-disclaimer-interval', requireAuth, async (req, res) => {
@@ -30099,12 +30099,12 @@ app.patch('/api/user/educational-disclaimer-interval', requireAuth, async (req, 
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────
 
 /**
  * POST /api/user/onboarding-complete
  * Records that the user completed (or skipped) the guided onboarding tour.
- * Body: { skipped: boolean } â€” informational only, both complete the tour flag.
+ * Body: { skipped: boolean } — informational only, both complete the tour flag.
  */
 app.post('/api/user/onboarding-complete', requireAuth, async (req, res) => {
   try {
@@ -30123,7 +30123,7 @@ app.post('/api/user/onboarding-complete', requireAuth, async (req, res) => {
 /**
  * POST /api/user/restart-tour
  * Resets the onboarding tour so it fires again on the user's next /app visit.
- * Called from Settings â†’ "Restart Walkthrough".
+ * Called from Settings → "Restart Walkthrough".
  */
 app.post('/api/user/restart-tour', requireAuth, async (req, res) => {
   try {
@@ -30138,13 +30138,13 @@ app.post('/api/user/restart-tour', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// TFR REWARDS PROGRAM â€” /api/rewards/*
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// TFR REWARDS PROGRAM — /api/rewards/*
 // Points economy separate from XP leveling system.
 // Points are a spendable currency redeemable at Aura Restored.
 // Monthly cap: 5,000 pts. Redemption: 1,000 pts = $1 store credit.
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * GET /api/rewards/dashboard
@@ -30203,16 +30203,16 @@ app.get('/api/rewards/dashboard', requireAuth, async (req, res) => {
 
     // Define all achievements
     const ALL_ACHIEVEMENTS = [
-      { key: 'first_transaction',    label: 'First Transaction Logged',     points: 25, icon: 'ðŸ’¸', description: 'Log your first transaction' },
-      { key: 'first_checkin',        label: 'First Daily Check-in',         points: 0,  icon: 'âœ…', description: 'Complete your first daily check-in' },
-      { key: 'first_budget',         label: 'First Budget Set',             points: 50, icon: 'ðŸ“Š', description: 'Set all 6 FACTS allocation categories' },
-      { key: 'first_debt_milestone', label: 'First Debt Payoff Milestone',  points: 100,icon: 'ðŸŽ¯', description: 'Pay off any portion of a debt' },
-      { key: 'credit_report_uploaded', label: 'Credit Report Uploaded',    points: 50, icon: 'ðŸ“„', description: 'Upload your credit report' },
-      { key: 'discovery_scan',       label: 'Discovery Scan Complete',      points: 75, icon: 'ðŸ”', description: 'Complete your first Discovery Scan' },
-      { key: 'plaid_connected',      label: 'Bank Connected via Plaid',     points: 100,icon: 'ðŸ¦', description: 'Connect a bank account (Pro)' },
-      { key: 'login_streak_7',       label: '7-Day Login Streak',           points: 50, icon: 'ðŸ”¥', description: 'Log in 7 days in a row' },
-      { key: 'login_streak_14',      label: '14-Day Login Streak',          points: 100,icon: 'âš¡', description: 'Log in 14 days in a row' },
-      { key: 'login_streak_30',      label: '30-Day Login Streak',          points: 250,icon: 'ðŸ‘‘', description: 'Log in 30 days in a row' },
+      { key: 'first_transaction',    label: 'First Transaction Logged',     points: 25, icon: '💸', description: 'Log your first transaction' },
+      { key: 'first_checkin',        label: 'First Daily Check-in',         points: 0,  icon: '✅', description: 'Complete your first daily check-in' },
+      { key: 'first_budget',         label: 'First Budget Set',             points: 50, icon: '📊', description: 'Set all 6 FACTS allocation categories' },
+      { key: 'first_debt_milestone', label: 'First Debt Payoff Milestone',  points: 100,icon: '🎯', description: 'Pay off any portion of a debt' },
+      { key: 'credit_report_uploaded', label: 'Credit Report Uploaded',    points: 50, icon: '📄', description: 'Upload your credit report' },
+      { key: 'discovery_scan',       label: 'Discovery Scan Complete',      points: 75, icon: '🔍', description: 'Complete your first Discovery Scan' },
+      { key: 'plaid_connected',      label: 'Bank Connected via Plaid',     points: 100,icon: '🏦', description: 'Connect a bank account (Pro)' },
+      { key: 'login_streak_7',       label: '7-Day Login Streak',           points: 50, icon: '🔥', description: 'Log in 7 days in a row' },
+      { key: 'login_streak_14',      label: '14-Day Login Streak',          points: 100,icon: '⚡', description: 'Log in 14 days in a row' },
+      { key: 'login_streak_30',      label: '30-Day Login Streak',          points: 250,icon: '👑', description: 'Log in 30 days in a row' },
     ];
 
     const achievementsWithStatus = ALL_ACHIEVEMENTS.map(a => ({
@@ -30283,7 +30283,7 @@ app.get('/api/rewards/dashboard', requireAuth, async (req, res) => {
  * Records that the user had a meaningful app interaction today.
  * Awards 10 FACTS Points (max once per calendar day).
  * A "meaningful interaction" means the user navigated to a core feature,
- * logged data, or completed an action â€” not just opened the app.
+ * logged data, or completed an action — not just opened the app.
  */
 app.post('/api/rewards/daily-interaction', requireAuth, async (req, res) => {
   try {
@@ -30330,7 +30330,7 @@ app.post('/api/rewards/daily-interaction', requireAuth, async (req, res) => {
       await pool.query(
         `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
          VALUES ($1, 'daily_interaction', $2, $3)`,
-        [userId, `Daily interaction: ${action || 'app session'} â€” ${toAward} FACTS Points`, toAward]
+        [userId, `Daily interaction: ${action || 'app session'} — ${toAward} FACTS Points`, toAward]
       );
     } else {
       // Still record the date to suppress duplicate calls even when capped
@@ -30524,7 +30524,7 @@ app.post('/api/rewards/achievement', requireAuth, async (req, res) => {
       await pool.query(
         `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
          VALUES ($1, 'achievement', $2, $3)`,
-        [userId, `Achievement unlocked: ${achievement_key.replace(/_/g,' ')} â€” ${toAward} FACTS Points`, toAward]
+        [userId, `Achievement unlocked: ${achievement_key.replace(/_/g,' ')} — ${toAward} FACTS Points`, toAward]
       );
     }
 
@@ -30549,7 +30549,7 @@ app.post('/api/rewards/achievement', requireAuth, async (req, res) => {
 /**
  * POST /api/rewards/referral
  * Award referral points when a referred user completes signup + activation.
- * Called internally â€” not directly by the client.
+ * Called internally — not directly by the client.
  * Also enforces 5 referral bonuses/month cap.
  */
 async function awardReferralPoints(referrerId, referredUserId) {
@@ -30593,7 +30593,7 @@ async function awardReferralPoints(referrerId, referredUserId) {
       await pool.query(
         `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
          VALUES ($1, 'referral', $2, $3)`,
-        [referrerId, `Referral bonus: friend signed up and activated â€” ${toAward} FACTS Points`, toAward]
+        [referrerId, `Referral bonus: friend signed up and activated — ${toAward} FACTS Points`, toAward]
       );
     }
     return { awarded: true, points: toAward };
@@ -30608,10 +30608,10 @@ app.get('/rewards', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'rewards.html'));
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Monthly cap reset job â€” runs once daily at 00:05 UTC
+// ─────────────────────────────────────────────────────────────────────────────
+// Monthly cap reset job — runs once daily at 00:05 UTC
 // Resets monthly_points_earned for users whose cap month has rolled over
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 (function scheduleRewardsJobs() {
   const FIVE_MINUTES = 5 * 60 * 1000;
   const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -30653,17 +30653,17 @@ app.get('/rewards', requireAuth, (req, res) => {
   }, FIVE_MINUTES);
 })();
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
-// â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘ â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â• â–ˆâ–ˆâ•”â•â•â•â•â•
-// â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â• â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
-// â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•— â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•
-// â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
-// â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â• â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•  â•šâ•â• â•šâ•â•â•â•â•â• â•šâ•â•â•â•â•â•â•
-//  TRACKER â€” Road to Zero (Project Net Zero)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
+// ██████╗ ██████╗  ██████╗ ██╗  ██╗███████╗██████╗  █████╗  ██████╗ ███████╗
+// ██╔══██╗██╔══██╗██╔═══██╗██║ ██╔╝██╔════╝██╔══██╗██╔══██╗██╔════╝ ██╔════╝
+// ██████╔╝██████╔╝██║   ██║█████╔╝ █████╗  ██████╔╝███████║██║  ███╗█████╗
+// ██╔══██╗██╔══██╗██║   ██║██╔═██╗ ██╔══╝  ██╔══██╗██╔══██║██║   ██║██╔══╝
+// ██████╔╝██║  ██║╚██████╔╝██║  ██╗███████╗██║  ██║██║  ██║╚██████╔╝███████╗
+// ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+//  TRACKER — Road to Zero (Project Net Zero)
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// â”€â”€ FACTS Brokerage Formulas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FACTS Brokerage Formulas ──────────────────────────────────────────────────
 function computeBrokerageMetrics(transactions) {
   const totalBuyCost = transactions
     .filter(t => t.activity_type === 'buy')
@@ -30724,7 +30724,7 @@ function computeBrokerageMetrics(transactions) {
 }
 
 async function computeRecoveryVelocity(pool, assetId, userId) {
-  // Recovery % today vs 30 days ago â€” derived purely from transactions
+  // Recovery % today vs 30 days ago — derived purely from transactions
   const [allTx, oldTx] = await Promise.all([
     pool.query(
       `SELECT activity_type, cash_flow, share_count, date FROM brokerage_transactions WHERE asset_id=$1 AND user_id=$2 ORDER BY date`,
@@ -30740,7 +30740,7 @@ async function computeRecoveryVelocity(pool, assetId, userId) {
   return parseFloat(((today30 - prev30) / 30).toFixed(4));
 }
 
-// â”€â”€ Vault-lock middleware (runs on all brokerage routes except discipline) â”€â”€â”€â”€â”€
+// ── Vault-lock middleware (runs on all brokerage routes except discipline) ─────
 async function checkVaultLock(req, res, next) {
   const userId = req.userId;
   try {
@@ -30748,7 +30748,7 @@ async function checkVaultLock(req, res, next) {
       `SELECT vault_status, last_entry_date FROM brokerage_discipline WHERE user_id=$1`,
       [userId]
     );
-    if (!rec.rows.length) return next(); // no discipline record yet â†’ not locked
+    if (!rec.rows.length) return next(); // no discipline record yet → not locked
 
     const d = rec.rows[0];
     // Auto-lock if 30+ days since last entry
@@ -30778,7 +30778,7 @@ async function checkVaultLock(req, res, next) {
   }
 }
 
-// â”€â”€ Streak helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Streak helper ──────────────────────────────────────────────────────────────
 async function updateDisciplineStreak(pool, userId) {
   // Upsert discipline record
   const rec = await pool.query(`SELECT * FROM brokerage_discipline WHERE user_id=$1`, [userId]);
@@ -30811,11 +30811,11 @@ async function updateDisciplineStreak(pool, userId) {
     const weekDiff    = currentWeek - lastWeek + (now.getFullYear() - lastEntry.getFullYear()) * 52;
 
     if (weekDiff === 0) {
-      // same week â€” no streak change
+      // same week — no streak change
     } else if (weekDiff === 1) {
       newStreak = d.streak_count + 1;
     } else {
-      newStreak = 1; // gap â€” reset
+      newStreak = 1; // gap — reset
     }
   } else {
     newStreak = 1;
@@ -30834,9 +30834,9 @@ app.get('/brokerage-tracker', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'brokerage-tracker.html'));
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 // BROKERAGE ASSETS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 
 // List all assets with computed FACTS metrics, sorted by recovery velocity
 app.get('/api/brokerage/assets', requireAuth, checkVaultLock, async (req, res) => {
@@ -31019,9 +31019,9 @@ app.delete('/api/brokerage/assets/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 // BROKERAGE TRANSACTIONS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 
 // List transactions for an asset
 app.get('/api/brokerage/transactions', requireAuth, checkVaultLock, async (req, res) => {
@@ -31187,9 +31187,9 @@ app.delete('/api/brokerage/transactions/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 // BROKERAGE DISCIPLINE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 
 app.get('/api/brokerage/discipline', requireAuth, async (req, res) => {
   try {
@@ -31197,7 +31197,7 @@ app.get('/api/brokerage/discipline', requireAuth, async (req, res) => {
     let rec = await pool.query(`SELECT * FROM brokerage_discipline WHERE user_id=$1`, [userId]);
 
     if (!rec.rows.length) {
-      // No record yet â€” return safe defaults (not locked)
+      // No record yet — return safe defaults (not locked)
       return res.json({
         discipline: {
           vault_status: 'active',
@@ -31264,22 +31264,22 @@ app.post('/api/brokerage/discipline/reactivate', requireAuth, async (req, res) =
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// FACTS CORE â€” NEW FEATURE ENDPOINTS
-// Â§0 User Profile Â· Â§3 Deposit Directive Â· Â§7 Sovereignty Baseline
-// Â§9 EOM Sweep Â· Â§10 Central State API
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
+// FACTS CORE — NEW FEATURE ENDPOINTS
+// §0 User Profile · §3 Deposit Directive · §7 Sovereignty Baseline
+// §9 EOM Sweep · §10 Central State API
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // (crypto already required at top of file)
 
-// â”€â”€ STARTUP: Load category cache (used by autoCategorizeFACTS) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── STARTUP: Load category cache (used by autoCategorizeFACTS) ────────────────
 loadCategoryCache();
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Â§0 + Â§7: User Profile Settings (ZIP, dependents, business_switch)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// §0 + §7: User Profile Settings (ZIP, dependents, business_switch)
+// ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/profile/settings â€” fetch user profile settings
+// GET /api/profile/settings — fetch user profile settings
 app.get('/api/profile/settings', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -31295,7 +31295,7 @@ app.get('/api/profile/settings', requireAuth, async (req, res) => {
   }
 });
 
-// PATCH /api/profile/settings â€” update ZIP, dependents, business_switch
+// PATCH /api/profile/settings — update ZIP, dependents, business_switch
 app.patch('/api/profile/settings', requireAuth, async (req, res) => {
   try {
     const { zip_code, num_dependents, business_switch } = req.body;
@@ -31325,9 +31325,9 @@ app.patch('/api/profile/settings', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Â§7: Sovereignty Baseline â€” CPI-based monthly necessity floor
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// §7: Sovereignty Baseline — CPI-based monthly necessity floor
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Estimate regional cost-of-living multiplier from ZIP code prefix.
@@ -31337,21 +31337,21 @@ function getRegionalMultiplier(zipCode) {
   if (!zipCode) return 1.0;
   const prefix3 = parseInt(zipCode.toString().slice(0, 3), 10);
 
-  // High cost metros (1.7â€“2.2Ã—)
+  // High cost metros (1.7–2.2×)
   if (prefix3 >= 100 && prefix3 <= 104) return 2.2; // NYC
   if ((prefix3 >= 900 && prefix3 <= 902) || (prefix3 >= 940 && prefix3 <= 949)) return 1.95; // LA/SF/Bay
   if (prefix3 >= 980 && prefix3 <= 984) return 1.8;  // Seattle
   if (prefix3 >= 200 && prefix3 <= 205) return 1.85; // DC
   if (prefix3 >= 21 && prefix3 <= 24) return 1.6;    // Boston
   if (prefix3 >= 941 && prefix3 <= 943) return 2.0;  // SF Bay Area
-  // Medium-high cost (1.3â€“1.5Ã—)
+  // Medium-high cost (1.3–1.5×)
   if (prefix3 >= 606 && prefix3 <= 608) return 1.4;  // Chicago
   if (prefix3 >= 800 && prefix3 <= 802) return 1.45; // Denver
   if (prefix3 >= 331 && prefix3 <= 334) return 1.35; // Miami
   if (prefix3 >= 970 && prefix3 <= 972) return 1.55; // Portland
   if (prefix3 >= 960 && prefix3 <= 962) return 1.9;  // Honolulu
   if (prefix3 >= 995 && prefix3 <= 999) return 1.5;  // Alaska
-  // Medium cost (1.05â€“1.2Ã—)
+  // Medium cost (1.05–1.2×)
   if (prefix3 >= 750 && prefix3 <= 752) return 1.1;  // Dallas
   if (prefix3 >= 303 && prefix3 <= 304) return 1.15; // Atlanta
   if (prefix3 >= 850 && prefix3 <= 852) return 1.1;  // Phoenix
@@ -31359,7 +31359,7 @@ function getRegionalMultiplier(zipCode) {
   if (prefix3 >= 191 && prefix3 <= 195) return 1.3;  // Philadelphia
   if (prefix3 >= 481 && prefix3 <= 483) return 1.05; // Detroit
   if (prefix3 >= 430 && prefix3 <= 432) return 1.0;  // Columbus
-  // Low cost rural/midwest/south (0.80â€“0.95Ã—)
+  // Low cost rural/midwest/south (0.80–0.95×)
   if ((prefix3 >= 385 && prefix3 <= 399) || (prefix3 >= 700 && prefix3 <= 714)) return 0.82; // MS/LA
   if (prefix3 >= 570 && prefix3 <= 577) return 0.82; // SD/ND
   if (prefix3 >= 680 && prefix3 <= 692) return 0.85; // Nebraska
@@ -31408,7 +31408,7 @@ function calculateSovereigntyBaseline(zipCode, numDependents, businessSwitch) {
   };
 }
 
-// GET /api/sovereignty-baseline â€” fetch/recalculate baseline for authenticated user
+// GET /api/sovereignty-baseline — fetch/recalculate baseline for authenticated user
 app.get('/api/sovereignty-baseline', requireAuth, async (req, res) => {
   try {
     const userRow = await pool.query(
@@ -31446,13 +31446,13 @@ app.get('/api/sovereignty-baseline', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Â§3: Deposit Directive â€” Income Allocation Flow
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// §3: Deposit Directive — Income Allocation Flow
+// ─────────────────────────────────────────────────────────────────────────────
 
 const INCOME_SOURCES = ['Salary', 'Bonus', 'Dividends', 'Interest', 'Gifts', 'Side Hustle', 'Other'];
 
-// GET /api/income â€” list income entries for user
+// GET /api/income — list income entries for user
 app.get('/api/income', requireAuth, async (req, res) => {
   try {
     const { limit = 20, offset = 0 } = req.query;
@@ -31482,7 +31482,7 @@ app.get('/api/income', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/income/preview â€” calculate split without saving (for confirmation screen)
+// POST /api/income/preview — calculate split without saving (for confirmation screen)
 app.post('/api/income/preview', requireAuth, async (req, res) => {
   try {
     const { amount, source = 'Other', date, note } = req.body;
@@ -31537,7 +31537,7 @@ app.post('/api/income/preview', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/income â€” confirm and save income entry + all allocations
+// POST /api/income — confirm and save income entry + all allocations
 app.post('/api/income', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -31629,9 +31629,9 @@ app.post('/api/income', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Â§9: EOM Sweep â€” End-of-Month cascading rebalance
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// §9: EOM Sweep — End-of-Month cascading rebalance
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Run EOM sweep for a single user.
@@ -31722,22 +31722,22 @@ async function runEomSweepForUser(userId) {
     );
     const velocityBalance = parseFloat(velocityBalRes.rows[0]?.balance || 0);
 
-    // â”€â”€ Gate logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Gate logic ────────────────────────────────────────────────────────────
     let sweepAmounts = {};
     let gatePath = '';
 
     if (catMap.velocity && velocityBalance <= 0) {
-      // Gate 3: No active debts â€” split Reserve + Growth
+      // Gate 3: No active debts — split Reserve + Growth
       sweepAmounts[catMap.reserve] = parseFloat((necRemaining * 0.50).toFixed(2));
       sweepAmounts[catMap.growth] = parseFloat((necRemaining * 0.50).toFixed(2));
       gatePath = 'no_debt';
     } else if (reserveBalance < reserveTarget) {
-      // Gate 1: Reserve underfunded â€” split Reserve + Velocity
+      // Gate 1: Reserve underfunded — split Reserve + Velocity
       sweepAmounts[catMap.reserve] = parseFloat((necRemaining * 0.50).toFixed(2));
       sweepAmounts[catMap.velocity] = parseFloat((necRemaining * 0.50).toFixed(2));
       gatePath = 'reserve_underfunded';
     } else {
-      // Gate 2: Reserve fully funded â€” mostly Velocity
+      // Gate 2: Reserve fully funded — mostly Velocity
       sweepAmounts[catMap.reserve] = parseFloat((necRemaining * 0.30).toFixed(2));
       sweepAmounts[catMap.velocity] = parseFloat((necRemaining * 0.70).toFixed(2));
       gatePath = 'reserve_funded';
@@ -31761,13 +31761,13 @@ async function runEomSweepForUser(userId) {
       // Deduct from Necessities
       await client.query(
         `INSERT INTO transactions (user_id, type, amount, description, category_id, transaction_date, payment_method)
-         VALUES ($1, 'expense', $2, 'EOM Sweep â€” outgoing', $3, $4, 'EOM Sweep')`,
+         VALUES ($1, 'expense', $2, 'EOM Sweep — outgoing', $3, $4, 'EOM Sweep')`,
         [userId, sweepAmt, catMap.necessities, today]
       );
       // Add to destination bucket
       await client.query(
         `INSERT INTO transactions (user_id, type, amount, description, category_id, transaction_date, payment_method)
-         VALUES ($1, 'income', $2, 'EOM Sweep â€” incoming', $3, $4, 'EOM Sweep')`,
+         VALUES ($1, 'income', $2, 'EOM Sweep — incoming', $3, $4, 'EOM Sweep')`,
         [userId, sweepAmt, parseInt(toCatId), today]
       );
       // Record sweep detail
@@ -31799,7 +31799,7 @@ async function runEomSweepForUser(userId) {
   }
 }
 
-// GET /api/eom-sweep/history â€” fetch sweep history for authenticated user
+// GET /api/eom-sweep/history — fetch sweep history for authenticated user
 app.get('/api/eom-sweep/history', requireAuth, async (req, res) => {
   try {
     const runs = await pool.query(
@@ -31825,7 +31825,7 @@ app.get('/api/eom-sweep/history', requireAuth, async (req, res) => {
   }
 });
 
-// EOM Sweep scheduler â€” runs daily at 11 PM UTC, fires sweep on last day of month
+// EOM Sweep scheduler — runs daily at 11 PM UTC, fires sweep on last day of month
 (function initEomSweepScheduler() {
   try {
     const schedule = '0 23 * * *'; // 11 PM UTC daily
@@ -31857,7 +31857,7 @@ app.get('/api/eom-sweep/history', requireAuth, async (req, res) => {
   }
 })();
 
-// POST /api/eom-sweep/run â€” manually trigger sweep for authenticated user (admin/testing)
+// POST /api/eom-sweep/run — manually trigger sweep for authenticated user (admin/testing)
 app.post('/api/eom-sweep/run', requireAuth, async (req, res) => {
   try {
     const result = await runEomSweepForUser(req.userId);
@@ -31868,9 +31868,9 @@ app.post('/api/eom-sweep/run', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Â§10: Central State API â€” Token-scoped read/write for external modules
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// §10: Central State API — Token-scoped read/write for external modules
+// ─────────────────────────────────────────────────────────────────────────────
 
 /** Middleware: verify module API key (Bearer token in Authorization header) */
 async function requireModuleToken(req, res, next) {
@@ -31904,7 +31904,7 @@ async function requireModuleToken(req, res, next) {
   }
 }
 
-// POST /api/module-tokens â€” create a module API key (requires session auth)
+// POST /api/module-tokens — create a module API key (requires session auth)
 app.post('/api/module-tokens', requireAuth, async (req, res) => {
   try {
     const { module_name, read_buckets, can_push_events } = req.body;
@@ -31918,14 +31918,14 @@ app.post('/api/module-tokens', requireAuth, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5) RETURNING id, module_name, read_buckets, can_push_events, created_at`,
       [req.userId, module_name, tokenHash, read_buckets || null, !!can_push_events]
     );
-    res.json({ ...result.rows[0], token: rawToken, warning: 'Save this token â€” it will not be shown again' });
+    res.json({ ...result.rows[0], token: rawToken, warning: 'Save this token — it will not be shown again' });
   } catch (err) {
     console.error('POST /api/module-tokens error:', err.message);
     res.status(500).json({ error: 'Failed to create module token' });
   }
 });
 
-// DELETE /api/module-tokens/:id â€” revoke a module API key
+// DELETE /api/module-tokens/:id — revoke a module API key
 app.delete('/api/module-tokens/:id', requireAuth, async (req, res) => {
   try {
     await pool.query(
@@ -31939,9 +31939,9 @@ app.delete('/api/module-tokens/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ Central State API v1 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Central State API v1 ─────────────────────────────────────────────────────
 
-// GET /api/v1/state/buckets â€” current balances for all 6 buckets
+// GET /api/v1/state/buckets — current balances for all 6 buckets
 app.get('/api/v1/state/buckets', requireModuleToken, async (req, res) => {
   try {
     const key = req.moduleKey;
@@ -31968,7 +31968,7 @@ app.get('/api/v1/state/buckets', requireModuleToken, async (req, res) => {
   }
 });
 
-// GET /api/v1/state/allocation â€” current allocation percentages
+// GET /api/v1/state/allocation — current allocation percentages
 app.get('/api/v1/state/allocation', requireModuleToken, async (req, res) => {
   try {
     const key = req.moduleKey;
@@ -31987,7 +31987,7 @@ app.get('/api/v1/state/allocation', requireModuleToken, async (req, res) => {
   }
 });
 
-// GET /api/v1/state/sovereignty â€” Sovereignty Baseline amount + breakdown
+// GET /api/v1/state/sovereignty — Sovereignty Baseline amount + breakdown
 app.get('/api/v1/state/sovereignty', requireModuleToken, async (req, res) => {
   try {
     const key = req.moduleKey;
@@ -32012,7 +32012,7 @@ app.get('/api/v1/state/sovereignty', requireModuleToken, async (req, res) => {
   }
 });
 
-// GET /api/v1/state/eom-history â€” EOM sweep history
+// GET /api/v1/state/eom-history — EOM sweep history
 app.get('/api/v1/state/eom-history', requireModuleToken, async (req, res) => {
   try {
     const key = req.moduleKey;
@@ -32027,7 +32027,7 @@ app.get('/api/v1/state/eom-history', requireModuleToken, async (req, res) => {
   }
 });
 
-// POST /api/v1/state/events â€” push event from external module
+// POST /api/v1/state/events — push event from external module
 app.post('/api/v1/state/events', requireModuleToken, async (req, res) => {
   try {
     const key = req.moduleKey;
@@ -32048,7 +32048,7 @@ app.post('/api/v1/state/events', requireModuleToken, async (req, res) => {
   }
 });
 
-// GET /api/v1/state/events â€” fetch pending module events for current user (session auth)
+// GET /api/v1/state/events — fetch pending module events for current user (session auth)
 app.get('/api/v1/state/events', requireAuth, async (req, res) => {
   try {
     const rows = await pool.query(
@@ -32066,8 +32066,8 @@ app.get('/api/v1/state/events', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€ Â§8: Diagnostic Upload â€” Spending vs. Sovereignty Baseline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// POST /api/diagnostic/analyze â€” compare uploaded spending against baseline
+// ── §8: Diagnostic Upload — Spending vs. Sovereignty Baseline ─────────────────
+// POST /api/diagnostic/analyze — compare uploaded spending against baseline
 app.post('/api/diagnostic/analyze', requireAuth, async (req, res) => {
   try {
     const { spending } = req.body;
@@ -32139,11 +32139,11 @@ app.post('/api/diagnostic/analyze', requireAuth, async (req, res) => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ MODULE ARCHITECTURE INITIALIZATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── MODULE ARCHITECTURE INITIALIZATION ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 
 async function initializeModuleArchitecture() {
   try {
@@ -32182,7 +32182,7 @@ async function initializeModuleArchitecture() {
   }
 }
 
-// â”€â”€â”€ Plaid Nightly Sovereign Audit (Sovereignty tier only, 2:00 AM UTC) â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Plaid Nightly Sovereign Audit (Sovereignty tier only, 2:00 AM UTC) ────────
 (function initPlaidNightlyAudit() {
   try {
     const schedule = '0 2 * * *'; // 2:00 AM UTC
@@ -32193,7 +32193,7 @@ async function initializeModuleArchitecture() {
       const clientId = process.env.PLAID_CLIENT_ID;
       const secret = process.env.PLAID_SECRET;
       if (!clientId || !secret) {
-        console.log('[Plaid Nightly] Plaid not configured â€” skipping');
+        console.log('[Plaid Nightly] Plaid not configured — skipping');
         return;
       }
 
@@ -32310,13 +32310,13 @@ async function initializeModuleArchitecture() {
           if (discrepancyDetected) {
             const firstKey = Object.keys(discrepancyDetails)[0];
             const detail = discrepancyDetails[firstKey];
-            const msg = `âš ï¸ Integrity Alert â€” Necessities bucket shows ${detail.discrepancy_pct}% discrepancy between FACTS allocation ($${detail.facts_total.toFixed(0)}) and Plaid balance ($${detail.plaid_total.toFixed(0)}). Verify your entries.`;
+            const msg = `⚠️ Integrity Alert — Necessities bucket shows ${detail.discrepancy_pct}% discrepancy between FACTS allocation ($${detail.facts_total.toFixed(0)}) and Plaid balance ($${detail.plaid_total.toFixed(0)}). Verify your entries.`;
             // Store in notifications if available
             await pool.query(`
               INSERT INTO notifications (user_id, type, message, is_read, created_at)
               VALUES ($1, 'integrity_alert', $2, false, NOW())
               ON CONFLICT DO NOTHING
-            `, [userId, msg]).catch(() => {}); // Non-fatal â€” notifications table may not exist
+            `, [userId, msg]).catch(() => {}); // Non-fatal — notifications table may not exist
           }
 
         } catch (e) {
@@ -32333,9 +32333,9 @@ async function initializeModuleArchitecture() {
   }
 })();
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ PHASE ZERO ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── PHASE ZERO ENGINE ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 
 // Utility: log Phase Zero reward for retroactive application if gamification not live
 async function pzLogReward(userId, eventType, xpAmount, pointsAmount, metadata, dbClient) {
@@ -32400,22 +32400,22 @@ async function pzAwardWalletPoints(userId, amount, activity, description) {
 // The AI path can personalize; the fallback must be safe and predictable.
 function buildAllocationSuggestion(answers) {
   var alloc = { necessities: 50, velocity: 10, reserve: 10, lifestyle: 10, growth: 10, legacy: 10 };
-  var rationale = 'Balanced allocation across all 6 categories â€” the FACTS baseline. You can customize anytime in Settings.';
+  var rationale = 'Balanced allocation across all 6 categories — the FACTS baseline. You can customize anytime in Settings.';
 
   if (answers.goal === 'crush_debt' || answers.debt === 'yes_significant') {
-    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting Velocity to accelerate debt payoff â€” adjust in Settings.';
+    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting Velocity to accelerate debt payoff — adjust in Settings.';
   } else if (answers.goal === 'build_savings' || answers.emergency === 'no') {
-    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting The Reserve to build your emergency fund â€” adjust in Settings.';
+    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting The Reserve to build your emergency fund — adjust in Settings.';
   } else if (answers.goal === 'grow_wealth') {
-    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting Growth and Legacy to accelerate wealth building â€” adjust in Settings.';
+    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting Growth and Legacy to accelerate wealth building — adjust in Settings.';
   } else if (answers.debt === 'yes_mortgage') {
-    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Mortgage-only debt allows a balanced approach â€” adjust in Settings as your strategy evolves.';
+    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Mortgage-only debt allows a balanced approach — adjust in Settings as your strategy evolves.';
   }
 
   return { allocations: alloc, rationale: rationale };
 }
 
-// â”€â”€ FACTS Marketing Site Routes (extensionless clean URLs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FACTS Marketing Site Routes (extensionless clean URLs) ──────────
 app.get('/products', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'products.html'));
 });
@@ -32429,7 +32429,7 @@ app.get('/about', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'about.html'));
 });
 
-// â”€â”€ Auth entry point redirects (extensionless clean URLs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Auth entry point redirects (extensionless clean URLs) ──────────────
 app.get('/login', (req, res) => {
   res.redirect('/login.html');
 });
@@ -32443,12 +32443,12 @@ app.get('/reset-password', (req, res) => {
   res.redirect('/reset-password.html');
 });
 
-// GET /phase-zero â€” clean URL for Phase Zero front gate page
+// GET /phase-zero — clean URL for Phase Zero front gate page
 app.get('/phase-zero', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'phase-zero.html'));
 });
 
-// GET /lockout â€” Phase Zero deadline lockout screen
+// GET /lockout — Phase Zero deadline lockout screen
 app.get('/lockout', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'lockout.html'));
 });
@@ -32512,7 +32512,7 @@ app.post('/api/phase-zero/skip-ai', requireAuth, async (req, res) => {
         [userId, defaults.necessities, defaults.velocity, defaults.reserve,
          defaults.lifestyle, defaults.growth, defaults.legacy]
       );
-    } catch(e2) { /* allocation columns might not exist â€” non-fatal */ }
+    } catch(e2) { /* allocation columns might not exist — non-fatal */ }
     res.json({ ok: true });
   } catch(e) {
     console.error('[PhaseZero] skip-ai error:', e.message);
@@ -32542,9 +32542,9 @@ User answers:
 - Primary goal: ${goal}
 
 Buckets (must sum to exactly 100):
-- necessities (shelter, utilities, food) â€” typically 40-55%
-- velocity (debt payoff) â€” increase if significant debt
-- reserve (emergency savings) â€” increase if no emergency fund
+- necessities (shelter, utilities, food) — typically 40-55%
+- velocity (debt payoff) — increase if significant debt
+- reserve (emergency savings) — increase if no emergency fund
 - lifestyle (discretionary spending)
 - growth (investments, wealth building)
 - legacy (generational wealth, giving)
@@ -32624,15 +32624,15 @@ app.post('/api/phase-zero/ai-setup', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ EMAIL VERIFICATION (Phase Zero) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── EMAIL VERIFICATION (Phase Zero) ─────────────────────────────────────────
 // Replaces SMS verification. Sends a 6-digit OTP to the user's registered email.
-// No phone number required â€” code goes to the email used at signup.
+// No phone number required — code goes to the email used at signup.
 
 function generateOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-// POST /api/email-verify/send  â€” send 6-digit OTP to user's registered email
+// POST /api/email-verify/send  — send 6-digit OTP to user's registered email
 app.post('/api/email-verify/send', requireAuth, async (req, res) => {
   try {
     var userId = req.userId;
@@ -32698,7 +32698,7 @@ app.post('/api/email-verify/send', requireAuth, async (req, res) => {
       });
     } catch (emailErr) {
       console.error('[PhaseZero] email-verify send error:', emailErr.message);
-      // Still return success â€” code is stored, user can retry
+      // Still return success — code is stored, user can retry
     }
 
     res.json({ ok: true, message: 'Code sent to your email.' });
@@ -32708,7 +32708,7 @@ app.post('/api/email-verify/send', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/email-verify/confirm  â€” verify the 6-digit OTP
+// POST /api/email-verify/confirm  — verify the 6-digit OTP
 app.post('/api/email-verify/confirm', requireAuth, async (req, res) => {
   try {
     var userId = req.userId;
@@ -32731,7 +32731,7 @@ app.post('/api/email-verify/confirm', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Incorrect code. Try again.' });
     }
 
-    // Mark email verified â€” reuse phone_verified_at as the verification timestamp
+    // Mark email verified — reuse phone_verified_at as the verification timestamp
     await pool.query(
       `UPDATE users SET phone_verified_at = NOW(),
           phone_otp = NULL, phone_otp_expires_at = NULL, updated_at = NOW()
@@ -32746,11 +32746,11 @@ app.post('/api/email-verify/confirm', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ SMS VERIFY (Twilio Verify) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SMS VERIFY (Twilio Verify) ──────────────────────────────────────
 // Real SMS OTP via Twilio Verify API.
 // Uses existing users columns: verified_phone, phone_otp_attempts, phone_otp_window_start
 
-// POST /api/sms-verify/set-phone â€” store phone number and send first SMS
+// POST /api/sms-verify/set-phone — store phone number and send first SMS
 app.post('/api/sms-verify/set-phone', requireAuth, async (req, res) => {
   try {
     var userId = req.userId;
@@ -32822,7 +32822,7 @@ app.post('/api/sms-verify/set-phone', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/sms-verify/send â€” resend verification SMS
+// POST /api/sms-verify/send — resend verification SMS
 app.post('/api/sms-verify/send', requireAuth, async (req, res) => {
   try {
     var userId = req.userId;
@@ -32863,7 +32863,7 @@ app.post('/api/sms-verify/send', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/sms-verify/confirm â€” verify the 6-digit code
+// POST /api/sms-verify/confirm — verify the 6-digit code
 app.post('/api/sms-verify/confirm', requireAuth, async (req, res) => {
   try {
     var userId = req.userId;
@@ -32944,11 +32944,11 @@ app.post('/api/phase-zero/complete', requireAuth, async (req, res) => {
     req.session.pzComplete = true;
 
     // Award 100 XP for Phase Zero completion
-    await pzAwardXp(userId, 'phase_zero_complete', 'Phase Zero Complete â€” 100 XP', 100);
+    await pzAwardXp(userId, 'phase_zero_complete', 'Phase Zero Complete — 100 XP', 100);
 
     // Award 25 bonus wallet points for AI-guided path
     if (user.ai_guided_setup) {
-      await pzAwardWalletPoints(userId, 25, 'phase_zero_ai_bonus', 'Phase Zero AI-Guided Setup Bonus â€” 25 Points');
+      await pzAwardWalletPoints(userId, 25, 'phase_zero_ai_bonus', 'Phase Zero AI-Guided Setup Bonus — 25 Points');
     }
 
     // Log rewards for retroactive application
@@ -32962,7 +32962,7 @@ app.post('/api/phase-zero/complete', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ AUDIT STATUS API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── AUDIT STATUS API ─────────────────────────────────────────────────────────
 
 // GET /api/audit/status  (Time Asset widget data)
 app.get('/api/audit/status', requireAuth, async (req, res) => {
@@ -33003,7 +33003,7 @@ app.get('/api/audit/status', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ AUDIT MIDNIGHT CRON â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── AUDIT MIDNIGHT CRON ──────────────────────────────────────────────────────
 // Runs at 00:05 UTC each day. Evaluates all users in audit.
 
 async function runAuditSweep() {
@@ -33031,7 +33031,7 @@ async function runAuditSweep() {
         var loggedYesterday = txCheck.rows.length > 0;
 
         if (!loggedYesterday) {
-          // Missed a day â€” fail the audit
+          // Missed a day — fail the audit
           var attempts = (user.audit_attempts || 0) + 1;
           var lockoutMs = 0;
           if (attempts === 2) lockoutMs = 48 * 60 * 60 * 1000;      // 48 hours
@@ -33050,9 +33050,9 @@ async function runAuditSweep() {
              WHERE id = $1`,
             [userId, newStatus, lockoutUntil, attempts]
           );
-          console.log('[AuditSweep] User', userId, 'failed audit (attempt', attempts + ') â€” status:', newStatus);
+          console.log('[AuditSweep] User', userId, 'failed audit (attempt', attempts + ') — status:', newStatus);
         } else {
-          // Logged yesterday â€” increment day count
+          // Logged yesterday — increment day count
           var newDayCount = (user.audit_day_count || 0) + 1;
           if (newDayCount >= 7) {
             // AUDIT COMPLETE
@@ -33065,10 +33065,10 @@ async function runAuditSweep() {
                WHERE id = $1`, [userId]
             );
             // Award 500 XP + 100 Wallet points
-            await pzAwardXp(userId, 'audit_complete', '168-Hour Audit Complete â€” 500 XP', 500);
-            await pzAwardWalletPoints(userId, 100, 'audit_complete', '168-Hour Audit Complete â€” 100 Points');
+            await pzAwardXp(userId, 'audit_complete', '168-Hour Audit Complete — 500 XP', 500);
+            await pzAwardWalletPoints(userId, 100, 'audit_complete', '168-Hour Audit Complete — 100 Points');
             await pzLogReward(userId, 'audit_complete', 500, 100, { day_count: 7 });
-            console.log('[AuditSweep] User', userId, 'COMPLETED audit â€” rewards awarded');
+            console.log('[AuditSweep] User', userId, 'COMPLETED audit — rewards awarded');
           } else {
             await pool.query(
               `UPDATE users SET
@@ -33138,13 +33138,13 @@ app.post('/api/internal/audit-sweep', function(req, res) {
   }
 }());
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ END PHASE ZERO ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── END PHASE ZERO ENGINE ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ ADMIN AGGREGATE DASHBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── ADMIN AGGREGATE DASHBOARD ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 //
 // PRIVACY RULE: Admin can NEVER see individual user data. All queries return
 // aggregate counts and statistics only.
@@ -33167,7 +33167,7 @@ async function requireAdminAllowlist(req, res) {
   const userEmail = (result.rows[0].email || '').toLowerCase();
 
   // Future Generations accounts (ecci2760, dianes3cps) are explicitly barred from
-  // admin panel access â€” they get sovereign feature access but NOT admin controls.
+  // admin panel access — they get sovereign feature access but NOT admin controls.
   // Check this first so even if is_creator flag were set incorrectly, they can't slip through.
   if (isFutureGenEmail(userEmail)) {
     res.status(403).json({ error: 'Admin access required' });
@@ -33183,7 +33183,7 @@ async function requireAdminAllowlist(req, res) {
   return true;
 }
 
-// GET /api/admin/aggregate-metrics â€” Aggregate user & engagement metrics (no individual data)
+// GET /api/admin/aggregate-metrics — Aggregate user & engagement metrics (no individual data)
 app.get('/api/admin/aggregate-metrics', requireAuth, async (req, res) => {
   try {
     if (!(await requireAdminAllowlist(req, res))) return;
@@ -33199,7 +33199,7 @@ app.get('/api/admin/aggregate-metrics', requireAuth, async (req, res) => {
       pool.query(`SELECT COUNT(DISTINCT user_id) FROM user_activity_events WHERE event_date >= $1`, [thirtyDaysAgo.toISOString().split('T')[0]])
     ]);
 
-    // Tier distribution â€” uses plan + subscription_tier columns
+    // Tier distribution — uses plan + subscription_tier columns
     const tierDist = await pool.query(`
       SELECT
         CASE
@@ -33267,7 +33267,7 @@ app.get('/api/admin/aggregate-metrics', requireAuth, async (req, res) => {
       ORDER BY total_revenue DESC
     `, [thirtyDaysAgo]).catch(() => ({ rows: [] }));
 
-    // MRR estimate (active paid users Ã— avg price per tier)
+    // MRR estimate (active paid users × avg price per tier)
     const mrrData = await pool.query(`
       SELECT COUNT(*) AS paid_count, SUM(amount_cents) / 100.0 AS mrr
       FROM subscriptions
@@ -33296,7 +33296,7 @@ app.get('/api/admin/aggregate-metrics', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ SUPPORT TICKETS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SUPPORT TICKETS ─────────────────────────────────────────────────────────
 
 const supportUpload = multer({
   storage: multer.memoryStorage(),
@@ -33311,7 +33311,7 @@ const supportUpload = multer({
   }
 });
 
-// POST /api/support/tickets â€” submit a support ticket (authenticated or anonymous)
+// POST /api/support/tickets — submit a support ticket (authenticated or anonymous)
 // optionalAuth: anonymous users can report issues from public routes (e.g. /credit-analysis); user_id nullable in DB
 app.post('/api/support/tickets', optionalAuth, supportUpload.single('screenshot'), async (req, res) => {
   try {
@@ -33351,7 +33351,7 @@ app.post('/api/support/tickets', optionalAuth, supportUpload.single('screenshot'
         }
       } catch (uploadErr) {
         console.error('[SupportTickets] screenshot upload failed:', uploadErr.message);
-        // Non-fatal â€” proceed without screenshot
+        // Non-fatal — proceed without screenshot
       }
     }
 
@@ -33369,7 +33369,7 @@ app.post('/api/support/tickets', optionalAuth, supportUpload.single('screenshot'
   }
 });
 
-// GET /api/admin/support-tickets â€” admin view of all tickets
+// GET /api/admin/support-tickets — admin view of all tickets
 app.get('/api/admin/support-tickets', requireAuth, async (req, res) => {
   try {
     if (!(await requireAdminAllowlist(req, res))) return;
@@ -33407,7 +33407,7 @@ app.get('/api/admin/support-tickets', requireAuth, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/support-tickets/:id â€” update ticket status/notes
+// PATCH /api/admin/support-tickets/:id — update ticket status/notes
 app.patch('/api/admin/support-tickets/:id', requireAuth, async (req, res) => {
   try {
     if (!(await requireAdminAllowlist(req, res))) return;
@@ -33434,7 +33434,7 @@ app.patch('/api/admin/support-tickets/:id', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ ADVISORY SWITCH (Schema deployed; API stubs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ADVISORY SWITCH (Schema deployed; API stubs) ────────────────────────────
 //
 // PRIVACY RULES:
 // 1. No user can see another user's data without explicit invite
@@ -33452,7 +33452,7 @@ async function requireAdvisoryAccess(userId) {
   return hasProAccess(user.rows[0]);
 }
 
-// POST /api/advisory/invite â€” owner generates a session invite
+// POST /api/advisory/invite — owner generates a session invite
 app.post('/api/advisory/invite', requireAuth, async (req, res) => {
   try {
     const hasPro = await requireAdvisoryAccess(req.userId);
@@ -33483,7 +33483,7 @@ app.post('/api/advisory/invite', requireAuth, async (req, res) => {
       session_id: session.id,
       session_token: session.session_token,
       share_link: shareLink,
-      expires_in: '10 minutes â€” both parties must be online for session to activate'
+      expires_in: '10 minutes — both parties must be online for session to activate'
     });
   } catch (err) {
     console.error('[Advisory] invite error:', err.message);
@@ -33491,7 +33491,7 @@ app.post('/api/advisory/invite', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/advisory/join/:token â€” viewer joins with token
+// POST /api/advisory/join/:token — viewer joins with token
 app.post('/api/advisory/join/:token', requireAuth, async (req, res) => {
   try {
     const { token } = req.params;
@@ -33552,7 +33552,7 @@ app.post('/api/advisory/join/:token', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/advisory/heartbeat â€” both parties ping every 30s
+// POST /api/advisory/heartbeat — both parties ping every 30s
 // If either misses 2 consecutive heartbeats (60s), session auto-expires
 app.post('/api/advisory/heartbeat', requireAuth, async (req, res) => {
   try {
@@ -33590,7 +33590,7 @@ app.post('/api/advisory/heartbeat', requireAuth, async (req, res) => {
     if (otherHeartbeat) {
       const staleSecs = (now - new Date(otherHeartbeat)) / 1000;
       if (staleSecs > 60) {
-        // Other party disconnected â€” expire the session
+        // Other party disconnected — expire the session
         await pool.query(
           `UPDATE advisory_sessions SET status = 'expired', expired_at = NOW() WHERE id = $1`,
           [advisorySession.id]
@@ -33621,7 +33621,7 @@ app.post('/api/advisory/heartbeat', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/advisory/revoke/:sessionId â€” owner manually ends session
+// POST /api/advisory/revoke/:sessionId — owner manually ends session
 app.post('/api/advisory/revoke/:sessionId', requireAuth, async (req, res) => {
   try {
     const sessionId = parseInt(req.params.sessionId);
@@ -33645,7 +33645,7 @@ app.post('/api/advisory/revoke/:sessionId', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/advisory/active â€” check if user has an active advisory session
+// GET /api/advisory/active — check if user has an active advisory session
 app.get('/api/advisory/active', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -33678,7 +33678,7 @@ app.get('/api/advisory/active', requireAuth, async (req, res) => {
   }
 });
 
-// â”€â”€â”€ Cron: expire stale advisory sessions every 5 minutes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Cron: expire stale advisory sessions every 5 minutes ───────────────────
 (function initAdvisoryCron() {
   // Guard: only start in-process schedulers when Blaxel shadow is not active
   if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED !== 'true') {
@@ -33720,11 +33720,11 @@ app.get('/api/advisory/active', requireAuth, async (req, res) => {
   }
 }());
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ END ADMIN + ADVISORY FEATURES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── END ADMIN + ADVISORY FEATURES ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 
-// â”€â”€â”€ Elite Bundles & Sanitized Importer UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Elite Bundles & Sanitized Importer UI ───────────────────────────────────
 // Serve the bundle pricing page
 app.get('/elite-bundles', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'elite-bundles.html'));
@@ -33734,7 +33734,7 @@ app.get('/add-ons', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'elite-bundles.html'));
 });
 
-// â”€â”€â”€ Tier Upgrade / Plan Change UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Tier Upgrade / Plan Change UI ───────────────────────────────────────────
 app.get('/tier-upgrade', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tier-upgrade.html'));
 });
@@ -33751,7 +33751,7 @@ ensurePWAIconsSync();
 
   app.listen(port, () => {
     console.log(`Financial Revolution (FACTS) running on port ${port}`);
-    console.log('[PWA] Icons verified â€” install prompt criteria met');
+    console.log('[PWA] Icons verified — install prompt criteria met');
     if (modulesReady) {
       console.log('[Modules] Architecture initialized successfully');
     } else {

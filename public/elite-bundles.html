@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Elite Modules â€” Financial Revolution</title>
+  <title>Elite Modules — Financial Revolution</title>
   <style>
     :root {
       --bg:           #0a0e1a;
@@ -28,7 +28,7 @@
       min-height: 100dvh;
     }
 
-    /* â”€â”€â”€ Top nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Top nav ──────────────────────────────────────────────── */
     .nav {
       display: flex; align-items: center; justify-content: space-between;
       padding: 1rem 2rem;
@@ -38,7 +38,7 @@
     .nav-back  { font-size: .875rem; color: var(--muted); text-decoration: none; }
     .nav-back:hover { color: var(--gold); }
 
-    /* â”€â”€â”€ Hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Hero ─────────────────────────────────────────────────── */
     .hero {
       text-align: center;
       padding: 3.5rem 1.5rem 2rem;
@@ -73,7 +73,7 @@
       line-height: 1.6;
     }
 
-    /* â”€â”€â”€ Upsell banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Upsell banner ────────────────────────────────────────── */
     #upsell-banner {
       display: none;
       margin: 1rem auto;
@@ -104,7 +104,7 @@
     #upsell-banner .dismiss { font-size: .75rem; color: var(--muted); cursor: pointer; margin-left: .5rem; }
     #upsell-banner .dismiss:hover { color: var(--text); }
 
-    /* â”€â”€â”€ Section label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Section label ────────────────────────────────────────── */
     .section-label {
       text-align: center;
       font-size: .8rem;
@@ -115,7 +115,7 @@
       margin: 2rem 0 1.25rem;
     }
 
-    /* â”€â”€â”€ Bundle grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Bundle grid ──────────────────────────────────────────── */
     .bundles-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -125,7 +125,7 @@
       padding: 0 1.5rem 2rem;
     }
 
-    /* â”€â”€â”€ Bundle card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Bundle card ──────────────────────────────────────────── */
     .bundle-card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -175,7 +175,7 @@
       margin-top: .2rem;
     }
 
-    /* â”€â”€â”€ Module picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Module picker ────────────────────────────────────────── */
     .module-picker { display: flex; flex-direction: column; gap: .6rem; }
     .module-picker-label {
       font-size: .75rem;
@@ -235,7 +235,7 @@
     }
     .slot-counter span { color: var(--gold); font-weight: 700; }
 
-    /* â”€â”€â”€ CTA button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── CTA button ───────────────────────────────────────────── */
     .bundle-cta {
       display: block;
       width: 100%;
@@ -256,7 +256,7 @@
     .cta-ultimate    { background: linear-gradient(135deg, #7c3aed, var(--teal)); color: #fff; }
     .bundle-cta:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
-    /* â”€â”€â”€ Individual add-ons section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Individual add-ons section ───────────────────────────── */
     .addons-section {
       max-width: 1000px; margin: 0 auto; padding: 0 1.5rem 3rem;
     }
@@ -291,7 +291,7 @@
     }
     .addon-btn:hover { background: rgba(212,168,67,.2); }
 
-    /* â”€â”€â”€ Footer note â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Footer note ──────────────────────────────────────────── */
     .footer-note {
       text-align: center;
       font-size: .8rem;
@@ -300,7 +300,7 @@
       border-top: 1px solid var(--border);
     }
 
-    /* â”€â”€â”€ Mobile adjustments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ─── Mobile adjustments ─────────────────────────────────────── */
     @media (max-width: 640px) {
       .bundles-grid { grid-template-columns: 1fr; }
       /* Sovereign first on mobile */
@@ -312,14 +312,14 @@
 
 <nav class="nav">
   <div class="nav-logo">FACTS</div>
-  <a class="nav-back" href="/app">â† Back to Dashboard</a>
+  <a class="nav-back" href="/app">← Back to Dashboard</a>
 </nav>
 
 <main>
   <section class="hero">
     <span class="hero-tag">Elite Add-Ons</span>
     <h1>Sovereign Architecture.<br/>Bundle &amp; Save.</h1>
-    <p>Combine Elite modules into a bundle â€” or activate them one at a time. Your privacy architecture, your choice.</p>
+    <p>Combine Elite modules into a bundle — or activate them one at a time. Your privacy architecture, your choice.</p>
   </section>
 
   <!-- Upsell banner (shown dynamically) -->
@@ -335,7 +335,7 @@
   <div class="section-label">Choose a Bundle</div>
   <div class="bundles-grid" id="bundles-grid">
 
-    <!-- BNDL_STARTER â€” Privacy Starter -->
+    <!-- BNDL_STARTER — Privacy Starter -->
     <div class="bundle-card bundle-card-starter">
       <div class="bundle-card-header">
         <div>
@@ -353,28 +353,28 @@
         <div class="module-picker-label">Select 2 modules</div>
         <label class="module-chip" data-bundle="starter" data-module="sanitized_importer" onclick="toggleModule(this,'starter',2)">
           <input type="checkbox" />
-          <span class="module-chip-icon">ðŸ›¡ï¸</span>
+          <span class="module-chip-icon">🛡️</span>
           <span class="module-chip-name">Sanitized Importer</span>
           <span class="module-chip-price">$19.99</span>
           <span class="check-circle"></span>
         </label>
         <label class="module-chip" data-bundle="starter" data-module="vault_automation" onclick="toggleModule(this,'starter',2)">
           <input type="checkbox" />
-          <span class="module-chip-icon">ðŸ›ï¸</span>
+          <span class="module-chip-icon">🏛️</span>
           <span class="module-chip-name">Vault Automation</span>
           <span class="module-chip-price">$29</span>
           <span class="check-circle"></span>
         </label>
         <label class="module-chip" data-bundle="starter" data-module="lending_desk" onclick="toggleModule(this,'starter',2)">
           <input type="checkbox" />
-          <span class="module-chip-icon">âš¡</span>
+          <span class="module-chip-icon">⚡</span>
           <span class="module-chip-name">Sovereign Lending</span>
           <span class="module-chip-price">$29</span>
           <span class="check-circle"></span>
         </label>
         <label class="module-chip" data-bundle="starter" data-module="legacy_lens" onclick="toggleModule(this,'starter',2)">
           <input type="checkbox" />
-          <span class="module-chip-icon">ðŸ”­</span>
+          <span class="module-chip-icon">🔭</span>
           <span class="module-chip-name">Legacy Lens</span>
           <span class="module-chip-price">$29</span>
           <span class="check-circle"></span>
@@ -382,11 +382,11 @@
         <div class="slot-counter"><span id="starter-count">0</span>/2 selected</div>
       </div>
       <a id="starter-cta" class="bundle-cta cta-standard" href="https://buy.stripe.com/cNibJ25lFc9b5NEfG37Re0h" onclick="checkBundleSelection(event,'starter',2)">
-        Activate Privacy Starter â€” $39/mo
+        Activate Privacy Starter — $39/mo
       </a>
     </div>
 
-    <!-- BNDL_SOVEREIGN â€” Sovereign Architect (RECOMMENDED) -->
+    <!-- BNDL_SOVEREIGN — Sovereign Architect (RECOMMENDED) -->
     <div class="bundle-card bundle-card-sovereign recommended">
       <div class="bundle-card-header">
         <div>
@@ -405,28 +405,28 @@
         <div class="module-picker-label">Select 3 modules</div>
         <label class="module-chip" data-bundle="sovereign" data-module="sanitized_importer" onclick="toggleModule(this,'sovereign',3)">
           <input type="checkbox" />
-          <span class="module-chip-icon">ðŸ›¡ï¸</span>
+          <span class="module-chip-icon">🛡️</span>
           <span class="module-chip-name">Sanitized Importer</span>
           <span class="module-chip-price">$19.99</span>
           <span class="check-circle"></span>
         </label>
         <label class="module-chip" data-bundle="sovereign" data-module="vault_automation" onclick="toggleModule(this,'sovereign',3)">
           <input type="checkbox" />
-          <span class="module-chip-icon">ðŸ›ï¸</span>
+          <span class="module-chip-icon">🏛️</span>
           <span class="module-chip-name">Vault Automation</span>
           <span class="module-chip-price">$29</span>
           <span class="check-circle"></span>
         </label>
         <label class="module-chip" data-bundle="sovereign" data-module="lending_desk" onclick="toggleModule(this,'sovereign',3)">
           <input type="checkbox" />
-          <span class="module-chip-icon">âš¡</span>
+          <span class="module-chip-icon">⚡</span>
           <span class="module-chip-name">Sovereign Lending</span>
           <span class="module-chip-price">$29</span>
           <span class="check-circle"></span>
         </label>
         <label class="module-chip" data-bundle="sovereign" data-module="legacy_lens" onclick="toggleModule(this,'sovereign',3)">
           <input type="checkbox" />
-          <span class="module-chip-icon">ðŸ”­</span>
+          <span class="module-chip-icon">🔭</span>
           <span class="module-chip-name">Legacy Lens</span>
           <span class="module-chip-price">$29</span>
           <span class="check-circle"></span>
@@ -434,11 +434,11 @@
         <div class="slot-counter"><span id="sovereign-count">0</span>/3 selected</div>
       </div>
       <a id="sovereign-cta" class="bundle-cta cta-recommended" href="https://buy.stripe.com/8x2bJ229tddf1xo79x7Re0i" onclick="checkBundleSelection(event,'sovereign',3)">
-        Activate Sovereign Architect â€” $59/mo
+        Activate Sovereign Architect — $59/mo
       </a>
     </div>
 
-    <!-- BNDL_LEGACY â€” Legacy Protocol Suite -->
+    <!-- BNDL_LEGACY — Legacy Protocol Suite -->
     <div class="bundle-card bundle-card-legacy">
       <div class="bundle-card-header">
         <div>
@@ -455,13 +455,13 @@
       </div>
       <div class="module-picker">
         <div class="module-picker-label">Includes all 4 modules</div>
-        <div class="module-chip selected locked"><span class="module-chip-icon">ðŸ›¡ï¸</span><span class="module-chip-name">Sanitized Importer</span><span class="check-circle"></span></div>
-        <div class="module-chip selected locked"><span class="module-chip-icon">ðŸ›ï¸</span><span class="module-chip-name">Vault Automation</span><span class="check-circle"></span></div>
-        <div class="module-chip selected locked"><span class="module-chip-icon">âš¡</span><span class="module-chip-name">Sovereign Lending</span><span class="check-circle"></span></div>
-        <div class="module-chip selected locked"><span class="module-chip-icon">ðŸ”­</span><span class="module-chip-name">Legacy Lens</span><span class="check-circle"></span></div>
+        <div class="module-chip selected locked"><span class="module-chip-icon">🛡️</span><span class="module-chip-name">Sanitized Importer</span><span class="check-circle"></span></div>
+        <div class="module-chip selected locked"><span class="module-chip-icon">🏛️</span><span class="module-chip-name">Vault Automation</span><span class="check-circle"></span></div>
+        <div class="module-chip selected locked"><span class="module-chip-icon">⚡</span><span class="module-chip-name">Sovereign Lending</span><span class="check-circle"></span></div>
+        <div class="module-chip selected locked"><span class="module-chip-icon">🔭</span><span class="module-chip-name">Legacy Lens</span><span class="check-circle"></span></div>
       </div>
       <a class="bundle-cta cta-ultimate" href="https://buy.stripe.com/eVq8wQ15p2yB6RIbpN7Re0j">
-        Activate Legacy Protocol â€” $79/mo
+        Activate Legacy Protocol — $79/mo
       </a>
     </div>
 
@@ -472,32 +472,32 @@
   <div class="addons-section">
     <div class="addons-grid">
       <div class="addon-card">
-        <div class="addon-icon">ðŸ›¡ï¸</div>
+        <div class="addon-icon">🛡️</div>
         <div class="addon-name">Sanitized Importer</div>
         <div class="addon-desc">Bulk CSV portfolio import with Zero-PII firewall. Air-gaps your brokerage data from your identity.</div>
         <div class="addon-price">$19.99/mo</div>
-        <a class="addon-btn" href="https://buy.stripe.com/8x2eVe4hB8WZ7VMalJ7Re0g">Activate â€” $19.99/mo</a>
+        <a class="addon-btn" href="https://buy.stripe.com/8x2eVe4hB8WZ7VMalJ7Re0g">Activate — $19.99/mo</a>
       </div>
       <div class="addon-card">
-        <div class="addon-icon">ðŸ›ï¸</div>
+        <div class="addon-icon">🏛️</div>
         <div class="addon-name">Vault Automation</div>
         <div class="addon-desc">Auto-file receipts, milestone PDFs, and achievement archives. Your documents, organized.</div>
         <div class="addon-price">$29/mo</div>
-        <a class="addon-btn" href="https://buy.stripe.com/bJe28scO7flngsi1Pd7Re0l">Activate â€” $29/mo</a>
+        <a class="addon-btn" href="https://buy.stripe.com/bJe28scO7flngsi1Pd7Re0l">Activate — $29/mo</a>
       </div>
       <div class="addon-card">
-        <div class="addon-icon">âš¡</div>
+        <div class="addon-icon">⚡</div>
         <div class="addon-name">Sovereign Lending</div>
         <div class="addon-desc">9-pod lending architecture. Behavioral underwriting. HELOC strike power. No external credit data.</div>
         <div class="addon-price">$29/mo</div>
-        <a class="addon-btn" href="https://buy.stripe.com/dRm3cwdSba13foe65t7Re0k">Activate â€” $29/mo</a>
+        <a class="addon-btn" href="https://buy.stripe.com/dRm3cwdSba13foe65t7Re0k">Activate — $29/mo</a>
       </div>
       <div class="addon-card">
-        <div class="addon-icon">ðŸ”­</div>
+        <div class="addon-icon">🔭</div>
         <div class="addon-name">Legacy Lens</div>
         <div class="addon-desc">Entity hierarchy visualizer. Sovereign Health Score. Equity across digital assets, IP, and info systems.</div>
         <div class="addon-price">$29/mo</div>
-        <a class="addon-btn" href="https://buy.stripe.com/9B6fZi01l3CFdg679x7Re0m">Activate â€” $29/mo</a>
+        <a class="addon-btn" href="https://buy.stripe.com/9B6fZi01l3CFdg679x7Re0m">Activate — $29/mo</a>
       </div>
     </div>
   </div>
@@ -519,7 +519,7 @@
     const isSelected = chipEl.classList.contains('selected');
 
     if (!isSelected) {
-      // Trying to add â€” check slot limit
+      // Trying to add — check slot limit
       if (bundleSelections[bundleId].length >= maxSlots) return;
       chipEl.classList.add('selected');
       bundleSelections[bundleId].push(module);
@@ -559,10 +559,10 @@
       const label = bundleId === 'starter' ? 'Privacy Starter' : 'Sovereign Architect';
       alert(`Please select ${maxSlots} module${maxSlots > 1 ? 's' : ''} for the ${label} bundle.`);
     }
-    // else â€” let the href through to Stripe
+    // else — let the href through to Stripe
   }
 
-  // â”€â”€â”€ Load upsell triggers from API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Load upsell triggers from API ───────────────────────────────────────
   let currentTrigger = null;
   async function loadUpsellTriggers() {
     try {
@@ -599,7 +599,7 @@
     } catch (_) {}
   }
 
-  // â”€â”€â”€ Initialize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Initialize ────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
     // Disable CTAs initially (no modules selected)
     updateBundleCTA('starter', 2);

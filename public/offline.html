@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FACTS â€” You're Offline</title>
+  <title>FACTS — You're Offline</title>
   <meta name="theme-color" content="#0a0f1a">
   <link rel="manifest" href="/manifest.json">
   <style>
@@ -188,7 +188,7 @@
 </head>
 <body>
   <div class="container">
-    <div class="wifi-icon">ðŸ“¡</div>
+    <div class="wifi-icon">📡</div>
 
     <div class="logo-wrap">
       <img src="/icons/icon-192.png" alt="FACTS" onerror="this.parentElement.innerHTML='<span class=logo-fallback>F</span>'">
@@ -205,16 +205,16 @@
 
     <div class="actions">
       <button class="btn btn-primary" onclick="tryReload()">
-        â†» Try Again
+        ↻ Try Again
       </button>
       <a href="/app" class="btn btn-secondary">
-        â† Back to Dashboard
+        ← Back to Dashboard
       </a>
     </div>
 
     <div class="tip">
-      <strong>ðŸ’¡ Pro tip</strong>
-      Install FACTS as an app on your home screen for the best offline experience â€” your recent data stays accessible even without internet.
+      <strong>💡 Pro tip</strong>
+      Install FACTS as an app on your home screen for the best offline experience — your recent data stays accessible even without internet.
     </div>
   </div>
 
@@ -223,7 +223,7 @@
     var statusLabel = document.querySelector('.status-text');
     var retryTimer = null;
 
-    // Actual server ping â€” navigator.onLine is unreliable across browsers.
+    // Actual server ping — navigator.onLine is unreliable across browsers.
     // A real HEAD request to the origin proves connectivity end-to-end.
     function checkServer() {
       return fetch(window.location.origin + '/?_sw_check=' + Date.now(), {
@@ -234,13 +234,13 @@
 
     function tryReload() {
       var btn = document.querySelector('.btn-primary');
-      btn.textContent = 'Checkingâ€¦';
+      btn.textContent = 'Checking…';
       checkServer().then(function (ok) {
         if (ok) {
-          // Server reachable â€” force bypass SW cache with a hard navigation
+          // Server reachable — force bypass SW cache with a hard navigation
           window.location.href = window.location.origin + '/app?_t=' + Date.now();
         } else {
-          btn.textContent = 'â†» Try Again';
+          btn.textContent = '↻ Try Again';
           statusDot.style.background = '#ef4444';
         }
       });

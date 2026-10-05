@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vantage Point â€” FACTS Financial View</title>
+  <title>Vantage Point — FACTS Financial View</title>
   <meta name="description" content="Read-only financial view shared via FACTS Vantage Point system.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0f1a'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='20' fill='%23c9a227'%3EðŸ‘%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0f1a'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='20' fill='%23c9a227'%3E👁%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -37,7 +37,7 @@
 
     h1,h2,h3,h4,h5 { font-family: 'Space Grotesk', sans-serif; }
 
-    /* â”€â”€ Header â”€â”€ */
+    /* ── Header ── */
     .header {
       background: rgba(10,15,26,0.97);
       border-bottom: 1px solid rgba(201,162,39,0.2);
@@ -87,10 +87,10 @@
       text-transform: uppercase;
     }
 
-    /* â”€â”€ Layout â”€â”€ */
+    /* ── Layout ── */
     .page { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
 
-    /* â”€â”€ Owner Banner â”€â”€ */
+    /* ── Owner Banner ── */
     .owner-banner {
       background: linear-gradient(135deg, rgba(201,162,39,0.1), rgba(201,162,39,0.04));
       border: 1px solid rgba(201,162,39,0.25);
@@ -126,7 +126,7 @@
       text-align: right;
     }
 
-    /* â”€â”€ Sections â”€â”€ */
+    /* ── Sections ── */
     .section { margin-bottom: 28px; }
 
     .section-header {
@@ -152,7 +152,7 @@
 
     .section-title { font-size: 0.9rem; font-weight: 700; }
 
-    /* â”€â”€ Card â”€â”€ */
+    /* ── Card ── */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -160,7 +160,7 @@
       padding: 20px;
     }
 
-    /* â”€â”€ Stats grid â”€â”€ */
+    /* ── Stats grid ── */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -194,7 +194,7 @@
     .stat-value.gold   { color: var(--gold-light); }
     .stat-value.blue   { color: var(--blue); }
 
-    /* â”€â”€ Debt table â”€â”€ */
+    /* ── Debt table ── */
     .debt-table { width: 100%; border-collapse: collapse; }
     .debt-table th {
       font-size: 0.72rem;
@@ -212,7 +212,7 @@
     }
     .debt-table td:last-child { text-align: right; }
 
-    /* â”€â”€ Allocation bars â”€â”€ */
+    /* ── Allocation bars ── */
     .alloc-row {
       display: flex;
       align-items: center;
@@ -224,7 +224,7 @@
     .alloc-bar { height: 8px; border-radius: 99px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
     .alloc-pct { width: 40px; text-align: right; font-size: 0.82rem; font-weight: 700; color: var(--gold-light); }
 
-    /* â”€â”€ Affiliate card â”€â”€ */
+    /* ── Affiliate card ── */
     .aff-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -232,7 +232,7 @@
       margin-top: 4px;
     }
 
-    /* â”€â”€ States â”€â”€ */
+    /* ── States ── */
     .loading-state, .error-state {
       text-align: center;
       padding: 60px 20px;
@@ -252,7 +252,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* â”€â”€ Locked section â”€â”€ */
+    /* ── Locked section ── */
     .locked-section {
       background: rgba(100,116,139,0.06);
       border: 1px dashed rgba(100,116,139,0.2);
@@ -265,7 +265,7 @@
       font-size: 0.85rem;
     }
 
-    /* â”€â”€ Footer â”€â”€ */
+    /* ── Footer ── */
     .footer {
       text-align: center;
       padding: 28px;
@@ -283,12 +283,12 @@
 
 <!-- Header -->
 <header class="header">
-  <div class="eye-icon">ðŸ‘</div>
+  <div class="eye-icon">👁</div>
   <div class="title-group">
     <h1>Vantage Point</h1>
-    <p>Read-Only Financial View Â· FACTS</p>
+    <p>Read-Only Financial View · FACTS</p>
   </div>
-  <div class="readonly-badge">ðŸ”’ View Only</div>
+  <div class="readonly-badge">🔒 View Only</div>
 </header>
 
 <!-- Page content -->
@@ -297,7 +297,7 @@
   <!-- Loading state -->
   <div id="loading-state">
     <div class="loading-spinner"></div>
-    <p style="color:var(--text-muted);font-size:0.9rem;text-align:center;">Loading financial snapshotâ€¦</p>
+    <p style="color:var(--text-muted);font-size:0.9rem;text-align:center;">Loading financial snapshot…</p>
   </div>
 
   <!-- Error state (hidden by default) -->
@@ -312,9 +312,9 @@
 
     <!-- Owner Banner -->
     <div class="owner-banner">
-      <div class="owner-avatar" id="owner-avatar">ðŸ‘¤</div>
+      <div class="owner-avatar" id="owner-avatar">👤</div>
       <div class="owner-info">
-        <h3 id="owner-name">Loadingâ€¦</h3>
+        <h3 id="owner-name">Loading…</h3>
         <p id="share-label"></p>
       </div>
       <div class="expiry-badge" id="expiry-badge" style="display:none;"></div>
@@ -323,7 +323,7 @@
     <!-- FACTS Ledger Summary -->
     <div class="section" id="section-ledger" style="display:none;">
       <div class="section-header">
-        <div class="section-icon gold">ðŸ“Š</div>
+        <div class="section-icon gold">📊</div>
         <span class="section-title">FACTS Ledger Summary</span>
       </div>
       <div class="card">
@@ -334,7 +334,7 @@
     <!-- Debt Position -->
     <div class="section" id="section-debt" style="display:none;">
       <div class="section-header">
-        <div class="section-icon red">ðŸ’³</div>
+        <div class="section-icon red">💳</div>
         <span class="section-title">Debt Position</span>
       </div>
       <div class="card">
@@ -346,7 +346,7 @@
     <!-- Allocation Percentages -->
     <div class="section" id="section-alloc" style="display:none;">
       <div class="section-header">
-        <div class="section-icon gold">ðŸ“</div>
+        <div class="section-icon gold">📐</div>
         <span class="section-title">Allocation Percentages</span>
       </div>
       <div class="card" id="alloc-content"></div>
@@ -355,7 +355,7 @@
     <!-- Net Worth -->
     <div class="section" id="section-nw" style="display:none;">
       <div class="section-header">
-        <div class="section-icon green">ðŸ’°</div>
+        <div class="section-icon green">💰</div>
         <span class="section-title">Net Worth Dashboard</span>
       </div>
       <div class="card">
@@ -366,7 +366,7 @@
     <!-- Affiliate Tree -->
     <div class="section" id="section-aff" style="display:none;">
       <div class="section-header">
-        <div class="section-icon blue">ðŸŒ³</div>
+        <div class="section-icon blue">🌳</div>
         <span class="section-title">Affiliate Tree Structure</span>
       </div>
       <div class="card">
@@ -379,7 +379,7 @@
 
 <footer class="footer">
   This is a read-only snapshot shared by the account holder via <strong>FACTS Vantage Point</strong>.<br>
-  Data is live â€” refreshed on each visit. &nbsp;Â·&nbsp; <a href="/">Join FACTS</a>
+  Data is live — refreshed on each visit. &nbsp;·&nbsp; <a href="/">Join FACTS</a>
 </footer>
 
 <script>
@@ -389,7 +389,7 @@
   }
 
   function escHtml(s) {
-    return String(s || 'â€”').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s || '—').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   async function loadVantagePoint() {
@@ -431,7 +431,7 @@
     // Owner banner
     const ownerName = body.owner_name || 'FACTS Member';
     document.getElementById('owner-name').textContent = ownerName;
-    document.getElementById('owner-avatar').textContent = ownerName.charAt(0).toUpperCase() || 'ðŸ‘¤';
+    document.getElementById('owner-avatar').textContent = ownerName.charAt(0).toUpperCase() || '👤';
     document.getElementById('share-label').textContent = body.share_label
       ? 'Share: ' + body.share_label
       : 'Financial Snapshot (Read-Only)';
@@ -494,15 +494,15 @@
             <tbody>
               ${dp.debts.map(d => `<tr>
                 <td>${escHtml(d.account_name)}</td>
-                <td>${d.interest_rate ? d.interest_rate + '%' : 'â€”'}</td>
-                <td>${d.minimum_payment_cents ? fmt(d.minimum_payment_cents) : 'â€”'}</td>
+                <td>${d.interest_rate ? d.interest_rate + '%' : '—'}</td>
+                <td>${d.minimum_payment_cents ? fmt(d.minimum_payment_cents) : '—'}</td>
                 <td style="font-weight:700;color:var(--red);">${fmt(d.balance_cents)}</td>
               </tr>`).join('')}
             </tbody>
           </table>
         `;
       } else {
-        document.getElementById('debt-table-wrap').innerHTML = '<p style="color:var(--green);font-size:0.85rem;">âœ“ No active debts on record.</p>';
+        document.getElementById('debt-table-wrap').innerHTML = '<p style="color:var(--green);font-size:0.85rem;">✓ No active debts on record.</p>';
       }
     }
 
@@ -555,7 +555,7 @@
         <div class="stat-item">
           <div class="stat-label">Snapshot Date</div>
           <div class="stat-value" style="font-size:0.9rem;color:var(--text-secondary);">
-            ${nw.snapshot_date ? new Date(nw.snapshot_date).toLocaleDateString() : 'â€”'}
+            ${nw.snapshot_date ? new Date(nw.snapshot_date).toLocaleDateString() : '—'}
           </div>
         </div>
       `;
@@ -575,11 +575,11 @@
         </div>
         <div class="stat-item">
           <div class="stat-label">Level</div>
-          <div class="stat-value blue">${a.affiliate_level || 'â€”'}</div>
+          <div class="stat-value blue">${a.affiliate_level || '—'}</div>
         </div>
         <div class="stat-item">
           <div class="stat-label">Status</div>
-          <div class="stat-value" style="font-size:0.85rem;color:${a.status === 'active' ? 'var(--green)' : 'var(--text-muted)'};text-transform:capitalize;">${a.status || 'â€”'}</div>
+          <div class="stat-value" style="font-size:0.85rem;color:${a.status === 'active' ? 'var(--green)' : 'var(--text-muted)'};text-transform:capitalize;">${a.status || '—'}</div>
         </div>
         <div class="stat-item">
           <div class="stat-label">Personal Recruits</div>

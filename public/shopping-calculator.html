@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Shopping Calculator â€” FACTS</title>
+  <title>Shopping Calculator — FACTS</title>
   <meta name="description" content="GPS-powered grocery shopping. Compare prices, build lists, sweep savings into your buckets.">
   <meta name="theme-color" content="#0a0a0a">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0a0a'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='%2339ff14'%3EðŸ›’%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0a0a'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='%2339ff14'%3E🛒%3C/text%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -81,7 +81,7 @@
   <!-- Header -->
   <div style="background:#0a0a0a;border-bottom:1px solid #2a2a2a;padding:12px 16px 10px;flex-shrink:0;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-      <span style="font-size:12px;letter-spacing:3px;color:#666;text-transform:uppercase;font-weight:700;">â—ˆ Shopping Calculator</span>
+      <span style="font-size:12px;letter-spacing:3px;color:#666;text-transform:uppercase;font-weight:700;">◈ Shopping Calculator</span>
       <div style="display:flex;gap:6px;align-items:center;">
         <span id="trip-badge" class="badge-grocery" style="display:none;">Shopping Mode</span>
         <span id="total-header" style="font-size:4rem;font-weight:900;color:#39ff14;text-shadow:0 0 20px rgba(57,255,20,0.5);line-height:1;letter-spacing:-1px;">$0.00</span>
@@ -93,7 +93,7 @@
     </div>
     <!-- Manual location fallback (hidden until GPS denied) -->
     <div id="manual-location" style="display:none;margin-top:6px;">
-      <div style="font-size:10px;color:#444;margin-bottom:4px;letter-spacing:1px;">â€” OR ENTER ZIP â€”</div>
+      <div style="font-size:10px;color:#444;margin-bottom:4px;letter-spacing:1px;">— OR ENTER ZIP —</div>
       <div style="display:flex;gap:6px;">
         <input id="zip-input" type="text" placeholder="92054" maxlength="5" class="input-dark" style="width:80px;font-size:11px;height:28px;" onkeydown="if(event.key==='Enter')applyZip()">
         <button onclick="applyZip()" class="btn-neon" style="height:28px;padding:0 12px;font-size:9px;letter-spacing:1px;border-radius:0.4rem;">GO</button>
@@ -103,10 +103,10 @@
 
   <!-- Tab Nav -->
   <div style="display:flex;background:#0a0a0a;border-bottom:1px solid #2a2a2a;flex-shrink:0;padding:0 16px;gap:0;">
-    <button class="tab-btn" id="tab-radar" onclick="switchTab('radar')" style="flex:1;padding:12px 0;border:none;background:transparent;color:#666;font-size:13px;font-weight:700;letter-spacing:1.5px;font-family:inherit;cursor:pointer;text-transform:uppercase;border-bottom:2px solid transparent;transition:all 0.2s;">ðŸ—º Radar</button>
-    <button class="tab-btn" id="tab-search" onclick="switchTab('search')" style="flex:1;padding:12px 0;border:none;background:transparent;color:#666;font-size:13px;font-weight:700;letter-spacing:1.5px;font-family:inherit;cursor:pointer;text-transform:uppercase;border-bottom:2px solid transparent;transition:all 0.2s;">ðŸ” Search</button>
-    <button class="tab-btn" id="tab-list" onclick="switchTab('list')" style="flex:1;padding:12px 0;border:none;background:transparent;color:#666;font-size:13px;font-weight:700;letter-spacing:1.5px;font-family:inherit;cursor:pointer;text-transform:uppercase;border-bottom:2px solid transparent;transition:all 0.2s;">ðŸ“‹ List</button>
-    <button class="tab-btn" id="tab-compare" onclick="switchTab('compare')" style="flex:1;padding:12px 0;border:none;background:transparent;color:#666;font-size:13px;font-weight:700;letter-spacing:1.5px;font-family:inherit;cursor:pointer;text-transform:uppercase;border-bottom:2px solid transparent;transition:all 0.2s;">âš– Compare</button>
+    <button class="tab-btn" id="tab-radar" onclick="switchTab('radar')" style="flex:1;padding:12px 0;border:none;background:transparent;color:#666;font-size:13px;font-weight:700;letter-spacing:1.5px;font-family:inherit;cursor:pointer;text-transform:uppercase;border-bottom:2px solid transparent;transition:all 0.2s;">🗺 Radar</button>
+    <button class="tab-btn" id="tab-search" onclick="switchTab('search')" style="flex:1;padding:12px 0;border:none;background:transparent;color:#666;font-size:13px;font-weight:700;letter-spacing:1.5px;font-family:inherit;cursor:pointer;text-transform:uppercase;border-bottom:2px solid transparent;transition:all 0.2s;">🔍 Search</button>
+    <button class="tab-btn" id="tab-list" onclick="switchTab('list')" style="flex:1;padding:12px 0;border:none;background:transparent;color:#666;font-size:13px;font-weight:700;letter-spacing:1.5px;font-family:inherit;cursor:pointer;text-transform:uppercase;border-bottom:2px solid transparent;transition:all 0.2s;">📋 List</button>
+    <button class="tab-btn" id="tab-compare" onclick="switchTab('compare')" style="flex:1;padding:12px 0;border:none;background:transparent;color:#666;font-size:13px;font-weight:700;letter-spacing:1.5px;font-family:inherit;cursor:pointer;text-transform:uppercase;border-bottom:2px solid transparent;transition:all 0.2s;">⚖ Compare</button>
   </div>
 
   <!-- Content Area -->
@@ -125,10 +125,10 @@
         </div>
         <div id="category-filters" style="display:flex;gap:4px;flex-wrap:wrap;">
           <button class="radius-btn active" id="cat-all" onclick="setCategory('all')">All</button>
-          <button class="radius-btn" id="cat-grocery" onclick="setCategory('grocery')">ðŸ›’ Grocery</button>
-          <button class="radius-btn" id="cat-warehouse" onclick="setCategory('warehouse')">ðŸ“¦ Warehouse</button>
-          <button class="radius-btn" id="cat-big_box" onclick="setCategory('big_box')">ðŸ¬ Big Box</button>
-          <button class="radius-btn" id="cat-gas_station" onclick="setCategory('gas_station')">â›½ Gas</button>
+          <button class="radius-btn" id="cat-grocery" onclick="setCategory('grocery')">🛒 Grocery</button>
+          <button class="radius-btn" id="cat-warehouse" onclick="setCategory('warehouse')">📦 Warehouse</button>
+          <button class="radius-btn" id="cat-big_box" onclick="setCategory('big_box')">🏬 Big Box</button>
+          <button class="radius-btn" id="cat-gas_station" onclick="setCategory('gas_station')">⛽ Gas</button>
         </div>
       </div>
 
@@ -145,7 +145,7 @@
       <div style="padding:16px;background:#111;border-bottom:1px solid #2a2a2a;">
         <div style="display:flex;gap:8px;">
           <input id="search-input" type="text" placeholder="Search products..." class="input-dark" style="flex:1;" oninput="handleSearch(this.value)">
-          <button onclick="clearSearch()" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:0 12px;border-radius:0.5rem;font-size:11px;cursor:pointer;letter-spacing:1px;">âœ•</button>
+          <button onclick="clearSearch()" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:0 12px;border-radius:0.5rem;font-size:11px;cursor:pointer;letter-spacing:1px;">✕</button>
         </div>
         <div id="search-results" style="margin-top:8px;"></div>
       </div>
@@ -159,11 +159,11 @@
       <div style="padding:12px 16px;background:#111;border-bottom:1px solid #2a2a2a;display:flex;align-items:center;justify-content:space-between;">
         <div>
           <div id="list-name" style="font-size:18px;font-weight:800;">My List</div>
-          <div id="list-meta" style="font-size:14px;color:#666;margin-top:3px;font-weight:600;">0 items Â· $0.00</div>
+          <div id="list-meta" style="font-size:14px;color:#666;margin-top:3px;font-weight:600;">0 items · $0.00</div>
         </div>
         <div style="display:flex;gap:6px;">
-          <button onclick="openReceiptScan()" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#39ff14;padding:10px 16px;border-radius:0.5rem;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;">ðŸ“· Scan</button>
-          <button onclick="clearList()" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:10px 16px;border-radius:0.5rem;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;">ðŸ—‘ Clear</button>
+          <button onclick="openReceiptScan()" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#39ff14;padding:10px 16px;border-radius:0.5rem;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;">📷 Scan</button>
+          <button onclick="clearList()" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:10px 16px;border-radius:0.5rem;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;">🗑 Clear</button>
         </div>
       </div>
 
@@ -179,12 +179,12 @@
       <!-- Sweep CTA Banner (hidden until needed) -->
       <div id="sweep-cta" class="sweep-banner" style="display:none;">
         <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div id="sweep-icon" style="font-size:1.5rem;flex-shrink:0;">ðŸ’°</div>
+          <div id="sweep-icon" style="font-size:1.5rem;flex-shrink:0;">💰</div>
           <div style="flex:1;">
             <div id="sweep-headline" style="font-size:18px;font-weight:800;color:#39ff14;margin-bottom:6px;"></div>
             <div id="sweep-body" style="font-size:15px;color:#94a3b8;line-height:1.5;margin-bottom:12px;font-weight:500;"></div>
             <div style="display:flex;gap:6px;">
-              <button onclick="executeSweep()" id="sweep-cta-btn" class="btn-neon" style="flex:1;padding:10px 14px;font-size:12px;letter-spacing:1px;border-radius:0.5rem;">ðŸ”„ Sweep into <span id="sweep-bucket-name"></span> â†’</button>
+              <button onclick="executeSweep()" id="sweep-cta-btn" class="btn-neon" style="flex:1;padding:10px 14px;font-size:12px;letter-spacing:1px;border-radius:0.5rem;">🔄 Sweep into <span id="sweep-bucket-name"></span> →</button>
               <button onclick="dismissSweep()" style="background:transparent;border:1px solid #2a2a2a;color:#666;padding:10px 14px;font-size:12px;cursor:pointer;border-radius:0.5rem;font-weight:600;">Not now</button>
             </div>
           </div>
@@ -194,7 +194,7 @@
       <!-- Upgrade Banner -->
       <div id="upgrade-banner" class="upgrade-banner" style="display:none;">
         <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.5rem;">ðŸ”’</span>
+          <span style="font-size:1.5rem;">🔒</span>
           <div style="flex:1;">
             <div style="font-size:13px;font-weight:700;color:#c9a227;margin-bottom:4px;">Free Tier Limit</div>
             <div style="font-size:12px;color:#94a3b8;line-height:1.5;">Your list is capped at 10 items. <strong style="color:#e8e8e8;">FACTS Pro</strong> unlocks unlimited lists, receipt scan, and store comparison.</div>
@@ -204,12 +204,12 @@
       </div>
 
       <div id="list-items" style="padding:4px 0;">
-        <div id="empty-list" style="text-align:center;padding:2rem;color:#444;font-size:16px;font-weight:700;letter-spacing:3px;">â—ˆ &nbsp; EMPTY LIST &nbsp; â—ˆ</div>
+        <div id="empty-list" style="text-align:center;padding:2rem;color:#444;font-size:16px;font-weight:700;letter-spacing:3px;">◈ &nbsp; EMPTY LIST &nbsp; ◈</div>
       </div>
 
       <div id="list-actions" style="padding:12px 16px;display:flex;gap:8px;">
-        <button onclick="selectStoreForList()" class="btn-ghost" style="flex:1;padding:14px;font-size:14px;letter-spacing:1.5px;border-radius:0.5rem;font-weight:700;">ðŸ“ Select Store</button>
-        <button onclick="goCompare()" class="btn-neon" style="flex:1;padding:14px;font-size:14px;letter-spacing:1.5px;border-radius:0.5rem;font-weight:800;">âš– Compare Stores</button>
+        <button onclick="selectStoreForList()" class="btn-ghost" style="flex:1;padding:14px;font-size:14px;letter-spacing:1.5px;border-radius:0.5rem;font-weight:700;">📍 Select Store</button>
+        <button onclick="goCompare()" class="btn-neon" style="flex:1;padding:14px;font-size:14px;letter-spacing:1.5px;border-radius:0.5rem;font-weight:800;">⚖ Compare Stores</button>
       </div>
     </div>
 
@@ -240,7 +240,7 @@
 <!-- Modal: Price Entry -->
 <div class="modal-overlay" id="price-modal">
   <div class="modal" style="border-radius:1rem 1rem 0 0;">
-    <div style="font-size:10px;letter-spacing:3px;color:#666;text-transform:uppercase;margin-bottom:8px;">â—ˆ ENTER PRICE</div>
+    <div style="font-size:10px;letter-spacing:3px;color:#666;text-transform:uppercase;margin-bottom:8px;">◈ ENTER PRICE</div>
     <div id="price-item-name" style="font-size:14px;font-weight:700;margin-bottom:12px;color:#e8e8e8;"></div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
       <span style="font-size:24px;color:#666;">$</span>
@@ -254,25 +254,25 @@
 <!-- Modal: Receipt Scan -->
 <div class="modal-overlay" id="receipt-modal">
   <div class="modal" style="border-radius:1rem 1rem 0 0;">
-    <div style="font-size:10px;letter-spacing:3px;color:#666;text-transform:uppercase;margin-bottom:8px;">â—ˆ SCAN RECEIPT</div>
+    <div style="font-size:10px;letter-spacing:3px;color:#666;text-transform:uppercase;margin-bottom:8px;">◈ SCAN RECEIPT</div>
 
     <div id="receipt-capture" style="text-align:center;">
       <div id="camera-preview" style="background:#0a0a0a;border:2px dashed rgba(57,255,20,0.3);border-radius:0.75rem;height:200px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;cursor:pointer;" onclick="triggerCamera()">
         <div style="text-align:center;color:#666;">
-          <div style="font-size:2rem;margin-bottom:8px;">ðŸ“·</div>
+          <div style="font-size:2rem;margin-bottom:8px;">📷</div>
           <div style="font-size:11px;letter-spacing:1px;">TAP TO CAPTURE</div>
         </div>
       </div>
       <input type="file" id="receipt-camera" accept="image/*" capture="environment" style="display:none;" onchange="handleReceiptFile(this)">
-      <button onclick="triggerCamera()" class="btn-ghost" style="width:100%;padding:10px;font-size:10px;letter-spacing:1.5px;border-radius:0.5rem;margin-bottom:8px;">ðŸ“· Open Camera</button>
+      <button onclick="triggerCamera()" class="btn-ghost" style="width:100%;padding:10px;font-size:10px;letter-spacing:1.5px;border-radius:0.5rem;margin-bottom:8px;">📷 Open Camera</button>
       <p style="font-size:10px;color:#444;text-align:center;margin:0;">Receipt OCR powered by OpenAI Vision. Prices are parsed and matched to your list.</p>
     </div>
 
     <div id="receipt-results" style="display:none;">
       <div id="receipt-parsed" style="max-height:280px;overflow-y:auto;margin-bottom:12px;"></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button onclick="retakeReceipt()" class="btn-ghost" style="flex:1;padding:9px;font-size:10px;letter-spacing:1px;border-radius:0.5rem;">ðŸ“· Retake</button>
-        <button onclick="confirmAllPrices()" class="btn-neon" style="flex:1;padding:9px;font-size:10px;letter-spacing:1.5px;border-radius:0.5rem;">âœ“ Confirm All</button>
+        <button onclick="retakeReceipt()" class="btn-ghost" style="flex:1;padding:9px;font-size:10px;letter-spacing:1px;border-radius:0.5rem;">📷 Retake</button>
+        <button onclick="confirmAllPrices()" class="btn-neon" style="flex:1;padding:9px;font-size:10px;letter-spacing:1.5px;border-radius:0.5rem;">✓ Confirm All</button>
       </div>
       <button onclick="closeReceiptModal()" class="btn-ghost" style="width:100%;padding:8px;font-size:10px;letter-spacing:1px;border-radius:0.5rem;margin-top:6px;">CANCEL</button>
     </div>
@@ -282,7 +282,7 @@
 <!-- Modal: Store Picker -->
 <div class="modal-overlay" id="store-modal">
   <div class="modal" style="border-radius:1rem 1rem 0 0;">
-    <div style="font-size:10px;letter-spacing:3px;color:#666;text-transform:uppercase;margin-bottom:12px;">â—ˆ SELECT STORE</div>
+    <div style="font-size:10px;letter-spacing:3px;color:#666;text-transform:uppercase;margin-bottom:12px;">◈ SELECT STORE</div>
     <div id="store-options" style="max-height:300px;overflow-y:auto;"></div>
     <button onclick="closeStoreModal()" class="btn-ghost" style="width:100%;padding:10px;font-size:10px;letter-spacing:1.5px;border-radius:0.5rem;margin-top:12px;">CANCEL</button>
   </div>
@@ -291,7 +291,7 @@
 <!-- Modal: Comparison -->
 <div class="modal-overlay" id="compare-modal">
   <div class="modal" style="border-radius:1rem 1rem 0 0;">
-    <div style="font-size:10px;letter-spacing:3px;color:#666;text-transform:uppercase;margin-bottom:12px;">â—ˆ TRIP SAVINGS</div>
+    <div style="font-size:10px;letter-spacing:3px;color:#666;text-transform:uppercase;margin-bottom:12px;">◈ TRIP SAVINGS</div>
     <div id="compare-modal-content"></div>
     <button onclick="closeCompareModal()" class="btn-ghost" style="width:100%;padding:10px;font-size:10px;letter-spacing:1.5px;border-radius:0.5rem;margin-top:12px;">CLOSE</button>
   </div>
@@ -300,7 +300,7 @@
 <script>
 'use strict';
 
-// â”€â”€ Zip â†’ Coords lookup (major US metro areas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Zip → Coords lookup (major US metro areas) ────────────────────────────
 const ZIP_TO_COORDS = {
   '92054': { lat: 33.1952, lng: -117.3793, city: 'Oceanside, CA' },
   '92055': { lat: 33.1988, lng: -117.3823, city: 'Oceanside, CA' },
@@ -328,7 +328,7 @@ const ZIP_TO_COORDS = {
   '60601': { lat: 41.8819, lng: -87.6278, city: 'Chicago, IL' },
 };
 
-// â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── State ─────────────────────────────────────────────────────────────────
 const STATE = {
   lat: null,
   lng: null,
@@ -348,7 +348,7 @@ const STATE = {
   searchDebounce: null,
 };
 
-// â”€â”€ API helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── API helpers ────────────────────────────────────────────────────────────
 async function api(url, opts = {}) {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...opts.headers },
@@ -367,7 +367,7 @@ async function getUser() {
   }
 }
 
-// â”€â”€ Location â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Location ───────────────────────────────────────────────────────────────
 async function detectLocation() {
   if (!navigator.geolocation) {
     setLocationText('Geolocation unavailable');
@@ -379,11 +379,11 @@ async function detectLocation() {
     return;
   }
 
-  // Safety timeout â€” if geolocation hangs, fallback after 10s
+  // Safety timeout — if geolocation hangs, fallback after 10s
   const safetyTimer = setTimeout(() => {
     if (STATE.loadingLocation) {
       document.getElementById('location-spinner').style.display = 'none';
-      setLocationText('Location timeout â€” using default');
+      setLocationText('Location timeout — using default');
       showManualLocation();
       STATE.lat = 33.1952;
       STATE.lng = -117.3793;
@@ -398,7 +398,7 @@ async function detectLocation() {
       STATE.lat = pos.coords.latitude;
       STATE.lng = pos.coords.longitude;
       const areaName = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-      setLocationText(`${areaName} â€” ${STATE.lat.toFixed(3)}Â°, ${STATE.lng.toFixed(3)}Â°`);
+      setLocationText(`${areaName} — ${STATE.lat.toFixed(3)}°, ${STATE.lng.toFixed(3)}°`);
       document.getElementById('location-spinner').style.display = 'none';
       STATE.loadingLocation = false;
       loadStores();
@@ -406,7 +406,7 @@ async function detectLocation() {
     async () => {
       clearTimeout(safetyTimer);
       document.getElementById('location-spinner').style.display = 'none';
-      setLocationText('Location access denied â€” using default');
+      setLocationText('Location access denied — using default');
       showManualLocation();
       STATE.lat = 33.1952;
       STATE.lng = -117.3793;
@@ -444,10 +444,10 @@ function applyZip() {
   const zip = document.getElementById('zip-input').value.trim();
   if (!/^\\d{5}$/.test(zip)) { showToast('Enter a 5-digit US zip code'); return; }
   const coords = ZIP_TO_COORDS[zip];
-  if (!coords) { showToast('Zip code not found â€” try Oceanside area (92054)'); return; }
+  if (!coords) { showToast('Zip code not found — try Oceanside area (92054)'); return; }
   STATE.lat = coords.lat;
   STATE.lng = coords.lng;
-  setLocationText(`${zip} â€” ${coords.city}`);
+  setLocationText(`${zip} — ${coords.city}`);
   document.getElementById('manual-location').style.display = 'none';
   document.getElementById('location-spinner').style.display = 'none';
   STATE.loadingLocation = false;
@@ -458,7 +458,7 @@ function setLocationText(txt) {
   document.getElementById('location-text').textContent = txt;
 }
 
-// â”€â”€ Load Stores â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Load Stores ────────────────────────────────────────────────────────────
 async function loadStores() {
   if (!STATE.lat || !STATE.lng) return;
   const container = document.getElementById('stores-list');
@@ -488,7 +488,7 @@ function renderStores() {
     return `<div class="card card-neon" style="margin-bottom:8px;padding:14px;cursor:pointer;" onclick="selectStore(${store.id})">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <div>
-          <div style="font-size:17px;font-weight:800;color:#e8e8e8;">ðŸ¬ ${store.name}</div>
+          <div style="font-size:17px;font-weight:800;color:#e8e8e8;">🏬 ${store.name}</div>
           ${stars}
         </div>
         <div style="text-align:right;">
@@ -497,25 +497,25 @@ function renderStores() {
         </div>
       </div>
       <div style="font-size:11px;color:#666;margin-bottom:4px;">${store.address || ''}</div>
-      <div style="font-size:10px;color:#444;margin-top:4px;">ðŸ’° ${store.price_count || 0} prices contributed</div>
+      <div style="font-size:10px;color:#444;margin-top:4px;">💰 ${store.price_count || 0} prices contributed</div>
     </div>`;
   }).join('');
 }
 
 function getCategoryBadge(cat) {
   const map = {
-    grocery: 'ðŸ›’ Grocery', warehouse: 'ðŸ“¦ Warehouse', big_box: 'ðŸ¬ Big Box',
-    gas_station: 'â›½ Gas', convenience: 'ðŸª Convenience', local_indie: 'ðŸ¡ Local'
+    grocery: '🛒 Grocery', warehouse: '📦 Warehouse', big_box: '🏬 Big Box',
+    gas_station: '⛽ Gas', convenience: '🏪 Convenience', local_indie: '🏡 Local'
   };
   return `<span class="badge-${cat}">${map[cat] || cat}</span>`;
 }
 
 function getStoreStars(count) {
   const stars = Math.min(5, Math.ceil((count || 0) / 4));
-  return '<div style="color:#c9a227;font-size:12px;margin-top:3px;">' + 'â­'.repeat(stars) + '</div>';
+  return '<div style="color:#c9a227;font-size:12px;margin-top:3px;">' + '⭐'.repeat(stars) + '</div>';
 }
 
-// â”€â”€ Store Selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Store Selection ────────────────────────────────────────────────────────
 async function selectStore(storeId) {
   const store = STATE.stores.find(s => s.id === storeId);
   if (!store) return;
@@ -533,7 +533,7 @@ async function selectStore(storeId) {
   }
 
   document.getElementById('trip-badge').style.display = 'inline';
-  document.getElementById('trip-badge').textContent = `ðŸ“ ${store.name}`;
+  document.getElementById('trip-badge').textContent = `📍 ${store.name}`;
   document.getElementById('quick-add-bar').style.display = 'block';
 
   showToast(`Shopping mode: ${store.name}`);
@@ -543,10 +543,10 @@ async function selectStore(storeId) {
 async function selectStoreForList() {
   if (!STATE.stores.length) { showToast('No stores loaded yet'); return; }
   const html = STATE.stores.map(s => `<div class="list-item-row" style="cursor:pointer;" onclick="selectStore(${s.id});closeStoreModal();">
-    <span style="font-size:1.2rem;">ðŸ¬</span>
+    <span style="font-size:1.2rem;">🏬</span>
     <div style="flex:1;">
       <div style="font-size:12px;font-weight:600;">${s.name}</div>
-      <div style="font-size:10px;color:#666;">${s.distance.toFixed(1)} mi Â· ${s.address || ''}</div>
+      <div style="font-size:10px;color:#666;">${s.distance.toFixed(1)} mi · ${s.address || ''}</div>
     </div>
   </div>`).join('');
   document.getElementById('store-options').innerHTML = html;
@@ -557,7 +557,7 @@ function closeStoreModal() {
   document.getElementById('store-modal').classList.remove('open');
 }
 
-// â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Search ─────────────────────────────────────────────────────────────────
 let searchTimer;
 function handleSearch(q) {
   clearTimeout(searchTimer);
@@ -587,7 +587,7 @@ function renderSearchResults(products) {
     <div class="search-result-row" data-name="${btoa(unescape(encodeURIComponent(p.name)))}" data-brand="${btoa(unescape(encodeURIComponent(p.brand)))}" data-upc="${p.upc || ''}" data-cat="${p.category || ''}" onclick="handleSearchRowClick(this)">
       <div>
         <div style="font-size:12px;font-weight:600;">${escapeHtml(p.name)}</div>
-        <div style="font-size:10px;color:#666;margin-top:2px;">${escapeHtml(p.brand)}${p.upc ? ' Â· UPC: ' + p.upc : ''}</div>
+        <div style="font-size:10px;color:#666;margin-top:2px;">${escapeHtml(p.brand)}${p.upc ? ' · UPC: ' + p.upc : ''}</div>
       </div>
       <div style="margin-left:auto;color:#39ff14;font-size:11px;letter-spacing:1px;">+ ADD</div>
     </div>`).join('');
@@ -610,7 +610,7 @@ function escapeHtml(s) {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// â”€â”€ List Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── List Management ───────────────────────────────────────────────────────
 async function addProductToList(name, brand, upc, category) {
   if (!STATE.listId) {
     const data = await api('/api/mod_shopping/list', { method: 'POST', body: { name: 'Shopping Trip' } });
@@ -669,7 +669,7 @@ function renderList() {
   const listNameEl = document.getElementById('list-name');
   const listMetaEl = document.getElementById('list-meta');
 
-  listNameEl.textContent = STATE.selectedStore ? `${STATE.selectedStore.name} â€” Shopping` : 'My List';
+  listNameEl.textContent = STATE.selectedStore ? `${STATE.selectedStore.name} — Shopping` : 'My List';
 
   if (!STATE.listItems.length) {
     emptyEl.style.display = 'block';
@@ -678,28 +678,28 @@ function renderList() {
       container.innerHTML = '';
       container.appendChild(emptyEl);
     }
-    listMetaEl.textContent = '0 items Â· $0.00';
+    listMetaEl.textContent = '0 items · $0.00';
     return;
   }
 
   emptyEl.style.display = 'none';
   const total = STATE.listItems.filter(i => i.confirmed).reduce((s, i) => s + (i.entered_price_cents || 0), 0);
-  listMetaEl.textContent = `${STATE.listItems.length} items Â· ${formatDollars(total)}`;
+  listMetaEl.textContent = `${STATE.listItems.length} items · ${formatDollars(total)}`;
 
   container.innerHTML = STATE.listItems.map(item => {
     const checkedClass = item.checked ? 'checked' : '';
     const qty = item.quantity || 1;
     const lineTotal = item.entered_price_cents ? item.entered_price_cents * qty : 0;
-    const priceDisplay = item.entered_price_cents ? formatDollars(item.entered_price_cents) : 'â€” â€”';
+    const priceDisplay = item.entered_price_cents ? formatDollars(item.entered_price_cents) : '— —';
     const lineTotalDisplay = lineTotal > 0 ? formatDollars(lineTotal) : '';
     return `<div class="list-item-row ${checkedClass}" style="cursor:pointer;" onclick="openPriceModal(${item.id}, '${escapeHtml(item.name.replace(/'/g, "\\'"))}')">
-      <div style="width:20px;text-align:center;color:${item.checked ? '#39ff14' : '#444'};font-size:14px;">${item.checked ? 'âœ“' : 'â—‹'}</div>
+      <div style="width:20px;text-align:center;color:${item.checked ? '#39ff14' : '#444'};font-size:14px;">${item.checked ? '✓' : '○'}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:19px;font-weight:700;">${escapeHtml(item.name)}</div>
         ${item.brand ? `<div style="font-size:12px;color:#666;">${escapeHtml(item.brand)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-        <button onclick="event.stopPropagation();adjustQty(${item.id},-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#666;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;">âˆ’</button>
+        <button onclick="event.stopPropagation();adjustQty(${item.id},-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#666;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;">−</button>
         <span style="font-size:13px;font-weight:700;color:#e8e8e8;min-width:20px;text-align:center;">${qty}</span>
         <button onclick="event.stopPropagation();adjustQty(${item.id},1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#666;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;">+</button>
       </div>
@@ -707,7 +707,7 @@ function renderList() {
         <div style="font-size:16px;color:${item.entered_price_cents ? '#39ff14' : '#666'};font-weight:700;">${priceDisplay}</div>
         ${lineTotalDisplay ? `<div style="font-size:12px;color:#888;font-weight:600;">${lineTotalDisplay}</div>` : ''}
       </div>
-      <button onclick="event.stopPropagation();removeListItem(${item.id})" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0;">Ã—</button>
+      <button onclick="event.stopPropagation();removeListItem(${item.id})" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0;">×</button>
     </div>`;
   }).join('');
 
@@ -728,7 +728,7 @@ async function removeListItem(itemId) {
   renderList();
 }
 
-// â”€â”€ Predictive Suggestions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Predictive Suggestions ─────────────────────────────────────────────────
 let _suggestDebounce = null;
 let _pendingSuggest = null;
 
@@ -788,7 +788,7 @@ async function confirmListAdd() {
   await addProductToList(name, '', '', '');
 }
 
-// â”€â”€ Quantity adjustment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Quantity adjustment ────────────────────────────────────────────────────
 async function adjustQty(itemId, delta) {
   const item = STATE.listItems.find(i => i.id === itemId);
   if (!item || !STATE.listId) return;
@@ -801,7 +801,7 @@ async function adjustQty(itemId, delta) {
   renderList();
 }
 
-// â”€â”€ Price Entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Price Entry ───────────────────────────────────────────────────────────
 function openPriceModal(itemId, itemName) {
   const item = STATE.listItems.find(i => i.id === itemId);
   if (!item) return;
@@ -842,7 +842,7 @@ function updateHeaderTotal() {
   document.getElementById('total-header').textContent = formatDollars(total);
 }
 
-// â”€â”€ Sweep CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Sweep CTA ──────────────────────────────────────────────────────────────
 async function checkSweepConditions() {
   if (!STATE.listId || !STATE.selectedStore) return;
   const total = STATE.listItems.filter(i => i.confirmed && i.entered_price_cents).reduce((s, i) => s + (i.entered_price_cents || 0), 0);
@@ -870,14 +870,14 @@ async function showSweepCTA(sweepData) {
 
   if (isGoodDeal) {
     const savings = analysis.trip_savings_cents;
-    document.getElementById('sweep-icon').textContent = 'ðŸ’°';
+    document.getElementById('sweep-icon').textContent = '💰';
     document.getElementById('sweep-headline').textContent = `You saved ${formatDollars(savings)} vs your neighbors!`;
     document.getElementById('sweep-body').textContent = `Your ${bucket} bucket is ${shortfall_pct}% behind this month. That ${formatDollars(savings)} goes directly there.`;
   } else {
     const overspend = Math.abs(analysis?.trip_savings_cents || 240);
-    document.getElementById('sweep-icon').textContent = 'âš ï¸';
+    document.getElementById('sweep-icon').textContent = '⚠️';
     document.getElementById('sweep-headline').textContent = `You paid ${formatDollars(overspend)} more than average this trip.`;
-    document.getElementById('sweep-body').textContent = `Your ${bucket} bucket is ${shortfall_pct}% behind. Make up the difference â€” sweep it back.`;
+    document.getElementById('sweep-body').textContent = `Your ${bucket} bucket is ${shortfall_pct}% behind. Make up the difference — sweep it back.`;
   }
 
   document.getElementById('sweep-bucket-name').textContent = bucket.charAt(0).toUpperCase() + bucket.slice(1);
@@ -899,10 +899,10 @@ async function executeSweep() {
         store_id: STATE.selectedStore?.id
       }
     });
-    showToast(`âœ“ Swept ${formatDollars(total)} into ${STATE.sweepData.bucket}`);
+    showToast(`✓ Swept ${formatDollars(total)} into ${STATE.sweepData.bucket}`);
     dismissSweep();
   } catch {
-    showToast('Sweep failed â€” login to save');
+    showToast('Sweep failed — login to save');
     goUpgrade();
   }
 }
@@ -911,29 +911,29 @@ function dismissSweep() {
   document.getElementById('sweep-cta').style.display = 'none';
 }
 
-// â”€â”€ Compare â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Compare ────────────────────────────────────────────────────────────────
 async function goCompare() {
   if (!STATE.listId) { showToast('Add items first'); return; }
   if (STATE.listItems.length === 0) { showToast('List is empty'); return; }
 
   const btn = document.querySelector('[onclick="goCompare()"]');
-  if (btn) { btn.textContent = 'â³ Loading...'; btn.disabled = true; }
+  if (btn) { btn.textContent = '⏳ Loading...'; btn.disabled = true; }
 
   try {
-    // FACTS user â†’ full /optimize endpoint
+    // FACTS user → full /optimize endpoint
     if (STATE.isFactsUser) {
       const latParam = STATE.lat ? `&lat=${STATE.lat}&lng=${STATE.lng}` : '';
       const data = await api(`/api/mod_shopping/optimize/${STATE.listId}${latParam}`);
       renderOptimizeResults(data);
     } else {
-      // Free tier â†’ cheapest-per-item
+      // Free tier → cheapest-per-item
       const data = await api(`/api/mod_shopping/optimize/${STATE.listId}/cheapest-per-item`);
       renderFreeTierCompare(data);
     }
   } catch (e) {
     showToast('Comparison failed');
   } finally {
-    if (btn) { btn.textContent = 'âš– Compare Stores'; btn.disabled = false; }
+    if (btn) { btn.textContent = '⚖ Compare Stores'; btn.disabled = false; }
   }
 }
 
@@ -944,14 +944,14 @@ function renderFreeTierCompare(data) {
   if (!items.length) {
     results.innerHTML = `
       <div style="padding:16px;text-align:center;color:#444;font-size:11px;letter-spacing:1px;">
-        <div style="margin-bottom:8px;">ðŸ’¬</div>
-        Not priced near you yet â€” be the first to contribute!
+        <div style="margin-bottom:8px;">💬</div>
+        Not priced near you yet — be the first to contribute!
       </div>`;
     switchTab('compare');
     return;
   }
 
-  const emojiMap = { grocery: 'ðŸ›’', warehouse: 'ðŸ“¦', big_box: 'ðŸ¬', gas_station: 'â›½', convenience: 'ðŸª', unknown: 'ðŸª' };
+  const emojiMap = { grocery: '🛒', warehouse: '📦', big_box: '🏬', gas_station: '⛽', convenience: '🏪', unknown: '🏪' };
 
   results.innerHTML = `
     <div style="padding:12px 16px;">
@@ -962,19 +962,19 @@ function renderFreeTierCompare(data) {
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;">
             <div style="flex:1;">
               <div style="font-size:12px;font-weight:600;">${escapeHtml(item.name)}</div>
-              <div style="font-size:10px;color:#666;margin-top:2px;">${emojiMap[item.category] || 'ðŸ›’'} ${escapeHtml(item.store_name)}</div>
+              <div style="font-size:10px;color:#666;margin-top:2px;">${emojiMap[item.category] || '🛒'} ${escapeHtml(item.store_name)}</div>
             </div>
             <div style="font-size:14px;font-weight:700;color:#39ff14;">${item.price_display}</div>
           </div>`).join('')}
       </div>
 
       <div style="background:linear-gradient(135deg,#1a1a2e,#0a1a0a);border:1px solid rgba(201,162,39,0.3);border-radius:0.875rem;padding:14px;">
-        <div style="font-size:11px;color:#c9a227;font-weight:700;margin-bottom:6px;">âš ï¸ Going to multiple stores?</div>
+        <div style="font-size:11px;color:#c9a227;font-weight:700;margin-bottom:6px;">⚠️ Going to multiple stores?</div>
         <div style="font-size:10px;color:#94a3b8;line-height:1.5;margin-bottom:10px;">
-          FACTS Pro finds the <strong style="color:#e8e8e8;">ONE store</strong> that gives you the cheapest total trip â€” automatically.
+          FACTS Pro finds the <strong style="color:#e8e8e8;">ONE store</strong> that gives you the cheapest total trip — automatically.
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="font-size:11px;color:#34d399;">â†’ Get FACTS Free â†’</div>
+          <div style="font-size:11px;color:#34d399;">→ Get FACTS Free →</div>
           <button onclick="goUpgrade()" class="btn-neon" style="padding:7px 12px;font-size:10px;letter-spacing:1px;border-radius:0.5rem;margin-left:auto;">Upgrade</button>
         </div>
       </div>
@@ -995,8 +995,8 @@ function renderOptimizeResults(data) {
   if (data.edge_case === 'no_prices_nearby') {
     results.innerHTML = `
       <div style="padding:16px;text-align:center;color:#666;font-size:11px;line-height:1.6;">
-        <div style="font-size:1.5rem;margin-bottom:8px;">ðŸ“</div>
-        Not priced near you yet â€” be the first to contribute!<br>
+        <div style="font-size:1.5rem;margin-bottom:8px;">📍</div>
+        Not priced near you yet — be the first to contribute!<br>
         <span style="color:#444;font-size:10px;">Add prices at stores you visit to enable comparisons.</span>
       </div>`;
     switchTab('compare');
@@ -1013,11 +1013,11 @@ function renderOptimizeResults(data) {
     return;
   }
 
-  const badgeMap = { grocery: 'ðŸ›’ Grocery', warehouse: 'ðŸ“¦ Warehouse', big_box: 'ðŸ¬ Big Box', gas_station: 'â›½ Gas', convenience: 'ðŸª Conv.', unknown: 'ðŸª' };
+  const badgeMap = { grocery: '🛒 Grocery', warehouse: '📦 Warehouse', big_box: '🏬 Big Box', gas_station: '⛽ Gas', convenience: '🏪 Conv.', unknown: '🏪' };
 
   let html = `<div style="padding:12px 16px;">`;
 
-  // â”€â”€ Cheapest Store Hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Cheapest Store Hero ────────────────────────────────────────────────
   const savingDisplay = data.savings_display || `$${(data.savings_vs_worst_cents / 100).toFixed(2)}`;
   const annDisplay = data.annualized_display || `$${data.annualized_savings_cents || 0}`;
 
@@ -1031,18 +1031,18 @@ function renderOptimizeResults(data) {
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(52,211,153,0.15);">
         <div style="font-size:11px;color:#666;margin-bottom:2px;">Saves you</div>
         <div style="font-size:22px;font-weight:700;color:#39ff14;">${savingDisplay}</div>
-        <div style="font-size:10px;color:#666;margin-top:2px;">vs most expensive Â· <strong style="color:#e8e8e8;">${annDisplay}/year</strong> (2 trips/mo)</div>
+        <div style="font-size:10px;color:#666;margin-top:2px;">vs most expensive · <strong style="color:#e8e8e8;">${annDisplay}/year</strong> (2 trips/mo)</div>
       </div>` : ''}
     </div>`;
 
-  // â”€â”€ FACTS Sweep CTA Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── FACTS Sweep CTA Card ───────────────────────────────────────────────
   if (sweep && sweep.per_year > 0) {
     const gapDisplay = sweep.gap_display || `$${(sweep.gap_cents / 100).toFixed(2)}`;
     const shortfallDisplay = `${sweep.shortfall_pct}%`;
     html += `
       <div style="background:linear-gradient(135deg,#0a1a08,#0a0a0a);border:1px solid rgba(57,255,20,0.2);border-radius:0.875rem;padding:14px;margin-bottom:12px;">
         <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div style="font-size:1.4rem;flex-shrink:0;">ðŸª£</div>
+          <div style="font-size:1.4rem;flex-shrink:0;">🪣</div>
           <div style="flex:1;">
             <div style="font-size:11px;font-weight:700;color:#39ff14;margin-bottom:4px;">FACTS sweeps ${sweep.per_year}/year into your ${sweep.bucket_display || sweep.bucket} bucket</div>
             <div style="font-size:10px;color:#94a3b8;line-height:1.5;margin-bottom:8px;">
@@ -1051,17 +1051,17 @@ function renderOptimizeResults(data) {
             <div style="font-size:9px;color:#444;line-height:1.5;margin-bottom:10px;padding:8px;background:#0a0a0a;border-radius:0.5rem;">
               Every dollar you save on groceries is working for your future, not just your next trip.
             </div>
-            <button onclick="executeSweepFromCompare('${sweep.bucket}')" class="btn-neon" style="width:100%;padding:9px;font-size:10px;letter-spacing:1.5px;border-radius:0.5rem;">â†’ Sweep into ${sweep.bucket_display || sweep.bucket} â†’</button>
+            <button onclick="executeSweepFromCompare('${sweep.bucket}')" class="btn-neon" style="width:100%;padding:9px;font-size:10px;letter-spacing:1.5px;border-radius:0.5rem;">→ Sweep into ${sweep.bucket_display || sweep.bucket} →</button>
           </div>
         </div>
       </div>`;
   }
 
-  // â”€â”€ All Stores Ranked â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── All Stores Ranked ───────────────────────────────────────────────
   html += `<div style="font-size:10px;letter-spacing:2px;color:#666;margin-bottom:8px;">ALL STORES</div>`;
   html += stores.map((s, i) => {
     const isWinner = i === 0;
-    const badge = badgeMap[s.category] || 'ðŸª';
+    const badge = badgeMap[s.category] || '🏪';
     const savings = data.savings_vs_worst_cents > 0 && !isWinner
       ? `<div style="font-size:9px;color:#666;">Save ${savingDisplay} vs here</div>`
       : '';
@@ -1069,7 +1069,7 @@ function renderOptimizeResults(data) {
       <div class="${isWinner ? 'card-emerald' : 'card'}" style="padding:10px 12px;margin-bottom:6px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div style="font-size:12px;font-weight:600;">${isWinner ? 'ðŸ¥‡ ' : ''}${escapeHtml(s.store_name || '')}</div>
+            <div style="font-size:12px;font-weight:600;">${isWinner ? '🥇 ' : ''}${escapeHtml(s.store_name || '')}</div>
             <div style="font-size:10px;color:#666;margin-top:2px;">${badge} ${s.store_address || ''}</div>
             ${savings}
           </div>
@@ -1100,13 +1100,13 @@ async function executeSweepFromCompare(bucket) {
         store_id: STATE.selectedStore?.id || null
       }
     });
-    showToast(`âœ“ Sweep ready: ${bucket}`);
+    showToast(`✓ Sweep ready: ${bucket}`);
   } catch {
     showToast('Login to enable sweep');
   }
 }
 
-// â”€â”€ Receipt Scan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Receipt Scan ───────────────────────────────────────────────────────────
 function openReceiptScan() {
   document.getElementById('receipt-modal').classList.add('open');
   document.getElementById('receipt-capture').style.display = 'block';
@@ -1163,7 +1163,7 @@ function renderReceiptResults(data) {
   });
 
   document.getElementById('receipt-parsed').innerHTML = `
-    <div style="margin-bottom:10px;font-size:10px;color:#666;letter-spacing:2px;text-transform:uppercase;">ðŸ“· Receipt Scan Results</div>
+    <div style="margin-bottom:10px;font-size:10px;color:#666;letter-spacing:2px;text-transform:uppercase;">📷 Receipt Scan Results</div>
 
     <!-- Header row -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
@@ -1173,13 +1173,13 @@ function renderReceiptResults(data) {
 
     ${parsed.map(item => {
       const matched = listItemsMap[item.name.toLowerCase()];
-      const matchIcon = matched ? 'âœ“' : '???';
+      const matchIcon = matched ? '✓' : '???';
       const matchColor = matched ? '#39ff14' : '#f59e0b';
       return `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0;border-bottom:1px solid #1a1a1a;align-items:center;">
         <div>
           <div style="font-size:12px;font-weight:600;color:${matched ? '#e8e8e8' : '#f59e0b'};">${escapeHtml(item.name)}</div>
-          <div style="font-size:10px;color:#666;">${matched ? escapeHtml(matched.brand || 'â€”') : 'Not in your list'}</div>
+          <div style="font-size:10px;color:#666;">${matched ? escapeHtml(matched.brand || '—') : 'Not in your list'}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="font-size:12px;color:${matchColor};font-weight:700;flex:1;">${matchIcon}</div>
@@ -1188,7 +1188,7 @@ function renderReceiptResults(data) {
         </div>
       </div>`;
     }).join('')}
-    ${parsed.length === 0 ? '<div style="text-align:center;padding:1rem;color:#666;font-size:11px;">No items parsed â€” try again with clearer photo.</div>' : ''}
+    ${parsed.length === 0 ? '<div style="text-align:center;padding:1rem;color:#666;font-size:11px;">No items parsed — try again with clearer photo.</div>' : ''}
 
     <div style="padding:10px 0;font-size:10px;color:#444;text-align:center;border-top:1px solid #1a1a1a;margin-top:6px;">${data.note || 'Review each price. Checkbox = confirm.'}</div>
   `;
@@ -1213,7 +1213,7 @@ function confirmAllPrices() {
     loadList();
     checkSweepConditions();
   }).catch(() => {
-    showToast('Failed to confirm â€” login to save prices');
+    showToast('Failed to confirm — login to save prices');
     goUpgrade();
   });
 }
@@ -1223,7 +1223,7 @@ function retakeReceipt() {
   document.getElementById('receipt-results').style.display = 'none';
   document.getElementById('receipt-camera').value = '';
   document.getElementById('camera-preview').innerHTML = `<div style="text-align:center;color:#666;">
-    <div style="font-size:2rem;margin-bottom:8px;">ðŸ“·</div>
+    <div style="font-size:2rem;margin-bottom:8px;">📷</div>
     <div style="font-size:11px;letter-spacing:1px;">TAP TO CAPTURE</div>
   </div>`;
 }
@@ -1232,7 +1232,7 @@ function closeReceiptModal() {
   document.getElementById('receipt-modal').classList.remove('open');
 }
 
-// â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Tabs ───────────────────────────────────────────────────────────────────
 function switchTab(tab) {
   STATE.currentTab = tab;
   document.querySelectorAll('.tab-view').forEach(el => el.style.display = 'none');
@@ -1263,7 +1263,7 @@ function loadCompareTab() {
   }
 }
 
-// â”€â”€ Radius / Category filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Radius / Category filters ─────────────────────────────────────────────
 function setRadius(r) {
   STATE.radius = r;
   document.querySelectorAll('.radius-btn').forEach(b => b.classList.remove('active'));
@@ -1280,7 +1280,7 @@ function setCategory(cat) {
   loadStores();
 }
 
-// â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Utilities ──────────────────────────────────────────────────────────────
 function formatDollars(cents) {
   return '$' + (cents / 100).toFixed(2);
 }
@@ -1294,7 +1294,7 @@ function showToast(msg) {
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Init ────────────────────────────────────────────────────────────────────
 (async function init() {
   await getUser();
   detectLocation();

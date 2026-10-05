@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Business â€” Heartbeat Audit | FACTS Finance</title>
+<title>Business — Heartbeat Audit | FACTS Finance</title>
 <link rel="icon" href="/favicon.ico" type="image/x-icon">
 <style>
   :root {
@@ -107,9 +107,9 @@
 <body>
 
 <nav class="nav">
-  <a class="nav-brand" href="/app.html">âš™ï¸ FACTS Business</a>
+  <a class="nav-brand" href="/app.html">⚙️ FACTS Business</a>
   <div class="nav-links">
-    <a class="nav-link" href="/app.html">â† Main App</a>
+    <a class="nav-link" href="/app.html">← Main App</a>
     <a class="nav-link" href="/business-pro-dashboard.html">Friday Sweep</a>
     <a class="nav-link active" href="/business-pro-heartbeat.html">Heartbeat Audit</a>
   </div>
@@ -118,12 +118,12 @@
 <div id="toast"></div>
 
 <div class="container">
-  <div class="page-title">ðŸ«€ Business â€” Heartbeat Audit</div>
-  <div class="page-sub">Monthly reconciliation. 1stâ€“7th of each month. Bank Balance vs. Ledger Balance must align to stay "In Truth."</div>
+  <div class="page-title">🫀 Business — Heartbeat Audit</div>
+  <div class="page-sub">Monthly reconciliation. 1st–7th of each month. Bank Balance vs. Ledger Balance must align to stay "In Truth."</div>
 
   <!-- Current Status -->
   <div id="status-area">
-    <div class="section" style="text-align:center;color:var(--muted);padding:40px;">Loadingâ€¦</div>
+    <div class="section" style="text-align:center;color:var(--muted);padding:40px;">Loading…</div>
   </div>
 
   <!-- Audit Form / Result -->
@@ -131,7 +131,7 @@
 
   <!-- 5-Tier Commission Reference -->
   <div class="section">
-    <div class="section-title">ðŸ’° Elite Affiliate â€” 5-Tier Unified Payout</div>
+    <div class="section-title">💰 Elite Affiliate — 5-Tier Unified Payout</div>
     <div style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">
       Commissions are released only after <strong style="color:var(--text);">3 consecutive</strong> successful Heartbeat Audits.
       Out of Truth status freezes all pending commissions.
@@ -150,8 +150,8 @@
 
   <!-- History -->
   <div class="section">
-    <div class="section-title">ðŸ“‹ Heartbeat Audit History</div>
-    <div id="history-body"><div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:24px;">Loadingâ€¦</div></div>
+    <div class="section-title">📋 Heartbeat Audit History</div>
+    <div id="history-body"><div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:24px;">Loading…</div></div>
   </div>
 </div>
 
@@ -193,25 +193,25 @@
     const vested  = d.vesting_complete;
 
     let pillText, pillClass;
-    if (d.commissionsOnHold) { pillText = 'ðŸš« Commissions Frozen'; pillClass = 'frozen'; }
-    else if (vested)          { pillText = 'âœ… Commissions Active (Vested)'; pillClass = 'active'; }
-    else                      { pillText = `â³ ${passes}/3 â€” Vesting`; pillClass = 'pending'; }
+    if (d.commissionsOnHold) { pillText = '🚫 Commissions Frozen'; pillClass = 'frozen'; }
+    else if (vested)          { pillText = '✅ Commissions Active (Vested)'; pillClass = 'active'; }
+    else                      { pillText = `⏳ ${passes}/3 — Vesting`; pillClass = 'pending'; }
 
     // Build vest dots
     let dotsHtml = '';
     for (let i = 1; i <= 3; i++) {
       const cls = i <= passes ? 'pass' : '';
-      dotsHtml += `<div class="vest-dot ${cls}">${i <= passes ? 'âœ“' : i}</div>`;
+      dotsHtml += `<div class="vest-dot ${cls}">${i <= passes ? '✓' : i}</div>`;
     }
 
     document.getElementById('status-area').innerHTML = `
       <div class="status-banner ${inTruth ? 'in-truth' : 'out-truth'}">
         <div>
           <div class="status-big ${inTruth ? 'green' : 'red'}">
-            ${inTruth ? 'âœ…' : 'ðŸš«'} ${inTruth ? 'In Truth' : 'Out of Truth'}
+            ${inTruth ? '✅' : '🚫'} ${inTruth ? 'In Truth' : 'Out of Truth'}
           </div>
           <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">
-            ${d.monthLabel} Â· ${d.withinWindow ? `Audit window open â€” ${d.daysLeft} day${d.daysLeft \!== 1 ? 's' : ''} remaining` : 'Audit window opens 1st of month'}
+            ${d.monthLabel} · ${d.withinWindow ? `Audit window open — ${d.daysLeft} day${d.daysLeft \!== 1 ? 's' : ''} remaining` : 'Audit window opens 1st of month'}
           </div>
           <div class="vest-track" style="margin-top:12px;">${dotsHtml}</div>
         </div>
@@ -231,10 +231,10 @@
       const isPass = a.in_truth;
       area.innerHTML = `
         <div class="section">
-          <div class="section-title">âœ… ${d.monthLabel} Audit â€” Completed</div>
+          <div class="section-title">✅ ${d.monthLabel} Audit — Completed</div>
           <div class="completed-card ${isPass ? 'pass' : 'fail'}">
             <div style="font-size:1.1rem;font-weight:800;color:${isPass ? 'var(--green)' : 'var(--rose)'};margin-bottom:16px;">
-              ${isPass ? 'âœ… IN TRUTH' : 'ðŸš« OUT OF TRUTH'}
+              ${isPass ? '✅ IN TRUTH' : '🚫 OUT OF TRUTH'}
             </div>
             <div class="result-row">
               <span style="color:var(--muted);">Bank Balance (reported)</span>
@@ -259,12 +259,12 @@
         </div>
       `;
     } else if (d.withinWindow) {
-      // Audit window open â€” show form
+      // Audit window open — show form
       area.innerHTML = `
         <div class="section">
-          <div class="section-title">ðŸ«€ Submit ${d.monthLabel} Heartbeat Audit</div>
+          <div class="section-title">🫀 Submit ${d.monthLabel} Heartbeat Audit</div>
           <div class="window-open">
-            âœ… Audit window is open. You have ${d.daysLeft} day${d.daysLeft \!== 1 ? 's' : ''} remaining (closes on the 8th).
+            ✅ Audit window is open. You have ${d.daysLeft} day${d.daysLeft \!== 1 ? 's' : ''} remaining (closes on the 8th).
           </div>
           <p style="font-size:0.88rem;color:var(--muted);margin-bottom:20px;line-height:1.6;">
             Enter your <strong style="color:var(--text);">actual bank balance</strong> (as shown in your banking app) and
@@ -294,13 +294,13 @@
           </div>
 
           <div class="sign-group form-group">
-            <label>Digital Signature â€” Your Full Name</label>
+            <label>Digital Signature — Your Full Name</label>
             <input type="text" id="inp-signer" class="form-input" placeholder="Enter your full name to sign">
             <div class="sign-note">By entering your name, you attest that the figures above are truthful to the best of your knowledge.</div>
           </div>
 
           <button class="btn-submit" id="submit-btn" onclick="submitAudit()">
-            ðŸ«€ Submit Heartbeat Audit
+            🫀 Submit Heartbeat Audit
           </button>
         </div>
       `;
@@ -308,13 +308,13 @@
       // Outside window
       area.innerHTML = `
         <div class="section">
-          <div class="section-title">ðŸ—“ï¸ Next Audit Window</div>
+          <div class="section-title">🗓️ Next Audit Window</div>
           <div class="window-closed">
-            â³ Audit window is closed. Opens on the 1st of next month (1stâ€“7th only).
+            ⏳ Audit window is closed. Opens on the 1st of next month (1st–7th only).
           </div>
           <div style="color:var(--muted);font-size:0.88rem;line-height:1.6;">
             The Heartbeat Audit can only be submitted between the <strong style="color:var(--text);">1st and 7th</strong> of each month.
-            Mark your calendar â€” missing the window forfeits your In Truth pass for the month and resets your consecutive count.
+            Mark your calendar — missing the window forfeits your In Truth pass for the month and resets your consecutive count.
           </div>
         </div>
       `;
@@ -333,8 +333,8 @@
     document.getElementById('variance-amount').textContent = fmt$(variance);
     document.getElementById('variance-amount').style.color = inTruth ? 'var(--green)' : 'var(--rose)';
     document.getElementById('variance-verdict').innerHTML  = inTruth
-      ? `<span style="color:var(--green);font-weight:700;">âœ… Within tolerance â€” In Truth</span>`
-      : `<span style="color:var(--rose);font-weight:700;">ðŸš« Outside tolerance (max $${(tolerance / 100).toFixed(2)}) â€” Out of Truth</span>`;
+      ? `<span style="color:var(--green);font-weight:700;">✅ Within tolerance — In Truth</span>`
+      : `<span style="color:var(--rose);font-weight:700;">🚫 Outside tolerance (max $${(tolerance / 100).toFixed(2)}) — Out of Truth</span>`;
   }
 
   async function submitAudit() {
@@ -346,7 +346,7 @@
     if (\!signer || signer.length < 2) { toast('Enter your full name to sign.', 'error'); return; }
 
     const btn = document.getElementById('submit-btn');
-    btn.disabled = true; btn.textContent = 'Submittingâ€¦';
+    btn.disabled = true; btn.textContent = 'Submitting…';
 
     try {
       const d = await api('POST', '/api/business-pro/heartbeat', {
@@ -355,14 +355,14 @@
         signer_name:          signer
       });
       if (\!d.success) {
-        btn.disabled = false; btn.textContent = 'ðŸ«€ Submit Heartbeat Audit';
+        btn.disabled = false; btn.textContent = '🫀 Submit Heartbeat Audit';
         toast(d.message || 'Submission failed.', 'error'); return;
       }
-      toast(d.in_truth ? 'âœ… In Truth â€” Pass recorded\!' : 'ðŸš« Out of Truth â€” Commissions frozen.', d.in_truth ? 'success' : 'error');
+      toast(d.in_truth ? '✅ In Truth — Pass recorded\!' : '🚫 Out of Truth — Commissions frozen.', d.in_truth ? 'success' : 'error');
       await loadStatus();
       loadHistory();
     } catch(e) {
-      btn.disabled = false; btn.textContent = 'ðŸ«€ Submit Heartbeat Audit';
+      btn.disabled = false; btn.textContent = '🫀 Submit Heartbeat Audit';
       toast('Network error.', 'error');
     }
   }
@@ -371,7 +371,7 @@
     const area = document.getElementById('history-body');
     try {
       // Use the heartbeat status to show recent audits via the existing endpoint
-      // We'll do a quick fetch of audit history if we can â€” for now show last 3 months from local cache
+      // We'll do a quick fetch of audit history if we can — for now show last 3 months from local cache
       const res = await api('GET', '/api/business-pro/heartbeat/status');
       if (res.audit) {
         area.innerHTML = `
@@ -383,7 +383,7 @@
                 <td>${fmt$(res.audit.bank_balance_cents)}</td>
                 <td>${fmt$(res.audit.ledger_balance_cents)}</td>
                 <td>${fmt$(res.audit.variance_cents)}</td>
-                <td><span class="tag ${res.audit.in_truth ? 'tag-pass' : 'tag-fail'}">${res.audit.in_truth ? 'In Truth âœ“' : 'Out of Truth âœ—'}</span></td>
+                <td><span class="tag ${res.audit.in_truth ? 'tag-pass' : 'tag-fail'}">${res.audit.in_truth ? 'In Truth ✓' : 'Out of Truth ✗'}</span></td>
               </tr>
             </tbody>
           </table>
