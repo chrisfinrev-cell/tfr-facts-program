@@ -1626,7 +1626,7 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(503).json({ error: 'Service temporarily unavailable. Please try again in a moment.' });
   }
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email or User ID and password are required' });
@@ -1649,9 +1649,7 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (selectErr) {
       console.error('[auth] full login SELECT failed, falling back to email-only:', selectErr.message);
       result = await pool.query(
-        `SELECT id, email, name, password_hash, plan, paid_until, is_creator, promo_code_used
-         FROM users
-         WHERE LOWER(email) = $1`,
+        `SELECT id, email, password_hash FROM users WHERE LOWER(email) = $1`,
         [normalizedIdentifier]
       );
     }
@@ -1728,7 +1726,8 @@ app.post('/api/auth/login', async (req, res) => {
     await completeLogin(req, res, user);
   } catch (err) {
     console.error('POST /api/auth/login error:', err.message);
-    res.status(500).json({ error: 'Login failed' });
+    const safe = String(err && err.message || 'unknown').slice(0, 180);
+    res.status(500).json({ error: 'Login failed', detail: safe });
   }
 });
 
