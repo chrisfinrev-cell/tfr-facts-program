@@ -7290,10 +7290,8 @@
 
     function switchTab(tabName) {
         // Gate paid tabs for free-tier users (covers inline onclick calls too)
-        // WHY: admin bypass — admins can access ALL tabs regardless of tier
-        var _isAdm = isAdminUser(window.currentUser);
-        var _tier = window.currentUser ? normalizeTierName(window.currentUser.pricing_tier || 'free') : 'free';
-        if (!_isAdm && _tier === 'free' && typeof FREE_TIER_TABS !== 'undefined' && FREE_TIER_TABS.indexOf(tabName) === -1) {
+        // Owners and other Pro accounts use the full app; admins do too.
+        if (isNavFreeTier(window.currentUser) && typeof FREE_TIER_TABS !== 'undefined' && FREE_TIER_TABS.indexOf(tabName) === -1) {
             window.location.href = '/tier-upgrade';
             return;
         }
@@ -7451,16 +7449,23 @@
         return map[tier] || 'free';
     }
 
+    // Free-tier locks apply only when the account has no Pro access.
+    // Owner accounts (full app, no affiliate program) arrive with has_pro set.
+    function isNavFreeTier(user) {
+        if (!user) return true;
+        if (isAdminUser(user)) return false;
+        if (user.has_pro || user.plan === 'paid') return false;
+        return normalizeTierName(user.pricing_tier || 'free') === 'free';
+    }
+
     // Tabs free-tier users can access without a paid plan
     const FREE_TIER_TABS = ['dashboard','add','transactions','allocations','credit-score','fi-calculator','pro','upgrade-elite'];
 
     document.querySelectorAll('.app-tab, .mobile-tab').forEach(btn => {
         btn.addEventListener('click', () => {
             if (!btn.dataset.tab) return; // Skip dropdown triggers
-            // Gate paid tabs for free-tier users (admin bypasses ALL gates)
-            var _adm = isAdminUser(window.currentUser);
-            const tier = window.currentUser ? normalizeTierName(window.currentUser.pricing_tier || 'free') : 'free';
-            if (!_adm && tier === 'free' && FREE_TIER_TABS.indexOf(btn.dataset.tab) === -1) {
+            // Gate paid tabs for free-tier users (Pro and admin accounts bypass)
+            if (isNavFreeTier(window.currentUser) && FREE_TIER_TABS.indexOf(btn.dataset.tab) === -1) {
                 window.location.href = '/tier-upgrade';
                 return;
             }
@@ -7470,10 +7475,7 @@
 
     // Apply locked visual state to paid tabs for free-tier users
     function applyFreeTierLocks() {
-        const tier = window.currentUser ? normalizeTierName(window.currentUser.pricing_tier || 'free') : 'free';
-        if (tier !== 'free') return;
-        // Admin bypasses all tier locks — every button works
-        if (isAdminUser(window.currentUser)) return;
+        if (!isNavFreeTier(window.currentUser)) return;
         document.querySelectorAll('.app-tab[data-tab], .mobile-menu-item[data-tab]').forEach(btn => {
             if (FREE_TIER_TABS.indexOf(btn.dataset.tab) === -1) {
                 btn.classList.add('tier-locked');
@@ -7619,7 +7621,7 @@
                     range: '35–50% of take-home income'
                 },
                 'Legacy': {
-                    what: 'Charitable giving, family support, children''s future, and community building.',
+                    what: 'Charitable giving, family support, children\'s future, and community building.',
                     why: 'Intentional legacy building creates generational wealth and positive impact beyond yourself.',
                     tips: ['Set a giving target at the start of each year', 'Group gifts to charities for tax efficiency', 'Consider giving time and skills, not just money'],
                     range: '5–10% of take-home income'
