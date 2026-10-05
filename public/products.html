@@ -246,6 +246,99 @@
     /* Accent glow backgrounds */
     .glow-gold { background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,162,39,0.08) 0%, transparent 70%); }
     .glow-purple { background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139,92,246,0.07) 0%, transparent 70%); }
+    .system-card.product-card-personal {
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201,162,39,0.14) 0%, transparent 68%),
+        linear-gradient(145deg, #13192a 0%, #1a2235 100%);
+    }
+    .system-card.product-card-business {
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(139,92,246,0.14) 0%, transparent 68%),
+        linear-gradient(145deg, #13192a 0%, #1a2235 100%);
+    }
+
+    .hero-lead {
+      font-size: 18px;
+      line-height: 1.7;
+      color: #E2E8F0;
+      max-width: 40rem;
+      margin: 0 auto;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      align-items: stretch;
+    }
+
+    .system-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .system-card .product-card-header { padding: 1.75rem 1.5rem 0.5rem; }
+    .system-card .product-card-body {
+      padding: 0.5rem 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .system-kicker {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .system-card h2 {
+      font-size: 2.25rem;
+      line-height: 1.1;
+      margin-bottom: 0.6rem;
+    }
+    .system-summary {
+      color: #E2E8F0;
+      font-size: 0.95rem;
+      line-height: 1.55;
+      margin-bottom: 1.25rem;
+    }
+    .bucket-list { list-style: none; margin: 0 0 1.25rem; padding: 0; }
+    .bucket-list li {
+      padding: 0.7rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .bucket-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .bucket-name { font-weight: 600; font-size: 0.95rem; }
+    .bucket-pct {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+    .bucket-note { color: #94a3b8; font-size: 0.78rem; line-height: 1.45; margin-top: 0.2rem; }
+    .tools-kicker {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: #94a3b8;
+      margin: 0.25rem 0 0.35rem;
+    }
+    .tool-list { list-style: none; margin: 0; padding: 0; }
+    .tool-list li {
+      padding: 0.65rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .tool-list strong { display: block; color: #fff; font-size: 0.9rem; font-weight: 600; }
+    .tool-list span { display: block; color: #94a3b8; font-size: 0.78rem; line-height: 1.45; margin-top: 0.15rem; }
+    .card-actions { margin-top: auto; padding-top: 1.25rem; }
+    .card-actions .btn-primary { width: 100%; justify-content: center; }
 
     @media (max-width: 640px) {
       .product-card-header, .product-card-body { padding-left: 1.5rem; padding-right: 1.5rem; }
@@ -258,491 +351,115 @@
 <script src="/facts-nav.js"></script>
 
 <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
-<section class="hero-bg pt-20 pb-16 px-4 sm:px-6 text-center">
+<section class="hero-bg pt-16 pb-8 px-4 sm:px-6 text-center">
   <div class="max-w-4xl mx-auto">
-    <div class="animate-up d1 inline-flex items-center gap-2 mb-6">
-      <span class="badge-gold">Products</span>
-    </div>
-    <h1 class="animate-up d2 display text-4xl sm:text-5xl md:text-6xl font-normal leading-tight mb-6" style="font-family:'Instrument Serif',serif;">
-      Two systems.<br>
-      <span class="gold-text italic">One revolution.</span>
+    <h1 class="animate-up d2 display text-5xl sm:text-6xl md:text-7xl font-normal leading-tight mb-6" style="font-family:'Instrument Serif',serif;">
+      Two Systems.<br>
+      <span class="gold-text italic">One Revolution.</span>
     </h1>
-    <p class="animate-up d3 text-lg sm:text-xl max-w-2xl mx-auto mb-10" style="color:#9ca3af; line-height:1.7;">
+    <p class="animate-up d3 hero-lead">
       FACTS replaces passive expense tracking with active allocation strategy. Whether you're building personal wealth or scaling a business, we have a system engineered for your freedom.
     </p>
-    <div class="animate-up d4 flex flex-col sm:flex-row gap-4 justify-center">
-      <a href="https://app.factsmoney.com/signup.html" class="btn-primary text-base">
-        Get Started Free →
-      </a>
-      <a href="#personal-facts" class="btn-secondary text-base">
-        Explore Products ↓
-      </a>
-    </div>
   </div>
 </section>
 
-<!-- Product overview pills -->
-<div class="max-w-3xl mx-auto px-4 sm:px-6 -mt-4 mb-16">
-  <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="#personal-facts" class="flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-semibold transition-all" style="background:rgba(201,162,39,0.1); border:1px solid rgba(201,162,39,0.25); color:#e8c96a; text-decoration:none;">
-      <span>👤</span> Personal FACTS
-      <span class="badge-live ml-auto sm:ml-2">Live</span>
-    </a>
-    <a href="#business-facts" class="flex items-center gap-3 px-5 py-3 rounded-xl text-sm font-semibold transition-all" style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.22); color:#a78bfa; text-decoration:none;">
-      <span>🏢</span> Business FACTS
-      <span class="badge-live ml-auto sm:ml-2">Live</span>
-    </a>
-  </div>
-</div>
+<!-- ═══════════════════════════ TWO SYSTEMS ═══════════════════════════ -->
+<section class="px-4 sm:px-6 pt-6 pb-24">
+  <div class="product-grid">
 
-<!-- ═══════════════════════════ PERSONAL FACTS ═══════════════════════════ -->
-<section id="personal-facts" class="px-4 sm:px-6 pb-24">
-  <div class="max-w-6xl mx-auto">
-
-    <!-- Section label -->
-    <div class="text-center mb-14">
-      <div class="inline-flex items-center gap-2 mb-4">
-        <span class="badge-live">Live Now</span>
+    <article id="personal-facts" class="product-card product-card-personal glow-gold system-card">
+      <div class="product-card-header">
+        <p class="system-kicker" style="color:#e8c96a;">Personal</p>
+        <h2 style="font-family:'Instrument Serif',serif;">Personal FACTS</h2>
+        <p class="system-summary">Your complete personal finance command center. Allocate every dollar with intention.</p>
+        <p class="tools-kicker">Allocation — 6 buckets</p>
+        <ul class="bucket-list">
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#60a5fa;">Necessities</span><span class="bucket-pct" style="color:#60a5fa;">50%</span></div>
+            <p class="bucket-note">Housing, utilities, food, transportation — the non-negotiables.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#a78bfa;">Reserve</span><span class="bucket-pct" style="color:#a78bfa;">10%</span></div>
+            <p class="bucket-note">Emergency fund, strategic savings, opportunity capital.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#fbbf24;">Velocity</span><span class="bucket-pct" style="color:#fbbf24;">10%</span></div>
+            <p class="bucket-note">Debt acceleration, payoff strategy, interest elimination.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#34d399;">Growth</span><span class="bucket-pct" style="color:#34d399;">10%</span></div>
+            <p class="bucket-note">Investments, retirement contributions, wealth-building assets.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#f472b6;">Lifestyle</span><span class="bucket-pct" style="color:#f472b6;">10%</span></div>
+            <p class="bucket-note">Dining, entertainment, experiences — guilt-free living.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#c9a227;">Legacy</span><span class="bucket-pct" style="color:#c9a227;">10%</span></div>
+            <p class="bucket-note">Generational wealth, estate planning, charitable giving.</p>
+          </li>
+        </ul>
       </div>
-      <h2 class="text-3xl sm:text-4xl md:text-5xl mb-4" style="font-family:'Instrument Serif',serif;">Personal FACTS</h2>
-      <p class="text-lg max-w-2xl mx-auto" style="color:#9ca3af;">
-        Your complete personal finance command center. Allocate every dollar with intention, track your net worth in real time, and build a sovereign financial identity.
-      </p>
-    </div>
-
-    <!-- Main product card -->
-    <div class="product-card product-card-personal glow-gold mb-12">
-
-      <!-- Header band -->
-      <div class="product-card-header" style="border-bottom:1px solid rgba(201,162,39,0.12);">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <div class="flex items-center gap-3 mb-2">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:rgba(201,162,39,0.12); border:1px solid rgba(201,162,39,0.25);">₣</div>
-              <h3 class="text-xl font-bold text-white" style="font-family:'Satoshi',sans-serif;">Personal FACTS</h3>
-            </div>
-            <p style="color:#9ca3af; font-size:0.9rem;">The 6-bucket allocation system for personal financial freedom</p>
-          </div>
-          <div class="flex flex-col items-start sm:items-end gap-2">
-            <span class="badge-live">Available Now</span>
-            <span style="color:#6b7280; font-size:0.8rem;">Connect accounts or track manually</span>
-          </div>
-        </div>
-
-        <!-- 6-Bucket breakdown -->
-        <div class="mb-2">
-          <p class="text-xs uppercase tracking-widest mb-4" style="color:#6b7280;">The FACTS Allocation Framework — 6 Buckets</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-
-            <!-- Necessities 50% -->
-            <div class="bucket">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#60a5fa;">Necessities</span>
-                <span class="text-lg font-bold" style="color:#60a5fa; font-family:'Instrument Serif',serif;">50%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(96,165,250,0.25);">
-                <div class="bucket-bar" style="background:#60a5fa; width:50%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Housing, utilities, food, transportation — the non-negotiables.</p>
-            </div>
-
-            <!-- Reserve 10% -->
-            <div class="bucket">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#a78bfa;">Reserve</span>
-                <span class="text-lg font-bold" style="color:#a78bfa; font-family:'Instrument Serif',serif;">10%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(167,139,250,0.25);">
-                <div class="bucket-bar" style="background:#a78bfa; width:10%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Emergency fund, strategic savings, opportunity capital.</p>
-            </div>
-
-            <!-- Velocity 10% -->
-            <div class="bucket">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#fbbf24;">Velocity</span>
-                <span class="text-lg font-bold" style="color:#fbbf24; font-family:'Instrument Serif',serif;">10%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(251,191,36,0.25);">
-                <div class="bucket-bar" style="background:#fbbf24; width:10%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Debt acceleration, payoff strategy, interest elimination.</p>
-            </div>
-
-            <!-- Growth 10% -->
-            <div class="bucket">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#34d399;">Growth</span>
-                <span class="text-lg font-bold" style="color:#34d399; font-family:'Instrument Serif',serif;">10%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(52,211,153,0.25);">
-                <div class="bucket-bar" style="background:#34d399; width:10%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Investments, retirement contributions, wealth-building assets.</p>
-            </div>
-
-            <!-- Lifestyle 10% -->
-            <div class="bucket">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#f472b6;">Lifestyle</span>
-                <span class="text-lg font-bold" style="color:#f472b6; font-family:'Instrument Serif',serif;">10%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(244,114,182,0.25);">
-                <div class="bucket-bar" style="background:#f472b6; width:10%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Dining, entertainment, experiences — guilt-free living.</p>
-            </div>
-
-            <!-- Legacy 10% -->
-            <div class="bucket">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#c9a227;">Legacy</span>
-                <span class="text-lg font-bold" style="color:#c9a227; font-family:'Instrument Serif',serif;">10%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(201,162,39,0.25);">
-                <div class="bucket-bar" style="background:#c9a227; width:10%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Generational wealth, estate planning, charitable giving.</p>
-            </div>
-
-          </div>
+      <div class="product-card-body">
+        <p class="tools-kicker">Tools</p>
+        <ul class="tool-list">
+          <li><strong>Net Worth Dashboard</strong><span>Assets and liabilities in one view, updated as you allocate.</span></li>
+          <li><strong>Debt Tracking &amp; Rate Radar</strong><span>Balance, rate, and payoff timeline, with refinance alerts.</span></li>
+          <li><strong>Sovereign Score</strong><span>A score built on allocation discipline, week over week.</span></li>
+          <li><strong>Account Connections &amp; Manual Tracking</strong><span>Sync bank, card, and investment accounts, or enter everything yourself.</span></li>
+          <li><strong>Allocation Reports &amp; Insights</strong><span>Weekly and monthly flow through each bucket.</span></li>
+          <li><strong>Family Mode</strong><span>A shared allocation view with separate account privacy.</span></li>
+        </ul>
+        <div class="card-actions">
+          <a href="https://app.factsmoney.com/signup.html" class="btn-primary">Start Personal FACTS</a>
         </div>
       </div>
+    </article>
 
-      <!-- Feature list -->
-      <div class="product-card-body pt-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12">
-
-          <!-- Left column -->
-          <div>
-
-            <!-- Net Worth Dashboard -->
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.2);">📊</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Net Worth Dashboard</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Real-time snapshot of assets vs. liabilities. Watch your net worth trend upward as your allocation strategy takes hold. Track every account in one unified command view.
-                </p>
-              </div>
-            </div>
-
-            <!-- Debt Tracking -->
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.2);">🎯</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Debt Tracking & Rate Radar</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Track every debt with its interest rate, balance, and payoff timeline. Rate Radar alerts you when refinancing opportunities emerge — so you can stop paying the bank more than you owe.
-                </p>
-              </div>
-            </div>
-
-            <!-- Sovereign Score -->
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(201,162,39,0.1); border:1px solid rgba(201,162,39,0.2);">👑</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Sovereign Score</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Your financial health score — built on allocation discipline, not just credit history. The Sovereign Score reflects how well you're executing your strategy, week over week.
-                </p>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Right column -->
-          <div>
-
-            <!-- Wallet / Account Connections -->
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(96,165,250,0.1); border:1px solid rgba(96,165,250,0.2);">🔗</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Account Connections & Manual Tracking</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Connect your bank accounts, credit cards, and investment accounts for automatic sync — or track everything manually if you prefer full control. FACTS works both ways.
-                </p>
-              </div>
-            </div>
-
-            <!-- Allocation Reports -->
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.2);">📈</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Allocation Reports & Insights</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Monthly and weekly breakdown of how your income flowed through each bucket. See exactly where your strategy is working and where you have room to optimize.
-                </p>
-              </div>
-            </div>
-
-            <!-- Family Mode -->
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.2);">🏠</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Family Mode</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Share your FACTS system with a partner or spouse. Unified family allocation view with individual account privacy — build wealth together without losing autonomy.
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Manual tracking note -->
-        <div class="mt-6 flex items-center gap-3 px-4 py-3 rounded-xl text-sm" style="background:rgba(201,162,39,0.06); border:1px solid rgba(201,162,39,0.14);">
-          <span style="color:#c9a227;">ℹ</span>
-          <span style="color:#9ca3af;">Connect your accounts securely or enter transactions manually — FACTS is designed to meet you where you are, no integrations required to get started.</span>
-        </div>
-
-        <!-- CTA -->
-        <div class="mt-8 flex flex-col sm:flex-row gap-3">
-          <a href="https://app.factsmoney.com/signup.html" class="btn-primary">
-            Start Personal FACTS Free →
-          </a>
-          <a href="https://app.factsmoney.com/login.html" class="btn-secondary">
-            Log In to Your System
-          </a>
+    <article id="business-facts" class="product-card product-card-business glow-purple system-card">
+      <div class="product-card-header">
+        <p class="system-kicker" style="color:#a78bfa;">Business</p>
+        <h2 style="font-family:'Instrument Serif',serif;">Business FACTS</h2>
+        <p class="system-summary">The same allocation discipline, rebuilt for business revenue.</p>
+        <p class="tools-kicker">Allocation — Freedom Map, 5 buckets</p>
+        <ul class="bucket-list">
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#60a5fa;">Operations</span><span class="bucket-pct" style="color:#60a5fa;">30–50%</span></div>
+            <p class="bucket-note">Payroll, overhead, software, supplies. Default 45%.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#34d399;">Reserves</span><span class="bucket-pct" style="color:#34d399;">3–10%</span></div>
+            <p class="bucket-note">Cash buffer and opportunity capital. Default 5%.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#fbbf24;">Taxes</span><span class="bucket-pct" style="color:#fbbf24;">25–30%</span></div>
+            <p class="bucket-note">Reserve the tax bill before you spend. Default 30%.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#f472b6;">Marketing</span><span class="bucket-pct" style="color:#f472b6;">5–10%</span></div>
+            <p class="bucket-note">Advertising, content, and campaigns. Default 10%.</p>
+          </li>
+          <li>
+            <div class="bucket-line"><span class="bucket-name" style="color:#a78bfa;">Innovation</span><span class="bucket-pct" style="color:#a78bfa;">5–10%</span></div>
+            <p class="bucket-note">New products, tools, and hiring. Default 10%.</p>
+          </li>
+        </ul>
+      </div>
+      <div class="product-card-body">
+        <p class="tools-kicker">Tools</p>
+        <ul class="tool-list">
+          <li><strong>Brokerage Tracker &amp; P/L Visibility</strong><span>Holdings, realized gains, and profit and loss in the business dashboard.</span></li>
+          <li><strong>Business Entity Tools</strong><span>Keep LLC, S-Corp, or sole prop finances separate from personal allocations.</span></li>
+          <li><strong>Revenue Intelligence</strong><span>Revenue trends, runway, and cash-flow projections.</span></li>
+          <li><strong>Personal + Business Integration</strong><span>Owner's pay flows into Personal FACTS automatically.</span></li>
+          <li><strong>Team &amp; Contractor Management</strong><span>Payroll and contractor costs tracked inside Operations.</span></li>
+          <li><strong>Freedom Number Calculator</strong><span>The revenue target that funds full financial freedom.</span></li>
+        </ul>
+        <div class="card-actions">
+          <a href="https://app.factsmoney.com/signup.html" class="btn-primary" style="background:linear-gradient(135deg,#7c3aed,#a78bfa); color:#fff;">Start Business FACTS</a>
         </div>
       </div>
-
-    </div>
-    <!-- end personal product card -->
-
-  </div>
-</section>
-
-<!-- Divider -->
-<div class="max-w-4xl mx-auto px-6 mb-24">
-  <div class="divider"></div>
-</div>
-
-<!-- ═══════════════════════════ BUSINESS FACTS ═══════════════════════════ -->
-<section id="business-facts" class="px-4 sm:px-6 pb-24">
-  <div class="max-w-6xl mx-auto">
-
-    <!-- Section label -->
-    <div class="text-center mb-14">
-      <div class="inline-flex items-center gap-2 mb-4">
-        <span class="badge-live">Live Now</span>
-      </div>
-      <h2 class="text-3xl sm:text-4xl md:text-5xl mb-4" style="font-family:'Instrument Serif',serif;">Business FACTS</h2>
-      <p class="text-lg max-w-2xl mx-auto" style="color:#9ca3af;">
-        The same allocation discipline — rebuilt for business revenue. Control every dollar your business generates with a system designed for entrepreneurs, founders, and self-employed professionals.
-      </p>
-    </div>
-
-    <!-- Main business product card -->
-    <div class="product-card product-card-business glow-purple mb-12">
-
-      <div class="product-card-header" style="border-bottom:1px solid rgba(139,92,246,0.12);">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <div class="flex items-center gap-3 mb-2">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.25);">🏢</div>
-              <h3 class="text-xl font-bold text-white" style="font-family:'Satoshi',sans-serif;">Business FACTS</h3>
-            </div>
-            <p style="color:#9ca3af; font-size:0.9rem;">Revenue allocation & business financial command center</p>
-          </div>
-          <div class="flex flex-col items-start sm:items-end gap-2">
-            <span class="badge-live">Available Now</span>
-            <span style="color:#6b7280; font-size:0.8rem;">Connect your business accounts today</span>
-          </div>
-        </div>
-
-        <!-- Freedom Map: 5-bucket for business revenue (sliding scale ranges) -->
-        <div class="mb-2">
-          <p class="text-xs uppercase tracking-widest mb-4" style="color:#6b7280;">The Freedom Map — 5 Buckets for Business Revenue</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-
-            <!-- Operations 30–50% (default 45%) -->
-            <div class="bucket" style="border-color:rgba(139,92,246,0.12);">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#60a5fa;">Operations</span>
-                <span class="text-lg font-bold" style="color:#60a5fa; font-family:'Instrument Serif',serif;">30–50%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(96,165,250,0.15);">
-                <div class="bucket-bar" style="background:rgba(96,165,250,0.5); width:45%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Payroll, overhead, software, supplies — keep the machine running. Default 45%.</p>
-            </div>
-
-            <!-- Reserves 3–10% (default 5%) -->
-            <div class="bucket" style="border-color:rgba(139,92,246,0.12);">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#34d399;">Reserves</span>
-                <span class="text-lg font-bold" style="color:#34d399; font-family:'Instrument Serif',serif;">3–10%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(52,211,153,0.15);">
-                <div class="bucket-bar" style="background:rgba(52,211,153,0.5); width:5%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Emergency fund, cash buffer, opportunity capital. Default 5%.</p>
-            </div>
-
-            <!-- Taxes 25–30% (default 30%) -->
-            <div class="bucket" style="border-color:rgba(139,92,246,0.12);">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#fbbf24;">Taxes</span>
-                <span class="text-lg font-bold" style="color:#fbbf24; font-family:'Instrument Serif',serif;">25–30%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(251,191,36,0.15);">
-                <div class="bucket-bar" style="background:rgba(251,191,36,0.5); width:30%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Never be surprised by a tax bill. Reserve first, spend second. Default 30%.</p>
-            </div>
-
-            <!-- Marketing 5–10% (default 10%) -->
-            <div class="bucket" style="border-color:rgba(139,92,246,0.12);">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#f472b6;">Marketing</span>
-                <span class="text-lg font-bold" style="color:#f472b6; font-family:'Instrument Serif',serif;">5–10%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(244,114,182,0.15);">
-                <div class="bucket-bar" style="background:rgba(244,114,182,0.5); width:10%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">Advertising, content, campaigns — invest in growth. Default 10%.</p>
-            </div>
-
-            <!-- Innovation 5–10% (default 10%) -->
-            <div class="bucket" style="border-color:rgba(139,92,246,0.12);">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold uppercase tracking-wide" style="color:#a78bfa;">Innovation</span>
-                <span class="text-lg font-bold" style="color:#a78bfa; font-family:'Instrument Serif',serif;">5–10%</span>
-              </div>
-              <div class="bucket-bar" style="background:rgba(167,139,250,0.15);">
-                <div class="bucket-bar" style="background:rgba(167,139,250,0.5); width:10%;"></div>
-              </div>
-              <p class="text-xs mt-2" style="color:#6b7280;">R&D, new products, tools, hiring — invest in scale. Default 10%.</p>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- Business feature list -->
-      <div class="product-card-body pt-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12">
-
-          <!-- Left -->
-          <div>
-
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2);">📉</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Brokerage Tracker & P/L Visibility</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Full profit-and-loss visibility at the business level. Track brokerage accounts, investment holdings, and realized gains — all within your business allocation dashboard.
-                </p>
-              </div>
-            </div>
-
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.2);">🏛️</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Business Entity Tools</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  LLC, S-Corp, sole proprietor — manage your entity structure, track expenses by category, and keep business finances cleanly separated from personal allocations.
-                </p>
-              </div>
-            </div>
-
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);">📊</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Revenue Intelligence</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Month-over-month revenue trends, runway calculations, and cash flow projections. Know your numbers before your accountant does.
-                </p>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Right -->
-          <div>
-
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(96,165,250,0.1); border:1px solid rgba(96,165,250,0.2);">🔄</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Personal + Business Integration</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  When your owner's pay flows from Business FACTS to Personal FACTS, your personal allocation system picks it up automatically. One ecosystem, complete financial visibility.
-                </p>
-              </div>
-            </div>
-
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(244,114,182,0.1); border:1px solid rgba(244,114,182,0.2);">👥</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Team & Contractor Management</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Track payroll and contractor payments within your Operations bucket. Allocation-aware expense tracking so every team cost is visible against your Freedom Map.
-                </p>
-              </div>
-            </div>
-
-            <div class="feature-row">
-              <div class="feature-icon" style="background:rgba(201,162,39,0.1); border:1px solid rgba(201,162,39,0.2);">🎯</div>
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-white text-sm">Freedom Number Calculator</span>
-                  <span class="badge-live" style="font-size:0.65rem; padding:0.15rem 0.5rem;">Live</span>
-                </div>
-                <p class="text-xs" style="color:#6b7280; line-height:1.6;">
-                  Define the revenue target that gives you full financial freedom — then track every dollar toward it. Your Freedom Number is the north star for every business decision.
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Waitlist CTA -->
-        <div class="mt-8 flex flex-col sm:flex-row gap-3">
-          <a href="https://app.factsmoney.com/signup.html" class="btn-primary" style="background:linear-gradient(135deg,#7c3aed,#a78bfa); color:#fff;">
-            Start Business FACTS →
-          </a>
-          <a href="#compare" class="btn-secondary">
-            Compare Plans ↓
-          </a>
-        </div>
-      </div>
-
-    </div>
-    <!-- end business product card -->
+    </article>
 
   </div>
 </section>
@@ -757,8 +474,8 @@
   <div class="max-w-5xl mx-auto">
 
     <div class="text-center mb-12">
-      <h2 class="text-3xl sm:text-4xl mb-4" style="font-family:'Instrument Serif',serif;">Personal vs Business FACTS</h2>
-      <p style="color:#9ca3af;">Every feature, side by side — so you know exactly what you get.</p>
+      <h2 class="text-3xl sm:text-4xl mb-4" style="font-family:'Instrument Serif',serif;">All ecosystem tools</h2>
+      <p style="color:#E2E8F0;">Personal in gold. Business in purple. Every tool, side by side.</p>
     </div>
 
     <div class="card-subtle overflow-hidden">
