@@ -6564,8 +6564,12 @@
                     return false;
                 }
 
-                updateNavForUser();
-                if (typeof applyFreeTierLocks === 'function') applyFreeTierLocks();
+                try {
+                    updateNavForUser();
+                    if (typeof applyFreeTierLocks === 'function') applyFreeTierLocks();
+                } catch (uiErr) {
+                    console.error('Nav update failed', uiErr);
+                }
                 return true;
             }
         } catch (err) {
@@ -6600,7 +6604,9 @@
                 }
             }
             const badge = document.getElementById('plan-badge');
-            if (currentUser.plan === 'paid') {
+            if (!badge) {
+                userPlan = currentUser.plan || 'free';
+            } else if (currentUser.plan === 'paid') {
                 // Map pricing_tier to canonical tier display name
                 const tierLabels = {
                     'sovereign_executive': 'Sovereign',
@@ -11962,10 +11968,12 @@
     }
 
     // Set today's date as default
-    document.getElementById('txn-date').value = new Date().toISOString().split('T')[0];
+    var txnDateInput = document.getElementById('txn-date');
+    if (txnDateInput) txnDateInput.value = new Date().toISOString().split('T')[0];
 
     // Handle subcategory dropdown selection
-    document.getElementById('txn-sub').addEventListener('change', function(e) {
+    var txnSubInput = document.getElementById('txn-sub');
+    if (txnSubInput) txnSubInput.addEventListener('change', function(e) {
         if (e.target.value === '__add_new__') {
             showInlineSubcategoryModal();
         }
@@ -11986,6 +11994,7 @@
         const isAuthenticated = await checkAuth();
 
         if (isAuthenticated) {
+            sessionStorage.removeItem('facts-auth-reload');
             // Auto-open app for logged-in users — skip landing page, land on Dashboard
             openApp();
             // Load custom payment methods for dropdowns
@@ -12005,9 +12014,14 @@
                 loadCustomPaymentMethods().then(() => {
                     if (typeof currentType !== 'undefined') setTxnType(currentType);
                 });
-            } else {
-                // Final fallback: full page reload forces server-side auth check
+            } else if (!sessionStorage.getItem('facts-auth-reload')) {
+                // One retry only. Reloading again loops forever when the
+                // session that served /app does not match /api/auth/me.
+                sessionStorage.setItem('facts-auth-reload', '1');
                 window.location.reload();
+            } else {
+                sessionStorage.removeItem('facts-auth-reload');
+                console.error('Staying on the app after auth check failed.');
             }
         }
 
