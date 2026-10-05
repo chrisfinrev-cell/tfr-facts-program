@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FACTS">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <title>Sign In — FACTS</title>
+    <title>Sign In â€” FACTS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -422,7 +422,7 @@
 
         <!-- 2FA Verification Panel (hidden until needed) -->
         <div class="twofa-panel" id="twofa-panel">
-            <div class="twofa-icon">🔐</div>
+            <div class="twofa-icon">ðŸ”</div>
             <div class="twofa-title">Check your email</div>
             <div class="twofa-subtitle" id="twofa-subtitle">
                 We sent a 6-digit code to <strong id="twofa-email-display"></strong>.<br>Enter it below to sign in.
@@ -455,7 +455,7 @@
                 <button class="resend-btn" id="resend-btn" type="button">Resend code</button>
             </div>
             <div style="text-align:center;margin-top:8px;">
-                <button class="back-to-login-btn" id="back-to-login-btn" type="button">← Back to login</button>
+                <button class="back-to-login-btn" id="back-to-login-btn" type="button">â† Back to login</button>
             </div>
         </div>
 
@@ -497,7 +497,7 @@
                 });
             });
 
-            // ── Login form ──
+            // â”€â”€ Login form â”€â”€
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 var email = document.getElementById('email').value.trim();
@@ -525,7 +525,7 @@
                 })
                 .then(function(result) {
                     if (!result) return; // redirect already followed
-                    // JSON success — server confirmed login, session saved to DB
+                    // JSON success â€” server confirmed login, session saved to DB
                     if (result.data && result.data.success && result.data.redirect) {
                         window.location.href = result.data.redirect;
                         return;
@@ -544,7 +544,7 @@
                 });
             });
 
-            // ── 2FA: code digit inputs auto-advance ──
+            // â”€â”€ 2FA: code digit inputs auto-advance â”€â”€
             var codeDigits = document.querySelectorAll('.code-digit');
             codeDigits.forEach(function(input, idx) {
                 input.addEventListener('input', function() {
@@ -575,7 +575,7 @@
                 });
             });
 
-            // ── 2FA: verify form ──
+            // â”€â”€ 2FA: verify form â”€â”€
             twofaForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 var code = Array.from(codeDigits).map(function(i) { return i.value; }).join('');
@@ -605,7 +605,7 @@
                 });
             });
 
-            // ── 2FA: resend ──
+            // â”€â”€ 2FA: resend â”€â”€
             var resendCooldown = null;
             function startResendCooldown() {
                 var secs = 60;
@@ -643,7 +643,7 @@
                 });
             });
 
-            // ── Back to login ──
+            // â”€â”€ Back to login â”€â”€
             backToLoginBtn.addEventListener('click', function() {
                 twofaPanel.style.display = 'none';
                 form.style.display = 'block';
@@ -696,5 +696,6 @@
     </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

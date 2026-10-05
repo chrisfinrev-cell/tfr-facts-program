@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -26,26 +26,26 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; min-height: 100dvh; }
 
-  /* ── Nav ── */
+  /* â”€â”€ Nav â”€â”€ */
   .nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; text-decoration: none; display: flex; align-items: center; gap: 8px; }
   .nav-links { display: flex; gap: 16px; align-items: center; }
   .nav-link { color: var(--muted); font-size: 0.85rem; text-decoration: none; padding: 6px 10px; border-radius: 6px; transition: color .15s; }
   .nav-link:hover, .nav-link.active { color: var(--text); background: rgba(255,255,255,0.05); }
 
-  /* ── Layout ── */
+  /* â”€â”€ Layout â”€â”€ */
   .container { max-width: 680px; margin: 0 auto; padding: 32px 20px 60px; }
   .page-header { margin-bottom: 32px; }
   .page-title { font-size: 1.55rem; font-weight: 800; color: var(--gold); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
   .page-sub { font-size: 0.88rem; color: var(--muted); }
 
-  /* ── Tier badge ── */
+  /* â”€â”€ Tier badge â”€â”€ */
   .tier-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
   .tier-badge.pro { background: rgba(6,182,212,0.15); color: var(--cyan); border: 1px solid rgba(6,182,212,0.3); }
   .tier-badge.business { background: rgba(245,197,66,0.15); color: var(--gold); border: 1px solid rgba(245,197,66,0.3); }
   .tier-badge.free { background: rgba(148,163,184,0.1); color: var(--muted); border: 1px solid rgba(148,163,184,0.2); }
 
-  /* ── Step indicator ── */
+  /* â”€â”€ Step indicator â”€â”€ */
   .steps { display: flex; align-items: center; gap: 0; margin-bottom: 28px; }
   .step { display: flex; align-items: center; gap: 8px; }
   .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
@@ -58,12 +58,12 @@
   .step-label.pending { color: var(--dim); }
   .step-line { flex: 1; height: 1px; background: var(--border); margin: 0 8px; min-width: 20px; }
 
-  /* ── Cards ── */
+  /* â”€â”€ Cards â”€â”€ */
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
   .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
   .card-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; }
 
-  /* ── Upload zone ── */
+  /* â”€â”€ Upload zone â”€â”€ */
   .upload-zone { border: 2px dashed rgba(245,197,66,0.3); border-radius: 14px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
   .upload-zone:hover, .upload-zone.drag-over { border-color: var(--gold); background: rgba(245,197,66,0.04); }
   .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
@@ -77,25 +77,25 @@
   .btn-camera:hover { background: rgba(6,182,212,0.08); }
   .camera-input { display: none; }
 
-  /* ── Preview image ── */
+  /* â”€â”€ Preview image â”€â”€ */
   .preview-wrap { display: none; }
   .preview-img { width: 100%; max-height: 300px; object-fit: contain; border-radius: 10px; border: 1px solid var(--border); }
   .preview-name { font-size: 0.78rem; color: var(--muted); margin-top: 8px; text-align: center; }
   .btn-change { font-size: 0.78rem; color: var(--cyan); background: none; border: none; cursor: pointer; text-decoration: underline; margin-top: 4px; display: block; text-align: center; }
 
-  /* ── Scan button ── */
+  /* â”€â”€ Scan button â”€â”€ */
   .btn-scan { width: 100%; padding: 14px; background: var(--gold); color: #000; font-weight: 800; font-size: 1rem; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; transition: background .15s; }
   .btn-scan:hover { background: var(--gold2); }
   .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* ── Scanning animation ── */
+  /* â”€â”€ Scanning animation â”€â”€ */
   .scan-overlay { display: none; position: absolute; inset: 0; background: rgba(10,14,26,0.92); border-radius: 14px; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 10; }
   .scan-bar { width: 60%; height: 3px; background: var(--card2); border-radius: 2px; overflow: hidden; }
   .scan-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--cyan)); animation: scanPulse 1.2s ease-in-out infinite; }
   @keyframes scanPulse { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(100%); } }
   .scan-text { font-size: 0.88rem; color: var(--muted); font-weight: 600; }
 
-  /* ── Review form ── */
+  /* â”€â”€ Review form â”€â”€ */
   .review-section { display: none; }
   .form-group { margin-bottom: 16px; }
   .form-label { display: block; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; margin-bottom: 6px; }
@@ -109,7 +109,7 @@
   .confidence-badge.high { background: rgba(16,185,129,0.15); color: var(--green); }
   .ai-note { font-size: 0.75rem; color: var(--dim); margin-top: 4px; }
 
-  /* ── Pillar tagging (Business Bundle) ── */
+  /* â”€â”€ Pillar tagging (Business Bundle) â”€â”€ */
   .pillar-section { display: none; background: rgba(245,197,66,0.04); border: 1px solid rgba(245,197,66,0.15); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   .pillar-section-title { font-size: 0.78rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
   .pillar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
@@ -118,14 +118,14 @@
   .pillar-btn.selected { background: rgba(245,197,66,0.12); border-color: var(--gold); color: var(--gold); }
   .pillar-hint { font-size: 0.73rem; color: var(--dim); margin-top: 10px; }
 
-  /* ── Buttons ── */
+  /* â”€â”€ Buttons â”€â”€ */
   .btn-primary { width: 100%; padding: 13px; background: var(--gold); color: #000; font-weight: 800; font-size: 0.95rem; border: none; border-radius: 12px; cursor: pointer; transition: background .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
   .btn-primary:hover { background: var(--gold2); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-ghost { width: 100%; padding: 11px; background: transparent; color: var(--muted); font-size: 0.88rem; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; margin-top: 10px; transition: background .15s; }
   .btn-ghost:hover { background: rgba(255,255,255,0.04); }
 
-  /* ── Success state ── */
+  /* â”€â”€ Success state â”€â”€ */
   .success-section { display: none; text-align: center; padding: 40px 20px; }
   .success-icon { font-size: 4rem; margin-bottom: 16px; animation: popIn .4s ease; }
   @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -144,7 +144,7 @@
   .btn-action.secondary { background: transparent; color: var(--cyan); border: 1px solid rgba(6,182,212,0.3); }
   .btn-action.secondary:hover { background: rgba(6,182,212,0.08); }
 
-  /* ── Upgrade gate (free users) ── */
+  /* â”€â”€ Upgrade gate (free users) â”€â”€ */
   .upgrade-gate { text-align: center; padding: 48px 24px; }
   .upgrade-icon { font-size: 3.5rem; margin-bottom: 16px; }
   .upgrade-title { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 10px; }
@@ -157,10 +157,10 @@
   .btn-upgrade:hover { background: var(--gold2); }
   .upgrade-sub { font-size: 0.78rem; color: var(--dim); margin-top: 14px; }
 
-  /* ── Error ── */
+  /* â”€â”€ Error â”€â”€ */
   .error-box { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; padding: 12px 16px; font-size: 0.85rem; color: var(--rose); margin-top: 12px; display: none; }
 
-  /* ── Toast ── */
+  /* â”€â”€ Toast â”€â”€ */
   .toast { position: fixed; bottom: 24px; right: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-size: 0.85rem; color: var(--text); z-index: 999; box-shadow: 0 8px 32px rgba(0,0,0,0.4); transform: translateY(80px); opacity: 0; transition: all .3s; }
   .toast.show { transform: translateY(0); opacity: 1; }
 
@@ -178,7 +178,7 @@
 
 <!-- Nav -->
 <nav class="nav">
-  <a href="/app" class="nav-brand">⚡ FACTS Finance</a>
+  <a href="/app" class="nav-brand">âš¡ FACTS Finance</a>
   <div class="nav-links">
     <a href="/app" class="nav-link">Dashboard</a>
     <a href="/document-vault" class="nav-link">Vault</a>
@@ -190,27 +190,27 @@
   <!-- Page header -->
   <div class="page-header">
     <div class="page-title">
-      🧾 AI Receipt Scanner
+      ðŸ§¾ AI Receipt Scanner
       <span id="tier-badge" class="tier-badge" style="display:none"></span>
     </div>
-    <div class="page-sub">Snap a receipt → AI extracts the data → auto-fills your FACTS ledger</div>
+    <div class="page-sub">Snap a receipt â†’ AI extracts the data â†’ auto-fills your FACTS ledger</div>
   </div>
 
   <!-- Free user gate (hidden by default, shown if not Pro) -->
   <div id="upgrade-gate" class="card" style="display:none">
     <div class="upgrade-gate">
-      <div class="upgrade-icon">📷</div>
+      <div class="upgrade-icon">ðŸ“·</div>
       <div class="upgrade-title">AI Receipt Scanner</div>
-      <div class="upgrade-desc">Take a photo of any receipt and our AI instantly extracts the vendor, amount, date, and category — then adds it directly to your FACTS ledger.</div>
+      <div class="upgrade-desc">Take a photo of any receipt and our AI instantly extracts the vendor, amount, date, and category â€” then adds it directly to your FACTS ledger.</div>
       <ul class="feature-list">
-        <li><span class="check">✓</span> OCR extraction from photos or images</li>
-        <li><span class="check">✓</span> Auto-category detection from FACTS buckets</li>
-        <li><span class="check">✓</span> One-tap ledger entry creation</li>
-        <li><span class="check">✓</span> Receipt archived in Document Vault</li>
-        <li><span class="gold">★</span> <strong>Full Business Bundle:</strong> 5-Bucket Pillar tagging</li>
+        <li><span class="check">âœ“</span> OCR extraction from photos or images</li>
+        <li><span class="check">âœ“</span> Auto-category detection from FACTS buckets</li>
+        <li><span class="check">âœ“</span> One-tap ledger entry creation</li>
+        <li><span class="check">âœ“</span> Receipt archived in Document Vault</li>
+        <li><span class="gold">â˜…</span> <strong>Full Business Bundle:</strong> 5-Bucket Pillar tagging</li>
       </ul>
-      <a href="/pricing.html" class="btn-upgrade">Upgrade Now →</a>
-      <div class="upgrade-sub">Starting at $25/mo · Cancel anytime</div>
+      <a href="/pricing.html" class="btn-upgrade">Upgrade Now â†’</a>
+      <div class="upgrade-sub">Starting at $25/mo Â· Cancel anytime</div>
     </div>
   </div>
 
@@ -234,22 +234,22 @@
 
   <!-- Step 1: Upload -->
   <div id="upload-section" class="card" style="display:none; position:relative">
-    <div class="card-title">📤 Upload Receipt</div>
+    <div class="card-title">ðŸ“¤ Upload Receipt</div>
     <div class="card-sub">Drag and drop or tap to select a receipt image from your device.</div>
 
     <!-- Drop zone -->
     <div id="drop-zone" class="upload-zone">
       <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" />
-      <span class="upload-icon">🖼️</span>
+      <span class="upload-icon">ðŸ–¼ï¸</span>
       <div class="upload-title">Drop receipt image here</div>
       <div class="upload-hint">or tap to browse your gallery</div>
-      <div class="upload-formats">Supports JPG, PNG, HEIC — up to 20 MB</div>
+      <div class="upload-formats">Supports JPG, PNG, HEIC â€” up to 20 MB</div>
     </div>
 
     <!-- Camera capture (mobile) -->
     <input class="camera-input" type="file" id="camera-input" accept="image/*" capture="environment" />
     <button class="btn-camera" onclick="document.getElementById('camera-input').click()">
-      📸 Use Camera
+      ðŸ“¸ Use Camera
     </button>
 
     <!-- Preview after selection -->
@@ -263,22 +263,22 @@
 
     <!-- Scan button -->
     <button id="btn-scan" class="btn-scan" onclick="startScan()" disabled>
-      🔍 Scan Receipt
+      ðŸ” Scan Receipt
     </button>
 
     <!-- Scanning overlay -->
     <div id="scan-overlay" class="scan-overlay">
-      <div>🔍</div>
+      <div>ðŸ”</div>
       <div class="scan-bar"><div class="scan-bar-fill"></div></div>
-      <div class="scan-text">AI is reading your receipt…</div>
+      <div class="scan-text">AI is reading your receiptâ€¦</div>
     </div>
   </div>
 
   <!-- Step 2: Review extracted data -->
   <div id="review-section" class="review-section">
     <div class="card">
-      <div class="card-title">✏️ Review & Edit</div>
-      <div class="card-sub">AI extracted the data below — review and correct anything before saving.</div>
+      <div class="card-title">âœï¸ Review & Edit</div>
+      <div class="card-sub">AI extracted the data below â€” review and correct anything before saving.</div>
 
       <div class="form-group">
         <label class="form-label">Vendor / Description <span class="ai-note" style="text-transform:none; letter-spacing:0">(AI-extracted)</span></label>
@@ -300,13 +300,13 @@
       <div class="form-group">
         <label class="form-label">FACTS Category</label>
         <select id="r-category" class="form-input">
-          <option value="">Select a category…</option>
+          <option value="">Select a categoryâ€¦</option>
         </select>
       </div>
 
       <!-- Full Business Bundle: Pillar tagging -->
       <div id="pillar-section" class="pillar-section">
-        <div class="pillar-section-title">⭐ 5-Bucket Pillar Tag <span style="font-size:0.65rem;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:600">Full Business Bundle</span></div>
+        <div class="pillar-section-title">â­ 5-Bucket Pillar Tag <span style="font-size:0.65rem;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:600">Full Business Bundle</span></div>
         <div class="pillar-grid" id="pillar-grid">
           <!-- Pillar buttons inserted by JS -->
         </div>
@@ -316,16 +316,16 @@
       <div id="review-error" class="error-box"></div>
 
       <button id="btn-save" class="btn-primary" onclick="saveReceipt()">
-        ✅ Save to FACTS Ledger
+        âœ… Save to FACTS Ledger
       </button>
-      <button class="btn-ghost" onclick="resetScanner()">← Start Over</button>
+      <button class="btn-ghost" onclick="resetScanner()">â† Start Over</button>
     </div>
   </div>
 
   <!-- Step 3: Success -->
   <div id="success-section" class="success-section">
     <div class="card">
-      <div class="success-icon">🎉</div>
+      <div class="success-icon">ðŸŽ‰</div>
       <div class="success-title">Receipt Saved!</div>
       <div class="success-sub">Your expense is now in the FACTS ledger and the receipt is stored in your Document Vault.</div>
 
@@ -356,14 +356,14 @@
   let categories = [];
 
   const PILLAR_DEFS = {
-    clearing:          { label: 'Clearing',           emoji: '🔄', desc: 'Revenue before allocation' },
-    tax_shield:        { label: 'Tax Shield',          emoji: '🛡️', desc: 'Tax-deductible expenses' },
-    operating_reserve: { label: 'Operating Reserve',  emoji: '⚙️', desc: 'Core business costs' },
-    growth_innovation: { label: 'Growth & Innovation', emoji: '🚀', desc: 'Growth investments' },
-    wealth_bridge:     { label: 'Wealth Bridge',       emoji: '🌉', desc: 'Long-term wealth' },
+    clearing:          { label: 'Clearing',           emoji: 'ðŸ”„', desc: 'Revenue before allocation' },
+    tax_shield:        { label: 'Tax Shield',          emoji: 'ðŸ›¡ï¸', desc: 'Tax-deductible expenses' },
+    operating_reserve: { label: 'Operating Reserve',  emoji: 'âš™ï¸', desc: 'Core business costs' },
+    growth_innovation: { label: 'Growth & Innovation', emoji: 'ðŸš€', desc: 'Growth investments' },
+    wealth_bridge:     { label: 'Wealth Bridge',       emoji: 'ðŸŒ‰', desc: 'Long-term wealth' },
   };
 
-  // ── Init ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function init() {
     try {
       // Load user tier & categories in parallel
@@ -392,7 +392,7 @@
       // Show tier badge
       const badge = document.getElementById('tier-badge');
       if (isBusinessPro) {
-        badge.textContent = '★ Business Bundle';
+        badge.textContent = 'â˜… Business Bundle';
         badge.className = 'tier-badge business';
       } else {
         badge.textContent = 'Individual';
@@ -434,7 +434,7 @@
     }
   }
 
-  // ── Drag & drop ──────────────────────────────────────────────────────────
+  // â”€â”€ Drag & drop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function setupDragDrop() {
     const zone = document.getElementById('drop-zone');
     zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
@@ -489,7 +489,7 @@
     hideError('scan-error');
   }
 
-  // ── Scan ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Scan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function startScan() {
     if (!selectedFile) return;
 
@@ -547,7 +547,7 @@
     }
   }
 
-  // ── Pillar selection ──────────────────────────────────────────────────────
+  // â”€â”€ Pillar selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function selectPillar(key) {
     selectedPillar = key;
     document.querySelectorAll('.pillar-btn').forEach(btn => {
@@ -575,7 +575,7 @@
     });
   });
 
-  // ── Save ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function saveReceipt() {
     hideError('review-error');
     const description = document.getElementById('r-description').value.trim();
@@ -589,7 +589,7 @@
 
     const btn = document.getElementById('btn-save');
     btn.disabled = true;
-    btn.textContent = 'Saving…';
+    btn.textContent = 'Savingâ€¦';
 
     try {
       const body = {
@@ -615,7 +615,7 @@
 
     } catch (err) {
       btn.disabled = false;
-      btn.textContent = '✅ Save to FACTS Ledger';
+      btn.textContent = 'âœ… Save to FACTS Ledger';
       showError('review-error', err.message || 'Failed to save. Please try again.');
     }
   }
@@ -627,7 +627,7 @@
     let rows = `
       <div class="success-detail-row"><span class="success-detail-label">Vendor</span><span class="success-detail-value">${esc(description || 'Receipt')}</span></div>
       <div class="success-detail-row"><span class="success-detail-label">Amount</span><span class="success-detail-value">$${parseFloat(amount).toFixed(2)}</span></div>
-      <div class="success-detail-row"><span class="success-detail-label">Date</span><span class="success-detail-value">${date || '—'}</span></div>
+      <div class="success-detail-row"><span class="success-detail-label">Date</span><span class="success-detail-value">${date || 'â€”'}</span></div>
       <div class="success-detail-row"><span class="success-detail-label">Category</span><span class="success-detail-value">${esc(catName)}</span></div>
     `;
     if (data.pillar_label) {
@@ -642,12 +642,12 @@
     document.getElementById('success-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function setStep(n) {
     [1, 2, 3].forEach(i => {
       const dot   = document.getElementById(`s${i}-dot`);
       const label = document.getElementById(`s${i}-label`);
-      if (i < n)  { dot.className = 'step-dot done'; dot.textContent = '✓'; label.className = 'step-label done'; }
+      if (i < n)  { dot.className = 'step-dot done'; dot.textContent = 'âœ“'; label.className = 'step-label done'; }
       else if (i === n) { dot.className = 'step-dot active'; dot.textContent = i; label.className = 'step-label active'; }
       else        { dot.className = 'step-dot pending'; dot.textContent = i; label.className = 'step-label pending'; }
     });
@@ -666,7 +666,7 @@
     document.getElementById('r-date').value = '';
     document.getElementById('r-category').value = '';
     document.getElementById('btn-save').disabled = false;
-    document.getElementById('btn-save').textContent = '✅ Save to FACTS Ledger';
+    document.getElementById('btn-save').textContent = 'âœ… Save to FACTS Ledger';
     document.querySelectorAll('.pillar-btn').forEach(b => b.classList.remove('selected'));
     if (isBusinessPro) document.getElementById('pillar-section').style.display = 'none';
     setStep(1);
@@ -697,5 +697,6 @@
 </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

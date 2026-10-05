@@ -36,8 +36,13 @@
         </div>
 
         <label class="checkbox-container">
-            <input type="checkbox" id="ndaCheck" onchange="document.getElementById('submitBtn').disabled = !this.checked">
+            <input type="checkbox" id="ndaCheck" onchange="syncAcceptButton()">
             <span>I have read, understand, and agree to the Non-Disclosure Agreement.</span>
+        </label>
+
+        <label class="checkbox-container" style="display:block; margin-bottom:16px;">
+            <span style="display:block; margin-bottom:8px;">Digital signature (full legal name)</span>
+            <input id="ndaSignature" type="text" oninput="syncAcceptButton()" placeholder="Type your full legal name" style="width:100%; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#f8fafc;">
         </label>
 
         <button id="submitBtn" disabled onclick="acceptNda()">Accept & Continue to Workspace</button>
@@ -46,11 +51,16 @@
     <script>
         async function acceptNda() {
             const btn = document.getElementById('submitBtn');
+            const signature = (document.getElementById('ndaSignature').value || '').trim();
             btn.disabled = true;
             btn.innerText = 'Verifying...';
 
             try {
-                const res = await fetch('/api/nda/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                const res = await fetch('/api/nda/accept', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ typedSignature: signature, ndaSignature: signature })
+                });
                 const data = await res.json();
                 if (data.success) {
                     window.location.href = data.redirectUrl || '/dashboard';
@@ -63,6 +73,13 @@
                 btn.disabled = false;
             }
         }
+
+        function syncAcceptButton() {
+            const checked = document.getElementById('ndaCheck').checked;
+            const signature = (document.getElementById('ndaSignature').value || '').trim();
+            document.getElementById('submitBtn').disabled = !(checked && signature);
+        }
     </script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

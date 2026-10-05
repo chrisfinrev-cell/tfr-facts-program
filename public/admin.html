@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel — Financial Revolution</title>
+  <title>Admin Panel â€” Financial Revolution</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0f1117; color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 
-    /* ─── Prominent Admin Header ─── */
+    /* â”€â”€â”€ Prominent Admin Header â”€â”€â”€ */
     .admin-header {
       background: linear-gradient(135deg, #18181b 0%, #1a1b23 60%, #1f1f2e 100%);
       border-bottom: 3px solid #ef4444;
@@ -40,7 +40,7 @@
     .admin-header-actions { display: flex; align-items: center; gap: 12px; }
     .admin-header-actions a { color: #6366f1; text-decoration: none; font-size: 13px; font-weight: 500; }
     .admin-header-actions a:hover { color: #818cf8; }
-    /* ─── Clickable Tier Badge with Dropdown ─── */
+    /* â”€â”€â”€ Clickable Tier Badge with Dropdown â”€â”€â”€ */
     .tier-badge-wrap { position: relative; }
     .tier-badge-btn {
       background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4);
@@ -49,7 +49,7 @@
       transition: all .15s; letter-spacing: 0.3px;
     }
     .tier-badge-btn:hover { background: rgba(245,158,11,0.25); }
-    .tier-badge-btn::after { content: ' ▾'; font-size: 10px; opacity: 0.7; }
+    .tier-badge-btn::after { content: ' â–¾'; font-size: 10px; opacity: 0.7; }
     .tier-dropdown {
       display: none; position: absolute; top: calc(100% + 6px); right: 0;
       background: #1a1b23; border: 1px solid #3f3f46; border-radius: 10px;
@@ -69,7 +69,7 @@
       margin-right: 8px; vertical-align: middle;
     }
 
-    /* ─── Tier Switcher Banner (front and center) ─── */
+    /* â”€â”€â”€ Tier Switcher Banner (front and center) â”€â”€â”€ */
     .tier-switcher-banner {
       padding: 12px 24px;
       background: rgba(0,0,0,0.3);
@@ -236,10 +236,10 @@
   <div class="admin-header">
     <div class="admin-header-top">
       <div class="admin-title">
-        <div class="icon-wrap">🔐</div>
+        <div class="icon-wrap">ðŸ”</div>
         <div class="admin-title-text">
-          <h1>FACTS <span style="background:#ef4444;color:#fff;font-size:11px;padding:3px 10px;border-radius:6px;margin-left:8px;vertical-align:middle;letter-spacing:0.5px;">🔴 ADMIN MODE</span></h1>
-          <div class="sub">Financial Allocation Control & Tracking System — <span>Restricted Access</span></div>
+          <h1>FACTS <span style="background:#ef4444;color:#fff;font-size:11px;padding:3px 10px;border-radius:6px;margin-left:8px;vertical-align:middle;letter-spacing:0.5px;">ðŸ”´ ADMIN MODE</span></h1>
+          <div class="sub">Financial Allocation Control & Tracking System â€” <span>Restricted Access</span></div>
         </div>
       </div>
       <div class="admin-header-actions">
@@ -247,7 +247,7 @@
           <button class="tier-badge-btn" id="tier-badge-btn" onclick="toggleTierDropdown()" title="Click to switch tier">Free</button>
           <div class="tier-dropdown" id="tier-dropdown"></div>
         </div>
-        <a href="/app">← Back to App</a>
+        <a href="/app">â† Back to App</a>
       </div>
     </div>
     <div class="tier-switcher-banner" id="tier-banner" style="display:none;">
@@ -258,29 +258,30 @@
   </div>
 
   <div class="tabs">
-    <div class="tab" data-tab="agg-dashboard">📊 Dashboard</div>
-    <div class="tab" data-tab="support-tickets">🎫 Support Tickets</div>
+    <div class="tab" data-tab="agg-dashboard">ðŸ“Š Dashboard</div>
+    <div class="tab" data-tab="support-tickets">ðŸŽ« Support Tickets</div>
     <div class="tab active" data-tab="tree">Future Generations Tree</div>
     <div class="tab" data-tab="commissions">Commission Verify</div>
-    <div class="tab" data-tab="accounts">👥 Accounts</div>
+    <div class="tab" data-tab="accounts">ðŸ‘¥ Accounts</div>
     <div class="tab" data-tab="test">Test Mode</div>
     <div class="tab" data-tab="promo">Promo Codes</div>
-    <div class="tab" data-tab="education">📚 Education</div>
-    <div class="tab" data-tab="shop-save">📡 Rate Radar</div>
-    <div class="tab" data-tab="nda">🔏 NDA Status</div>
-    <div class="tab" data-tab="users">🗑️ Users</div>
-    <div class="tab" data-tab="succession">⚜️ Succession</div>
-    <div class="tab" data-tab="trials">🧪 Trials</div>
-    <div class="tab" data-tab="resources">📂 Resources</div>
-    <div class="tab" data-tab="feed">📰 Feed</div>
-    <div class="tab" data-tab="waitlist">🔔 Waitlist</div>
-    <div class="tab" data-tab="launch-waitlist">🌐 Launch List</div>
-    <div class="tab" data-tab="phase-zero">🔄 Phase Zero</div>
-    <div class="tab" data-tab="sovereign-flags">⚔️ Sovereign Flags</div>
-    <div class="tab" data-tab="job-triggers">⚙️ Job Triggers</div>
-    <div class="tab" data-tab="gamification">🧠 Gamification</div>
-    <div class="tab" data-tab="presentations">📊 Presentations</div>
-    <div class="tab" data-tab="vault-cycles">🏦 Vault Cycles</div>
+    <div class="tab" data-tab="education">ðŸ“š Education</div>
+    <div class="tab" data-tab="shop-save">ðŸ“¡ Rate Radar</div>
+    <div class="tab" data-tab="nda">ðŸ” NDA Status</div>
+    <div class="tab" data-tab="beta-invites">ðŸŽŸï¸ Beta Invites</div>
+    <div class="tab" data-tab="users">ðŸ—‘ï¸ Users</div>
+    <div class="tab" data-tab="succession">âšœï¸ Succession</div>
+    <div class="tab" data-tab="trials">ðŸ§ª Trials</div>
+    <div class="tab" data-tab="resources">ðŸ“‚ Resources</div>
+    <div class="tab" data-tab="feed">ðŸ“° Feed</div>
+    <div class="tab" data-tab="waitlist">ðŸ”” Waitlist</div>
+    <div class="tab" data-tab="launch-waitlist">ðŸŒ Launch List</div>
+    <div class="tab" data-tab="phase-zero">ðŸ”„ Phase Zero</div>
+    <div class="tab" data-tab="sovereign-flags">âš”ï¸ Sovereign Flags</div>
+    <div class="tab" data-tab="job-triggers">âš™ï¸ Job Triggers</div>
+    <div class="tab" data-tab="gamification">ðŸ§  Gamification</div>
+    <div class="tab" data-tab="presentations">ðŸ“Š Presentations</div>
+    <div class="tab" data-tab="vault-cycles">ðŸ¦ Vault Cycles</div>
   </div>
 
   <!-- Loading -->
@@ -290,7 +291,7 @@
 
   <!-- Access Denied -->
   <div id="access-denied" style="display:none; text-align:center; padding:80px 24px;">
-    <h2 style="color:#ef4444; font-size:24px; margin-bottom:12px;">⛔ Access Denied</h2>
+    <h2 style="color:#ef4444; font-size:24px; margin-bottom:12px;">â›” Access Denied</h2>
     <p style="color:#71717a;">Only the app creator can access this panel.</p>
     <a href="/" class="btn btn-secondary" style="margin-top:20px; display:inline-block;">Return Home</a>
   </div>
@@ -298,23 +299,23 @@
   <div id="admin-panel" style="display:none;">
     <div class="main">
 
-      <!-- ═══════ AGGREGATE DASHBOARD ═══════ -->
+      <!-- â•â•â•â•â•â•â• AGGREGATE DASHBOARD â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-agg-dashboard">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
           <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">Platform Aggregate Dashboard</h2>
-          <button class="btn btn-secondary btn-sm" onclick="loadAggDashboard()">↻ Refresh</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadAggDashboard()">â†» Refresh</button>
         </div>
         <p style="color:#52525b;font-size:12px;margin-bottom:20px;">
-          ⚠️ Aggregate data only — no individual user information is ever shown here.
+          âš ï¸ Aggregate data only â€” no individual user information is ever shown here.
         </p>
 
         <!-- Key Metrics Cards -->
         <div class="stats-row" id="agg-metrics-cards" style="margin-bottom:24px;">
-          <div class="stat-card"><div class="label">Total Users</div><div class="value" id="agg-total">—</div></div>
-          <div class="stat-card"><div class="label">Active (7 days)</div><div class="value green" id="agg-7d">—</div></div>
-          <div class="stat-card"><div class="label">Active (30 days)</div><div class="value blue" id="agg-30d">—</div></div>
-          <div class="stat-card"><div class="label">Est. MRR</div><div class="value yellow" id="agg-mrr">—</div></div>
-          <div class="stat-card"><div class="label">Paid Subscribers</div><div class="value green" id="agg-paid">—</div></div>
+          <div class="stat-card"><div class="label">Total Users</div><div class="value" id="agg-total">â€”</div></div>
+          <div class="stat-card"><div class="label">Active (7 days)</div><div class="value green" id="agg-7d">â€”</div></div>
+          <div class="stat-card"><div class="label">Active (30 days)</div><div class="value blue" id="agg-30d">â€”</div></div>
+          <div class="stat-card"><div class="label">Est. MRR</div><div class="value yellow" id="agg-mrr">â€”</div></div>
+          <div class="stat-card"><div class="label">Paid Subscribers</div><div class="value green" id="agg-paid">â€”</div></div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
@@ -360,7 +361,7 @@
         </div>
       </div>
 
-      <!-- ═══════ SUPPORT TICKETS ═══════ -->
+      <!-- â•â•â•â•â•â•â• SUPPORT TICKETS â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-support-tickets">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
           <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">Support Tickets</h2>
@@ -370,14 +371,14 @@
               <option value="open">Open</option>
               <option value="resolved">Resolved</option>
             </select>
-            <button class="btn btn-secondary btn-sm" onclick="loadTickets()">↻ Refresh</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadTickets()">â†» Refresh</button>
           </div>
         </div>
 
         <div class="stats-row" style="margin-bottom:20px;">
-          <div class="stat-card"><div class="label">Total Tickets</div><div class="value" id="ticket-count-total">—</div></div>
-          <div class="stat-card"><div class="label">Open</div><div class="value" style="color:#ef4444" id="ticket-count-open">—</div></div>
-          <div class="stat-card"><div class="label">Resolved</div><div class="value green" id="ticket-count-resolved">—</div></div>
+          <div class="stat-card"><div class="label">Total Tickets</div><div class="value" id="ticket-count-total">â€”</div></div>
+          <div class="stat-card"><div class="label">Open</div><div class="value" style="color:#ef4444" id="ticket-count-open">â€”</div></div>
+          <div class="stat-card"><div class="label">Resolved</div><div class="value green" id="ticket-count-resolved">â€”</div></div>
         </div>
 
         <div class="section">
@@ -399,7 +400,7 @@
         </div>
       </div>
 
-      <!-- ═══════ ORGANIZATION TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• ORGANIZATION TAB â•â•â•â•â•â•â• -->
       <div class="panel active" id="panel-tree">
         <div class="stats-row" id="tree-stats"></div>
 
@@ -413,7 +414,7 @@
             </div>
             <div style="text-align:right;">
               <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">First-Line Filled</div>
-              <div id="seed-count-display" style="font-size:22px; font-weight:800; color:#f59e0b;">—/100</div>
+              <div id="seed-count-display" style="font-size:22px; font-weight:800; color:#f59e0b;">â€”/100</div>
             </div>
           </div>
           <!-- Progress bar -->
@@ -426,14 +427,14 @@
 
         <!-- Action bar for selected user -->
         <div class="action-bar" id="action-bar">
-          <div class="title">Selected: <span id="selected-user-label">—</span></div>
+          <div class="title">Selected: <span id="selected-user-label">â€”</span></div>
           <div class="form-row">
             <div class="form-group">
               <label>Place under affiliate</label>
               <select id="place-parent-select" style="min-width:240px;"></select>
             </div>
             <button class="btn btn-primary" onclick="placeUser()">Place in Organization</button>
-            <button class="btn btn-secondary" onclick="simulatePayment()">💳 Simulate Payment</button>
+            <button class="btn btn-secondary" onclick="simulatePayment()">ðŸ’³ Simulate Payment</button>
             <button class="btn btn-danger btn-sm" onclick="detachUser()">Detach from Organization</button>
           </div>
           <div id="payment-result" style="margin-top:12px; display:none;"></div>
@@ -445,7 +446,7 @@
             <div style="display:flex; gap:8px;">
               <button class="btn btn-secondary btn-sm" onclick="toggleAll(true)">Expand All</button>
               <button class="btn btn-secondary btn-sm" onclick="toggleAll(false)">Collapse All</button>
-              <button class="btn btn-primary btn-sm" onclick="loadTree()">↻ Refresh</button>
+              <button class="btn btn-primary btn-sm" onclick="loadTree()">â†» Refresh</button>
             </div>
           </div>
           <div id="tree-view" class="tree-container">
@@ -454,7 +455,7 @@
         </div>
       </div>
 
-      <!-- ═══════ COMMISSION VERIFY TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• COMMISSION VERIFY TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-commissions">
         <div class="stats-row" id="commission-stats"></div>
         <div class="section">
@@ -474,7 +475,7 @@
         </div>
       </div>
 
-      <!-- ═══════ ACCOUNTS TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• ACCOUNTS TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-accounts">
 
         <!-- Future Generations Account Manager -->
@@ -492,7 +493,7 @@
                 <option value="at_risk">At Risk</option>
                 <option value="revoked">Revoked</option>
               </select>
-              <button class="btn btn-primary btn-sm" onclick="loadAffiliates()">↻ Refresh</button>
+              <button class="btn btn-primary btn-sm" onclick="loadAffiliates()">â†» Refresh</button>
             </div>
           </div>
           <div class="table-wrap" id="affiliates-table-wrap">
@@ -504,10 +505,10 @@
         <div class="section">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div>
-              <h2>🏅 Founding Members</h2>
+              <h2>ðŸ… Founding Members</h2>
               <p style="font-size:12px; color:#71717a; margin-top:4px;">Earliest paid subscribers, sorted by first subscription date.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="loadFoundingMembers()">↻ Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="loadFoundingMembers()">â†» Refresh</button>
           </div>
           <div class="table-wrap" id="founding-members-table-wrap">
             <div class="loading-center"><div class="loader"></div></div>
@@ -523,18 +524,18 @@
           <label style="font-size:12px;color:#a1a1aa;">Filter by feature:</label>
           <select id="waitlist-feature-filter" onchange="loadWaitlist()" style="padding:6px 10px;border-radius:8px;border:1px solid #2d2d3d;background:#1a1a2e;color:#e4e4e7;font-size:12px;min-width:220px;">
             <option value="">All features</option>
-            <optgroup label="── Modules ──">
+            <optgroup label="â”€â”€ Modules â”€â”€">
               <option value="brokerage_cost_tracker">Brokerage Cost Tracker</option>
               <option value="sdira_wealth_hub">SDIRA Wealth Hub</option>
               <option value="business_facts">Business FACTS</option>
               <option value="business_brokerage_cost_tracker">Business Brokerage Cost Tracker</option>
               <option value="elite_tier">Elite Tier</option>
-              <option value="level_2_strategy_mapping">Level 2 — Strategy Mapping</option>
+              <option value="level_2_strategy_mapping">Level 2 â€” Strategy Mapping</option>
             </optgroup>
-            <optgroup label="── Settings ──">
+            <optgroup label="â”€â”€ Settings â”€â”€">
               <option value="totp_authenticator">Authenticator App (TOTP)</option>
             </optgroup>
-            <optgroup label="── Document Vault ──">
+            <optgroup label="â”€â”€ Document Vault â”€â”€">
               <option value="doc_vault_wills">Wills</option>
               <option value="doc_vault_trusts">Trusts</option>
               <option value="doc_vault_insurance_policies">Insurance Policies</option>
@@ -571,7 +572,7 @@
       <!-- Balance Adjustment Modal -->
       <div class="modal-overlay" id="balance-modal">
         <div class="modal">
-          <h3>💰 Adjust Balance</h3>
+          <h3>ðŸ’° Adjust Balance</h3>
           <p style="font-size:13px; color:#71717a; margin-bottom:16px;">
             Future Generations member: <strong id="balance-modal-email"></strong>
           </p>
@@ -600,7 +601,7 @@
         </div>
       </div>
 
-      <!-- ═══════ TEST MODE TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• TEST MODE TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-test">
         <div class="section">
           <h2>Create Test Users</h2>
@@ -622,7 +623,7 @@
           </div>
           <div id="quick-create" style="margin-top:16px;">
             <h3>Quick Create Chain</h3>
-            <p style="font-size:12px; color:#52525b; margin-bottom:12px;">Creates multiple test users and chains them: A → B → C → D (A refers B, B refers C, etc.)</p>
+            <p style="font-size:12px; color:#52525b; margin-bottom:12px;">Creates multiple test users and chains them: A â†’ B â†’ C â†’ D (A refers B, B refers C, etc.)</p>
             <div class="form-row">
               <div class="form-group">
                 <label>Number of users</label>
@@ -634,23 +635,23 @@
                   <option value="">None (create as roots)</option>
                 </select>
               </div>
-              <button class="btn btn-primary" onclick="createChain()">⛓️ Create Chain</button>
+              <button class="btn btn-primary" onclick="createChain()">â›“ï¸ Create Chain</button>
             </div>
             <div id="chain-result" style="margin-top:12px; display:none;"></div>
           </div>
         </div>
 
         <div class="section">
-          <h2 style="color:#ef4444;">⚠️ Reset Test Data</h2>
+          <h2 style="color:#ef4444;">âš ï¸ Reset Test Data</h2>
           <p style="font-size:13px; color:#71717a; margin-bottom:16px;">
             Removes all users with <code>@test-affiliate.facts</code> emails and their associated commissions, referrals, and affiliate records. Real users are never affected.
           </p>
-          <button class="btn btn-danger" id="reset-btn" onclick="resetTestData()">🗑 Reset All Test Data</button>
+          <button class="btn btn-danger" id="reset-btn" onclick="resetTestData()">ðŸ—‘ Reset All Test Data</button>
           <div id="reset-result" style="margin-top:12px; display:none;"></div>
         </div>
       </div>
 
-      <!-- ═══════ PROMO CODES TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• PROMO CODES TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-promo">
         <div class="stats-row" id="promo-stats"></div>
         <div class="section">
@@ -658,7 +659,7 @@
           <p style="font-size:13px; color:#71717a; margin-bottom:16px;">Create a single-use code that grants free paid access.</p>
           <button class="btn btn-primary" id="generate-btn" onclick="generatePromo()">+ Generate New Code</button>
           <div id="new-code-display" style="display:none; margin-top:16px; padding:16px; background:#064e3b; border:1px solid #10b981; border-radius:10px;">
-            <span style="color:#6ee7b7; font-size:13px;">✅ New code:</span>
+            <span style="color:#6ee7b7; font-size:13px;">âœ… New code:</span>
             <code id="new-code" style="font-size:20px; font-weight:700; color:#10b981; margin-left:8px; cursor:pointer;" onclick="copyCode(this)"></code>
             <span style="font-size:11px; color:#6ee7b7; margin-left:8px;">(click to copy)</span>
           </div>
@@ -671,19 +672,19 @@
         </div>
       </div>
 
-      <!-- ═══════ TRIALS TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• TRIALS TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-trials">
         <div class="section">
-          <h2>🧪 21-Day Free Trial — Stats Dashboard</h2>
-          <p style="color:#71717a;font-size:13px;margin-bottom:20px;">The "Habitual Handshake" — 21 days to build the habit before asking for commitment.</p>
+          <h2>ðŸ§ª 21-Day Free Trial â€” Stats Dashboard</h2>
+          <p style="color:#71717a;font-size:13px;margin-bottom:20px;">The "Habitual Handshake" â€” 21 days to build the habit before asking for commitment.</p>
 
           <div class="stats-row" id="trial-stats-row">
             <div class="loading-center"><div class="loader"></div></div>
           </div>
 
           <div style="margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="loadTrialStats()">🔄 Refresh Stats</button>
-            <button class="btn btn-secondary" onclick="triggerTrialExpiryJob()">▶ Run Expiry Job Now</button>
+            <button class="btn btn-primary" onclick="loadTrialStats()">ðŸ”„ Refresh Stats</button>
+            <button class="btn btn-secondary" onclick="triggerTrialExpiryJob()">â–¶ Run Expiry Job Now</button>
           </div>
         </div>
 
@@ -696,7 +697,7 @@
         </div>
       </div>
 
-      <!-- ═══════ EDUCATION CONTENT TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• EDUCATION CONTENT TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-education">
         <div class="stats-row" id="edu-admin-stats"></div>
 
@@ -711,20 +712,20 @@
             <div class="form-group" style="flex:2;min-width:180px;">
               <label>Category *</label>
               <select id="edu-form-category" style="width:100%;">
-                <option value="loan-evaluation">💳 Evaluating Loans</option>
-                <option value="credit-scores">📊 Credit Scores</option>
-                <option value="insurance">🛡️ Insurance</option>
-                <option value="debt-reduction">💰 Debt Reduction</option>
-                <option value="budgeting">📋 Budgeting</option>
-                <option value="saving-investing">📈 Saving &amp; Investing</option>
+                <option value="loan-evaluation">ðŸ’³ Evaluating Loans</option>
+                <option value="credit-scores">ðŸ“Š Credit Scores</option>
+                <option value="insurance">ðŸ›¡ï¸ Insurance</option>
+                <option value="debt-reduction">ðŸ’° Debt Reduction</option>
+                <option value="budgeting">ðŸ“‹ Budgeting</option>
+                <option value="saving-investing">ðŸ“ˆ Saving &amp; Investing</option>
               </select>
             </div>
             <div class="form-group" style="flex:1;min-width:140px;">
               <label>Content Type *</label>
               <select id="edu-form-type" style="width:100%;" onchange="eduFormTypeChanged()">
-                <option value="article">📝 Article</option>
-                <option value="video">🎬 Video Embed</option>
-                <option value="link">🔗 External Link</option>
+                <option value="article">ðŸ“ Article</option>
+                <option value="video">ðŸŽ¬ Video Embed</option>
+                <option value="link">ðŸ”— External Link</option>
               </select>
             </div>
             <div class="form-group" style="flex:1;min-width:80px;">
@@ -746,7 +747,7 @@
 
           <div class="form-group" style="margin-bottom:10px;">
             <label>Short Description (shown in card preview)</label>
-            <input type="text" id="edu-form-desc" placeholder="1–2 sentence summary…" style="width:100%;">
+            <input type="text" id="edu-form-desc" placeholder="1â€“2 sentence summaryâ€¦" style="width:100%;">
           </div>
 
           <!-- Video embed URL (only for video type) -->
@@ -764,13 +765,13 @@
           <!-- Article body (for articles; optional extra notes for video/link) -->
           <div class="form-group" style="margin-bottom:16px;">
             <label id="edu-body-label">Article Content (Markdown supported)</label>
-            <textarea id="edu-form-body" rows="10" placeholder="Write your article in Markdown…"
+            <textarea id="edu-form-body" rows="10" placeholder="Write your article in Markdownâ€¦"
               style="width:100%;background:#27272a;border:1px solid #3f3f46;color:#e4e4e7;padding:10px 12px;border-radius:8px;font-size:13px;font-family:monospace;outline:none;resize:vertical;line-height:1.6;"></textarea>
             <div style="font-size:11px;color:#52525b;margin-top:4px;">Supports: ## headings, **bold**, - lists, | tables |, ```code```</div>
           </div>
 
           <div style="display:flex;gap:10px;">
-            <button class="btn btn-primary" onclick="eduAdminSave()">💾 Save Content</button>
+            <button class="btn btn-primary" onclick="eduAdminSave()">ðŸ’¾ Save Content</button>
             <button class="btn btn-secondary" onclick="eduAdminCancelEdit()">Clear</button>
           </div>
           <div id="edu-form-msg" style="margin-top:10px;font-size:13px;display:none;"></div>
@@ -782,22 +783,22 @@
             <h2 style="margin:0;">All Content</h2>
             <select id="edu-admin-filter" onchange="eduAdminRenderList()" style="font-size:13px;">
               <option value="">All Categories</option>
-              <option value="loan-evaluation">💳 Evaluating Loans</option>
-              <option value="credit-scores">📊 Credit Scores</option>
-              <option value="insurance">🛡️ Insurance</option>
-              <option value="debt-reduction">💰 Debt Reduction</option>
-              <option value="budgeting">📋 Budgeting</option>
-              <option value="saving-investing">📈 Saving &amp; Investing</option>
+              <option value="loan-evaluation">ðŸ’³ Evaluating Loans</option>
+              <option value="credit-scores">ðŸ“Š Credit Scores</option>
+              <option value="insurance">ðŸ›¡ï¸ Insurance</option>
+              <option value="debt-reduction">ðŸ’° Debt Reduction</option>
+              <option value="budgeting">ðŸ“‹ Budgeting</option>
+              <option value="saving-investing">ðŸ“ˆ Saving &amp; Investing</option>
             </select>
           </div>
           <div id="edu-admin-list"><div class="loading-center"><div class="loader"></div></div></div>
         </div>
       </div>
 
-      <!-- ═══════ RATE RADAR TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• RATE RADAR TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-shop-save">
         <div class="section">
-          <h2>📡 Rate Radar — Affiliate Links</h2>
+          <h2>ðŸ“¡ Rate Radar â€” Affiliate Links</h2>
           <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Update the affiliate/comparison URLs for each Rate Radar category. Set URL to <code>#</code> to show "Coming Soon" button. Categories are visible to all users (Free &amp; Paid).</p>
 
           <div id="sas-admin-list">
@@ -817,7 +818,7 @@
               </div>
               <div class="form-group" style="flex:0 0 80px;">
                 <label>Icon</label>
-                <input id="sas-new-icon" type="text" placeholder="🐾" style="width:100%;text-align:center;" />
+                <input id="sas-new-icon" type="text" placeholder="ðŸ¾" style="width:100%;text-align:center;" />
               </div>
             </div>
             <div class="form-row" style="flex-wrap:wrap;gap:10px;margin-bottom:10px;">
@@ -841,13 +842,13 @@
       </div>
       <!-- END SHOP & SAVE TAB -->
 
-      <!-- ═══════ NDA STATUS TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• NDA STATUS TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-nda">
         <div class="stats-row" id="nda-stats-row"></div>
 
         <div class="section">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <h2>🔏 Beta NDA / Agreement Status</h2>
+            <h2>ðŸ” Beta NDA / Agreement Status</h2>
             <div style="display:flex; gap:8px;">
               <select id="nda-filter" onchange="renderNdaTable()" style="font-size:13px; min-width:160px;">
                 <option value="all">All Users</option>
@@ -855,7 +856,7 @@
                 <option value="accepted">NDA Accepted</option>
                 <option value="exempt">Creator / Exempt</option>
               </select>
-              <button class="btn btn-primary btn-sm" onclick="loadNdaStatus()">↻ Refresh</button>
+              <button class="btn btn-primary btn-sm" onclick="loadNdaStatus()">â†» Refresh</button>
             </div>
           </div>
 
@@ -866,7 +867,110 @@
       </div>
       <!-- END NDA STATUS TAB -->
 
-      <!-- ═══════ USERS / ACCOUNT DELETION TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• BETA INVITES / FOUNDER TRACKER â•â•â•â•â•â•â• -->
+      <div class="panel" id="panel-beta-invites">
+        <div class="section">
+          <h2>Issue Master Admin Invite Code</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Code Name</label>
+              <input type="text" id="newCode" placeholder="Code Name (e.g., VIP-FOUNDER-2026)">
+            </div>
+            <div class="form-group">
+              <label>Max Uses</label>
+              <input type="number" id="maxUses" placeholder="Max Uses (e.g., 20)" value="5">
+            </div>
+            <button class="btn btn-primary" onclick="createBetaInviteCode()">Generate Master Code</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Issue Targeted Invite (recipient identity)</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Recipient Name</label>
+              <input type="text" id="inviteSentToName" placeholder="Jane Doe / Acme Capital">
+            </div>
+            <div class="form-group">
+              <label>Recipient Email</label>
+              <input type="email" id="inviteSentToEmail" placeholder="jane@example.com">
+            </div>
+            <div class="form-group">
+              <label>Count</label>
+              <input type="number" id="inviteCount" value="1" min="1" max="100">
+            </div>
+            <div class="form-group">
+              <label>Metadata JSON</label>
+              <input type="text" id="inviteMeta" placeholder='{"cohort":"investors","tier":"future_gen"}'>
+            </div>
+            <button class="btn btn-primary" onclick="createTargetedInviteCodes()">Generate Targeted Codes</button>
+          </div>
+          <p id="targetedInviteResult" style="margin-top:12px;font-size:0.85rem;color:var(--text-secondary);"></p>
+        </div>
+
+        <div class="section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Master Admin Codes Tracker</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadBetaInviteTracking()">↻ Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Used / Max</th>
+                  <th>Remaining</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="masterCodesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Targeted Invites (recipient-mapped)</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Sent To</th>
+                  <th>Email</th>
+                  <th>Metadata</th>
+                  <th>Claimed</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="targetedInvitesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Beta Tester Lineage & Invite Usage</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>User Email</th>
+                  <th>Personal Code</th>
+                  <th>Affiliate / Parent Code</th>
+                  <th>Invited By</th>
+                  <th>Total Recruits</th>
+                  <th>Invites Remaining</th>
+                  <th>NDA Accepted</th>
+                  <th>Income Programs</th>
+                </tr>
+              </thead>
+              <tbody id="lineageBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- END BETA INVITES TAB -->
+
+      <!-- â•â•â•â•â•â•â• USERS / ACCOUNT DELETION TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-users">
 
         <!-- Search + Details side by side on wide screens -->
@@ -874,12 +978,12 @@
 
           <!-- Left: Search -->
           <div class="section">
-            <h2 style="margin-bottom:14px;">🔍 Search Users</h2>
+            <h2 style="margin-bottom:14px;">ðŸ” Search Users</h2>
             <div style="display:flex; gap:8px; margin-bottom:16px;">
               <input
                 id="user-search-input"
                 type="text"
-                placeholder="Email or name…"
+                placeholder="Email or nameâ€¦"
                 style="flex:1; background:#1e293b; border:1px solid #334155; color:#e4e4e7; border-radius:8px; padding:9px 12px; font-size:14px;"
                 oninput="handleUserSearchInput()"
               />
@@ -895,7 +999,7 @@
 
           <!-- Right: Selected User Details -->
           <div class="section" id="user-detail-panel" style="min-height:200px;">
-            <h2 style="margin-bottom:14px;">📋 Account Details</h2>
+            <h2 style="margin-bottom:14px;">ðŸ“‹ Account Details</h2>
             <div id="user-detail-content">
               <p style="color:#52525b; font-size:13px; text-align:center; padding:20px 0;">
                 Select a user from the search results to see their details.
@@ -907,19 +1011,19 @@
         <!-- Deletion Audit Log -->
         <div class="section" style="margin-top:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-            <h2>🗓️ Deletion Log</h2>
-            <button class="btn btn-secondary btn-sm" onclick="loadDeletionLog()">↻ Refresh</button>
+            <h2>ðŸ—“ï¸ Deletion Log</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadDeletionLog()">â†» Refresh</button>
           </div>
           <div id="deletion-log-wrap" class="table-wrap">
-            <p style="color:#52525b; font-size:13px; text-align:center; padding:20px 0;">Loading…</p>
+            <p style="color:#52525b; font-size:13px; text-align:center; padding:20px 0;">Loadingâ€¦</p>
           </div>
         </div>
 
         <!-- Confirmation Modal -->
         <div id="delete-user-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.75); align-items:center; justify-content:center;">
           <div style="background:#1a1a2e; border:1px solid #ef4444; border-radius:12px; padding:28px; max-width:460px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
-            <h3 style="color:#ef4444; font-size:18px; margin-bottom:12px;">⚠️ Permanently Delete Account?</h3>
-            <p style="color:#94a3b8; font-size:14px; margin-bottom:8px;" id="delete-modal-name">—</p>
+            <h3 style="color:#ef4444; font-size:18px; margin-bottom:12px;">âš ï¸ Permanently Delete Account?</h3>
+            <p style="color:#94a3b8; font-size:14px; margin-bottom:8px;" id="delete-modal-name">â€”</p>
             <p style="color:#71717a; font-size:13px; line-height:1.6; margin-bottom:16px;">
               This will <strong style="color:#ef4444;">permanently erase</strong> all user data including transactions, allocations, debts, portfolio entries, organization position, and subscription. The user's referrals will be re-linked to their sponsor.
             </p>
@@ -944,63 +1048,63 @@
       </div>
       <!-- END USERS TAB -->
 
-      <!-- ═══════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <!-- SUCCESSION MANAGEMENT TAB               -->
-      <!-- ═══════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-succession">
 
         <!-- Stats row -->
         <div class="stats-row" id="succession-stats-row">
           <div class="stat-card">
             <div class="label">Total Plans</div>
-            <div class="value blue" id="stat-total-plans">—</div>
+            <div class="value blue" id="stat-total-plans">â€”</div>
           </div>
           <div class="stat-card">
             <div class="label">Pending Transfers</div>
-            <div class="value yellow" id="stat-pending-transfers">—</div>
+            <div class="value yellow" id="stat-pending-transfers">â€”</div>
           </div>
           <div class="stat-card">
             <div class="label">On Probation</div>
-            <div class="value" style="color:#f97316;" id="stat-probation">—</div>
+            <div class="value" style="color:#f97316;" id="stat-probation">â€”</div>
           </div>
         </div>
 
         <!-- Succession Plans Section -->
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-            <h2>📋 Succession Plans (Designations)</h2>
-            <button class="btn btn-secondary btn-sm" onclick="loadSuccessionAdmin()">↻ Refresh</button>
+            <h2>ðŸ“‹ Succession Plans (Designations)</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadSuccessionAdmin()">â†» Refresh</button>
           </div>
           <div id="succession-plans-table">
-            <p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loading…</p>
+            <p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loadingâ€¦</p>
           </div>
         </div>
 
         <!-- Pending Transfers Section -->
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-            <h2>🔄 Transfer Queue</h2>
-            <button class="btn btn-secondary btn-sm" onclick="loadSuccessionTransfers()">↻ Refresh</button>
+            <h2>ðŸ”„ Transfer Queue</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadSuccessionTransfers()">â†» Refresh</button>
           </div>
           <div id="succession-transfers-table">
-            <p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loading…</p>
+            <p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loadingâ€¦</p>
           </div>
         </div>
 
         <!-- Probation Monitoring -->
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-            <h2>⚠️ Probation Monitoring (Post-Transfer)</h2>
-            <button class="btn btn-secondary btn-sm" onclick="loadSuccessionProbation()">↻ Refresh</button>
+            <h2>âš ï¸ Probation Monitoring (Post-Transfer)</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadSuccessionProbation()">â†» Refresh</button>
           </div>
           <div id="succession-probation-table">
-            <p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loading…</p>
+            <p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loadingâ€¦</p>
           </div>
         </div>
 
         <!-- Death Override / Corporate Override -->
         <div class="section" style="border:1px solid #ef4444;">
-          <h2 style="color:#ef4444;margin-bottom:4px;">💀 Death / Incapacitation Override</h2>
+          <h2 style="color:#ef4444;margin-bottom:4px;">ðŸ’€ Death / Incapacitation Override</h2>
           <p style="color:#71717a;font-size:13px;margin-bottom:16px;">Corporate override: manually transfer an affiliate position due to death or incapacitation. No successor signature required. Audit trail is created automatically.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
             <div>
@@ -1033,7 +1137,7 @@
           </div>
           <div id="death-override-result" style="display:none;margin-bottom:12px;padding:12px;border-radius:8px;font-size:13px;"></div>
           <button class="btn btn-sm" onclick="executeDeathOverride()" style="background:#ef4444;color:#fff;border-color:#ef4444;">
-            💀 Execute Death Override
+            ðŸ’€ Execute Death Override
           </button>
         </div>
 
@@ -1043,7 +1147,7 @@
             <h3 id="succession-modal-title" style="font-size:17px;margin-bottom:12px;"></h3>
             <p id="succession-modal-desc" style="color:#94a3b8;font-size:13px;line-height:1.6;margin-bottom:16px;"></p>
             <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px;">Admin Notes (optional)</label>
-            <input id="succession-modal-notes" type="text" placeholder="Notes…" style="width:100%;background:#0f172a;border:1px solid #334155;color:#e4e4e7;border-radius:6px;padding:8px 10px;font-size:13px;margin-bottom:16px;box-sizing:border-box;" />
+            <input id="succession-modal-notes" type="text" placeholder="Notesâ€¦" style="width:100%;background:#0f172a;border:1px solid #334155;color:#e4e4e7;border-radius:6px;padding:8px 10px;font-size:13px;margin-bottom:16px;box-sizing:border-box;" />
             <div id="succession-modal-result" style="display:none;margin-bottom:12px;padding:10px;border-radius:8px;font-size:13px;"></div>
             <div style="display:flex;gap:10px;justify-content:flex-end;">
               <button class="btn btn-secondary btn-sm" onclick="closeSuccessionModal()">Cancel</button>
@@ -1055,9 +1159,9 @@
       </div>
       <!-- END SUCCESSION TAB -->
 
-      <!-- ═══════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <!-- RESOURCE CENTER TAB                     -->
-      <!-- ═══════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-resources">
 
         <!-- Stats row -->
@@ -1077,7 +1181,7 @@
             </div>
             <div class="form-group" style="flex:1;min-width:140px;">
               <label>Emoji</label>
-              <input type="text" id="res-form-emoji" placeholder="📄" maxlength="4" style="width:100%;font-size:20px;">
+              <input type="text" id="res-form-emoji" placeholder="ðŸ“„" maxlength="4" style="width:100%;font-size:20px;">
             </div>
           </div>
 
@@ -1101,14 +1205,14 @@
             <div class="form-group" style="flex:1;min-width:140px;">
               <label>Type</label>
               <select id="res-form-type" style="width:100%;">
-                <option value="pdf">📄 PDF</option>
-                <option value="spreadsheet">📊 Spreadsheet</option>
-                <option value="diagram">📐 Diagram</option>
-                <option value="image">🖼 Image</option>
-                <option value="chart">📈 Chart</option>
-                <option value="link">🔗 Link</option>
-                <option value="video">🎬 Video</option>
-                <option value="doc">📝 Document</option>
+                <option value="pdf">ðŸ“„ PDF</option>
+                <option value="spreadsheet">ðŸ“Š Spreadsheet</option>
+                <option value="diagram">ðŸ“ Diagram</option>
+                <option value="image">ðŸ–¼ Image</option>
+                <option value="chart">ðŸ“ˆ Chart</option>
+                <option value="link">ðŸ”— Link</option>
+                <option value="video">ðŸŽ¬ Video</option>
+                <option value="doc">ðŸ“ Document</option>
               </select>
             </div>
             <div class="form-group" style="flex:0.5;min-width:110px;">
@@ -1124,7 +1228,7 @@
           </div>
 
           <div class="form-group" style="margin-bottom:12px;">
-            <label>Upload File <span style="color:#6b7280;font-weight:400;">(PDF, images, docs — max 20MB)</span></label>
+            <label>Upload File <span style="color:#6b7280;font-weight:400;">(PDF, images, docs â€” max 20MB)</span></label>
             <input type="file" id="res-form-file" accept=".pdf,.png,.jpg,.jpeg,.gif,.svg,.xlsx,.xls,.csv,.docx,.doc,.pptx,.ppt,.txt" style="width:100%;">
           </div>
 
@@ -1149,7 +1253,7 @@
         <div class="section" style="margin-top:24px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
             <h2>All Resources</h2>
-            <button class="btn btn-secondary" onclick="loadResourcesAdmin()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="loadResourcesAdmin()">ðŸ”„ Refresh</button>
           </div>
           <div id="res-table-wrap">
             <div class="loading-center"><div class="loader"></div></div>
@@ -1159,9 +1263,9 @@
       </div>
       <!-- END RESOURCES TAB -->
 
-      <!-- ═══════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <!-- CONTENT FEED TAB                        -->
-      <!-- ═══════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-feed">
 
         <!-- Add / Edit Form -->
@@ -1175,11 +1279,11 @@
             <div class="form-group" style="flex:1;min-width:140px;">
               <label>Type *</label>
               <select id="feed-form-type" style="width:100%;">
-                <option value="quote">💛 CP Quote</option>
-                <option value="news">📰 News</option>
-                <option value="story">🏆 Community Win</option>
-                <option value="tip">💡 FACTS Tip</option>
-                <option value="digest">📋 Weekly Digest</option>
+                <option value="quote">ðŸ’› CP Quote</option>
+                <option value="news">ðŸ“° News</option>
+                <option value="story">ðŸ† Community Win</option>
+                <option value="tip">ðŸ’¡ FACTS Tip</option>
+                <option value="digest">ðŸ“‹ Weekly Digest</option>
               </select>
             </div>
             <div class="form-group" style="flex:2;min-width:200px;">
@@ -1218,7 +1322,7 @@
 
           <div class="form-row" style="margin-bottom:16px;gap:24px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#9ca3af;">
-              <input type="checkbox" id="feed-form-pinned"> <span>📌 Pin to top of feed</span>
+              <input type="checkbox" id="feed-form-pinned"> <span>ðŸ“Œ Pin to top of feed</span>
             </label>
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#9ca3af;">
               <input type="checkbox" id="feed-form-active" checked> <span>Active (visible in feed)</span>
@@ -1236,7 +1340,7 @@
         <div class="section" style="margin-top:24px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
             <h2>All Posts</h2>
-            <button class="btn btn-secondary" onclick="loadFeedAdmin()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="loadFeedAdmin()">ðŸ”„ Refresh</button>
           </div>
           <div id="feed-table-wrap">
             <div class="loading-center"><div class="loader"></div></div>
@@ -1246,23 +1350,23 @@
       </div>
       <!-- END FEED TAB -->
 
-      <!-- ═══════ LAUNCH WAITLIST TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• LAUNCH WAITLIST TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-launch-waitlist">
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <div>
-              <h2 style="margin-bottom:4px;">🌐 factsmoney.com Launch Waitlist</h2>
+              <h2 style="margin-bottom:4px;">ðŸŒ factsmoney.com Launch Waitlist</h2>
               <p style="font-size:13px;color:#71717a;">Signups from the coming-soon page on factsmoney.com</p>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
               <span id="launch-waitlist-total" style="font-size:13px;color:#71717a;"></span>
-              <button class="btn btn-secondary btn-sm" onclick="exportLaunchWaitlistCSV()">⬇ CSV</button>
-              <button class="btn btn-primary btn-sm" onclick="loadLaunchWaitlist()">↻ Refresh</button>
+              <button class="btn btn-secondary btn-sm" onclick="exportLaunchWaitlistCSV()">â¬‡ CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="loadLaunchWaitlist()">â†» Refresh</button>
             </div>
           </div>
           <div id="launch-waitlist-loading" class="loading-center"><div class="loader"></div></div>
           <div id="launch-waitlist-error" style="display:none;color:#ef4444;padding:12px;"></div>
-          <div id="launch-waitlist-empty" style="display:none;" class="empty-state"><div class="icon">📭</div><p>No signups yet</p></div>
+          <div id="launch-waitlist-empty" style="display:none;" class="empty-state"><div class="icon">ðŸ“­</div><p>No signups yet</p></div>
           <div id="launch-waitlist-table-wrap" style="display:none;overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
               <thead>
@@ -1282,13 +1386,13 @@
         </div>
       </div>
 
-      <!-- ═══════ PHASE ZERO TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• PHASE ZERO TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-phase-zero">
         <div class="stats-row" id="pz-stats-row"></div>
         <div class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2>🔄 Phase Zero Overview</h2>
-            <button class="btn btn-primary btn-sm" onclick="loadPhaseZero()">↻ Refresh</button>
+            <h2>ðŸ”„ Phase Zero Overview</h2>
+            <button class="btn btn-primary btn-sm" onclick="loadPhaseZero()">â†» Refresh</button>
           </div>
           <p style="font-size:13px;color:#71717a;margin-bottom:16px;">Review user Phase Zero status. Deadline = 7-day timer from declaration. Admin override lifts lockout and resets timer.</p>
           <div id="pz-loading" class="loading-center"><div class="loader"></div></div>
@@ -1302,7 +1406,7 @@
                   <th style="text-align:center;padding:8px 12px;">Day</th>
                   <th style="text-align:center;padding:8px 12px;">Entries</th>
                   <th style="text-align:center;padding:8px 12px;">Attempts</th>
-                  <th style="text-align:center;padding:8px 12px;">⏱ Deadline</th>
+                  <th style="text-align:center;padding:8px 12px;">â± Deadline</th>
                   <th style="text-align:left;padding:8px 12px;">Completed</th>
                   <th style="text-align:center;padding:8px 12px;">Actions</th>
                 </tr>
@@ -1315,8 +1419,8 @@
         <!-- Override Log Section -->
         <div class="section" style="margin-top:0;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2>🔓 Lockout Override Log</h2>
-            <button class="btn btn-secondary btn-sm" onclick="loadPZOverrides()">↻ Load Log</button>
+            <h2>ðŸ”“ Lockout Override Log</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadPZOverrides()">â†» Load Log</button>
           </div>
           <p style="font-size:13px;color:#71717a;margin-bottom:16px;">All admin overrides of Phase Zero deadline lockouts. Includes admin, timestamp, user, and prior state.</p>
           <div id="pz-override-loading" style="display:none;text-align:center;padding:12px;"><div class="loader"></div></div>
@@ -1340,10 +1444,10 @@
         </div>
       </div>
 
-      <!-- ═══════ SOVEREIGN FLAGS TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• SOVEREIGN FLAGS TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-sovereign-flags">
         <div class="section">
-          <h2>⚔️ Sovereign Flags — Per-User Overrides</h2>
+          <h2>âš”ï¸ Sovereign Flags â€” Per-User Overrides</h2>
           <p style="font-size:13px;color:#71717a;margin-bottom:20px;">Search for a user and toggle their sovereign feature flags. These unlock hidden features for select accounts.</p>
           <div class="form-row" style="margin-bottom:20px;">
             <div class="form-group" style="flex:1;">
@@ -1391,15 +1495,15 @@
         </div>
       </div>
 
-      <!-- ═══════ JOB TRIGGERS TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• JOB TRIGGERS TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-job-triggers">
         <div class="section">
-          <h2>⚙️ Background Job Triggers</h2>
-          <p style="font-size:13px;color:#71717a;margin-bottom:20px;">Manually fire any background job. Use with care — these run against production data.</p>
+          <h2>âš™ï¸ Background Job Triggers</h2>
+          <p style="font-size:13px;color:#71717a;margin-bottom:20px;">Manually fire any background job. Use with care â€” these run against production data.</p>
           <div id="job-trigger-result" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13px;"></div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
             <div class="section" style="background:#111827;border-color:#374151;margin-bottom:0;">
-              <h3>🌳 Affiliate / Tree</h3>
+              <h3>ðŸŒ³ Affiliate / Tree</h3>
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
                 <button class="btn btn-secondary" onclick="triggerJob('/api/admin/trigger-orphan-placement','POST',null,'Orphan Placement')">Run Orphan Placement</button>
                 <button class="btn btn-secondary" onclick="triggerJob('/api/admin/trigger-depth-gates','POST',null,'Depth Gate Check')">Run Depth Gate Check</button>
@@ -1407,7 +1511,7 @@
               </div>
             </div>
             <div class="section" style="background:#111827;border-color:#374151;margin-bottom:0;">
-              <h3>💳 Billing / Trials</h3>
+              <h3>ðŸ’³ Billing / Trials</h3>
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
                 <button class="btn btn-secondary" onclick="triggerJob('/api/admin/trigger-trial-expiry','POST',null,'Trial Expiry')">Run Trial Expiry</button>
                 <button class="btn btn-secondary" onclick="triggerJob('/api/admin/trigger-promo-grace-job','POST',null,'Promo Grace Manager')">Run Promo Grace Manager</button>
@@ -1415,7 +1519,7 @@
               </div>
             </div>
             <div class="section" style="background:#111827;border-color:#374151;margin-bottom:0;">
-              <h3>💓 Heartbeat Compliance</h3>
+              <h3>ðŸ’“ Heartbeat Compliance</h3>
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
                 <button class="btn btn-secondary" onclick="triggerJob('/api/admin/trigger-heartbeat-compliance','POST',null,'Heartbeat Compliance')">Run Compliance Check</button>
                 <button class="btn btn-secondary" onclick="triggerJob('/api/admin/trigger-heartbeat-day1','POST',null,'Day 1 Heartbeat')">Run Day 1 Heartbeat</button>
@@ -1424,37 +1528,37 @@
               </div>
             </div>
             <div class="section" style="background:#111827;border-color:#374151;margin-bottom:0;">
-              <h3>👤 Users</h3>
+              <h3>ðŸ‘¤ Users</h3>
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
                 <button class="btn btn-secondary" onclick="triggerJob('/api/admin/trigger-inactivity-job','POST',null,'Inactivity Manager')">Run Inactivity Manager</button>
               </div>
             </div>
             <div class="section" style="background:#111827;border-color:#374151;margin-bottom:0;">
-              <h3>🏦 Sovereign Lens</h3>
+              <h3>ðŸ¦ Sovereign Lens</h3>
               <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
                 <button class="btn btn-secondary" onclick="triggerJob('/api/vault/admin/trigger-nightly-cycle','POST',null,'Sovereign Lens Nightly Cycle')">Run Nightly Cycle</button>
-                <p style="font-size:11px;color:#52525b;margin:0;">Full history → <a href="#" onclick="document.querySelector('[data-tab=vault-cycles]').click();return false;" style="color:#6366f1;">Vault Cycles tab</a></p>
+                <p style="font-size:11px;color:#52525b;margin:0;">Full history â†’ <a href="#" onclick="document.querySelector('[data-tab=vault-cycles]').click();return false;" style="color:#6366f1;">Vault Cycles tab</a></p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ═══════ GAMIFICATION TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• GAMIFICATION TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-gamification">
         <div class="section">
-          <h2>🧠 Gamification Engine (The Brain)</h2>
+          <h2>ðŸ§  Gamification Engine (The Brain)</h2>
           <p style="font-size:13px;color:#71717a;margin-bottom:20px;">Manage XP levels, user promotions, sweep verification, module toggles, and gamification audit logs.</p>
           <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:24px;margin-bottom:20px;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
-              <div style="width:48px;height:48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;">🧠</div>
+              <div style="width:48px;height:48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;">ðŸ§ </div>
               <div>
                 <div style="font-size:16px;font-weight:700;color:#fff;">Gamification Admin Portal</div>
-                <div style="font-size:13px;color:#94a3b8;">Silent Architect controls — XP, levels, sweeps, module flags</div>
+                <div style="font-size:13px;color:#94a3b8;">Silent Architect controls â€” XP, levels, sweeps, module flags</div>
               </div>
             </div>
             <a href="/preview/admin/gamification" target="_blank" class="btn btn-primary" style="display:inline-block;text-decoration:none;margin-bottom:16px;">
-              Open Full Gamification Admin →
+              Open Full Gamification Admin â†’
             </a>
             <p style="font-size:12px;color:#64748b;">Opens in a new tab. Full controls: user search, level promotion, sweep verification, audit log, module status toggles, XP dashboard.</p>
           </div>
@@ -1465,31 +1569,31 @@
         </div>
       </div>
 
-      <!-- ═══════ PRESENTATIONS TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• PRESENTATIONS TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-presentations">
         <div class="section">
-          <h2>📊 Presentations</h2>
-          <p style="font-size:13px;color:#71717a;margin-bottom:24px;">Two shareable slide-style presentations — one for new users, one for investors. Each has its own direct link.</p>
+          <h2>ðŸ“Š Presentations</h2>
+          <p style="font-size:13px;color:#71717a;margin-bottom:24px;">Two shareable slide-style presentations â€” one for new users, one for investors. Each has its own direct link.</p>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
 
             <!-- User Guide Card -->
             <div style="background:linear-gradient(135deg,#0f2027,#1a2d3a);border:1px solid rgba(197,165,90,0.35);border-radius:16px;padding:28px;">
               <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-                <div style="width:48px;height:48px;background:linear-gradient(135deg,#C5A55A,#a07840);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">📖</div>
+                <div style="width:48px;height:48px;background:linear-gradient(135deg,#C5A55A,#a07840);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">ðŸ“–</div>
                 <div>
                   <div style="font-size:17px;font-weight:700;color:#fff;">User Guide</div>
                   <div style="font-size:12px;color:#C5A55A;margin-top:2px;">A-to-Z How to Use FACTS</div>
                 </div>
               </div>
               <p style="font-size:13px;color:#94a3b8;margin-bottom:20px;line-height:1.6;">
-                Full walkthrough for new and existing users — account setup, income sources, 6 allocation categories, expenses, reports, debt strategies, Financial Freedom Number, CSV import/export, and paid features.
+                Full walkthrough for new and existing users â€” account setup, income sources, 6 allocation categories, expenses, reports, debt strategies, Financial Freedom Number, CSV import/export, and paid features.
               </p>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <a href="/presentation-user-guide.html" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#C5A55A,#a07840);color:#0a0a0a;font-weight:700;font-size:14px;padding:12px 20px;border-radius:10px;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-                  Open Presentation →
+                  Open Presentation â†’
                 </a>
                 <button onclick="copyToClipboard('https://app.factsmoney.com/presentation-user-guide.html')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#1e293b;color:#94a3b8;font-size:13px;padding:10px 16px;border-radius:10px;border:1px solid #334155;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='#C5A55A';this.style.color='#C5A55A'" onmouseout="this.style.borderColor='#334155';this.style.color='#94a3b8'">
-                  🔗 Copy Shareable Link
+                  ðŸ”— Copy Shareable Link
                 </button>
               </div>
               <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:6px;">
@@ -1502,10 +1606,10 @@
             <!-- Investor Pitch Card -->
             <div style="background:linear-gradient(135deg,#0d0d1a,#1a1a2e);border:1px solid rgba(99,102,241,0.35);border-radius:16px;padding:28px;">
               <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-                <div style="width:48px;height:48px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">📈</div>
+                <div style="width:48px;height:48px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">ðŸ“ˆ</div>
                 <div>
                   <div style="font-size:17px;font-weight:700;color:#fff;">Investor Pitch Deck</div>
-                  <div style="font-size:12px;color:#a5b4fc;margin-top:2px;">FACTS — Why Now</div>
+                  <div style="font-size:12px;color:#a5b4fc;margin-top:2px;">FACTS â€” Why Now</div>
                 </div>
               </div>
               <p style="font-size:13px;color:#94a3b8;margin-bottom:20px;line-height:1.6;">
@@ -1513,10 +1617,10 @@
               </p>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <a href="/presentation-investor.html" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-weight:700;font-size:14px;padding:12px 20px;border-radius:10px;text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-                  Open Pitch Deck →
+                  Open Pitch Deck â†’
                 </a>
                 <button onclick="copyToClipboard('https://app.factsmoney.com/presentation-investor.html')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#1a1a2e;color:#94a3b8;font-size:13px;padding:10px 16px;border-radius:10px;border:1px solid #2d2d4e;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='#6366f1';this.style.color='#a5b4fc'" onmouseout="this.style.borderColor='#2d2d4e';this.style.color='#94a3b8'">
-                  🔗 Copy Shareable Link
+                  ðŸ”— Copy Shareable Link
                 </button>
               </div>
               <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:6px;">
@@ -1530,13 +1634,13 @@
         </div>
       </div>
 
-      <!-- ═══════ VAULT CYCLES TAB ═══════ -->
+      <!-- â•â•â•â•â•â•â• VAULT CYCLES TAB â•â•â•â•â•â•â• -->
       <div class="panel" id="panel-vault-cycles">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-          <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">🏦 Sovereign Lens — Vault Cycles</h2>
+          <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">ðŸ¦ Sovereign Lens â€” Vault Cycles</h2>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-secondary btn-sm" onclick="loadVaultCycles()">↻ Refresh</button>
-            <button class="btn btn-primary" id="vault-cycle-run-btn" onclick="triggerVaultCycle()">▶ Run Nightly Cycle Now</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadVaultCycles()">â†» Refresh</button>
+            <button class="btn btn-primary" id="vault-cycle-run-btn" onclick="triggerVaultCycle()">â–¶ Run Nightly Cycle Now</button>
           </div>
         </div>
         <p style="font-size:13px;color:#71717a;margin-bottom:20px;">
@@ -1560,9 +1664,9 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // WAITLIST
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     async function loadWaitlist() {
       var loadingEl = document.getElementById('waitlist-loading');
@@ -1620,9 +1724,9 @@
       toast('CSV downloaded');
     }
 
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // LAUNCH WAITLIST
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     async function loadLaunchWaitlist() {
       var loadingEl = document.getElementById('launch-waitlist-loading');
@@ -1649,11 +1753,11 @@
         if (tbody) {
           tbody.innerHTML = entries.map(function(e) {
             var d = new Date(e.created_at).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'});
-            var fmt = function(n) { return n != null ? '$' + Number(n).toLocaleString() : '—'; };
+            var fmt = function(n) { return n != null ? '$' + Number(n).toLocaleString() : 'â€”'; };
             return '<tr style="border-bottom:1px solid #1f1f2e;">' +
               '<td style="padding:8px 12px;"><a href="mailto:' + escF(e.email) + '" style="color:#60a5fa;">' + escF(e.email) + '</a></td>' +
-              '<td style="padding:8px 12px;color:#71717a;">' + escF(e.ref_code || '—') + '</td>' +
-              '<td style="padding:8px 12px;text-align:right;color:#10b981;font-weight:600;">' + (e.sovereign_score != null ? e.sovereign_score : '—') + '</td>' +
+              '<td style="padding:8px 12px;color:#71717a;">' + escF(e.ref_code || 'â€”') + '</td>' +
+              '<td style="padding:8px 12px;text-align:right;color:#10b981;font-weight:600;">' + (e.sovereign_score != null ? e.sovereign_score : 'â€”') + '</td>' +
               '<td style="padding:8px 12px;text-align:right;color:#d4d4d8;">' + fmt(e.monthly_income) + '</td>' +
               '<td style="padding:8px 12px;text-align:right;color:#d4d4d8;">' + fmt(e.liquid_reserves) + '</td>' +
               '<td style="padding:8px 12px;text-align:right;color:#fca5a5;">' + fmt(e.total_debt) + '</td>' +
@@ -1689,11 +1793,11 @@
       toast('CSV downloaded');
     }
 
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // PHASE ZERO
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-    // ── Phase Zero deadline data cache (loaded alongside audit data) ────────────
+    // â”€â”€ Phase Zero deadline data cache (loaded alongside audit data) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     var pzDeadlineData = {};
 
     async function loadPhaseZero() {
@@ -1739,23 +1843,23 @@
           tbody.innerHTML = users.map(function(u) {
             var dl = pzDeadlineData[u.id] || {};
             var statusBadge = '';
-            if (u.phase_zero_completed_at) statusBadge = '<span class="badge badge-green">✓ Complete</span>';
-            else if (dl.is_locked) statusBadge = '<span class="badge badge-red" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:2px 8px;border-radius:4px;font-size:11px;">🔒 Deadline Locked</span>';
+            if (u.phase_zero_completed_at) statusBadge = '<span class="badge badge-green">âœ“ Complete</span>';
+            else if (dl.is_locked) statusBadge = '<span class="badge badge-red" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:2px 8px;border-radius:4px;font-size:11px;">ðŸ”’ Deadline Locked</span>';
             else if (u.audit_status === 'in_progress') statusBadge = '<span class="badge badge-blue">In Audit</span>';
-            else if (u.audit_status === 'locked') statusBadge = '<span class="badge badge-yellow">🔒 Audit Locked</span>';
-            else if (u.declaration_accepted_at) statusBadge = '<span class="badge badge-gray">Declaration ✓</span>';
+            else if (u.audit_status === 'locked') statusBadge = '<span class="badge badge-yellow">ðŸ”’ Audit Locked</span>';
+            else if (u.declaration_accepted_at) statusBadge = '<span class="badge badge-gray">Declaration âœ“</span>';
             else statusBadge = '<span class="badge badge-gray">Not Started</span>';
 
-            var completedDate = u.phase_zero_completed_at ? new Date(u.phase_zero_completed_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+            var completedDate = u.phase_zero_completed_at ? new Date(u.phase_zero_completed_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'â€”';
 
             // Deadline column
-            var deadlineCell = '—';
+            var deadlineCell = 'â€”';
             if (u.phase_zero_completed_at) {
-              deadlineCell = '<span style="color:#71717a;font-size:11px;">—</span>';
+              deadlineCell = '<span style="color:#71717a;font-size:11px;">â€”</span>';
             } else if (dl.is_locked && dl.lockout_until) {
               var lockoutDate = new Date(dl.lockout_until).toLocaleDateString('en-US',{month:'short',day:'numeric'});
               var daysLeft = Math.max(0, Math.ceil((new Date(dl.lockout_until) - Date.now()) / 86400000));
-              deadlineCell = '<span style="color:#ef4444;font-size:11px;font-family:monospace;">🔒 ' + daysLeft + 'd left<br><span style="color:#71717a;">until ' + lockoutDate + '</span></span>';
+              deadlineCell = '<span style="color:#ef4444;font-size:11px;font-family:monospace;">ðŸ”’ ' + daysLeft + 'd left<br><span style="color:#71717a;">until ' + lockoutDate + '</span></span>';
             } else if (dl.deadline_info) {
               var daysLeft = dl.deadline_info.days_left;
               var color = daysLeft <= 2 ? '#ef4444' : daysLeft <= 4 ? '#f59e0b' : '#71717a';
@@ -1772,8 +1876,8 @@
               '<td style="padding:8px 12px;color:#71717a;font-size:12px;">' + completedDate + '</td>' +
               '<td style="padding:8px 12px;text-align:center;">' +
                 '<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">' +
-                  (dl.is_locked ? '<button class="btn btn-sm" style="background:#10b981;color:#fff;border:none;cursor:pointer;" onclick="pzDeadlineOverride(' + u.id + ', \'' + escF(u.email) + '\')">🔓 Override</button>' : '') +
-                  (u.phase_zero_completed_at ? '' : '<button class="btn btn-primary btn-sm" onclick="pzComplete(' + u.id + ')">✓ Complete</button>') +
+                  (dl.is_locked ? '<button class="btn btn-sm" style="background:#10b981;color:#fff;border:none;cursor:pointer;" onclick="pzDeadlineOverride(' + u.id + ', \'' + escF(u.email) + '\')">ðŸ”“ Override</button>' : '') +
+                  (u.phase_zero_completed_at ? '' : '<button class="btn btn-primary btn-sm" onclick="pzComplete(' + u.id + ')">âœ“ Complete</button>') +
                   '<button class="btn btn-secondary btn-sm" onclick="pzReset(' + u.id + ')">Reset</button>' +
                 '</div>' +
               '</td></tr>';
@@ -1793,7 +1897,7 @@
         var res = await fetch('/api/admin/phase-zero/complete', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId}) });
         var data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed');
-        toast('Phase Zero completed ✓');
+        toast('Phase Zero completed âœ“');
         loadPhaseZero();
       } catch(err) { toast('Error: ' + err.message, true); }
     }
@@ -1804,13 +1908,13 @@
         var res = await fetch('/api/admin/phase-zero/reset', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId}) });
         var data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed');
-        toast('Phase Zero audit reset ✓');
+        toast('Phase Zero audit reset âœ“');
         loadPhaseZero();
       } catch(err) { toast('Error: ' + err.message, true); }
     }
 
     async function pzDeadlineOverride(userId, userEmail) {
-      if (!confirm('Override deadline lockout for ' + userEmail + '?\n\nThis will:\n• Immediately lift the 30-day lockout\n• Give the user a fresh 7-day window to complete Phase Zero\n• Log this action with your admin email and timestamp')) return;
+      if (!confirm('Override deadline lockout for ' + userEmail + '?\n\nThis will:\nâ€¢ Immediately lift the 30-day lockout\nâ€¢ Give the user a fresh 7-day window to complete Phase Zero\nâ€¢ Log this action with your admin email and timestamp')) return;
       try {
         var res = await fetch('/api/mod_pz_deadline/admin/override', {
           method: 'POST',
@@ -1819,7 +1923,7 @@
         });
         var data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed');
-        toast('🔓 Lockout override applied — user has fresh 7-day window ✓');
+        toast('ðŸ”“ Lockout override applied â€” user has fresh 7-day window âœ“');
         loadPhaseZero();
       } catch(err) { toast('Error: ' + err.message, true); }
     }
@@ -1847,15 +1951,15 @@
         if (tbody) {
           tbody.innerHTML = overrides.map(function(o) {
             var date = new Date(o.overridden_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
-            var daysLeft = o.days_remaining_at_override !== null ? o.days_remaining_at_override + 'd' : '—';
-            var stateLabel = { deadline_locked: '🔒 Deadline Locked', deadline_active: '⏱ Active Timer', no_lockout: 'No Lockout' }[o.prior_state] || o.prior_state;
+            var daysLeft = o.days_remaining_at_override !== null ? o.days_remaining_at_override + 'd' : 'â€”';
+            var stateLabel = { deadline_locked: 'ðŸ”’ Deadline Locked', deadline_active: 'â± Active Timer', no_lockout: 'No Lockout' }[o.prior_state] || o.prior_state;
             return '<tr style="border-bottom:1px solid #1f1f2e;">' +
-              '<td style="padding:8px 12px;"><div style="color:#e4e4e7;">' + escF(o.user_name || '—') + '</div><div style="font-size:11px;color:#71717a;">' + escF(o.user_email) + '</div></td>' +
+              '<td style="padding:8px 12px;"><div style="color:#e4e4e7;">' + escF(o.user_name || 'â€”') + '</div><div style="font-size:11px;color:#71717a;">' + escF(o.user_email) + '</div></td>' +
               '<td style="padding:8px 12px;font-size:12px;color:#71717a;">' + escF(o.admin_email) + '</td>' +
               '<td style="padding:8px 12px;font-size:12px;color:#71717a;">' + date + '</td>' +
               '<td style="padding:8px 12px;text-align:center;font-family:monospace;font-size:12px;color:#f59e0b;">' + daysLeft + '</td>' +
               '<td style="padding:8px 12px;font-size:12px;color:#d4d4d8;">' + stateLabel + '</td>' +
-              '<td style="padding:8px 12px;font-size:12px;color:#71717a;">' + escF(o.notes || '—') + '</td>' +
+              '<td style="padding:8px 12px;font-size:12px;color:#71717a;">' + escF(o.notes || 'â€”') + '</td>' +
               '</tr>';
           }).join('');
         }
@@ -1866,9 +1970,9 @@
       }
     }
 
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // SOVEREIGN FLAGS
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     var sfCurrentUserId = null;
 
@@ -1933,8 +2037,8 @@
           resultEl.style.background = 'rgba(16,185,129,0.15)';
           resultEl.style.border = '1px solid rgba(16,185,129,0.3)';
           resultEl.style.color = '#6ee7b7';
-          resultEl.textContent = '✓ Flags saved successfully';
-          toast('Sovereign flags saved ✓');
+          resultEl.textContent = 'âœ“ Flags saved successfully';
+          toast('Sovereign flags saved âœ“');
         }
       } catch(err) { toast('Error: ' + err.message, true); }
     }
@@ -1946,9 +2050,9 @@
       document.getElementById('sf-search-input').value = '';
     }
 
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // JOB TRIGGERS
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     async function triggerJob(url, method, body, label) {
       var resultEl = document.getElementById('job-trigger-result');
@@ -1956,7 +2060,7 @@
       resultEl.style.background = 'rgba(99,102,241,0.15)';
       resultEl.style.border = '1px solid rgba(99,102,241,0.3)';
       resultEl.style.color = '#a5b4fc';
-      resultEl.textContent = 'Running ' + label + '…';
+      resultEl.textContent = 'Running ' + label + 'â€¦';
       try {
         var opts = { method: method || 'POST', headers: {'Content-Type':'application/json'} };
         if (body) opts.body = JSON.stringify(body);
@@ -1966,20 +2070,20 @@
         resultEl.style.background = 'rgba(16,185,129,0.15)';
         resultEl.style.border = '1px solid rgba(16,185,129,0.3)';
         resultEl.style.color = '#6ee7b7';
-        resultEl.textContent = '✓ ' + label + ' complete: ' + (data.message || JSON.stringify(data));
-        toast(label + ' triggered ✓');
+        resultEl.textContent = 'âœ“ ' + label + ' complete: ' + (data.message || JSON.stringify(data));
+        toast(label + ' triggered âœ“');
       } catch(err) {
         resultEl.style.background = 'rgba(239,68,68,0.15)';
         resultEl.style.border = '1px solid rgba(239,68,68,0.3)';
         resultEl.style.color = '#fca5a5';
-        resultEl.textContent = '✗ ' + label + ' failed: ' + err.message;
+        resultEl.textContent = 'âœ— ' + label + ' failed: ' + err.message;
         toast(label + ' failed', true);
       }
     }
 
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // GAMIFICATION DASHBOARD PREVIEW
-    // ══════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     async function loadGamificationPreview() {
       var wrap = document.getElementById('gam-dashboard-wrap');
@@ -1990,28 +2094,28 @@
         var stats = data.stats || {};
         wrap.innerHTML = '<div class="stats-row">' + [
           ['Total Users', stats.total_users || 0, ''],
-          ['Avg Level', stats.avg_level ? Number(stats.avg_level).toFixed(1) : '—', 'green'],
+          ['Avg Level', stats.avg_level ? Number(stats.avg_level).toFixed(1) : 'â€”', 'green'],
           ['Decaying Users', stats.decaying_users || 0, 'yellow'],
           ['Total XP Awarded', stats.total_xp_awarded ? Number(stats.total_xp_awarded).toLocaleString() : '0', 'blue'],
         ].map(function(item) {
           return '<div class="stat-card"><div class="label">' + item[0] + '</div><div class="value' + (item[2] ? ' ' + item[2] : '') + '">' + item[1] + '</div></div>';
         }).join('') + '</div>' +
-        '<p style="text-align:center;margin-top:8px;"><a href="/preview/admin/gamification" target="_blank" style="color:#6366f1;font-size:13px;">→ Full controls in Gamification Admin Portal</a></p>';
+        '<p style="text-align:center;margin-top:8px;"><a href="/preview/admin/gamification" target="_blank" style="color:#6366f1;font-size:13px;">â†’ Full controls in Gamification Admin Portal</a></p>';
       } catch(err) {
         wrap.innerHTML = '<p style="color:#71717a;text-align:center;padding:20px;">Use the full admin portal above.</p>';
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // STATE
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let allUsers = [];
     let selectedUserId = null;
     let isCreatorUser = false;
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // AUTH & INIT
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Owner accounts get sovereign feature access but NOT admin panel access.
     const FUTURE_GEN_EMAILS = ['ecci2760@gmail.com', 'ecci2760f@gmail.com', 'dianes3cps@gmail.com'];
 
@@ -2026,7 +2130,7 @@
         const proData = await proRes.json();
         isCreatorUser = proData.is_creator;
 
-        // Explicitly block Future Generations accounts — they are NOT admins.
+        // Explicitly block Future Generations accounts â€” they are NOT admins.
         // Belt-and-suspenders: backend requireAdminAllowlist already enforces this;
         // this check prevents the panel from even rendering for these accounts.
         const userEmail = (authData.user && authData.user.email || '').toLowerCase();
@@ -2053,7 +2157,7 @@
           tab.addEventListener('click', () => switchTab(tab.dataset.tab));
         });
 
-        // Wrap init calls in a timeout — if they hang, show error instead of infinite spinner
+        // Wrap init calls in a timeout â€” if they hang, show error instead of infinite spinner
         const initTimeout = setTimeout(() => {
           const loadingEl = document.getElementById('loading');
           const adminPanel = document.getElementById('admin-panel');
@@ -2062,7 +2166,7 @@
             if (adminPanel) {
               const errEl = document.createElement('div');
               errEl.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7f1d1d;padding:16px;text-align:center;color:white;z-index:9999';
-              errEl.textContent = '⚠ Admin panel timed out loading — try refreshing. If issue persists, contact support.';
+              errEl.textContent = 'âš  Admin panel timed out loading â€” try refreshing. If issue persists, contact support.';
               adminPanel.prepend(errEl);
             }
           }
@@ -2077,6 +2181,106 @@
       }
     }
 
+    async function loadBetaInviteTracking() {
+      const res = await fetch('/api/admin/tracking');
+      const data = await res.json();
+      if (!data.success) return alert(data.error || 'Failed to load data.');
+
+      const masterBody = document.getElementById('masterCodesBody');
+      masterBody.innerHTML = (data.masterCodes || []).map(c => `
+        <tr>
+          <td><strong>${c.code}</strong></td>
+          <td>${c.uses_count} / ${c.max_uses}</td>
+          <td>${c.max_uses - c.uses_count}</td>
+          <td>${new Date(c.created_at).toLocaleDateString()}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4">No master codes yet.</td></tr>';
+
+      const targetedBody = document.getElementById('targetedInvitesBody');
+      if (targetedBody) {
+        targetedBody.innerHTML = (data.targetedInvites || []).map(i => `
+          <tr>
+            <td><code>${i.code}</code></td>
+            <td>${i.sent_to_name || '—'}</td>
+            <td>${i.sent_to_email || '—'}</td>
+            <td><code style="font-size:0.75rem;">${typeof i.recipient_metadata === 'object' ? JSON.stringify(i.recipient_metadata) : (i.recipient_metadata || '{}')}</code></td>
+            <td>${i.claimed_by_user_id
+              ? `<span class="badge badge-green">User #${i.claimed_by_user_id}</span><br><small>${i.claimed_at ? new Date(i.claimed_at).toLocaleString() : ''}</small>`
+              : '<span class="badge badge-yellow">Unclaimed</span>'}</td>
+            <td>${new Date(i.created_at).toLocaleDateString()}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="6">No targeted invites yet.</td></tr>';
+      }
+
+      const lineageBody = document.getElementById('lineageBody');
+      lineageBody.innerHTML = (data.userLineage || []).map(u => `
+        <tr>
+          <td>${u.email}${u.affiliate_tier ? `<br><small>${u.affiliate_tier}</small>` : ''}</td>
+          <td><code>${u.referral_code || 'N/A'}</code></td>
+          <td><code>${u.affiliate_code || '—'}</code><br><small>${u.referred_by_code || ''}</small></td>
+          <td>${u.invited_by_email || 'Master / Targeted Code'}</td>
+          <td><strong>${u.total_recruits}</strong></td>
+          <td>${u.monthly_invites_remaining}</td>
+          <td>${u.nda_accepted_at
+            ? '<span class="badge badge-green">Signed</span>'
+            : '<span class="badge badge-yellow">Pending</span>'}</td>
+          <td>${u.is_admin
+            ? '<span class="badge badge-yellow">Admin (blocked)</span>'
+            : `<button class="btn btn-sm ${u.income_programs_blocked ? 'btn-primary' : 'btn-secondary'}" onclick="setIncomeEligibility(${u.user_id}, ${u.income_programs_blocked ? 'false' : 'true'})">${u.income_programs_blocked ? 'Blocked — Allow' : 'Eligible — Block'}</button>`}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="8">No beta testers yet.</td></tr>';
+    }
+
+    async function setIncomeEligibility(userId, blocked) {
+      const res = await fetch('/api/admin/income-eligibility', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, blocked })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadBetaInviteTracking();
+    }
+
+    async function createBetaInviteCode() {
+      const code = document.getElementById('newCode').value;
+      const maxUses = document.getElementById('maxUses').value;
+
+      const res = await fetch('/api/admin/generate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, maxUses })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadBetaInviteTracking();
+    }
+
+    async function createTargetedInviteCodes() {
+      const name = document.getElementById('inviteSentToName').value;
+      const email = document.getElementById('inviteSentToEmail').value;
+      const count = document.getElementById('inviteCount').value || 1;
+      const metaRaw = document.getElementById('inviteMeta').value || '{}';
+      let meta = {};
+      try { meta = JSON.parse(metaRaw); } catch (e) { return alert('Metadata must be valid JSON'); }
+
+      const res = await fetch('/api/admin/generate-invites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, count, meta, maxUses: 1 })
+      });
+      const data = await res.json();
+      const resultEl = document.getElementById('targetedInviteResult');
+      if (!data.success) {
+        if (resultEl) resultEl.textContent = data.error || 'Failed to create invites.';
+        return alert(data.error || 'Failed to create invites.');
+      }
+      const codes = (data.invites || []).map(i => i.code).join(', ');
+      if (resultEl) resultEl.textContent = `Created: ${codes}`;
+      alert(data.message + (codes ? `\n${codes}` : ''));
+      loadBetaInviteTracking();
+    }
+
     function switchTab(tabName) {
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
       document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tabName}`));
@@ -2085,6 +2289,7 @@
       if (tabName === 'education') loadEducationAdmin();
       if (tabName === 'shop-save') loadShopAdmin();
       if (tabName === 'nda') loadNdaStatus();
+      if (tabName === 'beta-invites') loadBetaInviteTracking();
       if (tabName === 'resources') loadResourcesAdmin();
       if (tabName === 'feed') loadFeedAdmin();
       if (tabName === 'waitlist') loadWaitlist();
@@ -2096,9 +2301,9 @@
       if (tabName === 'gamification') loadGamificationPreview();
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // TIER SWITCHER
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const TIER_COLORS = {
       free: '#6b7280',
       individual: '#10b981',
@@ -2116,7 +2321,7 @@
       { key: 'sovereign', label: 'Sovereign' }
     ];
 
-    // ─── Clickable tier badge dropdown in header ───
+    // â”€â”€â”€ Clickable tier badge dropdown in header â”€â”€â”€
     function toggleTierDropdown() {
       var dropEl = document.getElementById('tier-dropdown');
       if (dropEl) dropEl.classList.toggle('open');
@@ -2147,7 +2352,7 @@
         var active = tier.key === currentTier ? ' active' : '';
         return '<button class="tier-dropdown-item' + active + '" onclick="switchToTier(\'' + tier.key + '\');document.getElementById(\'tier-dropdown\').classList.remove(\'open\');">' +
           '<span class="tier-dot" style="background:' + c + '"></span>' + tier.label +
-          (tier.key === currentTier ? ' ✓' : '') + '</button>';
+          (tier.key === currentTier ? ' âœ“' : '') + '</button>';
       }).join('');
     }
 
@@ -2169,7 +2374,7 @@
         });
         const data = await res.json();
         if (data.success) {
-          toast('Testing tier set to ' + tierKey + ' — reloading...');
+          toast('Testing tier set to ' + tierKey + ' â€” reloading...');
           setTimeout(() => window.location.reload(), 1200);
         } else {
           toast('Failed: ' + (data.error || 'Unknown error'), true);
@@ -2198,7 +2403,7 @@
       }).join('');
       if (isTesting) {
         banner.style.display = 'flex';
-        badge.textContent = '⚠️ TESTING: ' + currentTier.toUpperCase();
+        badge.textContent = 'âš ï¸ TESTING: ' + currentTier.toUpperCase();
         badge.style.display = 'inline-block';
         // Highlight active button
         const activeBtn = buttons.querySelector('[data-tier="' + currentTier + '"]');
@@ -2212,7 +2417,7 @@
           const tier = normalizeTierName(u.pricing_tier || 'free');
           banner.style.display = 'flex';
           if (testing) {
-            badge.textContent = '⚠️ TESTING: ' + tier.toUpperCase();
+            badge.textContent = 'âš ï¸ TESTING: ' + tier.toUpperCase();
             badge.style.display = 'inline-block';
           } else {
             badge.textContent = 'Current: ' + tier;
@@ -2226,9 +2431,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // TOAST
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     function toast(msg, isError = false) {
       const el = document.getElementById('toast');
       el.textContent = msg;
@@ -2236,9 +2441,9 @@
       setTimeout(() => el.className = 'toast', 3000);
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // ORGANIZATION
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function loadTree() {
       try {
         const [treeRes] = await Promise.all([
@@ -2273,13 +2478,13 @@
           `${seed_phase.first_line_count}/${seed_phase.first_line_capacity}`;
 
         if (seed_phase.active) {
-          document.getElementById('seed-phase-label').textContent = '🌱 Seed Phase ACTIVE';
+          document.getElementById('seed-phase-label').textContent = 'ðŸŒ± Seed Phase ACTIVE';
           document.getElementById('seed-phase-sub').textContent =
-            `${seed_phase.first_line_remaining} Level-1 slots remaining · Total org: ${total_affiliates} affiliates`;
+            `${seed_phase.first_line_remaining} Level-1 slots remaining Â· Total org: ${total_affiliates} affiliates`;
         } else {
-          document.getElementById('seed-phase-label').textContent = '✅ Seed Phase Complete — BFS Auto-Fill Active';
+          document.getElementById('seed-phase-label').textContent = 'âœ… Seed Phase Complete â€” BFS Auto-Fill Active';
           document.getElementById('seed-phase-sub').textContent =
-            `New codeless signups auto-placed via breadth-first fill · Total org: ${total_affiliates} affiliates`;
+            `New codeless signups auto-placed via breadth-first fill Â· Total org: ${total_affiliates} affiliates`;
           document.getElementById('seed-phase-label').style.color = '#34d399';
         }
 
@@ -2352,7 +2557,7 @@
       });
 
       if (roots.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="icon">🌳</div><p>No users yet. Create test users to build an organization.</p></div>';
+        container.innerHTML = '<div class="empty-state"><div class="icon">ðŸŒ³</div><p>No users yet. Create test users to build an organization.</p></div>';
         return;
       }
 
@@ -2392,7 +2597,7 @@
         : '';
 
       const toggleBtn = hasChildren
-        ? `<button class="toggle-btn" onclick="event.stopPropagation(); toggleNode(${node.id})" id="toggle-${node.id}">▼ ${node.children.length}</button>`
+        ? `<button class="toggle-btn" onclick="event.stopPropagation(); toggleNode(${node.id})" id="toggle-${node.id}">â–¼ ${node.children.length}</button>`
         : '';
 
       return `
@@ -2421,7 +2626,7 @@
       el.classList.toggle('collapsed');
       const node = allUsers.find(u => u.id === id);
       const count = node ? (allUsers.filter(u => u.referred_by_user_id === id).length) : 0;
-      btn.textContent = el.classList.contains('collapsed') ? `▶ ${count}` : `▼ ${count}`;
+      btn.textContent = el.classList.contains('collapsed') ? `â–¶ ${count}` : `â–¼ ${count}`;
     }
 
     function toggleAll(expand) {
@@ -2429,8 +2634,8 @@
         el.classList.toggle('collapsed', !expand);
       });
       document.querySelectorAll('.toggle-btn').forEach(btn => {
-        const text = btn.textContent.replace(/[▶▼]\s*/, '');
-        btn.textContent = (expand ? '▼ ' : '▶ ') + text;
+        const text = btn.textContent.replace(/[â–¶â–¼]\s*/, '');
+        btn.textContent = (expand ? 'â–¼ ' : 'â–¶ ') + text;
       });
     }
 
@@ -2491,9 +2696,9 @@
       });
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // PLACEMENT
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function placeUser() {
       if (!selectedUserId) return;
       const parentId = parseInt(document.getElementById('place-parent-select').value);
@@ -2535,9 +2740,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // SIMULATE PAYMENT
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function simulatePayment() {
       if (!selectedUserId) return;
       const resultEl = document.getElementById('payment-result');
@@ -2551,7 +2756,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
 
-        let html = `<div style="color:#10b981; font-weight:600; margin-bottom:8px;">✅ ${escHtml(data.message)}</div>`;
+        let html = `<div style="color:#10b981; font-weight:600; margin-bottom:8px;">âœ… ${escHtml(data.message)}</div>`;
         if (data.commission_chain && data.commission_chain.length > 0) {
           html += `<table style="width:100%;"><thead><tr><th>Level</th><th>Affiliate</th><th>Rate</th><th>Earned</th><th>Status</th></tr></thead><tbody>`;
           data.commission_chain.forEach(c => {
@@ -2566,14 +2771,14 @@
         resultEl.style.display = 'block';
         await loadTree();
       } catch (err) {
-        resultEl.innerHTML = `<div style="color:#ef4444;">❌ ${escHtml(err.message)}</div>`;
+        resultEl.innerHTML = `<div style="color:#ef4444;">âŒ ${escHtml(err.message)}</div>`;
         resultEl.style.display = 'block';
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // TEST USERS
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function createTestUser() {
       const name = document.getElementById('test-name').value.trim();
       let email = document.getElementById('test-email').value.trim();
@@ -2610,7 +2815,7 @@
 
       if (count < 2 || count > 10) { toast('Chain size must be 2-10', true); return; }
 
-      resultEl.innerHTML = '<div style="color:#eab308;">⏳ Creating chain...</div>';
+      resultEl.innerHTML = '<div style="color:#eab308;">â³ Creating chain...</div>';
       resultEl.style.display = 'block';
 
       try {
@@ -2649,14 +2854,14 @@
         }
 
         resultEl.innerHTML = `
-          <div style="color:#10b981; font-weight:600;">✅ Created ${count}-user chain!</div>
+          <div style="color:#10b981; font-weight:600;">âœ… Created ${count}-user chain!</div>
           <div style="margin-top:8px; font-size:13px; color:#a1a1aa;">
-            ${created.map((u, i) => `${i > 0 ? '→ ' : ''}${u.name} (${u.email})`).join('<br>')}
+            ${created.map((u, i) => `${i > 0 ? 'â†’ ' : ''}${u.name} (${u.email})`).join('<br>')}
           </div>
         `;
         await loadTree();
       } catch (err) {
-        resultEl.innerHTML = `<div style="color:#ef4444;">❌ ${escHtml(err.message)}</div>`;
+        resultEl.innerHTML = `<div style="color:#ef4444;">âŒ ${escHtml(err.message)}</div>`;
       }
     }
 
@@ -2669,7 +2874,7 @@
         if (!res.ok) throw new Error(data.error);
 
         const resultEl = document.getElementById('reset-result');
-        resultEl.innerHTML = `<div style="color:#10b981;">✅ ${escHtml(data.message)}</div>`;
+        resultEl.innerHTML = `<div style="color:#10b981;">âœ… ${escHtml(data.message)}</div>`;
         resultEl.style.display = 'block';
         toast(data.message);
         selectedUserId = null;
@@ -2680,9 +2885,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // COMMISSIONS
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function loadCommissions() {
       const userId = document.getElementById('commission-user-filter').value;
       const url = userId ? `/api/admin/affiliate-tree/commissions?user_id=${userId}` : '/api/admin/affiliate-tree/commissions';
@@ -2703,7 +2908,7 @@
 
         // Table
         if (data.commissions.length === 0) {
-          document.getElementById('commission-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>No commissions yet. Simulate payments to generate commission data.</p></div>';
+          document.getElementById('commission-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ðŸ’°</div><p>No commissions yet. Simulate payments to generate commission data.</p></div>';
           return;
         }
 
@@ -2713,12 +2918,12 @@
           html += `<tr>
             <td>L${c.level}</td>
             <td>${escHtml(c.affiliate_name || c.affiliate_email)}<br><span style="font-size:11px;color:#52525b;">${escHtml(c.affiliate_email)}</span></td>
-            <td>${escHtml(c.source_name || c.source_email || '—')}<br><span style="font-size:11px;color:#52525b;">${escHtml(c.source_email || '')}</span></td>
+            <td>${escHtml(c.source_name || c.source_email || 'â€”')}<br><span style="font-size:11px;color:#52525b;">${escHtml(c.source_email || '')}</span></td>
             <td><span class="badge badge-gray">${c.type}</span></td>
             <td>${c.percentage}%</td>
             <td style="font-weight:600;color:#10b981;">$${(c.amount_cents / 100).toFixed(2)}</td>
             <td><span class="badge badge-${statusColor}">${c.status}</span></td>
-            <td style="font-size:12px;color:#71717a;">${c.earned_at ? new Date(c.earned_at).toLocaleDateString() : '—'}</td>
+            <td style="font-size:12px;color:#71717a;">${c.earned_at ? new Date(c.earned_at).toLocaleDateString() : 'â€”'}</td>
           </tr>`;
         });
         html += '</tbody></table>';
@@ -2728,9 +2933,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // PROMO CODES
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function loadPromoCodes() {
       try {
         const res = await fetch('/api/admin/promo-codes/list');
@@ -2744,7 +2949,7 @@
         `;
 
         if (data.codes.length === 0) {
-          document.getElementById('promo-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">🎫</div><p>No promo codes yet.</p></div>';
+          document.getElementById('promo-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ðŸŽ«</div><p>No promo codes yet.</p></div>';
           return;
         }
 
@@ -2754,9 +2959,9 @@
           html += `<tr>
             <td><code style="font-weight:700;">${escHtml(c.code)}</code></td>
             <td><span class="badge ${active ? 'badge-green' : 'badge-gray'}">${active ? 'active' : 'redeemed'}</span></td>
-            <td>${c.redeemed_by_name || c.redeemed_by_email || '—'}</td>
+            <td>${c.redeemed_by_name || c.redeemed_by_email || 'â€”'}</td>
             <td style="font-size:12px;color:#71717a;">${new Date(c.created_at).toLocaleDateString()}</td>
-            <td style="font-size:12px;color:#71717a;">${c.redeemed_at ? new Date(c.redeemed_at).toLocaleDateString() : '—'}</td>
+            <td style="font-size:12px;color:#71717a;">${c.redeemed_at ? new Date(c.redeemed_at).toLocaleDateString() : 'â€”'}</td>
           </tr>`;
         });
         html += '</tbody></table>';
@@ -2792,9 +2997,9 @@
       toast('Code copied!');
     }
 
-    // ═══════════════════════════════════════
-    // ACCOUNTS — AFFILIATE MANAGER
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ACCOUNTS â€” AFFILIATE MANAGER
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let allAffiliates = [];
     let selectedAffiliateId = null;
 
@@ -2839,7 +3044,7 @@
 
     function renderAffiliatesTable(affiliates) {
       if (affiliates.length === 0) {
-        document.getElementById('affiliates-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No affiliates found.</p></div>';
+        document.getElementById('affiliates-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ðŸ”</div><p>No affiliates found.</p></div>';
         return;
       }
 
@@ -2848,7 +3053,7 @@
         return `<span class="badge ${map[s] || 'badge-gray'}">${s}</span>`;
       };
       const fmt = c => '$' + ((c||0)/100).toFixed(2);
-      const fmtDate = d => d ? new Date(d).toLocaleDateString() : '—';
+      const fmtDate = d => d ? new Date(d).toLocaleDateString() : 'â€”';
 
       let html = `<table><thead><tr>
         <th>Name / Email</th>
@@ -2873,11 +3078,11 @@
         if (a.status === 'active') actions.push(`<button class="btn btn-secondary btn-sm" onclick="updateAffiliateStatus(${a.id}, 'pause')">Pause</button>`);
         if (a.status === 'paused') actions.push(`<button class="btn btn-primary btn-sm" onclick="updateAffiliateStatus(${a.id}, 'reactivate')">Reactivate</button>`);
         if (a.status !== 'revoked') actions.push(`<button class="btn btn-danger btn-sm" onclick="updateAffiliateStatus(${a.id}, 'revoke')">Revoke</button>`);
-        actions.push(`<button class="btn btn-secondary btn-sm" onclick="openBalanceModal(${a.id}, '${escHtml(a.email)}')">💰 Adjust</button>`);
+        actions.push(`<button class="btn btn-secondary btn-sm" onclick="openBalanceModal(${a.id}, '${escHtml(a.email)}')">ðŸ’° Adjust</button>`);
 
         html += `<tr>
           <td>
-            <div style="font-weight:600;">${escHtml(a.name || '—')}</div>
+            <div style="font-weight:600;">${escHtml(a.name || 'â€”')}</div>
             <div style="font-size:11px; color:#71717a;">${escHtml(a.email)}</div>
             ${a.is_creator ? '<span class="badge badge-blue" style="font-size:9px;">creator</span>' : ''}
           </td>
@@ -2954,9 +3159,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
-    // ACCOUNTS — FOUNDING MEMBERS
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ACCOUNTS â€” FOUNDING MEMBERS
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function loadFoundingMembers() {
       document.getElementById('founding-members-table-wrap').innerHTML = '<div class="loading-center"><div class="loader"></div></div>';
       try {
@@ -2965,12 +3170,12 @@
         const data = await res.json();
 
         if (data.founding_members.length === 0) {
-          document.getElementById('founding-members-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">🏅</div><p>No founding members yet. Founding members are the first paid subscribers.</p></div>';
+          document.getElementById('founding-members-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ðŸ…</div><p>No founding members yet. Founding members are the first paid subscribers.</p></div>';
           return;
         }
 
         const fmt = c => '$' + ((c||0)/100).toFixed(2);
-        const fmtDate = d => d ? new Date(d).toLocaleDateString() : '—';
+        const fmtDate = d => d ? new Date(d).toLocaleDateString() : 'â€”';
 
         let html = `<table><thead><tr>
           <th>#</th>
@@ -2992,9 +3197,9 @@
           html += `<tr>
             <td style="color:#71717a; font-weight:700;">#${i+1}</td>
             <td>
-              <div style="font-weight:600;">${escHtml(m.name || '—')}</div>
+              <div style="font-weight:600;">${escHtml(m.name || 'â€”')}</div>
               <div style="font-size:11px; color:#71717a;">${escHtml(m.email)}</div>
-              ${m.is_founding_member ? '<span class="badge badge-blue" style="font-size:9px;">🏅 Founding</span>' : ''}
+              ${m.is_founding_member ? '<span class="badge badge-blue" style="font-size:9px;">ðŸ… Founding</span>' : ''}
             </td>
             <td style="font-size:12px;">${fmtDate(m.first_subscription_date)}</td>
             <td><span class="${isPro ? 'badge badge-green' : 'badge badge-gray'}">${isPro ? 'Paid' : 'Expired'}</span></td>
@@ -3003,7 +3208,7 @@
             <td style="color:#6366f1; font-weight:600;">${fmt(m.lifetime_earnings_cents)}</td>
             <td>
               <button class="btn btn-secondary btn-sm" onclick="toggleFoundingMember(${m.id}, ${!m.is_founding_member})">
-                ${m.is_founding_member ? '🏅 Remove Tag' : '🏅 Tag Founding'}
+                ${m.is_founding_member ? 'ðŸ… Remove Tag' : 'ðŸ… Tag Founding'}
               </button>
             </td>
           </tr>`;
@@ -3025,26 +3230,26 @@
           body: JSON.stringify({ is_founding_member: isFounding })
         });
         if (!res.ok) throw new Error('Failed');
-        toast(isFounding ? '🏅 Tagged as founding member' : 'Founding member tag removed');
+        toast(isFounding ? 'ðŸ… Tagged as founding member' : 'Founding member tag removed');
         await loadFoundingMembers();
       } catch (err) {
         toast('Failed to update founding member status', true);
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // EDUCATION ADMIN
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let eduAdminItems = null;
     let eduAdminEditingId = null;
 
     const EDU_CATEGORY_LABELS = {
-      'loan-evaluation': '💳 Evaluating Loans',
-      'credit-scores':   '📊 Credit Scores',
-      'insurance':       '🛡️ Insurance',
-      'debt-reduction':  '💰 Debt Reduction',
-      'budgeting':       '📋 Budgeting',
-      'saving-investing':'📈 Saving & Investing'
+      'loan-evaluation': 'ðŸ’³ Evaluating Loans',
+      'credit-scores':   'ðŸ“Š Credit Scores',
+      'insurance':       'ðŸ›¡ï¸ Insurance',
+      'debt-reduction':  'ðŸ’° Debt Reduction',
+      'budgeting':       'ðŸ“‹ Budgeting',
+      'saving-investing':'ðŸ“ˆ Saving & Investing'
     };
 
     async function loadEducationAdmin() {
@@ -3085,7 +3290,7 @@
         return;
       }
 
-      const typeIcon = { article: '📝', video: '🎬', link: '🔗' };
+      const typeIcon = { article: 'ðŸ“', video: 'ðŸŽ¬', link: 'ðŸ”—' };
 
       let html = `<table style="width:100%;border-collapse:collapse;">
         <thead>
@@ -3102,8 +3307,8 @@
 
       for (const item of items) {
         const statusBadge = item.is_published
-          ? '<span style="color:#10b981;font-size:11px;font-weight:600;">● Published</span>'
-          : '<span style="color:#71717a;font-size:11px;font-weight:600;">○ Draft</span>';
+          ? '<span style="color:#10b981;font-size:11px;font-weight:600;">â— Published</span>'
+          : '<span style="color:#71717a;font-size:11px;font-weight:600;">â—‹ Draft</span>';
         html += `<tr style="border-bottom:1px solid #27272a;" id="edu-row-${item.id}">
           <td style="padding:10px 12px;font-size:13px;color:#e4e4e7;max-width:300px;">
             <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escAdminHtml(item.title)}</div>
@@ -3208,7 +3413,7 @@
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error);
-        toast(eduAdminEditingId ? '✅ Content updated' : '✅ Content created');
+        toast(eduAdminEditingId ? 'âœ… Content updated' : 'âœ… Content created');
         eduAdminCancelEdit();
         await loadEducationAdmin();
       } catch (err) {
@@ -3224,7 +3429,7 @@
         const res = await fetch(`/api/admin/education/content/${id}`, { method: 'DELETE' });
         const data = await res.json();
         if (!data.success) throw new Error(data.error);
-        toast('🗑️ Content deleted');
+        toast('ðŸ—‘ï¸ Content deleted');
         await loadEducationAdmin();
       } catch (err) {
         toast(`Failed to delete: ${err.message}`, true);
@@ -3243,9 +3448,9 @@
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // SHOP & SAVE ADMIN
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function loadShopAdmin() {
       const list = document.getElementById('sas-admin-list');
       if (!list) return;
@@ -3316,7 +3521,7 @@
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed');
-        toast('✅ Link saved');
+        toast('âœ… Link saved');
       } catch (err) {
         toast(`Failed: ${err.message}`, true);
       }
@@ -3328,7 +3533,7 @@
         const res = await fetch(`/api/admin/shop/links/${id}`, { method: 'DELETE' });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed');
-        toast('🗑️ Category deleted');
+        toast('ðŸ—‘ï¸ Category deleted');
         await loadShopAdmin();
       } catch (err) {
         toast(`Failed: ${err.message}`, true);
@@ -3338,7 +3543,7 @@
     async function sasAddCategory() {
       const key  = document.getElementById('sas-new-key')?.value?.trim();
       const name = document.getElementById('sas-new-name')?.value?.trim();
-      const icon = document.getElementById('sas-new-icon')?.value?.trim() || '🔗';
+      const icon = document.getElementById('sas-new-icon')?.value?.trim() || 'ðŸ”—';
       const desc = document.getElementById('sas-new-desc')?.value?.trim() || '';
       const url  = document.getElementById('sas-new-url')?.value?.trim() || '#';
       const btn  = document.getElementById('sas-new-btn')?.value?.trim() || 'Compare & Save';
@@ -3354,7 +3559,7 @@
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed');
-        toast('✅ Category added');
+        toast('âœ… Category added');
         msg.style.display = 'none';
         ['sas-new-key','sas-new-name','sas-new-icon','sas-new-desc','sas-new-url','sas-new-btn'].forEach(id => {
           const el = document.getElementById(id);
@@ -3368,9 +3573,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // NDA STATUS
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let ndaData = null;
 
     async function loadNdaStatus() {
@@ -3417,7 +3622,7 @@
       else if (filter === 'exempt') users = users.filter(u => u.is_creator);
 
       if (users.length === 0) {
-        wrap.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No users match this filter.</p></div>';
+        wrap.innerHTML = '<div class="empty-state"><div class="icon">ðŸ”</div><p>No users match this filter.</p></div>';
         return;
       }
 
@@ -3442,21 +3647,21 @@
               const statusBadge = u.is_creator
                 ? '<span class="badge badge-blue">Creator / Exempt</span>'
                 : u.nda_accepted
-                  ? '<span class="badge badge-green">✅ Accepted</span>'
-                  : '<span class="badge badge-red">⏳ Pending</span>';
+                  ? '<span class="badge badge-green">âœ… Accepted</span>'
+                  : '<span class="badge badge-red">â³ Pending</span>';
               const acceptedAt = u.nda_accepted_at
                 ? new Date(u.nda_accepted_at).toLocaleDateString()
-                : '—';
+                : 'â€”';
               const refCode = u.referral_code
                 ? `<code>${esc(u.referral_code)}</code>`
                 : '<span style="color:#52525b">Not generated</span>';
               return `
                 <tr>
-                  <td style="font-weight:600;">${esc(u.name || '—')}</td>
+                  <td style="font-weight:600;">${esc(u.name || 'â€”')}</td>
                   <td style="color:#94a3b8; font-size:12px;">${esc(u.email)}</td>
                   <td>${statusBadge}</td>
                   <td style="font-size:12px;">${acceptedAt}</td>
-                  <td style="font-size:12px;">${esc(u.promo_code_used || '—')}</td>
+                  <td style="font-size:12px;">${esc(u.promo_code_used || 'â€”')}</td>
                   <td style="font-size:12px;">${refCode}</td>
                   <td style="text-align:center;">${u.referral_count}</td>
                   <td style="font-size:12px;">${new Date(u.signup_date).toLocaleDateString()}</td>
@@ -3468,9 +3673,9 @@
       `;
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // USERS / ACCOUNT DELETION
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     let userSearchResults = [];
     let selectedDeleteUserId = null;
@@ -3478,7 +3683,7 @@
     let userSearchTimer = null;
 
     function loadUserSearch() {
-      // Nothing to load proactively — search is on-demand
+      // Nothing to load proactively â€” search is on-demand
     }
 
     function handleUserSearchInput() {
@@ -3526,12 +3731,12 @@
             style="padding:10px 12px; border:1px solid #334155; border-radius:8px; cursor:pointer; margin-bottom:8px; transition:border-color .15s; background:#0f172a;"
             onmouseover="this.style.borderColor='#10b981'" onmouseout="this.style.borderColor='#334155'">
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <span style="font-size:14px; font-weight:600;">${esc(u.name || '—')}</span>
+              <span style="font-size:14px; font-weight:600;">${esc(u.name || 'â€”')}</span>
               ${subBadge}${creatorBadge}
             </div>
             <div style="color:#94a3b8; font-size:12px; margin-top:2px;">${esc(u.email)}</div>
             <div style="color:#52525b; font-size:11px; margin-top:3px;">
-              Joined ${new Date(u.created_at).toLocaleDateString()} · ${u.transaction_count} transactions
+              Joined ${new Date(u.created_at).toLocaleDateString()} Â· ${u.transaction_count} transactions
             </div>
           </div>
         `;
@@ -3562,7 +3767,7 @@
       const isCreator = user.is_creator;
 
       const subInfo = subscriptions.length
-        ? subscriptions.map(s => `<span style="font-size:11px; color:#94a3b8;">${esc(s.plan)} — ${esc(s.status)}</span>`).join(', ')
+        ? subscriptions.map(s => `<span style="font-size:11px; color:#94a3b8;">${esc(s.plan)} â€” ${esc(s.status)}</span>`).join(', ')
         : '<span style="color:#52525b; font-size:11px;">No subscriptions</span>';
 
       const referrerHtml = referrer
@@ -3571,7 +3776,7 @@
 
       const affiliateHtml = affiliate
         ? `<span style="background:#1d4ed822; color:#60a5fa; padding:2px 7px; border-radius:4px; font-size:11px;">
-            Level ${affiliate.affiliate_level} · ${esc(affiliate.status)}
+            Level ${affiliate.affiliate_level} Â· ${esc(affiliate.status)}
            </span>`
         : '<span style="color:#52525b; font-size:12px;">Not in affiliate program</span>';
 
@@ -3581,10 +3786,10 @@
       content.innerHTML = `
         <div style="display:grid; gap:10px;">
           <div style="background:#0f172a; border-radius:8px; padding:14px; border:1px solid #1e293b;">
-            <div style="font-size:16px; font-weight:700; margin-bottom:4px;">${esc(user.name || '—')}</div>
+            <div style="font-size:16px; font-weight:700; margin-bottom:4px;">${esc(user.name || 'â€”')}</div>
             <div style="color:#94a3b8; font-size:13px;">${esc(user.email)}</div>
             <div style="color:#52525b; font-size:12px; margin-top:4px;">
-              ID: ${user.id} · Joined ${new Date(user.created_at).toLocaleDateString()}
+              ID: ${user.id} Â· Joined ${new Date(user.created_at).toLocaleDateString()}
             </div>
           </div>
 
@@ -3601,7 +3806,7 @@
 
           ${direct_referral_children > 0 || affiliate_tree_children > 0 ? `
             <div style="background:#1c1917; border:1px solid #78350f; border-radius:6px; padding:10px 12px; font-size:12px; color:#fbbf24;">
-              ⚠️ This user has ${direct_referral_children} direct referral(s) and ${affiliate_tree_children} organization member(s).
+              âš ï¸ This user has ${direct_referral_children} direct referral(s) and ${affiliate_tree_children} organization member(s).
               Deleting will re-link them to this user's sponsor.
             </div>
           ` : ''}
@@ -3611,7 +3816,7 @@
             style="background:${deleteDisabled ? '#374151' : '#ef4444'}; color:${deleteDisabled ? '#6b7280' : '#fff'}; border-color:${deleteDisabled ? '#374151' : '#ef4444'}; cursor:${deleteDisabled ? 'not-allowed' : 'pointer'}; width:100%; margin-top:4px;"
             ${deleteDisabled ? 'disabled title="Cannot delete the creator account"' : `onclick="openDeleteModal(${user.id}, '${esc(user.email).replace(/'/g, "\\'")}', '${esc(user.name || '').replace(/'/g, "\\'")}')" title="${deleteTitle}"`}
           >
-            🗑️ Delete Account
+            ðŸ—‘ï¸ Delete Account
           </button>
         </div>
       `;
@@ -3637,7 +3842,7 @@
       const btn = document.getElementById('confirm-delete-btn');
       const notes = document.getElementById('delete-modal-notes').value.trim();
       btn.disabled = true;
-      btn.textContent = 'Deleting…';
+      btn.textContent = 'Deletingâ€¦';
       try {
         const res = await fetch(`/api/admin/users/${selectedDeleteUserId}`, {
           method: 'DELETE',
@@ -3647,7 +3852,7 @@
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Delete failed');
         closeDeleteModal();
-        toast(`✓ Account ${selectedDeleteUserEmail || ''} deleted. Relinked ${data.relinked_children} children.`);
+        toast(`âœ“ Account ${selectedDeleteUserEmail || ''} deleted. Relinked ${data.relinked_children} children.`);
         // Clear the detail panel and refresh search & log
         document.getElementById('user-detail-content').innerHTML =
           '<p style="color:#52525b; font-size:13px; text-align:center; padding:20px 0;">Account deleted.</p>';
@@ -3691,17 +3896,17 @@
               ${data.log.map(row => `
                 <tr style="border-bottom:1px solid #1a1a2e;">
                   <td style="padding:6px 8px; color:#e4e4e7;">${esc(row.deleted_email)}</td>
-                  <td style="padding:6px 8px; color:#94a3b8;">${esc(row.deleted_name || '—')}</td>
+                  <td style="padding:6px 8px; color:#94a3b8;">${esc(row.deleted_name || 'â€”')}</td>
                   <td style="padding:6px 8px; color:#71717a;">${new Date(row.deleted_at).toLocaleString()}</td>
                   <td style="padding:6px 8px; color:#71717a;">${esc(row.admin_email)}</td>
                   <td style="padding:6px 8px; text-align:center;">${row.transaction_count}</td>
-                  <td style="padding:6px 8px; color:#94a3b8;">${esc(row.subscription_status || '—')}</td>
+                  <td style="padding:6px 8px; color:#94a3b8;">${esc(row.subscription_status || 'â€”')}</td>
                   <td style="padding:6px 8px; text-align:center;">
                     ${row.affiliate_tree_relinked
-                      ? `<span style="color:#10b981;">✓ ${row.children_relinked_count}</span>`
-                      : '<span style="color:#52525b;">—</span>'}
+                      ? `<span style="color:#10b981;">âœ“ ${row.children_relinked_count}</span>`
+                      : '<span style="color:#52525b;">â€”</span>'}
                   </td>
-                  <td style="padding:6px 8px; color:#71717a; font-size:11px;">${esc(row.notes || '—')}</td>
+                  <td style="padding:6px 8px; color:#71717a; font-size:11px;">${esc(row.notes || 'â€”')}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -3712,9 +3917,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // SUCCESSION MANAGEMENT
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     let pendingSuccessionAction = null; // { type: 'execute'|'reject', id, affiliateId }
 
@@ -3729,7 +3934,7 @@
     async function loadSuccessionPlans() {
       const wrap = document.getElementById('succession-plans-table');
       if (!wrap) return;
-      wrap.innerHTML = '<p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loading…</p>';
+      wrap.innerHTML = '<p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loadingâ€¦</p>';
       try {
         const res = await fetch('/api/admin/succession/plans');
         const data = await res.json();
@@ -3754,11 +3959,11 @@
               ${data.plans.map(p => `
                 <tr style="border-bottom:1px solid #1a1a2e;">
                   <td style="padding:6px 8px;"><div style="color:#e4e4e7;">${escHtml(p.name || p.email)}</div><div style="color:#52525b;font-size:11px;">${escHtml(p.referral_code)}</div></td>
-                  <td style="padding:6px 8px;color:#e4e4e7;">${escHtml(p.successor_name || '—')}</td>
+                  <td style="padding:6px 8px;color:#e4e4e7;">${escHtml(p.successor_name || 'â€”')}</td>
                   <td style="padding:6px 8px;color:#94a3b8;">${escHtml(p.successor_email)}</td>
-                  <td style="padding:6px 8px;color:#94a3b8;text-transform:capitalize;">${escHtml(p.successor_relationship || '—')}</td>
-                  <td style="padding:6px 8px;color:#71717a;">${p.succession_authorized_date ? new Date(p.succession_authorized_date).toLocaleDateString() : '—'}</td>
-                  <td style="padding:6px 8px;">${p.successor_user_email ? `<span style="color:#10b981;">✓ ${escHtml(p.successor_user_email)}</span>` : '<span style="color:#f97316;">Not registered</span>'}</td>
+                  <td style="padding:6px 8px;color:#94a3b8;text-transform:capitalize;">${escHtml(p.successor_relationship || 'â€”')}</td>
+                  <td style="padding:6px 8px;color:#71717a;">${p.succession_authorized_date ? new Date(p.succession_authorized_date).toLocaleDateString() : 'â€”'}</td>
+                  <td style="padding:6px 8px;">${p.successor_user_email ? `<span style="color:#10b981;">âœ“ ${escHtml(p.successor_user_email)}</span>` : '<span style="color:#f97316;">Not registered</span>'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -3773,7 +3978,7 @@
     async function loadSuccessionTransfers() {
       const wrap = document.getElementById('succession-transfers-table');
       if (!wrap) return;
-      wrap.innerHTML = '<p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loading…</p>';
+      wrap.innerHTML = '<p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loadingâ€¦</p>';
       try {
         const res = await fetch('/api/admin/succession/transfers');
         const data = await res.json();
@@ -3809,17 +4014,17 @@
                   <td style="padding:6px 8px;color:#71717a;">#${t.id}</td>
                   <td style="padding:6px 8px;color:#e4e4e7;text-transform:capitalize;">${esc(t.transfer_type)}</td>
                   <td style="padding:6px 8px;"><span style="color:${statusColors[t.status]||'#94a3b8'};font-size:11px;">${esc(t.status.replace(/_/g,' '))}</span></td>
-                  <td style="padding:6px 8px;"><div style="color:#e4e4e7;">${esc(t.original_holder_name||'—')}</div><div style="color:#52525b;font-size:11px;">${esc(t.original_holder_email||'')}</div></td>
-                  <td style="padding:6px 8px;"><div style="color:#e4e4e7;">${esc(t.successor_name||'—')}</div><div style="color:#52525b;font-size:11px;">${esc(t.successor_email||'')}</div></td>
+                  <td style="padding:6px 8px;"><div style="color:#e4e4e7;">${esc(t.original_holder_name||'â€”')}</div><div style="color:#52525b;font-size:11px;">${esc(t.original_holder_email||'')}</div></td>
+                  <td style="padding:6px 8px;"><div style="color:#e4e4e7;">${esc(t.successor_name||'â€”')}</div><div style="color:#52525b;font-size:11px;">${esc(t.successor_email||'')}</div></td>
                   <td style="padding:6px 8px;color:#71717a;">${new Date(t.created_at).toLocaleDateString()}</td>
                   <td style="padding:6px 8px;">
                     ${t.status === 'pending_admin_approval' ? `
-                      <button class="btn btn-primary btn-sm" style="font-size:11px;padding:4px 8px;margin-right:4px;" onclick="openSuccessionModal('execute',${t.id})">✓ Execute</button>
-                      <button class="btn btn-sm" style="font-size:11px;padding:4px 8px;background:#ef4444;color:#fff;border-color:#ef4444;" onclick="openSuccessionModal('reject',${t.id})">✕ Reject</button>
+                      <button class="btn btn-primary btn-sm" style="font-size:11px;padding:4px 8px;margin-right:4px;" onclick="openSuccessionModal('execute',${t.id})">âœ“ Execute</button>
+                      <button class="btn btn-sm" style="font-size:11px;padding:4px 8px;background:#ef4444;color:#fff;border-color:#ef4444;" onclick="openSuccessionModal('reject',${t.id})">âœ• Reject</button>
                     ` : t.status === 'pending_successor_signature' ? `
                       <span style="color:#52525b;font-size:11px;">Waiting for signature</span>
-                      <button class="btn btn-sm" style="font-size:11px;padding:4px 8px;background:#ef4444;color:#fff;border-color:#ef4444;margin-left:4px;" onclick="openSuccessionModal('reject',${t.id})">✕ Cancel</button>
-                    ` : '<span style="color:#52525b;font-size:11px;">—</span>'}
+                      <button class="btn btn-sm" style="font-size:11px;padding:4px 8px;background:#ef4444;color:#fff;border-color:#ef4444;margin-left:4px;" onclick="openSuccessionModal('reject',${t.id})">âœ• Cancel</button>
+                    ` : '<span style="color:#52525b;font-size:11px;">â€”</span>'}
                   </td>
                 </tr>
               `).join('')}
@@ -3835,7 +4040,7 @@
     async function loadSuccessionProbation() {
       const wrap = document.getElementById('succession-probation-table');
       if (!wrap) return;
-      wrap.innerHTML = '<p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loading…</p>';
+      wrap.innerHTML = '<p style="color:#52525b;font-size:13px;text-align:center;padding:20px 0;">Loadingâ€¦</p>';
       try {
         const res = await fetch('/api/admin/succession/probation');
         const data = await res.json();
@@ -3872,9 +4077,9 @@
                 return `
                   <tr style="border-bottom:1px solid #1a1a2e;">
                     <td style="padding:6px 8px;color:#71717a;">#${p.id}</td>
-                    <td style="padding:6px 8px;"><div style="color:#e4e4e7;">${esc(p.successor_user_name||'—')}</div><div style="color:#52525b;font-size:11px;">${esc(p.successor_email_addr||'')}</div></td>
-                    <td style="padding:6px 8px;">${proOk ? '<span style="color:#10b981;">✓ Paid</span>' : `<span style="color:${proOverdue?'#ef4444':'#f59e0b'};">✗ Free</span>`}</td>
-                    <td style="padding:6px 8px;">${certOk ? '<span style="color:#10b981;">✓ Certified</span>' : `<span style="color:${certOverdue?'#ef4444':'#f59e0b'};">✗ Pending</span>`}</td>
+                    <td style="padding:6px 8px;"><div style="color:#e4e4e7;">${esc(p.successor_user_name||'â€”')}</div><div style="color:#52525b;font-size:11px;">${esc(p.successor_email_addr||'')}</div></td>
+                    <td style="padding:6px 8px;">${proOk ? '<span style="color:#10b981;">âœ“ Paid</span>' : `<span style="color:${proOverdue?'#ef4444':'#f59e0b'};">âœ— Free</span>`}</td>
+                    <td style="padding:6px 8px;">${certOk ? '<span style="color:#10b981;">âœ“ Certified</span>' : `<span style="color:${certOverdue?'#ef4444':'#f59e0b'};">âœ— Pending</span>`}</td>
                     <td style="padding:6px 8px;color:${proOverdue?'#ef4444':'#94a3b8'};">${proDeadline.toLocaleDateString()}</td>
                     <td style="padding:6px 8px;color:${certOverdue?'#ef4444':'#94a3b8'};">${certDeadline.toLocaleDateString()}</td>
                     <td style="padding:6px 8px;color:${deactOverdue?'#ef4444':'#94a3b8'};">${deactDeadline.toLocaleDateString()}</td>
@@ -3902,13 +4107,13 @@
       document.getElementById('succession-modal-notes').value = '';
 
       if (type === 'execute') {
-        title.textContent = '✓ Execute Succession Transfer';
-        desc.innerHTML = `<strong>Transfer #${transferId}</strong><br>Both parties have signed. Executing this will:<br>• Swap the affiliate node to the successor<br>• Downgrade original holder to Retail (free)<br>• Start 30/60/90-day probation period for successor<br><br>This <strong>cannot be undone</strong>.`;
+        title.textContent = 'âœ“ Execute Succession Transfer';
+        desc.innerHTML = `<strong>Transfer #${transferId}</strong><br>Both parties have signed. Executing this will:<br>â€¢ Swap the affiliate node to the successor<br>â€¢ Downgrade original holder to Retail (free)<br>â€¢ Start 30/60/90-day probation period for successor<br><br>This <strong>cannot be undone</strong>.`;
         btn.textContent = 'Execute Transfer';
         btn.style.background = '#10b981';
         btn.style.borderColor = '#10b981';
       } else {
-        title.textContent = '✕ Reject / Cancel Transfer';
+        title.textContent = 'âœ• Reject / Cancel Transfer';
         desc.innerHTML = `<strong>Transfer #${transferId}</strong><br>This will reject and cancel the transfer. Both parties retain their current status.`;
         btn.textContent = 'Reject Transfer';
         btn.style.background = '#ef4444';
@@ -3931,7 +4136,7 @@
       const btn = document.getElementById('succession-modal-confirm-btn');
       const result = document.getElementById('succession-modal-result');
       btn.disabled = true;
-      btn.textContent = 'Processing…';
+      btn.textContent = 'Processingâ€¦';
 
       try {
         const endpoint = type === 'execute'
@@ -3983,7 +4188,7 @@
         return;
       }
 
-      if (!confirm(`⚠️ CONFIRM DEATH OVERRIDE\n\nAffiliate ID: ${affiliateId}\nSuccessor: ${name} (${email})\n\nThis will transfer the affiliate node immediately. Are you sure?`)) return;
+      if (!confirm(`âš ï¸ CONFIRM DEATH OVERRIDE\n\nAffiliate ID: ${affiliateId}\nSuccessor: ${name} (${email})\n\nThis will transfer the affiliate node immediately. Are you sure?`)) return;
 
       try {
         const res = await fetch('/api/admin/succession/death-override', {
@@ -4020,9 +4225,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // TRIALS (21-Day Free Trial Stats)
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function loadTrialStats() {
       const statsRow = document.getElementById('trial-stats-row');
       const tableWrap = document.getElementById('trial-active-table');
@@ -4038,8 +4243,8 @@
 
         // Render summary stats
         if (statsRow) {
-          const convRate = s.conversion_rate_pct ? `${s.conversion_rate_pct}%` : '—';
-          const avgDays = s.avg_days_to_convert ? `Day ${s.avg_days_to_convert}` : '—';
+          const convRate = s.conversion_rate_pct ? `${s.conversion_rate_pct}%` : 'â€”';
+          const avgDays = s.avg_days_to_convert ? `Day ${s.avg_days_to_convert}` : 'â€”';
           statsRow.innerHTML = `
             <div class="stat-card">
               <div class="stat-val">${s.total_trials_started}</div>
@@ -4123,7 +4328,7 @@
         const res = await fetch('/api/admin/trigger-trial-expiry', { method: 'POST' });
         const data = await res.json();
         if (res.ok) {
-          toast('Trial expiry job triggered ✓');
+          toast('Trial expiry job triggered âœ“');
           setTimeout(() => loadTrialStats(), 2000);
         } else {
           toast('Error: ' + (data.error || 'Unknown'), true);
@@ -4133,9 +4338,9 @@
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // RESOURCE CENTER ADMIN
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let resEditId = null;
 
     async function loadResourcesAdmin() {
@@ -4167,7 +4372,7 @@
         const rows = items.map(r => `
           <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
             <td style="padding:10px 12px;">
-              <span style="font-size:20px;margin-right:8px;">${r.thumbnail_emoji || '📄'}</span>
+              <span style="font-size:20px;margin-right:8px;">${r.thumbnail_emoji || 'ðŸ“„'}</span>
               <span style="font-weight:600;color:#e5e7eb;">${escR(r.title)}</span>
               ${r.is_pro_only ? '<span style="margin-left:6px;font-size:10px;background:rgba(201,162,39,0.2);color:#e8c96a;padding:1px 6px;border-radius:100px;border:1px solid rgba(201,162,39,0.3);">PRO</span>' : ''}
             </td>
@@ -4177,11 +4382,11 @@
               <span style="font-size:12px;padding:2px 8px;border-radius:100px;${r.is_active
                 ? 'background:rgba(16,185,129,0.15);color:#6ee7b7;border:1px solid rgba(16,185,129,0.2);'
                 : 'background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.2);'}">
-                ${r.is_active ? '● Active' : '○ Hidden'}
+                ${r.is_active ? 'â— Active' : 'â—‹ Hidden'}
               </span>
             </td>
             <td style="padding:10px 12px;text-align:center;font-size:12px;color:#6b7280;">
-              ${r.has_file_upload ? '📎 Uploaded' : r.file_url ? '🔗 URL' : '—'}
+              ${r.has_file_upload ? 'ðŸ“Ž Uploaded' : r.file_url ? 'ðŸ”— URL' : 'â€”'}
             </td>
             <td style="padding:10px 12px;text-align:center;font-size:12px;color:#6b7280;">${r.download_count || 0}</td>
             <td style="padding:10px 12px;text-align:center;">
@@ -4232,7 +4437,7 @@
         document.getElementById('res-cancel-btn').style.display = 'inline-block';
 
         document.getElementById('res-form-title-input').value = item.title || '';
-        document.getElementById('res-form-emoji').value = item.thumbnail_emoji || '📄';
+        document.getElementById('res-form-emoji').value = item.thumbnail_emoji || 'ðŸ“„';
         document.getElementById('res-form-desc').value = item.description || '';
         document.getElementById('res-form-category').value = item.category || 'General';
         document.getElementById('res-form-type').value = item.resource_type || 'pdf';
@@ -4276,7 +4481,7 @@
 
       const btn = document.getElementById('res-save-btn');
       btn.disabled = true;
-      btn.textContent = 'Saving…';
+      btn.textContent = 'Savingâ€¦';
 
       const fd = new FormData();
       fd.append('title', title);
@@ -4284,7 +4489,7 @@
       fd.append('category', category);
       fd.append('resource_type', document.getElementById('res-form-type').value);
       fd.append('file_url', document.getElementById('res-form-url').value);
-      fd.append('thumbnail_emoji', document.getElementById('res-form-emoji').value || '📄');
+      fd.append('thumbnail_emoji', document.getElementById('res-form-emoji').value || 'ðŸ“„');
       fd.append('is_pro_only', document.getElementById('res-form-pro-only').checked);
       fd.append('is_active', document.getElementById('res-form-active').checked);
       fd.append('sort_order', document.getElementById('res-form-sort').value || 0);
@@ -4301,7 +4506,7 @@
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
 
-        toast(resEditId ? 'Resource updated ✓' : 'Resource added ✓');
+        toast(resEditId ? 'Resource updated âœ“' : 'Resource added âœ“');
         resCancelEdit();
         loadResourcesAdmin();
       } catch (err) {
@@ -4321,7 +4526,7 @@
         const res = await fetch(`/api/admin/resources/${id}`, { method: 'PUT', body: fd });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-        toast(currentlyActive ? 'Resource hidden ✓' : 'Resource shown ✓');
+        toast(currentlyActive ? 'Resource hidden âœ“' : 'Resource shown âœ“');
         loadResourcesAdmin();
       } catch (err) {
         toast('Error: ' + err.message, true);
@@ -4334,7 +4539,7 @@
         const res = await fetch(`/api/admin/resources/${id}`, { method: 'DELETE' });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-        toast('Resource deleted ✓');
+        toast('Resource deleted âœ“');
         loadResourcesAdmin();
       } catch (err) {
         toast('Error: ' + err.message, true);
@@ -4351,9 +4556,9 @@
         .replace(/'/g, '&#039;');
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // CONTENT FEED ADMIN
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let feedEditingId = null;
 
     async function loadFeedAdmin() {
@@ -4370,22 +4575,22 @@
           return;
         }
 
-        const typeEmoji = { quote: '💛', news: '📰', story: '🏆', tip: '💡', digest: '📋' };
+        const typeEmoji = { quote: 'ðŸ’›', news: 'ðŸ“°', story: 'ðŸ†', tip: 'ðŸ’¡', digest: 'ðŸ“‹' };
         const rows = posts.map(p => `
           <tr>
-            <td style="width:36px;text-align:center;">${typeEmoji[p.type] || '📄'}</td>
+            <td style="width:36px;text-align:center;">${typeEmoji[p.type] || 'ðŸ“„'}</td>
             <td>
               <strong style="color:#e2e8f0;font-size:13px;">${escF(p.title || '(quote)')}</strong>
-              <div style="color:#6b7280;font-size:11px;margin-top:2px;">${escF(p.content.slice(0,80))}${p.content.length > 80 ? '…' : ''}</div>
+              <div style="color:#6b7280;font-size:11px;margin-top:2px;">${escF(p.content.slice(0,80))}${p.content.length > 80 ? 'â€¦' : ''}</div>
             </td>
             <td style="color:#9ca3af;font-size:12px;">${p.type}</td>
-            <td style="color:#9ca3af;font-size:12px;">${p.author || '—'}</td>
+            <td style="color:#9ca3af;font-size:12px;">${p.author || 'â€”'}</td>
             <td style="text-align:center;font-size:12px;">
-              <span style="color:#f43f5e;">❤️ ${p.like_count}</span>
-              <span style="color:#e8c96a;margin-left:8px;">🔖 ${p.bookmark_count}</span>
-              <span style="color:#93c5fd;margin-left:8px;">💬 ${p.comment_count}</span>
+              <span style="color:#f43f5e;">â¤ï¸ ${p.like_count}</span>
+              <span style="color:#e8c96a;margin-left:8px;">ðŸ”– ${p.bookmark_count}</span>
+              <span style="color:#93c5fd;margin-left:8px;">ðŸ’¬ ${p.comment_count}</span>
             </td>
-            <td style="font-size:12px;color:${p.is_active ? '#10b981' : '#6b7280'};">${p.is_active ? '✅ Live' : '🔴 Hidden'}${p.pinned ? ' 📌' : ''}</td>
+            <td style="font-size:12px;color:${p.is_active ? '#10b981' : '#6b7280'};">${p.is_active ? 'âœ… Live' : 'ðŸ”´ Hidden'}${p.pinned ? ' ðŸ“Œ' : ''}</td>
             <td style="font-size:11px;color:#6b7280;">${new Date(p.created_at).toLocaleDateString()}</td>
             <td style="white-space:nowrap;">
               <button onclick="feedEdit(${p.id})" class="btn btn-secondary" style="padding:4px 10px;font-size:11px;margin-right:4px;">Edit</button>
@@ -4482,7 +4687,7 @@
 
       const btn = document.getElementById('feed-save-btn');
       btn.disabled = true;
-      btn.textContent = 'Saving…';
+      btn.textContent = 'Savingâ€¦';
 
       try {
         const url = feedEditingId ? `/api/admin/feed/posts/${feedEditingId}` : '/api/admin/feed/posts';
@@ -4491,7 +4696,7 @@
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
 
-        toast(feedEditingId ? 'Post updated ✓' : 'Post created ✓');
+        toast(feedEditingId ? 'Post updated âœ“' : 'Post created âœ“');
         feedCancelEdit();
         loadFeedAdmin();
         document.getElementById('feed-form-error').style.display = 'none';
@@ -4509,7 +4714,7 @@
         const res = await fetch(`/api/admin/feed/posts/${id}/toggle`, { method: 'PATCH' });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-        toast(currentlyActive ? 'Post hidden ✓' : 'Post published ✓');
+        toast(currentlyActive ? 'Post hidden âœ“' : 'Post published âœ“');
         loadFeedAdmin();
       } catch (err) {
         toast('Error: ' + err.message, true);
@@ -4522,21 +4727,21 @@
         const res = await fetch(`/api/admin/feed/posts/${id}`, { method: 'DELETE' });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
-        toast('Post deleted ✓');
+        toast('Post deleted âœ“');
         loadFeedAdmin();
       } catch (err) {
         toast('Error: ' + err.message, true);
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // PRESENTATIONS TAB
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     function copyToClipboard(url) {
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(url).then(function() {
-          toast('Link copied to clipboard ✓');
+          toast('Link copied to clipboard âœ“');
         }).catch(function() { fallbackCopy(url); });
       } else {
         fallbackCopy(url);
@@ -4549,8 +4754,8 @@
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.select();
-      try { document.execCommand('copy'); toast('Link copied ✓'); }
-      catch(e) { toast('Copy failed — use Ctrl+C', true); }
+      try { document.execCommand('copy'); toast('Link copied âœ“'); }
+      catch(e) { toast('Copy failed â€” use Ctrl+C', true); }
       document.body.removeChild(ta);
     }
 
@@ -4559,9 +4764,9 @@
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // AGGREGATE DASHBOARD
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function loadAggDashboard() {
       try {
         const res = await fetch('/api/admin/aggregate-metrics');
@@ -4673,9 +4878,9 @@
 
     function escA(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // SUPPORT TICKETS
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let currentTicketId = null;
 
     async function loadTickets() {
@@ -4695,7 +4900,7 @@
         document.getElementById('ticket-count-resolved').textContent = resolved;
 
         if (!data.tickets.length) {
-          listEl.innerHTML = '<div class="empty-state"><div class="icon">🎫</div><p>No tickets found</p></div>';
+          listEl.innerHTML = '<div class="empty-state"><div class="icon">ðŸŽ«</div><p>No tickets found</p></div>';
           return;
         }
 
@@ -4730,7 +4935,7 @@
       currentTicketId = id;
 
       const modal = document.getElementById('ticket-modal');
-      document.getElementById('ticket-modal-subject').textContent = `#${ticket.id} — ${ticket.subject}`;
+      document.getElementById('ticket-modal-subject').textContent = `#${ticket.id} â€” ${ticket.subject}`;
 
       const resolveBtn = document.getElementById('ticket-resolve-btn');
       resolveBtn.textContent = ticket.status === 'open' ? 'Mark Resolved' : 'Reopen';
@@ -4784,7 +4989,7 @@
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed');
-        toast(`Ticket ${newStatus === 'resolved' ? 'resolved' : 'reopened'} ✓`);
+        toast(`Ticket ${newStatus === 'resolved' ? 'resolved' : 'reopened'} âœ“`);
         closeTicketModal();
         loadTickets();
       } catch (err) {
@@ -4803,9 +5008,9 @@
       });
     });
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // VAULT CYCLES
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     async function loadVaultCycles() {
       const tableEl = document.getElementById('vault-cycles-table');
       tableEl.innerHTML = '<div class="loading-center"><div class="loader"></div></div>';
@@ -4816,22 +5021,22 @@
 
         const runs = data.runs || [];
         if (!runs.length) {
-          tableEl.innerHTML = '<div class="empty-state"><div class="icon">🏦</div><p>No cycle runs found in the last 30 days.</p></div>';
+          tableEl.innerHTML = '<div class="empty-state"><div class="icon">ðŸ¦</div><p>No cycle runs found in the last 30 days.</p></div>';
           return;
         }
 
         const statusColor = { completed: '#10b981', failed: '#ef4444', running: '#eab308' };
         const rows = runs.map(r => {
-          const started = r.started_at ? new Date(r.started_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-          const dur = r.duration_secs != null ? r.duration_secs + 's' : '—';
-          const statusBadge = `<span class="badge" style="background:${statusColor[r.status] || '#3f3f46'}22;color:${statusColor[r.status] || '#a1a1aa'};border:1px solid ${statusColor[r.status] || '#3f3f46'}44;">${escA(r.status || '—')}</span>`;
+          const started = r.started_at ? new Date(r.started_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'â€”';
+          const dur = r.duration_secs != null ? r.duration_secs + 's' : 'â€”';
+          const statusBadge = `<span class="badge" style="background:${statusColor[r.status] || '#3f3f46'}22;color:${statusColor[r.status] || '#a1a1aa'};border:1px solid ${statusColor[r.status] || '#3f3f46'}44;">${escA(r.status || 'â€”')}</span>`;
           return `<tr>
             <td style="color:#52525b;">${escA(r.cycle_date)}</td>
             <td>${statusBadge}</td>
-            <td>${r.deals_checked != null ? parseInt(r.deals_checked).toLocaleString() : '—'}</td>
-            <td style="color:#eab308;">${r.alerts_generated != null ? parseInt(r.alerts_generated).toLocaleString() : '—'}</td>
-            <td style="color:#ef4444;">${r.auto_revokes_triggered != null ? parseInt(r.auto_revokes_triggered).toLocaleString() : '—'}</td>
-            <td>${r.locked_open_activations != null ? parseInt(r.locked_open_activations) : '—'} / ${r.locked_open_deactivations != null ? parseInt(r.locked_open_deactivations) : '—'}</td>
+            <td>${r.deals_checked != null ? parseInt(r.deals_checked).toLocaleString() : 'â€”'}</td>
+            <td style="color:#eab308;">${r.alerts_generated != null ? parseInt(r.alerts_generated).toLocaleString() : 'â€”'}</td>
+            <td style="color:#ef4444;">${r.auto_revokes_triggered != null ? parseInt(r.auto_revokes_triggered).toLocaleString() : 'â€”'}</td>
+            <td>${r.locked_open_activations != null ? parseInt(r.locked_open_activations) : 'â€”'} / ${r.locked_open_deactivations != null ? parseInt(r.locked_open_deactivations) : 'â€”'}</td>
             <td style="color:#71717a;">${dur}</td>
             <td style="font-size:12px;color:#71717a;">${started}</td>
             ${r.error_message ? `<td style="color:#ef4444;font-size:11px;">${escA(r.error_message.slice(0, 60))}</td>` : '<td></td>'}
@@ -4855,7 +5060,7 @@
       const btn = document.getElementById('vault-cycle-run-btn');
       const resultEl = document.getElementById('vault-cycle-trigger-result');
       btn.disabled = true;
-      btn.textContent = '⏳ Running…';
+      btn.textContent = 'â³ Runningâ€¦';
       resultEl.style.display = 'none';
 
       try {
@@ -4866,29 +5071,30 @@
         resultEl.style.background = '#064e3b';
         resultEl.style.border = '1px solid #10b981';
         resultEl.style.color = '#6ee7b7';
-        resultEl.textContent = '✓ Cycle triggered — running in background. Refresh history in a few seconds to see results.';
+        resultEl.textContent = 'âœ“ Cycle triggered â€” running in background. Refresh history in a few seconds to see results.';
         resultEl.style.display = '';
-        toast('Vault cycle triggered ✓');
+        toast('Vault cycle triggered âœ“');
         setTimeout(() => loadVaultCycles(), 3000);
       } catch (err) {
         resultEl.style.background = '#450a0a';
         resultEl.style.border = '1px solid #ef4444';
         resultEl.style.color = '#fca5a5';
-        resultEl.textContent = '✗ Error: ' + err.message;
+        resultEl.textContent = 'âœ— Error: ' + err.message;
         resultEl.style.display = '';
         toast('Error: ' + err.message, true);
       } finally {
         btn.disabled = false;
-        btn.textContent = '▶ Run Nightly Cycle Now';
+        btn.textContent = 'â–¶ Run Nightly Cycle Now';
       }
     }
 
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // INIT
-    // ═══════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     init();
   </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

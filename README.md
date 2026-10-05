@@ -1,6 +1,8 @@
-# FACTS — Financial Allocation Control & Tracking System
+# tfr-facts-program
 
-FACTS replaces passive budgeting with active income allocation across six purpose-driven categories: Necessities, Velocity, Reserve, Lifestyle, Growth, and Legacy.
+**The Financial Revolution (TFR) + FACTS** — one official codebase bundle.
+
+FACTS (Financial Allocation Control & Tracking System) replaces passive budgeting with active income allocation across six purpose-driven categories: Necessities, Velocity, Reserve, Lifestyle, Growth, and Legacy.
 
 ## Stack
 

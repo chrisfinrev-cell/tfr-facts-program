@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Discovery Scan — Future Generations | FACTS</title>
+  <title>Discovery Scan â€” Future Generations | FACTS</title>
   <meta name="description" content="Complete your Discovery Scan to unlock your Future Generations Affiliate Link. Map your financial footprint in under 3 minutes.">
 
   <!-- Favicon -->
@@ -32,13 +32,13 @@
     * { font-family: 'Inter', system-ui, sans-serif; box-sizing: border-box; }
     html, body { height: 100%; margin: 0; background: #0d1117; color: #f1f5f9; }
 
-    /* ── Gold gradient text ── */
+    /* â”€â”€ Gold gradient text â”€â”€ */
     .gold-text {
       background: linear-gradient(135deg, #c9a227 0%, #e8c96a 50%, #c9a227 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
 
-    /* ── Progress bar ── */
+    /* â”€â”€ Progress bar â”€â”€ */
     #progress-bar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       height: 4px; background: rgba(255,255,255,0.06);
@@ -54,7 +54,7 @@
       background: rgba(13,17,23,0.5);
     }
 
-    /* ── Screen container ── */
+    /* â”€â”€ Screen container â”€â”€ */
     #screens {
       min-height: 100vh;
       min-height: 100dvh;
@@ -63,7 +63,7 @@
       padding: 4rem 1rem 2rem;
     }
 
-    /* Individual screen — one visible at a time */
+    /* Individual screen â€” one visible at a time */
     .screen {
       display: none;
       width: 100%; max-width: 600px;
@@ -75,7 +75,7 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Input styles ── */
+    /* â”€â”€ Input styles â”€â”€ */
     .input-currency {
       width: 100%;
       background: rgba(255,255,255,0.04);
@@ -94,7 +94,7 @@
     }
     .input-currency::placeholder { color: rgba(255,255,255,0.2); font-weight: 400; }
 
-    /* ── Range slider ── */
+    /* â”€â”€ Range slider â”€â”€ */
     input[type=range] {
       -webkit-appearance: none;
       width: 100%; height: 6px;
@@ -122,7 +122,7 @@
       border: none; cursor: pointer;
     }
 
-    /* ── Gold button ── */
+    /* â”€â”€ Gold button â”€â”€ */
     .btn-gold {
       display: inline-flex; align-items: center; justify-content: center;
       gap: 0.5rem;
@@ -138,7 +138,7 @@
     .btn-gold:active { transform: translateY(0); }
     .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    /* ── Outline button ── */
+    /* â”€â”€ Outline button â”€â”€ */
     .btn-outline {
       display: inline-flex; align-items: center; justify-content: center;
       background: rgba(255,255,255,0.04);
@@ -150,7 +150,7 @@
     }
     .btn-outline:hover { background: rgba(255,255,255,0.08); color: #f1f5f9; border-color: rgba(255,255,255,0.2); }
 
-    /* ── Option cards ── */
+    /* â”€â”€ Option cards â”€â”€ */
     .option-card {
       display: flex; align-items: center; gap: 1rem;
       padding: 1rem 1.25rem;
@@ -176,7 +176,7 @@
     .option-check svg { display: none; }
     .option-card.selected .option-check svg { display: block; }
 
-    /* ── Sovereign Score chip ── */
+    /* â”€â”€ Sovereign Score chip â”€â”€ */
     #score-badge {
       position: fixed; bottom: 1.5rem; right: 1.5rem;
       background: linear-gradient(135deg, rgba(201,162,39,0.15), rgba(201,162,39,0.08));
@@ -192,7 +192,7 @@
     }
     #score-badge.hidden { opacity: 0; transform: scale(0.9); }
 
-    /* ── Skip popup overlay ── */
+    /* â”€â”€ Skip popup overlay â”€â”€ */
     #skip-popup {
       display: none;
       position: fixed; inset: 0; z-index: 200;
@@ -201,22 +201,22 @@
     }
     #skip-popup.open { display: flex; }
 
-    /* ── Card ── */
+    /* â”€â”€ Card â”€â”€ */
     .card {
       background: linear-gradient(145deg, #13192a, #1a2235);
       border: 1px solid rgba(255,255,255,0.07);
     }
 
-    /* ── Screen step label ── */
+    /* â”€â”€ Screen step label â”€â”€ */
     .step-label {
       font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
       text-transform: uppercase; color: #c9a227; margin-bottom: 0.5rem;
     }
 
-    /* ── Micro-copy ── */
+    /* â”€â”€ Micro-copy â”€â”€ */
     .micro { font-size: 0.78rem; color: #6b7280; }
 
-    /* ── Sovereign score pulse animation ── */
+    /* â”€â”€ Sovereign score pulse animation â”€â”€ */
     @keyframes scorePulse {
       0%   { box-shadow: 0 0 0 0 rgba(201,162,39,0.4); }
       70%  { box-shadow: 0 0 0 10px rgba(201,162,39,0); }
@@ -236,7 +236,7 @@
 </head>
 <body>
 
-  <!-- ── Progress Bar (12 segments) ── -->
+  <!-- â”€â”€ Progress Bar (12 segments) â”€â”€ -->
   <div id="progress-bar">
     <div id="progress-fill" style="width:0%"></div>
     <!-- 11 dividers = 12 segments -->
@@ -253,7 +253,7 @@
     <div class="prog-tick" style="left:91.66%"></div>
   </div>
 
-  <!-- ── Step counter ── -->
+  <!-- â”€â”€ Step counter â”€â”€ -->
   <div id="step-counter" style="
     position:fixed; top:12px; right:1rem; z-index:101;
     font-size:0.72rem; font-weight:600; color:rgba(255,255,255,0.35);
@@ -262,17 +262,17 @@
     <span id="step-current">1</span> / 7
   </div>
 
-  <!-- ── Screens ── -->
+  <!-- â”€â”€ Screens â”€â”€ -->
   <main id="screens">
 
-    <!-- ─────────────────────────────── SCREEN 1: The Vision ── -->
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SCREEN 1: The Vision â”€â”€ -->
     <div id="screen-1" class="screen active" role="main">
       <div class="text-center px-2">
 
         <!-- Logo pill -->
         <div class="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full text-sm font-semibold"
              style="background:rgba(201,162,39,0.08); border:1px solid rgba(201,162,39,0.2); color:#e8c96a;">
-          🌿 Future Generations — Discovery Scan
+          ðŸŒ¿ Future Generations â€” Discovery Scan
         </div>
 
         <h1 class="text-4xl sm:text-5xl font-black leading-tight mb-4">
@@ -288,24 +288,24 @@
 
         <!-- Feature pills -->
         <div class="flex flex-wrap justify-center gap-2 mb-10">
-          <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:#34d399;">🔒 100% Private</span>
-          <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#60a5fa;">⚡ 3 Minutes</span>
-          <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.2);color:#e8c96a;">🎯 7 Questions</span>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:#34d399;">ðŸ”’ 100% Private</span>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#60a5fa;">âš¡ 3 Minutes</span>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background:rgba(201,162,39,0.1);border:1px solid rgba(201,162,39,0.2);color:#e8c96a;">ðŸŽ¯ 7 Questions</span>
         </div>
 
         <button class="btn-gold text-lg px-10 py-4" onclick="goTo(2)" id="start-btn">
-          Start My Scan →
+          Start My Scan â†’
         </button>
 
-        <p class="micro mt-5">Already completed? <a href="/sovereign-oath.html" class="text-gold-300 underline">Continue to Sovereign Oath →</a></p>
+        <p class="micro mt-5">Already completed? <a href="/sovereign-oath.html" class="text-gold-300 underline">Continue to Sovereign Oath â†’</a></p>
       </div>
     </div>
 
-    <!-- ──────────────────────────── SCREEN 2: Survival Runway ── -->
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SCREEN 2: Survival Runway â”€â”€ -->
     <div id="screen-2" class="screen">
       <div class="step-label">Question 1 of 6</div>
       <h2 class="text-2xl sm:text-3xl font-black leading-tight mb-2">
-        Survival Runway 🛬
+        Survival Runway ðŸ›¬
       </h2>
       <p class="text-gray-400 text-base leading-relaxed mb-8">
         If all your income stopped today, how many months could you maintain your current lifestyle before your cash reserves hit zero?
@@ -327,25 +327,25 @@
 
       <!-- Context label that changes based on value -->
       <div id="runway-label" class="card rounded-xl p-3 text-sm text-center text-gray-400 mb-8" style="min-height:48px;">
-        No runway — every month is critical.
+        No runway â€” every month is critical.
       </div>
 
       <div class="flex gap-3 screen-actions">
-        <button class="btn-outline" onclick="goTo(1)">← Back</button>
-        <button class="btn-gold flex-1" onclick="nextFromRunway()">Continue →</button>
+        <button class="btn-outline" onclick="goTo(1)">â† Back</button>
+        <button class="btn-gold flex-1" onclick="nextFromRunway()">Continue â†’</button>
       </div>
     </div>
 
-    <!-- ─────────────────────────────── SCREEN 3: Debt Weight ── -->
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SCREEN 3: Debt Weight â”€â”€ -->
     <div id="screen-3" class="screen">
       <div class="step-label">Question 2 of 6</div>
       <h2 class="text-2xl sm:text-3xl font-black leading-tight mb-2">
-        Total Liabilities Check 📊
+        Total Liabilities Check ðŸ“Š
       </h2>
       <p class="text-gray-400 text-base leading-relaxed mb-2">
         Approximately how much do you currently owe to creditors?
       </p>
-      <p class="micro mb-8">Credit cards, auto, student loans, medical — everything.</p>
+      <p class="micro mb-8">Credit cards, auto, student loans, medical â€” everything.</p>
 
       <div class="relative mb-2">
         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400 pointer-events-none">$</span>
@@ -354,25 +354,25 @@
                oninput="updateScore()" style="padding-left:2.5rem;">
       </div>
       <p class="micro mb-8">
-        Don't worry — we'll verify the exact cents with your credit report in the next step.
+        Don't worry â€” we'll verify the exact cents with your credit report in the next step.
       </p>
 
       <div class="flex gap-3 screen-actions">
-        <button class="btn-outline" onclick="goTo(2)">← Back</button>
-        <button class="btn-gold flex-1" onclick="nextFromDebt()">Continue →</button>
+        <button class="btn-outline" onclick="goTo(2)">â† Back</button>
+        <button class="btn-gold flex-1" onclick="nextFromDebt()">Continue â†’</button>
       </div>
     </div>
 
-    <!-- ─────────────────────────────── SCREEN 4: Monthly Burn ── -->
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SCREEN 4: Monthly Burn â”€â”€ -->
     <div id="screen-4" class="screen">
       <div class="step-label">Question 3 of 6</div>
       <h2 class="text-2xl sm:text-3xl font-black leading-tight mb-2">
-        Your Oxygen Number 🌬️
+        Your Oxygen Number ðŸŒ¬ï¸
       </h2>
       <p class="text-gray-400 text-base leading-relaxed mb-2">
         What is the bare minimum monthly cost to keep your family running?
       </p>
-      <p class="micro mb-8">Housing, food, utilities — the non-negotiables.</p>
+      <p class="micro mb-8">Housing, food, utilities â€” the non-negotiables.</p>
 
       <div class="relative mb-2">
         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400 pointer-events-none">$</span>
@@ -381,20 +381,20 @@
                oninput="updateScore()" style="padding-left:2.5rem;">
       </div>
       <p class="micro mb-8">
-        This is your <strong class="text-white">"Oxygen Number"</strong> — the cost of staying alive financially.
+        This is your <strong class="text-white">"Oxygen Number"</strong> â€” the cost of staying alive financially.
       </p>
 
       <div class="flex gap-3 screen-actions">
-        <button class="btn-outline" onclick="goTo(3)">← Back</button>
-        <button class="btn-gold flex-1" onclick="nextFromBurn()">Continue →</button>
+        <button class="btn-outline" onclick="goTo(3)">â† Back</button>
+        <button class="btn-gold flex-1" onclick="nextFromBurn()">Continue â†’</button>
       </div>
     </div>
 
-    <!-- ───────────────────────────── SCREEN 5: Legacy Anchor ── -->
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SCREEN 5: Legacy Anchor â”€â”€ -->
     <div id="screen-5" class="screen">
       <div class="step-label">Question 4 of 6</div>
       <h2 class="text-2xl sm:text-3xl font-black leading-tight mb-2">
-        Who Are You Anchoring This For? ⚓
+        Who Are You Anchoring This For? âš“
       </h2>
       <p class="text-gray-400 text-base leading-relaxed mb-8">
         Who are you building this legacy for?
@@ -411,7 +411,7 @@
             <div class="font-bold text-white">Just Me (For Now)</div>
             <div class="text-xs text-gray-400 mt-0.5">Building my own foundation first</div>
           </div>
-          <span class="ml-auto text-xl">🙋</span>
+          <span class="ml-auto text-xl">ðŸ™‹</span>
         </div>
 
         <div class="option-card" data-value="children" onclick="selectAnchor(this)">
@@ -424,7 +424,7 @@
             <div class="font-bold text-white">My Children / Grandchildren</div>
             <div class="text-xs text-gray-400 mt-0.5">Creating generational wealth for the next generation</div>
           </div>
-          <span class="ml-auto text-xl">👨‍👩‍👧‍👦</span>
+          <span class="ml-auto text-xl">ðŸ‘¨â€ðŸ‘©â€ðŸ‘§â€ðŸ‘¦</span>
         </div>
 
         <div class="option-card" data-value="family" onclick="selectAnchor(this)">
@@ -437,7 +437,7 @@
             <div class="font-bold text-white">My Parents / Extended Family</div>
             <div class="text-xs text-gray-400 mt-0.5">Protecting and uplifting the people who raised me</div>
           </div>
-          <span class="ml-auto text-xl">👴👵</span>
+          <span class="ml-auto text-xl">ðŸ‘´ðŸ‘µ</span>
         </div>
 
         <div class="option-card" data-value="charity" onclick="selectAnchor(this)">
@@ -450,24 +450,24 @@
             <div class="font-bold text-white">A Charitable Cause or Trust</div>
             <div class="text-xs text-gray-400 mt-0.5">Making a lasting impact beyond my family</div>
           </div>
-          <span class="ml-auto text-xl">🌍</span>
+          <span class="ml-auto text-xl">ðŸŒ</span>
         </div>
       </div>
 
       <div class="flex gap-3 screen-actions">
-        <button class="btn-outline" onclick="goTo(4)">← Back</button>
-        <button class="btn-gold flex-1" id="anchor-continue" onclick="nextFromAnchor()" disabled>Continue →</button>
+        <button class="btn-outline" onclick="goTo(4)">â† Back</button>
+        <button class="btn-gold flex-1" id="anchor-continue" onclick="nextFromAnchor()" disabled>Continue â†’</button>
       </div>
     </div>
 
-    <!-- ─────────────────────────── SCREEN 6: Sovereign Target ── -->
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SCREEN 6: Sovereign Target â”€â”€ -->
     <div id="screen-6" class="screen">
       <div class="step-label">Question 5 of 6</div>
       <h2 class="text-2xl sm:text-3xl font-black leading-tight mb-2">
-        The Freedom Number 🔓
+        The Freedom Number ðŸ”“
       </h2>
       <p class="text-gray-400 text-base leading-relaxed mb-8">
-        What is the monthly residual income goal that sets your family free — <em class="text-white not-italic font-bold">forever?</em>
+        What is the monthly residual income goal that sets your family free â€” <em class="text-white not-italic font-bold">forever?</em>
       </p>
 
       <div class="relative mb-2">
@@ -479,22 +479,22 @@
 
       <!-- Goal context preview -->
       <div id="goal-context" class="card rounded-xl p-4 text-sm mb-8 hidden">
-        <div class="font-semibold text-white mb-1">🎯 Your Sovereign Target</div>
+        <div class="font-semibold text-white mb-1">ðŸŽ¯ Your Sovereign Target</div>
         <div id="goal-context-text" class="text-gray-400 text-xs leading-relaxed"></div>
       </div>
 
       <div class="flex gap-3 screen-actions">
-        <button class="btn-outline" onclick="goTo(5)">← Back</button>
-        <button class="btn-gold flex-1" onclick="nextFromGoal()">Continue →</button>
+        <button class="btn-outline" onclick="goTo(5)">â† Back</button>
+        <button class="btn-gold flex-1" onclick="nextFromGoal()">Continue â†’</button>
       </div>
     </div>
 
-    <!-- ─────────────────────────── SCREEN 7: The Handshake ── -->
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SCREEN 7: The Handshake â”€â”€ -->
     <div id="screen-7" class="screen">
       <div class="text-center px-2">
         <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full text-sm font-semibold"
              style="background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.25); color:#34d399;">
-          ✅ Scan Complete
+          âœ… Scan Complete
         </div>
 
         <h2 class="text-3xl sm:text-4xl font-black leading-tight mb-3">
@@ -510,7 +510,7 @@
         <div class="grid sm:grid-cols-2 gap-4 mb-6 text-left">
           <!-- Option A: Credit Report -->
           <div class="card rounded-2xl p-5 flex flex-col gap-3">
-            <div class="text-2xl">📄</div>
+            <div class="text-2xl">ðŸ“„</div>
             <div>
               <div class="font-bold text-white mb-1">Upload Credit Report</div>
               <div class="text-xs text-gray-400 leading-relaxed">Download your free PDF from AnnualCreditReport.com and upload it here for instant verification.</div>
@@ -522,7 +522,7 @@
 
           <!-- Option B: Plaid -->
           <div class="card rounded-2xl p-5 flex flex-col gap-3">
-            <div class="text-2xl">🔐</div>
+            <div class="text-2xl">ðŸ”</div>
             <div>
               <div class="font-bold text-white mb-1">Link Bank Accounts</div>
               <div class="text-xs text-gray-400 leading-relaxed">Connect securely via Plaid (256-bit encrypted) for real-time balance and transaction verification.</div>
@@ -533,7 +533,7 @@
             <!-- Zero-Knowledge Security Badge -->
             <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span style="font-size:0.72rem;color:#64748b;font-weight:500;">🔒 Zero-Knowledge Security — Your financial data is encrypted and never shared</span>
+              <span style="font-size:0.72rem;color:#64748b;font-weight:500;">ðŸ”’ Zero-Knowledge Security â€” Your financial data is encrypted and never shared</span>
             </div>
           </div>
         </div>
@@ -547,13 +547,13 @@
       </div>
     </div>
 
-    <!-- ─────────────────────────── SCREEN 8: Completed ── -->
+    <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SCREEN 8: Completed â”€â”€ -->
     <div id="screen-complete" class="screen">
       <div class="text-center px-2">
         <!-- Animated checkmark -->
         <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl"
              style="background:linear-gradient(135deg,rgba(52,211,153,0.15),rgba(52,211,153,0.08)); border:2px solid rgba(52,211,153,0.3);">
-          🎉
+          ðŸŽ‰
         </div>
 
         <h2 class="text-3xl sm:text-4xl font-black leading-tight mb-3">
@@ -568,50 +568,50 @@
         <!-- Score summary -->
         <div id="final-score-card" class="card rounded-2xl p-5 mb-8 text-left max-w-sm mx-auto">
           <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Your Sovereign Score</div>
-          <div class="text-5xl font-black gold-text mb-1" id="final-score-number">—</div>
+          <div class="text-5xl font-black gold-text mb-1" id="final-score-number">â€”</div>
           <div class="text-xs text-gray-400" id="final-score-label">Calculating...</div>
         </div>
 
         <a href="/sovereign-oath.html" class="btn-gold text-base px-8 py-3.5">
-          Sign Sovereign Oath →
+          Sign Sovereign Oath â†’
         </a>
       </div>
     </div>
 
   </main><!-- /screens -->
 
-  <!-- ── Sovereign Score Badge (fixed bottom-right) ── -->
+  <!-- â”€â”€ Sovereign Score Badge (fixed bottom-right) â”€â”€ -->
   <div id="score-badge" class="hidden">
-    <span>⚡</span>
+    <span>âš¡</span>
     <span>Score: <strong id="score-value">0</strong></span>
   </div>
 
-  <!-- ── Skip Popup ── -->
+  <!-- â”€â”€ Skip Popup â”€â”€ -->
   <div id="skip-popup">
     <div class="card rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl"
          style="border:1px solid rgba(248,113,113,0.2);">
-      <div class="text-4xl mb-4">⚠️</div>
+      <div class="text-4xl mb-4">âš ï¸</div>
       <h3 class="text-xl font-black text-white mb-2">Hold On</h3>
       <p class="text-gray-400 text-sm leading-relaxed mb-6">
         Skipping this step will <strong class="text-red-400">prevent you from unlocking your Affiliate Link</strong> and Phase 1 Commissions.
         <br><br>
-        You can always come back later to complete verification — your scan data will be saved.
+        You can always come back later to complete verification â€” your scan data will be saved.
       </p>
       <div class="flex flex-col gap-3">
         <button class="btn-gold w-full" onclick="closeSkipPopup()">
           Complete Verification Now
         </button>
         <button class="btn-outline text-sm" onclick="skipAndFinish()">
-          I understand — save my scan &amp; skip verification
+          I understand â€” save my scan &amp; skip verification
         </button>
       </div>
     </div>
   </div>
 
   <script>
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // State
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const state = {
     runway: 0,
     debt: null,
@@ -623,7 +623,7 @@
   };
 
   // Progress: screen 1 = start (0%), screen 7 = end (100%)
-  // We have 7 screens — progress per screen = 100/7 ≈ 14.3%
+  // We have 7 screens â€” progress per screen = 100/7 â‰ˆ 14.3%
   // But we'll show progress as "questions answered" (6 questions + welcome = 7 steps)
   const SCREEN_PROGRESS = {
     1: 0,
@@ -636,9 +636,9 @@
     'complete': 100
   };
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Navigation
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function goTo(n) {
     // Hide current
     document.querySelectorAll('.screen').forEach(s => {
@@ -685,13 +685,13 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // Sovereign Score (0–100)
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Sovereign Score (0â€“100)
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function calcScore() {
     let score = 0;
 
-    // Runway: 0–25 months → 0–30 pts
+    // Runway: 0â€“25 months â†’ 0â€“30 pts
     const r = Math.min(state.runway, 24);
     score += Math.round((r / 24) * 30);
 
@@ -755,43 +755,43 @@
     el.classList.remove('hidden');
     const annual = goal * 12;
     const burn = state.burn || 0;
-    const multiple = burn > 0 ? (goal / burn).toFixed(1) : '∞';
+    const multiple = burn > 0 ? (goal / burn).toFixed(1) : 'âˆž';
     txt.textContent = `$${goal.toLocaleString()}/mo = $${annual.toLocaleString()}/year. ` +
       (burn > 0
-        ? `That's ${multiple}× your Oxygen Number — enough to cover your family and build wealth simultaneously.`
+        ? `That's ${multiple}Ã— your Oxygen Number â€” enough to cover your family and build wealth simultaneously.`
         : 'Enter your Oxygen Number on the previous screen to see your freedom multiplier.');
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Screen-specific logic
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const RUNWAY_LABELS = [
-    'No runway — every month is critical.',           // 0
+    'No runway â€” every month is critical.',           // 0
     '1 month of safety. Every decision matters.',     // 1
-    '2 months — still very vulnerable.',              // 2
-    '3 months — approaching the first safety threshold.', // 3
-    '4 months — building awareness.',                 // 4
-    '5 months — solid early momentum.',               // 5
-    '6 months — the standard "emergency fund" goal.',  // 6
-    '7 months — above average. Keep stacking.',       // 7
-    '8 months — approaching genuine stability.',      // 8
-    '9 months — 3 quarters of a year. Strong.',       // 9
-    '10 months — double-digit runway. Real security.', // 10
-    '11 months — almost a year of protection.',       // 11
-    '12 months — a full year of runway. Excellent.',  // 12
-    '13 months — beyond the norm.',                   // 13
-    '14 months — financial confidence is building.',  // 14
-    '15 months — serious cushion.',                   // 15
-    '16 months — you\'ve been disciplined.',          // 16
-    '17 months — elite-level preparation.',           // 17
-    '18 months — 1.5 years. That\'s rare.',           // 18
-    '19 months — sovereign territory.',               // 19
-    '20 months — approaching 2 years. Impressive.',   // 20
-    '21 months — freedom-level reserves.',            // 21
-    '22 months — near the top.',                      // 22
-    '23 months — almost fully sovereign.',            // 23
-    '24 months — 2 full years. Maximum score.',       // 24
-    '24+ months — fully sovereign. The Revolution wins.', // 25
+    '2 months â€” still very vulnerable.',              // 2
+    '3 months â€” approaching the first safety threshold.', // 3
+    '4 months â€” building awareness.',                 // 4
+    '5 months â€” solid early momentum.',               // 5
+    '6 months â€” the standard "emergency fund" goal.',  // 6
+    '7 months â€” above average. Keep stacking.',       // 7
+    '8 months â€” approaching genuine stability.',      // 8
+    '9 months â€” 3 quarters of a year. Strong.',       // 9
+    '10 months â€” double-digit runway. Real security.', // 10
+    '11 months â€” almost a year of protection.',       // 11
+    '12 months â€” a full year of runway. Excellent.',  // 12
+    '13 months â€” beyond the norm.',                   // 13
+    '14 months â€” financial confidence is building.',  // 14
+    '15 months â€” serious cushion.',                   // 15
+    '16 months â€” you\'ve been disciplined.',          // 16
+    '17 months â€” elite-level preparation.',           // 17
+    '18 months â€” 1.5 years. That\'s rare.',           // 18
+    '19 months â€” sovereign territory.',               // 19
+    '20 months â€” approaching 2 years. Impressive.',   // 20
+    '21 months â€” freedom-level reserves.',            // 21
+    '22 months â€” near the top.',                      // 22
+    '23 months â€” almost fully sovereign.',            // 23
+    '24 months â€” 2 full years. Maximum score.',       // 24
+    '24+ months â€” fully sovereign. The Revolution wins.', // 25
   ];
 
   function onRunwayChange(val) {
@@ -856,9 +856,9 @@
     goTo(7);
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Shake animation for empty required fields
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function shakeInput(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -872,9 +872,9 @@
     }, 600);
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Skip Popup
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function showSkipPopup() { document.getElementById('skip-popup').classList.add('open'); }
   function closeSkipPopup() { document.getElementById('skip-popup').classList.remove('open'); }
 
@@ -883,9 +883,9 @@
     completeScan();
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // Plaid / Credit Report handlers (stubs — Plaid integration is next phase)
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Plaid / Credit Report handlers (stubs â€” Plaid integration is next phase)
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function handleCreditUpload() {
     // TODO: wire up actual file upload when R2 + parsing integration is built
     alert('Credit report upload is coming in Phase 2 of Certification. Your scan data has been saved.');
@@ -898,9 +898,9 @@
     completeScan();
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // API: save partial data mid-scan (best-effort, non-blocking)
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function savePartial(data) {
     fetch('/api/discovery-scan/complete', {
       method: 'POST',
@@ -910,9 +910,9 @@
     }).catch(() => { /* non-fatal */ });
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // API: complete the scan (mark as done)
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function completeScan() {
     const payload = {
       survival_runway_months: state.runway,
@@ -933,7 +933,7 @@
       if (!res.ok) throw new Error('Save failed');
     } catch (e) {
       console.warn('[DiscoveryScan] save error:', e.message);
-      // Still show complete screen — data may have been partially saved
+      // Still show complete screen â€” data may have been partially saved
     }
 
     // Update final score display
@@ -942,19 +942,19 @@
     const labelEl = document.getElementById('final-score-label');
     if (scoreEl) scoreEl.textContent = score;
     if (labelEl) {
-      if (score >= 80) labelEl.textContent = '🏆 Elite — Sovereign Foundation';
-      else if (score >= 60) labelEl.textContent = '💪 Strong — Building Momentum';
-      else if (score >= 40) labelEl.textContent = '🌱 Growing — Keep Stacking';
-      else labelEl.textContent = '🔥 Starting — The Revolution Begins';
+      if (score >= 80) labelEl.textContent = 'ðŸ† Elite â€” Sovereign Foundation';
+      else if (score >= 60) labelEl.textContent = 'ðŸ’ª Strong â€” Building Momentum';
+      else if (score >= 40) labelEl.textContent = 'ðŸŒ± Growing â€” Keep Stacking';
+      else labelEl.textContent = 'ðŸ”¥ Starting â€” The Revolution Begins';
     }
 
     document.getElementById('progress-fill').style.width = '100%';
     goTo('complete');
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Auth check: redirect to login if not authenticated
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function checkAuth() {
     try {
       const res = await fetch('/api/auth/me', { credentials: 'include' });
@@ -967,9 +967,9 @@
     }
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Load existing scan data (if user partially completed before)
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function loadExistingData() {
     try {
       const res = await fetch('/api/discovery-scan/status', { credentials: 'include' });
@@ -978,7 +978,7 @@
 
       // If scan already completed, continue to next gate step
       if (data.completed) {
-        // Check if oath is already signed — if so go straight to dashboard
+        // Check if oath is already signed â€” if so go straight to dashboard
         try {
           const oathRes = await fetch('/api/sovereign-oath/status', { credentials: 'include' });
           if (oathRes.ok) {
@@ -988,7 +988,7 @@
               return;
             }
           }
-        } catch (e) { /* non-fatal — fall through to oath page */ }
+        } catch (e) { /* non-fatal â€” fall through to oath page */ }
         window.location.href = '/sovereign-oath.html';
         return;
       }
@@ -1029,9 +1029,9 @@
     }
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Init
-  // ──────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
     await loadExistingData();
@@ -1050,5 +1050,6 @@
   </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

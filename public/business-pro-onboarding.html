@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0a0f1a">
-    <title>FACTS Business — Financial Architect Onboarding</title>
+    <title>FACTS Business â€” Financial Architect Onboarding</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -39,7 +39,7 @@
 
         h1,h2,h3 { font-family: 'Space Grotesk', sans-serif; }
 
-        /* ─── Ambient glow ─── */
+        /* â”€â”€â”€ Ambient glow â”€â”€â”€ */
         .ambient {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 0;
@@ -57,7 +57,7 @@
             border-radius: 50%;
         }
 
-        /* ─── Layout ─── */
+        /* â”€â”€â”€ Layout â”€â”€â”€ */
         .page-wrap {
             max-width: 720px;
             margin: 0 auto;
@@ -66,7 +66,7 @@
             z-index: 1;
         }
 
-        /* ─── Header ─── */
+        /* â”€â”€â”€ Header â”€â”€â”€ */
         .tier-badge {
             display: inline-flex;
             align-items: center;
@@ -99,7 +99,7 @@
             margin-bottom: 40px;
         }
 
-        /* ─── Progress steps ─── */
+        /* â”€â”€â”€ Progress steps â”€â”€â”€ */
         .progress-steps {
             display: flex;
             align-items: center;
@@ -150,7 +150,7 @@
         }
         .step-line.done { background: var(--accent-green); }
 
-        /* ─── Section card ─── */
+        /* â”€â”€â”€ Section card â”€â”€â”€ */
         .section-card {
             background: var(--bg-card);
             border: 2px solid var(--border);
@@ -188,7 +188,7 @@
         .section-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
         .section-desc { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; }
 
-        /* ─── Path selector ─── */
+        /* â”€â”€â”€ Path selector â”€â”€â”€ */
         .path-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -236,7 +236,7 @@
         }
         .path-option.selected .path-desc { color: var(--text-secondary); }
 
-        /* ─── Burn calculator ─── */
+        /* â”€â”€â”€ Burn calculator â”€â”€â”€ */
         .burn-notice {
             background: rgba(59,130,246,0.06);
             border: 1px solid rgba(59,130,246,0.2);
@@ -318,7 +318,7 @@
             white-space: nowrap;
         }
 
-        /* ─── 5-Bucket layout ─── */
+        /* â”€â”€â”€ 5-Bucket layout â”€â”€â”€ */
         .bucket-list {
             display: flex;
             flex-direction: column;
@@ -373,7 +373,7 @@
             align-self: center;
         }
 
-        /* ─── Confirmation ─── */
+        /* â”€â”€â”€ Confirmation â”€â”€â”€ */
         .confirm-checklist {
             display: flex;
             flex-direction: column;
@@ -408,7 +408,7 @@
         }
         .confirm-item.checked .ci-text { color: var(--text-primary); }
 
-        /* ─── Buttons ─── */
+        /* â”€â”€â”€ Buttons â”€â”€â”€ */
         .btn-primary {
             background: var(--accent-blue);
             color: #fff;
@@ -459,7 +459,7 @@
             align-items: center;
         }
 
-        /* ─── Status messages ─── */
+        /* â”€â”€â”€ Status messages â”€â”€â”€ */
         .status-msg {
             font-size: 0.88rem;
             min-height: 20px;
@@ -468,7 +468,7 @@
             color: var(--text-muted);
         }
 
-        /* ─── Legacy Pivot notice ─── */
+        /* â”€â”€â”€ Legacy Pivot notice â”€â”€â”€ */
         .legacy-notice {
             display: none;
             background: rgba(245,158,11,0.08);
@@ -483,7 +483,7 @@
         .legacy-notice strong { color: var(--accent-gold); }
         .legacy-notice.visible { display: block; }
 
-        /* ─── Loading overlay ─── */
+        /* â”€â”€â”€ Loading overlay â”€â”€â”€ */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-deep);
@@ -499,7 +499,7 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ─── Done screen ─── */
+        /* â”€â”€â”€ Done screen â”€â”€â”€ */
         #done-screen {
             display: none;
             text-align: center;
@@ -530,11 +530,11 @@
     <!-- Main onboarding content (hidden until auth check) -->
     <div class="page-wrap" id="main-content" style="display:none;">
 
-        <div class="tier-badge">💼 FACTS Business — Levels 7–9</div>
+        <div class="tier-badge">ðŸ’¼ FACTS Business â€” Levels 7â€“9</div>
 
         <h1 class="page-title">Welcome, <span>Financial Architect</span></h1>
         <p class="page-subtitle">
-            You are no longer just running a business — you are engineering a Sovereign Entity.
+            You are no longer just running a business â€” you are engineering a Sovereign Entity.
             Before you access your dashboard, complete your Business setup. This takes 3 minutes.
         </p>
 
@@ -578,7 +578,7 @@
                     <input type="radio" name="path_type" value="B">
                     <div class="path-letter">B</div>
                     <div class="path-name">The Full-Timer</div>
-                    <div class="path-desc">This business is your primary — and only — source of income.</div>
+                    <div class="path-desc">This business is your primary â€” and only â€” source of income.</div>
                 </label>
 
                 <label class="path-option" data-path="C" onclick="selectPath('C')">
@@ -597,13 +597,13 @@
             </div>
 
             <div class="legacy-notice" id="legacy-notice">
-                <strong>⚠️ Path D: Legacy Pivot</strong> — Your first 30 days are a Financial Cleanse.
+                <strong>âš ï¸ Path D: Legacy Pivot</strong> â€” Your first 30 days are a Financial Cleanse.
                 You will audit all existing accounts, reconcile liabilities, and rebuild your Clearing account from zero.
                 The platform will guide you through each step.
             </div>
 
             <button class="btn-primary" id="step1-btn" onclick="goToStep2()" disabled>
-                Confirm Path →
+                Confirm Path â†’
             </button>
             <div class="status-msg" id="step1-status"></div>
         </div>
@@ -615,7 +615,7 @@
                 <div>
                     <div class="section-title">Set Your SURVIVAL_BURN</div>
                     <div class="section-desc" id="burn-desc">
-                        Your monthly non-negotiable floor — the number below which everything stops.
+                        Your monthly non-negotiable floor â€” the number below which everything stops.
                     </div>
                 </div>
             </div>
@@ -637,16 +637,16 @@
                 <div class="label-col">
                     <div class="sl-label">Your Goal</div>
                     <div class="sl-name">SOVEREIGNTY_FLOOR</div>
-                    <div class="sl-desc">6× your SURVIVAL_BURN — the Operating Reserve target</div>
+                    <div class="sl-desc">6Ã— your SURVIVAL_BURN â€” the Operating Reserve target</div>
                 </div>
-                <div class="sl-amount" id="sovereignty-amount">$—</div>
+                <div class="sl-amount" id="sovereignty-amount">$â€”</div>
             </div>
 
             <div style="margin-top: 24px;">
                 <div class="btn-row">
-                    <button class="btn-secondary" onclick="goBackToStep1()">← Back</button>
+                    <button class="btn-secondary" onclick="goBackToStep1()">â† Back</button>
                     <button class="btn-primary" id="step2-btn" onclick="saveAndGoToStep3()" disabled style="flex:1;">
-                        Save & Continue →
+                        Save & Continue â†’
                     </button>
                 </div>
                 <div class="status-msg" id="step2-status"></div>
@@ -681,7 +681,7 @@
                     <div class="bucket-info">
                         <div class="bucket-name">Tax Shield</div>
                         <div class="bucket-type">HYSA / Money Market</div>
-                        <div class="bucket-desc">25% of every deposit moves here immediately. Do not touch it — that money is not yours.</div>
+                        <div class="bucket-desc">25% of every deposit moves here immediately. Do not touch it â€” that money is not yours.</div>
                     </div>
                     <div class="bucket-alloc">25%</div>
                 </div>
@@ -741,9 +741,9 @@
             </div>
 
             <div class="btn-row">
-                <button class="btn-secondary" onclick="goBackToStep2()">← Back</button>
+                <button class="btn-secondary" onclick="goBackToStep2()">â† Back</button>
                 <button class="btn-primary green" id="step3-btn" onclick="completeCertification()" disabled style="flex:1;">
-                    Complete Setup →
+                    Complete Setup â†’
                 </button>
             </div>
             <div class="status-msg" id="step3-status"></div>
@@ -752,14 +752,14 @@
 
     <!-- Done screen (shown after completion) -->
     <div class="page-wrap" id="done-screen">
-        <div class="done-icon">🏛️</div>
+        <div class="done-icon">ðŸ›ï¸</div>
         <h1 class="done-title">Architecture Complete</h1>
         <p class="done-subtitle">
             Your foundation is set. Your 6 Buckets are certified. Your path is confirmed.
             FACTS starts now.
         </p>
         <button class="btn-primary green" onclick="goToDashboard()">
-            Enter Your Dashboard →
+            Enter Your Dashboard â†’
         </button>
     </div>
 
@@ -769,7 +769,7 @@
     let step3Checks = {};
     let isSaving = false;
 
-    // ─── Path selection ────────────────────────────────────────────────────────
+    // â”€â”€â”€ Path selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function selectPath(p) {
         selectedPath = p;
         document.querySelectorAll('.path-option').forEach(el => {
@@ -782,7 +782,7 @@
         if (notice) notice.classList.toggle('visible', p === 'D');
     }
 
-    // ─── Step navigation ───────────────────────────────────────────────────────
+    // â”€â”€â”€ Step navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function goToStep2() {
         if (!selectedPath) return;
 
@@ -836,7 +836,7 @@
 
         const btn = document.getElementById('step2-btn');
         btn.disabled = true;
-        btn.textContent = 'Saving…';
+        btn.textContent = 'Savingâ€¦';
         showStatus('step2-status', '', '');
 
         try {
@@ -866,7 +866,7 @@
         } catch (err) {
             showStatus('step2-status', err.message, 'error');
             btn.disabled = false;
-            btn.textContent = 'Save & Continue →';
+            btn.textContent = 'Save & Continue â†’';
         }
         isSaving = false;
     }
@@ -881,7 +881,7 @@
         document.getElementById('step2-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // ─── Confirm checkboxes ────────────────────────────────────────────────────
+    // â”€â”€â”€ Confirm checkboxes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function toggleConfirm(el) {
         const cb = el.querySelector('input[type="checkbox"]');
         if (!cb) return;
@@ -906,7 +906,7 @@
 
         const btn = document.getElementById('step3-btn');
         btn.disabled = true;
-        btn.textContent = 'Certifying…';
+        btn.textContent = 'Certifyingâ€¦';
         showStatus('step3-status', '', '');
 
         try {
@@ -929,12 +929,12 @@
         } catch (err) {
             showStatus('step3-status', err.message, 'error');
             btn.disabled = false;
-            btn.textContent = 'Complete Setup →';
+            btn.textContent = 'Complete Setup â†’';
         }
         isSaving = false;
     }
 
-    // ─── Sovereignty Floor calculator ─────────────────────────────────────────
+    // â”€â”€â”€ Sovereignty Floor calculator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function updateSovereigntyFloor() {
         const input = document.getElementById('survival-burn-input');
         const amtEl = document.getElementById('sovereignty-amount');
@@ -946,22 +946,22 @@
             amtEl.textContent = '$' + floor.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             btn2.disabled = false;
         } else {
-            amtEl.textContent = '$—';
+            amtEl.textContent = '$â€”';
             btn2.disabled = true;
         }
     }
 
-    // ─── Dashboard redirect ────────────────────────────────────────────────────
+    // â”€â”€â”€ Dashboard redirect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function goToDashboard() {
         window.location.href = '/';
     }
 
-    // ─── UI helpers ───────────────────────────────────────────────────────────
+    // â”€â”€â”€ UI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function setStepState(id, state) {
         const el = document.getElementById(id);
         if (!el) return;
         el.className = 'step-dot ' + state;
-        if (state === 'done') el.querySelector('.dot').textContent = '✓';
+        if (state === 'done') el.querySelector('.dot').textContent = 'âœ“';
     }
 
     function setCardState(id, state) {
@@ -977,7 +977,7 @@
         el.style.color = type === 'error' ? '#f43f5e' : type === 'ok' ? '#10b981' : 'var(--text-muted)';
     }
 
-    // ─── Init: auth check ─────────────────────────────────────────────────────
+    // â”€â”€â”€ Init: auth check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function init() {
         try {
             const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
@@ -990,7 +990,7 @@
 
             const user = data.user;
 
-            // Not a Business tier user — redirect to dashboard
+            // Not a Business tier user â€” redirect to dashboard
             if (['business_core', 'business_bundle'].includes(user.pricing_tier) === false) {
                 window.location.href = '/';
                 return;
@@ -1028,5 +1028,6 @@
     </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

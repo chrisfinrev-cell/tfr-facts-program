@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family Dashboard — FACTS</title>
+  <title>Family Dashboard â€” FACTS</title>
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +37,7 @@
     }
     h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
 
-    /* ─── Header ─── */
+    /* â”€â”€â”€ Header â”€â”€â”€ */
     .page-header {
       background: rgba(10,15,26,0.97);
       border-bottom: 1px solid var(--border);
@@ -65,14 +65,14 @@
       padding: 3px 9px; border-radius: 20px;
     }
 
-    /* ─── Layout ─── */
+    /* â”€â”€â”€ Layout â”€â”€â”€ */
     .container {
       max-width: 760px;
       margin: 0 auto;
       padding: 28px 20px 100px;
     }
 
-    /* ─── Hero Stats ─── */
+    /* â”€â”€â”€ Hero Stats â”€â”€â”€ */
     .hero-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -110,7 +110,7 @@
       font-size: 12px; color: var(--muted);
     }
 
-    /* ─── Section labels ─── */
+    /* â”€â”€â”€ Section labels â”€â”€â”€ */
     .section-label {
       font-size: 11px; font-weight: 700;
       text-transform: uppercase; letter-spacing: 1px;
@@ -118,7 +118,7 @@
       margin-bottom: 10px; padding-left: 4px;
     }
 
-    /* ─── Cards ─── */
+    /* â”€â”€â”€ Cards â”€â”€â”€ */
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -134,7 +134,7 @@
     .card-title { font-size: 15px; font-weight: 600; color: var(--text); }
     .card-sub { font-size: 12px; color: var(--muted); }
 
-    /* ─── Member Summary Rows ─── */
+    /* â”€â”€â”€ Member Summary Rows â”€â”€â”€ */
     .member-row {
       padding: 14px 20px;
       display: flex; align-items: center; gap: 14px;
@@ -181,7 +181,7 @@
       display: flex; align-items: center; gap: 6px;
     }
 
-    /* ─── Category Bars ─── */
+    /* â”€â”€â”€ Category Bars â”€â”€â”€ */
     .category-row {
       padding: 12px 20px;
       border-bottom: 1px solid var(--border-subtle);
@@ -214,7 +214,7 @@
       margin-top: 4px; text-align: right;
     }
 
-    /* ─── Empty State ─── */
+    /* â”€â”€â”€ Empty State â”€â”€â”€ */
     .empty-state {
       text-align: center;
       padding: 48px 24px;
@@ -223,7 +223,7 @@
     .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
     .empty-state p { font-size: 14px; }
 
-    /* ─── Loading ─── */
+    /* â”€â”€â”€ Loading â”€â”€â”€ */
     .loading {
       display: flex; align-items: center; justify-content: center;
       padding: 60px 24px;
@@ -238,7 +238,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ─── Affiliate Commissions ─── */
+    /* â”€â”€â”€ Affiliate Commissions â”€â”€â”€ */
     .aff-member-row {
       display: flex; align-items: center; gap: 12px;
       padding: 12px 20px;
@@ -267,7 +267,7 @@
       border-top: 1px solid var(--border-subtle);
       display: flex; align-items: center; gap: 8px;
     }
-    /* ─── Error ─── */
+    /* â”€â”€â”€ Error â”€â”€â”€ */
     .error-banner {
       background: rgba(244,63,94,0.1);
       border: 1px solid rgba(244,63,94,0.25);
@@ -278,7 +278,7 @@
       margin-bottom: 20px;
     }
 
-    /* ─── Month filter ─── */
+    /* â”€â”€â”€ Month filter â”€â”€â”€ */
     .filter-bar {
       display: flex; align-items: center; gap: 10px;
       margin-bottom: 20px;
@@ -313,7 +313,7 @@
 <div class="container">
   <div id="loadingState" class="loading">
     <div class="spinner"></div>
-    Loading family data…
+    Loading family dataâ€¦
   </div>
   <div id="errorState" class="error-banner" style="display:none"></div>
   <div id="mainContent" style="display:none">
@@ -321,21 +321,21 @@
     <!-- Family Incubator: Sub-Account Banner (shown for sub-accounts only) -->
     <div id="subAccountBanner" style="display:none;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:16px 18px;margin-bottom:24px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <span style="font-size:20px">🏠</span>
+        <span style="font-size:20px">ðŸ </span>
         <span style="font-size:14px;font-weight:700;color:#c9a84c">Family Incubator Sub-Account</span>
-        <span style="margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;background:rgba(201,168,76,0.2);color:#c9a84c;padding:3px 8px;border-radius:20px">Levels 1–3</span>
+        <span style="margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;background:rgba(201,168,76,0.2);color:#c9a84c;padding:3px 8px;border-radius:20px">Levels 1â€“3</span>
       </div>
       <p style="font-size:13px;color:#a89a7e;line-height:1.5;margin:0 0 12px">
         You have free educational access to FACTS courtesy of your Head of family.
-        You can access <strong style="color:#e8e0d4">Levels 1–3</strong>: Manual FACTS ledger, basic dashboards, and educational content.
+        You can access <strong style="color:#e8e0d4">Levels 1â€“3</strong>: Manual FACTS ledger, basic dashboards, and educational content.
         Upgrade to your own Family plan ($25/mo) to unlock full features and become commission-eligible.
       </p>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <a href="/pricing.html" style="display:inline-flex;align-items:center;gap:6px;background:#c9a84c;color:#0a0f1a;font-weight:700;font-size:13px;padding:10px 18px;border-radius:8px;text-decoration:none">
-          ⬆️ Upgrade to Family plan
+          â¬†ï¸ Upgrade to Family plan
         </a>
         <button onclick="initiateBreakaway()" id="breakawayBtn" style="display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(201,168,76,0.4);color:#a89a7e;font-weight:600;font-size:13px;padding:10px 18px;border-radius:8px;cursor:pointer;font-family:inherit">
-          🚀 Break Away (Go Independent)
+          ðŸš€ Break Away (Go Independent)
         </button>
       </div>
     </div>
@@ -343,8 +343,8 @@
     <!-- Family Incubator: Head of family Panel (shown for heads only) -->
     <div id="incubatorHeadPanel" style="display:none;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:16px 18px;margin-bottom:24px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span style="font-size:20px">👑</span>
-        <span style="font-size:14px;font-weight:700;color:#10b981">Family Incubator — Head of family</span>
+        <span style="font-size:20px">ðŸ‘‘</span>
+        <span style="font-size:14px;font-weight:700;color:#10b981">Family Incubator â€” Head of family</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
         <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px 14px">
@@ -357,11 +357,11 @@
         </div>
       </div>
       <p style="font-size:12px;color:#a89a7e;margin:0 0 12px;line-height:1.5">
-        Your $25/mo Family plan grants <strong style="color:#e8e0d4">up to 5 family sub-accounts</strong> free educational access (Levels 1–3).
+        Your $25/mo Family plan grants <strong style="color:#e8e0d4">up to 5 family sub-accounts</strong> free educational access (Levels 1â€“3).
         Sub-accounts can break away at any time to subscribe independently and unlock full commission eligibility.
       </p>
       <a href="/family-settings.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;font-weight:600;font-size:13px;padding:9px 16px;border-radius:8px;text-decoration:none">
-        ⚙️ Manage Sub-Accounts →
+        âš™ï¸ Manage Sub-Accounts â†’
       </a>
     </div>
 
@@ -370,7 +370,7 @@
       <div class="stat-card">
         <div class="stat-label">Total Income</div>
         <div class="stat-value income" id="totalIncome">$0</div>
-        <div class="stat-sub" id="memberCount">—</div>
+        <div class="stat-sub" id="memberCount">â€”</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Total Expenses</div>
@@ -380,7 +380,7 @@
       <div class="stat-card" id="netCard">
         <div class="stat-label">Net Balance</div>
         <div class="stat-value" id="netBalance">$0</div>
-        <div class="stat-sub" id="netSub">—</div>
+        <div class="stat-sub" id="netSub">â€”</div>
       </div>
     </div>
 
@@ -395,7 +395,7 @@
         <div class="loading"><div class="spinner"></div></div>
       </div>
       <div class="privacy-note">
-        🔒 Individual transaction details are private. Only total income &amp; expenses are shared.
+        ðŸ”’ Individual transaction details are private. Only total income &amp; expenses are shared.
       </div>
     </div>
 
@@ -421,7 +421,7 @@
         <span class="card-sub">Combined across all members</span>
       </div>
       <div id="categoriesList">
-        <div class="empty-state"><div class="icon">📊</div><p>No category data yet</p></div>
+        <div class="empty-state"><div class="icon">ðŸ“Š</div><p>No category data yet</p></div>
       </div>
     </div>
 
@@ -429,7 +429,7 @@
 </div>
 
 <script>
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function fmt(val) {
   const n = parseFloat(val) || 0;
   return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -439,11 +439,11 @@ function initials(name) {
   return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
 }
 
-// ── Resolve family ID from URL ─────────────────────────────────────────
+// â”€â”€ Resolve family ID from URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const params = new URLSearchParams(location.search);
 let householdId = params.get('id');
 
-// ── Load family list if no ID provided ────────────────────────────────
+// â”€â”€ Load family list if no ID provided â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function init() {
   const loading = document.getElementById('loadingState');
   const errorEl = document.getElementById('errorState');
@@ -481,7 +481,7 @@ async function init() {
     // Update family name
     const hhName = dash.household_name || 'Family Dashboard';
     document.getElementById('householdName').textContent = hhName;
-    document.title = `${hhName} — FACTS`;
+    document.title = `${hhName} â€” FACTS`;
 
     // Hero stats
     const income = parseFloat(dash.total_income) || 0;
@@ -505,7 +505,7 @@ async function init() {
     const membersList = document.getElementById('membersList');
     const members = membersData.members || membersData.member_summaries || [];
     if (members.length === 0) {
-      membersList.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>No members yet</p></div>';
+      membersList.innerHTML = '<div class="empty-state"><div class="icon">ðŸ‘¥</div><p>No members yet</p></div>';
     } else {
       membersList.innerHTML = members.map(m => {
         const mIncome = parseFloat(m.total_income) || 0;
@@ -523,7 +523,7 @@ async function init() {
               <div class="member-net ${isPositive ? 'positive' : 'negative'}">
                 ${isPositive ? '+' : '-'}${fmt(Math.abs(mNet))}
               </div>
-              <div class="member-breakdown">${fmt(mIncome)} in · ${fmt(mExpenses)} out</div>
+              <div class="member-breakdown">${fmt(mIncome)} in Â· ${fmt(mExpenses)} out</div>
             </div>
           </div>
         `;
@@ -534,7 +534,7 @@ async function init() {
     const categoriesList = document.getElementById('categoriesList');
     const cats = (dash.categories || []).filter(c => parseFloat(c.spent) > 0 || parseFloat(c.allocated) > 0);
     if (cats.length === 0) {
-      categoriesList.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>No category data yet</p></div>';
+      categoriesList.innerHTML = '<div class="empty-state"><div class="icon">ðŸ“Š</div><p>No category data yet</p></div>';
     } else {
       categoriesList.innerHTML = cats.map(c => {
         const pct = parseFloat(c.usage_percent) || 0;
@@ -544,7 +544,7 @@ async function init() {
           <div class="category-row">
             <div class="cat-header">
               <div class="cat-name">
-                <span class="cat-icon">${c.icon || '📁'}</span>
+                <span class="cat-icon">${c.icon || 'ðŸ“'}</span>
                 ${c.name}
               </div>
               <div class="cat-amounts">${fmt(c.spent)} / ${fmt(c.allocated)}</div>
@@ -552,7 +552,7 @@ async function init() {
             <div class="cat-bar-bg">
               <div class="cat-bar-fill ${isOver ? 'over' : ''}" style="width:${barWidth}%"></div>
             </div>
-            <div class="cat-pct">${pct.toFixed(1)}% used${isOver ? ' ⚠️ over budget' : ''}</div>
+            <div class="cat-pct">${pct.toFixed(1)}% used${isOver ? ' âš ï¸ over budget' : ''}</div>
           </div>
         `;
       }).join('');
@@ -575,7 +575,7 @@ async function init() {
   }
 }
 
-// ── Family Affiliate Commissions ────────────────────────────────────────────
+// â”€â”€ Family Affiliate Commissions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadFamilyAffiliateSection(hhId) {
   try {
     // Try owner view first
@@ -599,7 +599,7 @@ async function loadFamilyAffiliateSection(hhId) {
       }
     }
   } catch (err) {
-    // Silently fail — affiliate section is non-critical
+    // Silently fail â€” affiliate section is non-critical
   }
 }
 
@@ -625,8 +625,8 @@ function renderOwnerAffiliateSection(data) {
           <div class="aff-code">${m.referral_code || ''}</div>
         </div>
         <div class="aff-pills">
-          <div class="aff-pill green" title="Your earned 50%">📈 ${fmt(ownerEarned / 100)}</div>
-          <div class="aff-pill blue" title="Their frozen 50%">🧊 ${fmt(memberFrozen / 100)}</div>
+          <div class="aff-pill green" title="Your earned 50%">ðŸ“ˆ ${fmt(ownerEarned / 100)}</div>
+          <div class="aff-pill blue" title="Their frozen 50%">ðŸ§Š ${fmt(memberFrozen / 100)}</div>
         </div>
       </div>
     `;
@@ -639,8 +639,8 @@ function renderOwnerAffiliateSection(data) {
     </div>
     ${rows || '<div style="padding:16px 20px;font-size:13px;color:var(--muted)">No affiliate activity yet</div>'}
     <div class="aff-frozen-banner">
-      🧊 Total frozen across members: <strong>${fmt(totalMemberFrozen / 100)}</strong>
-      &nbsp;·&nbsp; <a href="/family-settings?id=${data.household_id}" style="color:#93c5fd">Gift from Settings →</a>
+      ðŸ§Š Total frozen across members: <strong>${fmt(totalMemberFrozen / 100)}</strong>
+      &nbsp;Â·&nbsp; <a href="/family-settings?id=${data.household_id}" style="color:#93c5fd">Gift from Settings â†’</a>
     </div>
   `;
 }
@@ -659,26 +659,26 @@ function renderMemberFrozenSection(data) {
     <div class="aff-total-row">
       <div>
         <div style="font-size:13px;font-weight:600;color:var(--text)">Your Referral Code</div>
-        <div style="font-size:12px;color:var(--muted);font-family:'Courier New',monospace;margin-top:2px">${data.referral_code || '—'}</div>
+        <div style="font-size:12px;color:var(--muted);font-family:'Courier New',monospace;margin-top:2px">${data.referral_code || 'â€”'}</div>
       </div>
     </div>
     <div class="aff-total-row">
-      <div style="font-size:13px;color:var(--muted)">🧊 Frozen (unlocks on individual Pro)</div>
+      <div style="font-size:13px;color:var(--muted)">ðŸ§Š Frozen (unlocks on individual Pro)</div>
       <div style="font-size:16px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#93c5fd">${fmt(frozen / 100)}</div>
     </div>
     ${unfrozen > 0 ? `
     <div class="aff-total-row">
-      <div style="font-size:13px;color:var(--muted)">✅ Unfrozen (available)</div>
+      <div style="font-size:13px;color:var(--muted)">âœ… Unfrozen (available)</div>
       <div style="font-size:16px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--success)">${fmt(unfrozen / 100)}</div>
     </div>` : ''}
     <div class="aff-frozen-banner">
-      💡 Your commissions are frozen while on the Family Plan. Upgrade to an Individual plan to unlock them.
-      &nbsp;·&nbsp; <a href="/affiliate-dashboard.html" style="color:#93c5fd">View affiliate dashboard →</a>
+      ðŸ’¡ Your commissions are frozen while on the Family Plan. Upgrade to an Individual plan to unlock them.
+      &nbsp;Â·&nbsp; <a href="/affiliate-dashboard.html" style="color:#93c5fd">View affiliate dashboard â†’</a>
     </div>
   `;
 }
 
-// ── Incubator Status ──────────────────────────────────────────────────────────
+// â”€â”€ Incubator Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadIncubatorStatus(hhId, dashData) {
   try {
     // Check if current user is a sub-account (check /api/auth/me cached data)
@@ -712,24 +712,24 @@ async function loadIncubatorStatus(hhId, dashData) {
       if (banner) banner.style.display = '';
     }
   } catch (err) {
-    // Non-critical — fail silently
+    // Non-critical â€” fail silently
   }
 }
 
-// ── Break Away ────────────────────────────────────────────────────────────────
+// â”€â”€ Break Away â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function initiateBreakaway() {
   const confirmed = confirm(
-    '🚀 Break Away from Family Incubator\n\n' +
+    'ðŸš€ Break Away from Family Incubator\n\n' +
     'This will permanently separate you from the family. You will:\n' +
-    '• Become commission-eligible immediately\n' +
-    '• Keep your referral tree position\n' +
-    '• Lose your free educational access (you\'ll need your own Family plan subscription)\n\n' +
+    'â€¢ Become commission-eligible immediately\n' +
+    'â€¢ Keep your referral tree position\n' +
+    'â€¢ Lose your free educational access (you\'ll need your own Family plan subscription)\n\n' +
     'This action cannot be undone. Are you sure?'
   );
   if (!confirmed) return;
 
   const btn = document.getElementById('breakawayBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Processing…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Processingâ€¦'; }
 
   try {
     const res = await fetch(`/api/households/${householdId}/breakaway`, {
@@ -739,14 +739,14 @@ async function initiateBreakaway() {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      alert('✅ You\'ve successfully broken away!\n\nYou are now commission-eligible and independent. Subscribe to Family plan to maintain full access to FACTS.');
+      alert('âœ… You\'ve successfully broken away!\n\nYou are now commission-eligible and independent. Subscribe to Family plan to maintain full access to FACTS.');
       window.location.href = '/pricing.html';
     } else {
       throw new Error(data.error || 'Breakaway failed');
     }
   } catch (err) {
     alert('Error: ' + (err.message || 'Failed to process breakaway. Please try again.'));
-    if (btn) { btn.disabled = false; btn.textContent = '🚀 Break Away (Go Independent)'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'ðŸš€ Break Away (Go Independent)'; }
   }
 }
 
@@ -754,5 +754,6 @@ init();
 </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

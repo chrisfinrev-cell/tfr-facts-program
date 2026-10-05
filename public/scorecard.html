@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FACTS">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <title>My Scorecard — FACTS</title>
+  <title>My Scorecard â€” FACTS</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1f2e'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-weight='bold' fill='%23c9a227'%3E%E2%82%A3%3C/text%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -145,7 +145,7 @@
               stroke-linecap="round" stroke-dasharray="427" stroke-dashoffset="427" style="transition: stroke-dashoffset 1.2s ease;"/>
           </svg>
           <div class="score-center">
-            <div id="composite-score-num" class="text-4xl font-bold" style="color:#c9a227; font-family:'Space Grotesk',sans-serif;">—</div>
+            <div id="composite-score-num" class="text-4xl font-bold" style="color:#c9a227; font-family:'Space Grotesk',sans-serif;">â€”</div>
             <div class="text-xs" style="color:#64748b;">/ 100</div>
           </div>
         </div>
@@ -153,7 +153,7 @@
         <!-- Score Info -->
         <div class="flex-1 text-center sm:text-left">
           <div id="tier-badge" class="tier-badge mb-2 mx-auto sm:mx-0" style="width:fit-content;">
-            <span id="tier-emoji">🌱</span>
+            <span id="tier-emoji">ðŸŒ±</span>
             <span id="tier-name">Loading...</span>
           </div>
           <p id="tier-description" class="text-sm mb-3" style="color:#94a3b8;"></p>
@@ -203,7 +203,7 @@
       <div id="panel-share" class="p-5">
         <div class="mb-4">
           <h3 class="text-base font-semibold mb-1" style="color:#e2e8f0;">Generate a Shareable Link</h3>
-          <p class="text-xs mb-4" style="color:#64748b;">Anyone with the link can view your full scorecard. No cherry-picking — all-or-nothing transparency. Links expire in 30 days.</p>
+          <p class="text-xs mb-4" style="color:#64748b;">Anyone with the link can view your full scorecard. No cherry-picking â€” all-or-nothing transparency. Links expire in 30 days.</p>
 
           <div class="flex flex-wrap gap-3 items-center mb-4">
             <label class="flex items-center gap-2 cursor-pointer">
@@ -226,8 +226,8 @@
 
         <div>
           <h3 class="text-base font-semibold mb-1" style="color:#e2e8f0;">Request-Based Access</h3>
-          <p class="text-xs mb-3" style="color:#64748b;">People with a FACTS account can request to see your scorecard. You approve or deny — and can revoke at any time.</p>
-          <p class="text-xs" style="color:#475569;">Share your email with someone and ask them to go to their Scorecard page → "Request Access" to send you a request.</p>
+          <p class="text-xs mb-3" style="color:#64748b;">People with a FACTS account can request to see your scorecard. You approve or deny â€” and can revoke at any time.</p>
+          <p class="text-xs" style="color:#475569;">Share your email with someone and ask them to go to their Scorecard page â†’ "Request Access" to send you a request.</p>
         </div>
       </div>
 
@@ -269,9 +269,9 @@
 
     <!-- Info Note -->
     <div class="mt-4 p-3 rounded-lg flex gap-3" style="background: rgba(201,162,39,0.06); border: 1px solid rgba(201,162,39,0.12);">
-      <span class="text-base flex-shrink-0">🔒</span>
+      <span class="text-base flex-shrink-0">ðŸ”’</span>
       <p class="text-xs" style="color:#94a3b8;">
-        <strong style="color:#d4a929;">All-or-nothing transparency.</strong> When you share, your entire scorecard is visible. No option to hide specific metrics — partial disclosure defeats the purpose of proving financial responsibility.
+        <strong style="color:#d4a929;">All-or-nothing transparency.</strong> When you share, your entire scorecard is visible. No option to hide specific metrics â€” partial disclosure defeats the purpose of proving financial responsibility.
       </p>
     </div>
 
@@ -282,7 +282,7 @@
 <div id="toast">Copied to clipboard!</div>
 
 <script>
-  // ─── Auth check ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Auth check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function checkAuth() {
     try {
       const res = await fetch('/api/auth/me');
@@ -296,7 +296,7 @@
     fetch('/api/auth/logout', { method: 'POST' }).finally(() => { window.location.href = '/login.html'; });
   }
 
-  // ─── State ───────────────────────────────────────────────────────────────
+  // â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   let scorecardData = null;
   let showDollars = false;
 
@@ -309,7 +309,7 @@
     app_engagement: '#06b6d4'
   };
 
-  // ─── Load scorecard ───────────────────────────────────────────────────────
+  // â”€â”€â”€ Load scorecard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function loadScorecard() {
     try {
       const res = await fetch(`/api/scorecard/me?show_dollars=${showDollars}`);
@@ -335,7 +335,7 @@
     const score = scorecard.composite_score;
     document.getElementById('composite-score-num').textContent = score;
 
-    // Animate ring (circumference = 2π * 68 ≈ 427)
+    // Animate ring (circumference = 2Ï€ * 68 â‰ˆ 427)
     const circumference = 427;
     const offset = circumference - (score / 100) * circumference;
     setTimeout(() => {
@@ -365,10 +365,10 @@
       const raw = scorecard.integrity.raw_score;
       if (m < 1.0) {
         const color = m >= 0.85 ? '#f59e0b' : '#f87171';
-        const icon = m >= 0.85 ? '⚡' : '⚠️';
+        const icon = m >= 0.85 ? 'âš¡' : 'âš ï¸';
         const tip = m >= 0.85
-          ? 'Mixed verification — connect all accounts via Plaid to reach 1.0×'
-          : 'Score discounted — connect your bank via Plaid to verify account data';
+          ? 'Mixed verification â€” connect all accounts via Plaid to reach 1.0Ã—'
+          : 'Score discounted â€” connect your bank via Plaid to verify account data';
         integrityEl.style.display = 'block';
         integrityEl.innerHTML = `
           <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;
@@ -376,8 +376,8 @@
                       border-radius:999px;font-size:0.75rem;color:${color};"
                title="${tip}">
             <span>${icon}</span>
-            <span>Data Integrity: <strong>${m.toFixed(2)}×</strong> (${label})</span>
-            <a href="/settings.html#section-connected" style="color:${color};text-decoration:none;opacity:0.8;">→ Connect Bank</a>
+            <span>Data Integrity: <strong>${m.toFixed(2)}Ã—</strong> (${label})</span>
+            <a href="/settings.html#section-connected" style="color:${color};text-decoration:none;opacity:0.8;">â†’ Connect Bank</a>
           </div>
         `;
       } else {
@@ -386,8 +386,8 @@
           <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;
                       background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);
                       border-radius:999px;font-size:0.75rem;color:#34d399;">
-            <span>✓</span>
-            <span>Data Integrity: <strong>1.00×</strong> — Fully verified</span>
+            <span>âœ“</span>
+            <span>Data Integrity: <strong>1.00Ã—</strong> â€” Fully verified</span>
           </div>
         `;
       }
@@ -414,7 +414,7 @@
     document.getElementById('shared-count').textContent = shared_with.length;
   }
 
-  // ─── Radar Chart (SVG) ────────────────────────────────────────────────────
+  // â”€â”€â”€ Radar Chart (SVG) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function renderRadarChart(metrics) {
     const svg = document.getElementById('radar-chart');
     const cx = 100, cy = 100, maxR = 90;
@@ -465,7 +465,7 @@
     svg.innerHTML = html;
   }
 
-  // ─── Metrics Grid ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ Metrics Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function renderMetricsGrid(metrics) {
     const grid = document.getElementById('metrics-grid');
     const metricKeys = ['allocation_adherence', 'savings_consistency', 'debt_reduction', 'income_expense_ratio', 'financial_freedom', 'app_engagement'];
@@ -481,16 +481,16 @@
       if (key === 'allocation_adherence' && data.deviation !== undefined) {
         detail = `<span>Avg deviation: ${data.deviation}%</span>`;
       } else if (key === 'savings_consistency') {
-        detail = `<span>${data.months_with_savings} of 12 months active</span><span class="ml-2 capitalize" style="color:${data.trend==='improving'?'#34d399':data.trend==='declining'?'#f87171':'#64748b'}">${data.trend==='improving'?'↑ Improving':data.trend==='declining'?'↓ Declining':'→ Stable'}</span>`;
+        detail = `<span>${data.months_with_savings} of 12 months active</span><span class="ml-2 capitalize" style="color:${data.trend==='improving'?'#34d399':data.trend==='declining'?'#f87171':'#64748b'}">${data.trend==='improving'?'â†‘ Improving':data.trend==='declining'?'â†“ Declining':'â†’ Stable'}</span>`;
       } else if (key === 'debt_reduction') {
-        if (!data.has_debt) detail = `<span style="color:#34d399">✓ Debt-free</span>`;
-        else detail = `<span class="capitalize">${(data.strategy||'').replace('_',' ')}</span> · <span class="capitalize" style="color:${data.trajectory==='accelerated_payoff'?'#34d399':data.trajectory==='on_track'?'#67e8f9':'#f87171'}">${(data.trajectory||'').replace(/_/g,' ')}</span>`;
+        if (!data.has_debt) detail = `<span style="color:#34d399">âœ“ Debt-free</span>`;
+        else detail = `<span class="capitalize">${(data.strategy||'').replace('_',' ')}</span> Â· <span class="capitalize" style="color:${data.trajectory==='accelerated_payoff'?'#34d399':data.trajectory==='on_track'?'#67e8f9':'#f87171'}">${(data.trajectory||'').replace(/_/g,' ')}</span>`;
       } else if (key === 'income_expense_ratio') {
         detail = data.avg_expense_to_income_pct !== undefined ? `<span>Avg ${data.avg_expense_to_income_pct}% of income spent</span>` : '<span>Track income & expenses to score</span>';
       } else if (key === 'financial_freedom') {
-        detail = data.has_ff_activity ? `<span>${data.months_active} months active · ${data.trend}</span>` : '<span>No FF activity tracked yet</span>';
+        detail = data.has_ff_activity ? `<span>${data.months_active} months active Â· ${data.trend}</span>` : '<span>No FF activity tracked yet</span>';
       } else if (key === 'app_engagement') {
-        detail = `<span>${data.streak_days} day streak</span> · <span>Level ${data.level}</span>`;
+        detail = `<span>${data.streak_days} day streak</span> Â· <span>Level ${data.level}</span>`;
       }
 
       return `
@@ -514,11 +514,11 @@
   }
 
   function getMetricIcon(key) {
-    const icons = { allocation_adherence: '🎯', savings_consistency: '💰', debt_reduction: '📉', income_expense_ratio: '⚖️', financial_freedom: '🗽', app_engagement: '🔥' };
-    return icons[key] || '📊';
+    const icons = { allocation_adherence: 'ðŸŽ¯', savings_consistency: 'ðŸ’°', debt_reduction: 'ðŸ“‰', income_expense_ratio: 'âš–ï¸', financial_freedom: 'ðŸ—½', app_engagement: 'ðŸ”¥' };
+    return icons[key] || 'ðŸ“Š';
   }
 
-  // ─── Share Links ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Share Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function renderShareLinks(links) {
     const list = document.getElementById('links-list');
     const activeLinks = links.filter(l => l.is_active && new Date(l.expires_at) > new Date());
@@ -539,7 +539,7 @@
             <div class="flex gap-3 text-xs" style="color:#475569;">
               <span>Expires in ${daysLeft} days</span>
               <span>${link.view_count} views</span>
-              <span>${link.show_dollar_amounts ? '💵 With dollars' : '% Percentages only'}</span>
+              <span>${link.show_dollar_amounts ? 'ðŸ’µ With dollars' : '% Percentages only'}</span>
             </div>
           </div>
           <button onclick="copyLink('${url}')" class="btn-ghost px-3 py-1.5 flex-shrink-0">Copy</button>
@@ -549,7 +549,7 @@
     }).join('');
   }
 
-  // ─── Shared With ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ Shared With â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function renderSharedWith(sharedWith) {
     const list = document.getElementById('shared-with-list');
     if (!sharedWith || sharedWith.length === 0) {
@@ -563,7 +563,7 @@
           <div class="flex justify-between items-start">
             <div>
               <div class="text-sm font-semibold" style="color:#e2e8f0;">${entry.viewer_name || 'FACTS Member'}</div>
-              <div class="text-xs" style="color:#64748b;">${entry.viewer_email} · ${expiresLabel}</div>
+              <div class="text-xs" style="color:#64748b;">${entry.viewer_email} Â· ${expiresLabel}</div>
             </div>
             <button onclick="revokeAccess(${entry.id})" class="btn-danger px-3 py-1.5">Revoke</button>
           </div>
@@ -572,7 +572,7 @@
     }).join('');
   }
 
-  // ─── Access Requests ──────────────────────────────────────────────────────
+  // â”€â”€â”€ Access Requests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function renderAccessRequests(requests) {
     const list = document.getElementById('requests-list');
     const pending = requests.filter(r => r.status === 'pending');
@@ -585,7 +585,7 @@
           <div class="flex justify-between items-start gap-3">
             <div class="flex-1">
               <div class="text-sm font-semibold" style="color:#e2e8f0;">${req.requester_name || 'FACTS Member'}</div>
-              <div class="text-xs mb-1" style="color:#64748b;">${req.requester_email} · ${new Date(req.created_at).toLocaleDateString()}</div>
+              <div class="text-xs mb-1" style="color:#64748b;">${req.requester_email} Â· ${new Date(req.created_at).toLocaleDateString()}</div>
               ${req.message ? `<div class="text-xs p-2 rounded" style="background:rgba(255,255,255,0.03); color:#94a3b8;">"${req.message}"</div>` : ''}
             </div>
             <div class="flex gap-2 flex-shrink-0">
@@ -598,7 +598,7 @@
     }
   }
 
-  // ─── Actions ─────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function generateLink() {
     const showDollarAmounts = document.getElementById('new-link-dollars').checked;
     try {
@@ -684,7 +684,7 @@
               </div>
               <span class="status-badge ${statusClass}">${req.status}</span>
             </div>
-            ${req.status === 'approved' ? '<div class="mt-2"><a href="/scorecard-view.html?userId=' + req.target_user_id + '" class="text-xs" style="color:#c9a227;">View their scorecard →</a></div>' : ''}
+            ${req.status === 'approved' ? '<div class="mt-2"><a href="/scorecard-view.html?userId=' + req.target_user_id + '" class="text-xs" style="color:#c9a227;">View their scorecard â†’</a></div>' : ''}
           </div>
         `;
       }).join('');
@@ -696,7 +696,7 @@
     loadScorecard();
   }
 
-  // ─── Tabs ─────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function showTab(tab) {
     ['share', 'shared-with', 'requests'].forEach(t => {
       document.getElementById(`panel-${t}`).style.display = t === tab ? 'block' : 'none';
@@ -705,7 +705,7 @@
     if (tab === 'requests') loadAccessRequests();
   }
 
-  // ─── Utilities ───────────────────────────────────────────────────────────
+  // â”€â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function copyLink(url) {
     navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch(() => {
       const ta = document.createElement('textarea');
@@ -724,10 +724,11 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  // ─── Init ─────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   checkAuth().then(user => { if (user) loadScorecard(); });
 </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>

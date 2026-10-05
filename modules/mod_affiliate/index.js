@@ -58,6 +58,27 @@ function getRecommendedTools(userProfile) {
 async function handleNewRegistration(args) {
   const userId = parseInt(args && args.newUserId, 10);
   if (!userId) return null;
+  const { userBlockedFromIncomePrograms } = require('../../config/adminIncomePolicy');
+  const { isAffiliateEligible } = require('../../lib/relationshipTags');
+
+  try {
+    const userRes = await pool.query(
+      `SELECT id, email, affiliate_tier, is_affiliate_disabled, income_programs_blocked, is_admin, is_creator
+       FROM users WHERE id = $1`,
+      [userId]
+    );
+    if (userRes.rows[0] && !isAffiliateEligible(userRes.rows[0])) {
+      await seedDefaultAllocations(pool, userId);
+      return { skipped: true, reason: 'affiliate_excluded' };
+    }
+  } catch (_) {
+    // continue with legacy income-block check
+  }
+
+  if (await userBlockedFromIncomePrograms(pool, userId)) {
+    await seedDefaultAllocations(pool, userId);
+    return { skipped: true, reason: 'admin_income_blocked' };
+  }
   const [placement] = await Promise.all([
     routeOrphanUser(pool, args),
     seedDefaultAllocations(pool, userId)

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>family Invite — FACTS</title>
+  <title>family Invite â€” FACTS</title>
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -277,12 +277,12 @@
   <div class="card">
     <!-- Loading -->
     <div id="loading" class="loading-state">
-      <span class="spinner"></span> Loading invite…
+      <span class="spinner"></span> Loading inviteâ€¦
     </div>
 
     <!-- Invite valid: not logged in -->
     <div id="view-not-authed" style="display:none">
-      <div class="invite-icon">🏠</div>
+      <div class="invite-icon">ðŸ </div>
       <div class="family-name" id="family-name-1"></div>
       <div class="invite-meta" id="invite-meta-1"></div>
       <div class="role-badge" id="role-badge-1"></div>
@@ -294,10 +294,10 @@
       <a id="signup-link" href="/signup.html" class="btn-signup">Create a new account</a>
     </div>
 
-    <!-- Invite valid: logged in — can accept/decline -->
+    <!-- Invite valid: logged in â€” can accept/decline -->
     <div id="view-authed" style="display:none">
       <div id="alert-box" style="display:none" class="alert"></div>
-      <div class="invite-icon">🏠</div>
+      <div class="invite-icon">ðŸ </div>
       <div class="family-name" id="family-name-2"></div>
       <div class="invite-meta" id="invite-meta-2"></div>
       <div class="role-badge" id="role-badge-2"></div>
@@ -315,18 +315,18 @@
 
     <!-- Invalid / expired / already used -->
     <div id="view-invalid" style="display:none" class="status-message">
-      <div class="status-icon">⏱️</div>
+      <div class="status-icon">â±ï¸</div>
       <div class="status-title" id="invalid-title">Invite Unavailable</div>
       <div class="status-body" id="invalid-body"></div>
-      <a href="/app.html" class="go-home">Go to FACTS →</a>
+      <a href="/app.html" class="go-home">Go to FACTS â†’</a>
     </div>
 
     <!-- Success state -->
     <div id="view-success" style="display:none" class="status-message">
-      <div class="status-icon">🎉</div>
+      <div class="status-icon">ðŸŽ‰</div>
       <div class="status-title">You're in!</div>
       <div class="status-body" id="success-body">Welcome to your family. Everyone can track, share, and build wealth together.</div>
-      <a href="/app.html" class="go-home">Open FACTS →</a>
+      <a href="/app.html" class="go-home">Open FACTS â†’</a>
     </div>
   </div>
 
@@ -385,7 +385,7 @@
         fill('expiry-2', `Expires ${expires}`);
         show('view-authed');
       } else {
-        // Not logged in — show login/signup links with invite token preserved
+        // Not logged in â€” show login/signup links with invite token preserved
         fill('family-name-1', data.household_name);
         fill('invite-meta-1', `You've been invited ${inviterLabel} to join this FACTS family.`);
         fill('role-badge-1', `Role: ${roleLabel}`);
@@ -403,7 +403,7 @@
       const decBtn = document.getElementById('btn-decline');
       btn.disabled = true;
       decBtn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Joining…';
+      btn.innerHTML = '<span class="spinner"></span> Joiningâ€¦';
       hideAlert();
 
       try {
@@ -430,7 +430,7 @@
       if (!confirm('Decline this invite? The sender will not be notified.')) return;
       const btn = document.getElementById('btn-decline');
       btn.disabled = true;
-      btn.textContent = 'Declining…';
+      btn.textContent = 'Decliningâ€¦';
       hideAlert();
 
       try {
@@ -442,7 +442,7 @@
           const d = await res.json();
           throw new Error(d.error || 'Failed to decline');
         }
-        showInvalid('Invite Declined', 'You\'ve declined this invite. No worries — you can always ask to be re-invited.');
+        showInvalid('Invite Declined', 'You\'ve declined this invite. No worries â€” you can always ask to be re-invited.');
       } catch (err) {
         btn.disabled = false;
         btn.textContent = 'Decline Invite';
@@ -477,5 +477,6 @@
   </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/global-footer.js"></script>
 </body>
 </html>
