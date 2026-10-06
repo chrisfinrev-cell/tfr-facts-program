@@ -28265,7 +28265,8 @@ const vaultUpload = multer({
   }
 });
 
-const VAULT_CATEGORIES = ['receipts', 'financial_transactions', 'credit_reports', 'benefits_packages'];
+const VAULT_CATEGORIES = ['receipts', 'financial_transactions', 'credit_reports', 'benefits_packages', 'life_insurance', 'other_documents'];
+const IMPORT_DOC_CATEGORIES = ['credit_reports', 'benefits_packages', 'life_insurance', 'other_documents'];
 
 // GET /api/vault/summary — count + last upload per category
 app.get('/api/vault/summary', requireAuth, async (req, res) => {
@@ -28294,15 +28295,23 @@ app.get('/api/vault/summary', requireAuth, async (req, res) => {
 app.get('/api/vault/documents', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
-
     const { category } = req.query;
+    if (category && !VAULT_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    if (!hasPro && category && !IMPORT_DOC_CATEGORIES.includes(category)) {
+      return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
+    }
+
     let query = `SELECT id, category, file_name, file_mime_type, file_size_bytes, notes, created_at
                  FROM user_documents WHERE user_id = $1`;
     const params = [req.userId];
-    if (category && VAULT_CATEGORIES.includes(category)) {
+    if (category) {
       query += ` AND category = $2`;
       params.push(category);
+    } else if (!hasPro) {
+      query += ` AND category = ANY($2)`;
+      params.push(IMPORT_DOC_CATEGORIES);
     }
     query += ' ORDER BY created_at DESC';
 
@@ -28318,13 +28327,15 @@ app.get('/api/vault/documents', requireAuth, async (req, res) => {
 app.post('/api/vault/documents', requireAuth, vaultUpload.single('file'), async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
 
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
     const { category, notes } = req.body;
     if (!category || !VAULT_CATEGORIES.includes(category)) {
       return res.status(400).json({ error: 'Invalid category. Must be one of: ' + VAULT_CATEGORIES.join(', ') });
+    }
+    if (!hasPro && !IMPORT_DOC_CATEGORIES.includes(category)) {
+      return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
     }
 
     const result = await pool.query(
@@ -28371,13 +28382,15 @@ app.post('/api/vault/documents', requireAuth, vaultUpload.single('file'), async 
 app.get('/api/vault/documents/:id/download', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
 
     const result = await pool.query(
       'SELECT * FROM user_documents WHERE id = $1 AND user_id = $2',
       [req.params.id, req.userId]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Document not found' });
+    if (!hasPro && !IMPORT_DOC_CATEGORIES.includes(result.rows[0].category)) {
+      return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
+    }
 
     const doc = result.rows[0];
     const mime = doc.file_mime_type || 'application/octet-stream';
@@ -28394,7 +28407,15 @@ app.get('/api/vault/documents/:id/download', requireAuth, async (req, res) => {
 app.delete('/api/vault/documents/:id', requireAuth, async (req, res) => {
   try {
     const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
+
+    const existing = await pool.query(
+      'SELECT category FROM user_documents WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.userId]
+    );
+    if (!existing.rows.length) return res.status(404).json({ error: 'Document not found' });
+    if (!hasPro && !IMPORT_DOC_CATEGORIES.includes(existing.rows[0].category)) {
+      return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
+    }
 
     const result = await pool.query(
       'DELETE FROM user_documents WHERE id = $1 AND user_id = $2 RETURNING id',

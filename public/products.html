@@ -75,6 +75,22 @@
         radial-gradient(ellipse 100% 60% at 50% -10%, rgba(201,162,39,0.12) 0%, transparent 65%),
         radial-gradient(ellipse 60% 40% at 80% 30%, rgba(16,185,129,0.04) 0%, transparent 60%),
         linear-gradient(180deg, #0d1117 0%, #13192a 100%);
+      text-align: center;
+    }
+    .hero-copy {
+      max-width: 56rem;
+      margin: 0 auto;
+      padding: 4.5rem 1.25rem 2.5rem;
+      text-align: center;
+    }
+    .hero-title {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(4.25rem, 9vw, 7.25rem);
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      text-align: center;
+      margin: 0 auto 1.5rem;
     }
 
     /* NAV */
@@ -263,6 +279,7 @@
       color: #E2E8F0;
       max-width: 40rem;
       margin: 0 auto;
+      text-align: center;
     }
 
     .product-grid {
@@ -351,9 +368,9 @@
 <script src="/facts-nav.js"></script>
 
 <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
-<section class="hero-bg pt-16 pb-8 px-4 sm:px-6 text-center">
-  <div class="max-w-4xl mx-auto">
-    <h1 class="animate-up d2 display text-5xl sm:text-6xl md:text-7xl font-normal leading-tight mb-6" style="font-family:'Instrument Serif',serif;">
+<section class="hero-bg">
+  <div class="hero-copy">
+    <h1 class="hero-title animate-up d2">
       Two Systems.<br>
       <span class="gold-text italic">One Revolution.</span>
     </h1>
