@@ -543,13 +543,33 @@
         desc: 'Employer benefits PDFs — powers the Benefits Masterclass calculators with your real data.',
         accepts: '.pdf,.jpg,.jpeg,.png',
         acceptHint: 'PDF, JPG, PNG · Max 20 MB'
+      },
+      {
+        id: 'life_insurance',
+        label: 'Life Insurance Plans',
+        icon: '🛡️',
+        color: 'rgba(167,139,250,0.12)',
+        border: 'rgba(167,139,250,0.3)',
+        desc: 'Policy documents and illustrations downloaded from the carrier.',
+        accepts: '.pdf,.jpg,.jpeg,.png',
+        acceptHint: 'PDF, JPG, PNG · Max 20 MB'
+      },
+      {
+        id: 'other_documents',
+        label: 'Other Documents',
+        icon: '📄',
+        color: 'rgba(148,163,184,0.12)',
+        border: 'rgba(148,163,184,0.3)',
+        desc: 'Any other file you have to download before it can live in FACTS.',
+        accepts: '.pdf,.jpg,.jpeg,.png',
+        acceptHint: 'PDF, JPG, PNG · Max 20 MB'
       }
     ];
 
     const LOCKED_CATEGORIES = [
       { icon: '📜', label: 'Wills', desc: 'Last will and testament documents' },
       { icon: '🏛️', label: 'Trusts', desc: 'Living trusts and trust agreements' },
-      { icon: '🛡️', label: 'Insurance Policies', desc: 'Life, health, and property insurance' },
+      { icon: '🏥', label: 'Health and Property Insurance', desc: 'Health and property policies beyond life insurance' },
       { icon: '📋', label: 'Tax Returns', desc: 'Annual federal and state tax returns' },
       { icon: '💼', label: 'Pay Stubs', desc: 'Payroll stubs and earnings statements' },
       { icon: '🏠', label: 'Property Deeds', desc: 'Deeds, titles, and mortgage docs' },

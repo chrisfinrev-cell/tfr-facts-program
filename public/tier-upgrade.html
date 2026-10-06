@@ -39,8 +39,12 @@
     .tier-card{background:var(--bg-card);border:2px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s;position:relative}
     .tier-card:hover{border-color:var(--accent-gold);transform:translateY(-1px)}
     .tier-card.selected{border-color:var(--accent-gold);background:#1a1500}
-    .tier-card.current-tier{border-color:#374151;cursor:default;opacity:.65}
-    .tier-card.current-tier::after{content:'Current';position:absolute;top:12px;right:14px;font-size:11px;font-weight:700;color:var(--text-muted);background:var(--bg-elevated);padding:3px 8px;border-radius:10px}
+    .tier-card.current-tier{border-color:#374151;cursor:default}
+    .plan-pay-btn{margin-top:14px;width:100%;padding:12px 16px;background:var(--accent-gold);color:#000;font-size:14px;font-weight:700;border:none;border-radius:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+    .plan-pay-btn:hover{background:#d97706}
+    .plan-pay-btn:disabled{opacity:.5;cursor:wait}
+    .plan-pay-btn.downgrade{background:transparent;color:var(--text-secondary);border:1px solid var(--border)}
+    .current-pill{display:inline-block;margin-left:8px;font-size:11px;font-weight:700;color:var(--text-muted);background:var(--bg-elevated);padding:3px 8px;border-radius:10px;vertical-align:middle}
     .tier-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
     .tier-name{font-size:17px;font-weight:700}
     .tier-price{text-align:right}
@@ -102,7 +106,7 @@
   <a href="/app" class="back-btn">← Back to Dashboard</a>
 
   <h1 class="page-title">Change Your Plan</h1>
-  <p class="page-sub">Upgrade to unlock features, or downgrade anytime. Your data is always preserved.</p>
+  <p class="page-sub">Plans include the tools. Pick a plan and the pay button charges that plan. Tools are not sold one by one.</p>
 
   <!-- Current plan -->
   <div class="current-plan-card">
@@ -153,8 +157,8 @@
     </div>
   </div>
 
-  <!-- CTA -->
-  <button class="cta-primary" id="cta-btn" disabled onclick="confirmChange()">Select a plan to continue</button>
+  <!-- Shown only when there is no higher plan to buy -->
+  <button class="cta-primary" id="cta-btn" disabled style="display:none">Select a plan to continue</button>
   <button class="cta-secondary" id="cancel-btn" style="display:none" onclick="cancelChange()">Cancel</button>
 
   <!-- Admin testing panel (only visible for admin accounts) -->
@@ -227,10 +231,16 @@
       badge.textContent = data.current_tier === 'free' ? 'Free' : 'Expired';
       badge.className = 'plan-status status-free';
     }
-    if (data.paid_until) {
+    const until = document.getElementById('paid-until-label');
+    if (data.current_tier === 'sovereign_executive') {
+      until.textContent = 'Lifetime access';
+    } else if (data.paid_until) {
       const d = new Date(data.paid_until);
-      document.getElementById('paid-until-label').textContent =
-        'Renews ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      until.textContent = isNaN(d.getTime())
+        ? ''
+        : 'Renews ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } else {
+      until.textContent = '';
     }
   }
 
@@ -254,22 +264,28 @@
       const isCurrent = t.tier === currentTier;
       const annualCents = t.monthly_cents * 10; // 2 months free
       const displayCents = billing === 'annual' && t.tier !== 'sovereign_executive' ? annualCents : t.monthly_cents;
-      const displayUSD = (displayCents / 100).toFixed(2);
+      const displayUSD = (displayCents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const periodLabel = t.tier === 'sovereign_executive' ? 'one-time' : billing === 'annual' ? '/year' : '/mo';
       const features = (t.features || []).slice(0, 4);
       const color = TIER_COLORS[t.tier] || '#f59e0b';
+      const movingUp = TIER_ORDER.indexOf(t.tier) > TIER_ORDER.indexOf(currentTier);
+      const priceText = displayCents === 0 ? 'Free' : '$' + displayUSD;
+      const payLabel = isCurrent
+        ? ''
+        : movingUp
+          ? `Pay ${priceText}${displayCents > 0 ? (periodLabel.charAt(0) === '/' ? periodLabel : ' ' + periodLabel) : ''}`
+          : `Downgrade to ${t.display_name}`;
 
       return `<div class="tier-card${isCurrent ? ' current-tier' : ''}"
                    id="tier-card-${t.tier}"
-                   onclick="${isCurrent ? '' : `selectTier('${t.tier}')`}"
                    style="border-color:${isCurrent ? '#374151' : 'var(--border)'}">
         <div class="tier-header">
           <div>
-            <div class="tier-name" style="color:${color}">${t.display_name}</div>
-            ${isCurrent ? '' : `<div style="font-size:12px;color:var(--text-muted);margin-top:2px">${TIER_ORDER.indexOf(t.tier) > TIER_ORDER.indexOf(currentTier) ? '↑ Upgrade' : '↓ Downgrade'}</div>`}
+            <div class="tier-name" style="color:${color}">${t.display_name}${isCurrent ? '<span class="current-pill">Current</span>' : ''}</div>
+            ${isCurrent ? '' : `<div style="font-size:12px;color:var(--text-muted);margin-top:2px">${movingUp ? 'Includes the paid tools' : 'Downgrade'}</div>`}
           </div>
           <div class="tier-price">
-            <div class="price-amount">${displayCents === 0 ? 'Free' : '$' + displayUSD}</div>
+            <div class="price-amount">${priceText}</div>
             ${displayCents > 0 ? `<div class="price-period">${periodLabel}</div>` : ''}
           </div>
         </div>
@@ -277,8 +293,47 @@
           ${features.map(f => `<li>${f}</li>`).join('')}
           ${(t.features || []).length > 4 ? `<li style="color:var(--text-muted)">+ ${(t.features || []).length - 4} more</li>` : ''}
         </ul>
+        ${isCurrent ? '' : `<button type="button" class="plan-pay-btn${movingUp ? '' : ' downgrade'}" id="pay-${t.tier}" onclick="payForTier('${t.tier}', ${movingUp})">${payLabel}</button>`}
       </div>`;
     }).join('');
+
+    const hasUpgrade = allTiers.some(t => TIER_ORDER.indexOf(t.tier) > TIER_ORDER.indexOf(currentTier));
+    const ctaBtn = document.getElementById('cta-btn');
+    if (!hasUpgrade) {
+      ctaBtn.style.display = 'block';
+      ctaBtn.disabled = true;
+      ctaBtn.textContent = "You're on the highest plan. The paid tools are already included.";
+    } else {
+      ctaBtn.style.display = 'none';
+    }
+  }
+
+  async function payForTier(tier, movingUp) {
+    const btn = document.getElementById('pay-' + tier);
+    if (btn) { btn.disabled = true; btn.textContent = movingUp ? 'Opening payment…' : 'Applying…'; }
+    try {
+      const r = await fetch('/api/mod_subscription/change-tier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ to_tier: tier, billing, reason: movingUp ? 'user_upgrade' : 'user_downgrade' })
+      });
+      const data = await r.json().catch(() => ({}));
+      if (data.stripe_link) {
+        window.location.href = data.stripe_link;
+        return;
+      }
+      if (data.action === 'downgraded') {
+        window.location.href = '/app';
+        return;
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = data.error || 'Payment link is not set up yet. Email admin@factsmoney.com';
+      }
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Could not start payment. Try again.'; }
+    }
   }
 
   async function selectTier(tier) {

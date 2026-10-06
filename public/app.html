@@ -2157,13 +2157,7 @@
                         <button class="dropdown-item" onclick="openDupModal('all');closeAllDropdowns()"><span class="item-label">🔍 Find Duplicates</span></button>
                     </div>
                 </div>
-                <div class="tab-dropdown" id="desktop-dropdown-upgrade">
-                    <button class="app-tab dropdown-trigger" data-dropdown-group="upgrade" onclick="toggleDropdown('desktop-upgrade')">⬆️ Upgrade <span class="dropdown-chevron">▾</span></button>
-                    <div class="dropdown-menu">
-                        <button class="dropdown-item" data-tab-child="pro" onclick="switchTab('pro');closeAllDropdowns()">✨ Upgrade</button>
-                        <button class="dropdown-item" data-tab-child="upgrade-elite" onclick="switchTab('upgrade-elite');closeAllDropdowns()">👑 Elite <span style="font-size:0.65rem;background:#7c3aed;color:#fff;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:700;letter-spacing:0.03em;">SOON</span></button>
-                    </div>
-                </div>
+                <button class="app-tab" onclick="window.location.href='/tier-upgrade'" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:700;border:none;">Upgrade</button>
                 <button class="app-tab" id="level2-nav-btn" onclick="handleLevel2NavClick(event)" title="Requires Level 1 completion">🔒 Level 2</button>
                 <button class="app-tab" data-tab="education">📚 Education</button>
                 <button class="app-tab" data-tab="future-generations">🌿 Future Gen</button>
@@ -2457,13 +2451,7 @@
                     <button class="dropdown-item" onclick="openDupModal('all');closeAllDropdowns()"><span class="item-label">🔍 Find Duplicates</span></button>
                 </div>
             </div>
-            <div class="tab-dropdown" id="mobile-dropdown-upgrade">
-                <button class="mobile-tab dropdown-trigger" data-dropdown-group="upgrade" onclick="toggleDropdown('mobile-upgrade')"><span class="tab-icon">⬆️</span>Upgrade<span class="dropdown-chevron" style="font-size:0.5rem;">▾</span></button>
-                <div class="dropdown-menu">
-                    <button class="dropdown-item" data-tab-child="pro" onclick="switchTab('pro');closeAllDropdowns()">✨ Upgrade</button>
-                    <button class="dropdown-item" data-tab-child="upgrade-elite" onclick="switchTab('upgrade-elite');closeAllDropdowns()">👑 Elite <span style="font-size:0.65rem;background:#7c3aed;color:#fff;padding:1px 5px;border-radius:4px;margin-left:4px;font-weight:700;letter-spacing:0.03em;">SOON</span></button>
-                </div>
-            </div>
+            <button class="mobile-tab" onclick="window.location.href='/tier-upgrade'" style="color:#34d399;font-weight:700;"><span class="tab-icon">⬆️</span>Upgrade</button>
             <button class="mobile-tab" data-tab="education"><span class="tab-icon">📚</span>Education</button>
             <button class="mobile-tab" data-tab="future-generations"><span class="tab-icon">🌿</span>Generations</button>
             <button class="mobile-tab" onclick="window.location.href='/rate-radar'" style="color:#34d399;"><span class="tab-icon">📡</span>Rate Radar</button>
@@ -3449,7 +3437,7 @@
                     <div style="max-width:600px;margin:0 auto;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);padding:48px 32px;border-radius:16px;text-align:center;color:white;">
                         <h2 style="font-size:2rem;margin-bottom:16px;">✨ Paid Feature</h2>
                         <p style="font-size:1.1rem;margin-bottom:24px;opacity:0.95;">Bank connectivity is available exclusively for paid subscribers. Connect thousands of financial institutions with Plaid.</p>
-                        <button class="upgrade-btn" onclick="window.location.href='/pricing.html'" style="background:white;color:#667eea;font-weight:600;">Upgrade Now →</button>
+                        <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'" style="background:white;color:#667eea;font-weight:600;">Upgrade Now →</button>
                     </div>
                 </div>
 
@@ -3497,173 +3485,27 @@
 
             <!-- Import Tab (CSV Upload - Pro Only) -->
             <div id="tab-import" class="tab-content">
-                <h3 class="section-title" style="text-align:center;">📁 Import Transactions</h3>
-                <p style="text-align:center;color:var(--text-secondary);margin-bottom:24px;">
-                    Upload CSV, OFX, or QFX files from your bank, credit card, or brokerage.
+                <h3 class="section-title" style="text-align:center;">Import Documents</h3>
+                <p style="text-align:center;color:var(--text-secondary);margin-bottom:24px;max-width:640px;margin-left:auto;margin-right:auto;">
+                    Bring in files you have to download before they can live here. Credit reports, employment benefit packages, life insurance plans, and other documents.
                 </p>
-
-                <!-- Pro Gate (hidden — import is available to all users) -->
-                <div id="import-pro-gate" style="display:none;"></div>
-
-                <!-- Import Content (all users) -->
-                <div id="import-content" style="display:none;">
-                    <div style="max-width:700px;margin:0 auto;">
-
-                        <!-- Upload Zone -->
-                        <div id="csv-upload-zone" style="border:2px dashed var(--border);border-radius:16px;padding:48px 32px;text-align:center;background:var(--bg-elevated);cursor:pointer;transition:all 0.3s ease;margin-bottom:24px;"
-                             ondragover="event.preventDefault(); this.style.borderColor='var(--accent-green)'; this.style.background='rgba(16,185,129,0.05)';"
-                             ondragleave="this.style.borderColor='var(--border)'; this.style.background='var(--bg-elevated)';"
-                             ondrop="handleCSVDrop(event)"
-                             onclick="document.getElementById('csv-file-input').click()">
-                            <div style="font-size:3rem;margin-bottom:16px;">📁</div>
-                            <h4 style="font-size:1.3rem;margin-bottom:8px;color:var(--text-primary);">Drop file here</h4>
-                            <p style="color:var(--text-secondary);margin-bottom:8px;">or click to browse</p>
-                            <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                                <span style="background:rgba(59,130,246,0.15);color:var(--accent-blue);padding:3px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;">CSV</span>
-                                <span style="background:rgba(16,185,129,0.15);color:var(--accent-green);padding:3px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;">OFX</span>
-                                <span style="background:rgba(139,92,246,0.15);color:var(--accent-purple);padding:3px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;">QFX</span>
-                            </div>
-                            <p style="color:var(--text-muted);font-size:0.82rem;">Fidelity · Schwab · Chase · Capital One · Discover · most banks &amp; brokerages · max 10 MB</p>
-                            <input type="file" id="csv-file-input" accept=".csv,.ofx,.qfx" style="display:none;" onchange="handleCSVFileSelect(event)">
+                <div style="max-width:820px;margin:0 auto;">
+                    <div id="import-doc-types" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px;"></div>
+                    <div id="import-doc-panel" style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:24px;">
+                        <h4 id="import-doc-title" style="margin:0 0 6px;color:var(--text-primary);">Credit Reports</h4>
+                        <p id="import-doc-detail" style="color:var(--text-secondary);font-size:0.9rem;margin:0 0 16px;"></p>
+                        <div id="import-doc-drop" style="border:2px dashed var(--border);border-radius:12px;padding:32px 20px;text-align:center;background:var(--bg-elevated);cursor:pointer;"
+                             onclick="document.getElementById('import-doc-file').click()"
+                             ondragover="event.preventDefault(); this.style.borderColor='var(--accent-green)';"
+                             ondragleave="this.style.borderColor='var(--border)';"
+                             ondrop="handleImportDocDrop(event)">
+                            <div style="font-size:2rem;margin-bottom:8px;">📄</div>
+                            <div style="font-weight:600;color:var(--text-primary);">Drop the downloaded file here</div>
+                            <div style="color:var(--text-muted);font-size:0.85rem;margin-top:4px;">or click to browse · PDF, JPG, PNG · max 20 MB</div>
+                            <input type="file" id="import-doc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="handleImportDocSelect(event)">
                         </div>
-
-                        <!-- Upload Instructions -->
-                        <div style="background:var(--bg-card);padding:20px;border-radius:12px;margin-bottom:24px;border-left:4px solid var(--accent-blue);">
-                            <h4 style="font-size:1rem;margin-bottom:10px;color:var(--text-primary);">📋 How to Export from Your Institution</h4>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;font-size:0.85rem;color:var(--text-secondary);">
-                                <div>✓ <strong>CSV</strong> — most banks, brokerages</div>
-                                <div>✓ <strong>OFX/QFX</strong> — Quicken export option</div>
-                                <div>✓ Log in → Account History</div>
-                                <div>✓ Click "Export" or "Download"</div>
-                                <div>✓ Choose date range</div>
-                                <div>✓ Drag &amp; drop or click browse above</div>
-                            </div>
-                        </div>
-
-                        <!-- History link (always visible) -->
-                        <div style="text-align:center;margin-bottom:16px;">
-                            <button onclick="showImportHistory()" style="background:transparent;color:var(--text-secondary);border:1px solid var(--border);padding:7px 16px;border-radius:20px;cursor:pointer;font-size:0.85rem;">
-                                📋 View import history &amp; undo
-                            </button>
-                        </div>
-
-                        <!-- Loading State -->
-                        <div id="csv-loading" style="display:none;text-align:center;padding:48px;color:var(--text-secondary);">
-                            <div style="display:inline-block;width:48px;height:48px;border:4px solid rgba(59,130,246,0.3);border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;"></div>
-                            <p style="margin-top:16px;">Processing file...</p>
-                        </div>
-
-                        <!-- Preview Section -->
-                        <div id="csv-preview-section" style="display:none;">
-                            <div style="background:var(--bg-card);padding:24px;border-radius:12px;margin-bottom:16px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                                    <div>
-                                        <h4 style="font-size:1.2rem;color:var(--text-primary);margin-bottom:4px;">Preview Transactions</h4>
-                                        <p id="csv-preview-summary" style="color:var(--text-secondary);font-size:0.9rem;"></p>
-                                        <p id="csv-format-detected" style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;"></p>
-                                    </div>
-                                    <button onclick="resetCSVUpload()" style="background:transparent;color:var(--text-secondary);border:1px solid var(--border);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:0.9rem;">
-                                        ← Upload Different File
-                                    </button>
-                                </div>
-
-                                <!-- Category Legend -->
-                                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding:12px;background:var(--bg-elevated);border-radius:8px;align-items:center;">
-                                    <div style="font-size:0.82rem;color:var(--text-secondary);margin-right:4px;font-weight:600;">Categories:</div>
-                                    <span style="font-size:0.82rem;color:var(--accent-green);">🏠 Necessities</span>
-                                    <span style="font-size:0.82rem;color:#8b5cf6;">🏛️ Legacy</span>
-                                    <span style="font-size:0.82rem;color:#06b6d4;">🛡️ The Reserve</span>
-                                    <span style="font-size:0.82rem;color:#f43f5e;">✨ Lifestyle</span>
-                                    <span style="font-size:0.82rem;color:#059669;">🌱 Growth</span>
-                                    <span style="font-size:0.82rem;color:#f59e0b;">⚡ Velocity</span>
-                                    <span style="font-size:0.78rem;color:#f59e0b;background:rgba(245,158,11,0.12);padding:1px 7px;border-radius:8px;margin-left:4px;">⚠ Review = unrecognized merchant</span>
-                                </div>
-
-                                <!-- Transaction List Preview -->
-                                <div id="csv-transactions-preview" style="max-height:400px;overflow-y:auto;margin-bottom:16px;"></div>
-
-                                <!-- Error Messages -->
-                                <div id="csv-preview-errors" style="display:none;background:rgba(244,63,94,0.1);border:1px solid var(--accent-rose);border-radius:8px;padding:16px;margin-bottom:16px;">
-                                    <h5 style="color:var(--accent-rose);font-size:1rem;margin-bottom:8px;">⚠️ Issues Found</h5>
-                                    <div id="csv-error-list" style="color:var(--text-secondary);font-size:0.85rem;"></div>
-                                </div>
-
-                                <!-- Account Selector -->
-                                <div style="margin-bottom:16px;">
-                                    <label style="display:block;font-weight:600;color:var(--text-primary);margin-bottom:8px;font-size:0.95rem;">
-                                        🏦 Select Account <span style="color:var(--accent-rose);font-size:0.85rem;">*required</span>
-                                    </label>
-                                    <select id="csv-account-select" onchange="handleCSVAccountSelect(this.value)"
-                                            style="width:100%;padding:10px 14px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:0.95rem;cursor:pointer;">
-                                        <option value="" disabled selected>— Select an account to import into —</option>
-                                        <!-- populated by displayCSVPreview() -->
-                                    </select>
-                                    <div id="csv-account-error" style="display:none;color:var(--accent-rose);font-size:0.82rem;margin-top:4px;">⚠ Please select an account before importing.</div>
-                                    <!-- Inline "Add New Account" form -->
-                                    <div id="csv-new-account-form" style="display:none;margin-top:12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:16px;">
-                                        <p style="font-weight:600;color:var(--text-primary);margin-bottom:12px;font-size:0.95rem;">➕ New Account</p>
-                                        <div style="display:flex;flex-direction:column;gap:10px;">
-                                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                                                <select id="csv-new-account-institution"
-                                                        style="padding:9px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.85rem;width:100%;">
-                                                    <option value="">Institution (optional)</option>
-                                                    <!-- populated by initCSVNewAccountSelects() -->
-                                                </select>
-                                                <select id="csv-new-account-type"
-                                                        style="padding:9px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.85rem;width:100%;">
-                                                    <option value="">Account type (optional)</option>
-                                                    <!-- populated by initCSVNewAccountSelects() -->
-                                                </select>
-                                            </div>
-                                            <input id="csv-new-account-name" type="text" placeholder="Account name (e.g. Chase Checking) *"
-                                                   style="padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.9rem;width:100%;box-sizing:border-box;">
-                                            <input id="csv-new-account-balance" type="number" placeholder="Starting balance (optional, default 0)"
-                                                   style="padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.9rem;width:100%;box-sizing:border-box;">
-                                            <div style="display:flex;gap:8px;">
-                                                <button onclick="saveCSVNewAccount()"
-                                                        style="flex:1;background:var(--accent-blue);color:white;padding:9px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:0.9rem;">
-                                                    Save Account
-                                                </button>
-                                                <button onclick="cancelCSVNewAccount()"
-                                                        style="background:transparent;color:var(--text-secondary);padding:9px 16px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:0.9rem;">
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Import Button -->
-                                <button id="csv-import-btn" onclick="importCSVTransactions()"
-                                        style="width:100%;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:white;padding:14px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:1rem;">
-                                    Import <span id="csv-import-count">0</span> Transactions
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Success Message -->
-                        <div id="csv-success-message" style="display:none;background:rgba(16,185,129,0.1);border:1px solid var(--accent-green);border-radius:8px;padding:24px;text-align:center;">
-                            <div style="font-size:3rem;margin-bottom:12px;">✅</div>
-                            <h4 style="font-size:1.3rem;color:var(--accent-green);margin-bottom:8px;">Import Successful!</h4>
-                            <p id="csv-success-text" style="color:var(--text-secondary);margin-bottom:16px;"></p>
-                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                                <button onclick="resetCSVUpload()" style="background:var(--accent-green);color:white;padding:10px 24px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
-                                    Import Another File
-                                </button>
-                                <button onclick="showImportHistory()" style="background:transparent;color:var(--text-secondary);border:1px solid var(--border);padding:10px 20px;border-radius:6px;font-weight:600;cursor:pointer;">
-                                    📋 View History
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Import History Section -->
-                        <div id="import-history-section" style="display:none;margin-top:24px;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                                <h4 style="font-size:1.1rem;color:var(--text-primary);">📋 Import History</h4>
-                                <button onclick="document.getElementById('import-history-section').style.display='none'" style="background:transparent;color:var(--text-secondary);border:none;cursor:pointer;font-size:0.9rem;">✕ Close</button>
-                            </div>
-                            <div id="import-history-list" style="color:var(--text-secondary);font-size:0.9rem;"></div>
-                        </div>
+                        <p id="import-doc-status" style="display:none;margin-top:12px;font-size:0.9rem;"></p>
+                        <div id="import-doc-list" style="margin-top:18px;"></div>
                     </div>
                 </div>
             </div>
@@ -4994,7 +4836,7 @@
                             <li><span class="icon">✓</span> <span>Smart alerts: credit limit, promo expiry risk</span></li>
                             <li><span class="icon">✓</span> <span>Save and compare multiple scenarios</span></li>
                         </ul>
-                        <button class="upgrade-btn" onclick="window.location.href='/pricing.html'">Upgrade Now →</button>
+                        <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'">Upgrade Now →</button>
                     </div>
                 </div>
 
@@ -5436,7 +5278,7 @@
                             <li><span class="icon">✓</span> <span>Performance comparison chart (% gain per ticker)</span></li>
                             <li><span class="icon">✓</span> <span>Filter by account or specific ticker</span></li>
                         </ul>
-                        <button class="upgrade-btn" onclick="window.location.href='/pricing.html'">Upgrade Now →</button>
+                        <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'">Upgrade Now →</button>
                     </div>
                 </div>
 
@@ -5922,7 +5764,7 @@
                         <li><span class="icon">✓</span> <span>Side-by-side comparison graphs</span></li>
                         <li><span class="icon">✓</span> <span>Total interest saved calculation</span></li>
                     </ul>
-                    <button class="upgrade-btn" onclick="window.location.href='/pricing.html'">Upgrade Now →</button>
+                    <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'">Upgrade Now →</button>
                 </div>
 
                 <div class="pro-feature-card">
@@ -5934,7 +5776,7 @@
                         <li><span class="icon">✓</span> <span>Compare multiple scenarios</span></li>
                         <li><span class="icon">✓</span> <span>Save and track your best path</span></li>
                     </ul>
-                    <button class="upgrade-btn" onclick="window.location.href='/pricing.html'">Upgrade Now →</button>
+                    <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'">Upgrade Now →</button>
                 </div>
 
                 <div class="pro-feature-card">
@@ -5946,7 +5788,7 @@
                         <li><span class="icon">✓</span> <span>Milestone celebration markers</span></li>
                         <li><span class="icon">✓</span> <span>Annual progress reports</span></li>
                     </ul>
-                    <button class="upgrade-btn" onclick="window.location.href='/pricing.html'">Upgrade Now →</button>
+                    <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'">Upgrade Now →</button>
                 </div>
 
                 <div class="pro-feature-card">
@@ -5957,7 +5799,7 @@
                         <li><span class="icon">✓</span> <span>Filter by date range or category</span></li>
                         <li><span class="icon">✓</span> <span>Tax-ready format</span></li>
                     </ul>
-                    <button class="upgrade-btn" onclick="window.location.href='/pricing.html'">Upgrade Now →</button>
+                    <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'">Upgrade Now →</button>
                 </div>
 
                 <div class="pro-feature-card">
@@ -5969,14 +5811,14 @@
                         <li><span class="icon">✓</span> <span>Performance comparison chart (% gain per ticker)</span></li>
                         <li><span class="icon">✓</span> <span>Combined view + drill-down by account &amp; ticker</span></li>
                     </ul>
-                    <button class="upgrade-btn" onclick="window.location.href='/pricing.html'">Upgrade Now →</button>
+                    <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'">Upgrade Now →</button>
                 </div>
 
                 <div style="text-align:center;padding:40px 24px;background:var(--bg-card);border-radius:16px;margin-top:32px;">
                     <h3 style="font-size:1.6rem;margin-bottom:12px;">Ready to level up?</h3>
                     <p style="color:var(--text-secondary);margin-bottom:24px;">Join a paid plan starting at $14.99/month. Cancel anytime.</p>
-                    <button class="upgrade-btn" style="font-size:1.1rem;padding:16px 48px;" onclick="window.location.href='/pricing.html'">
-                        View Pricing & Upgrade →
+                    <button class="upgrade-btn" style="font-size:1.1rem;padding:16px 48px;" onclick="window.location.href='/tier-upgrade'">
+                        View Plans & Pay →
                     </button>
                 </div>
             </div>
@@ -6058,7 +5900,7 @@
                     <div style="font-size:3rem;margin-bottom:16px;">🔒</div>
                     <h3 style="font-size:1.4rem;margin-bottom:8px;">Future Generations is a <span style="color:#c9a227;">Paid Feature</span></h3>
                     <p style="color:var(--text-secondary);max-width:400px;margin:0 auto 24px;font-size:0.95rem;">Build your referral network and earn commissions through five levels of connection. Included with all paid plans.</p>
-                    <button class="upgrade-btn" onclick="switchTab('pro')" style="display:inline-block;padding:12px 32px;">Upgrade Now →</button>
+                    <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'" style="display:inline-block;padding:12px 32px;">Upgrade Now →</button>
                 </div>
 
                 <!-- Join state (Pro but not yet joined) -->
@@ -6565,6 +6407,7 @@
                 }
 
                 try {
+                    await reconcilePlanAccess();
                     updateNavForUser();
                     if (typeof applyFreeTierLocks === 'function') applyFreeTierLocks();
                 } catch (uiErr) {
@@ -6578,6 +6421,25 @@
         currentUser = null;
         window.currentUser = null;
         return false;
+    }
+
+    // The plan page and the nav badge must agree. Owner and Sovereign accounts
+    // can show as free on /api/auth/me while /api/mod_subscription/current
+    // already has their real plan. Import and Family follow that plan.
+    async function reconcilePlanAccess() {
+        if (!currentUser || !isNavFreeTier(currentUser)) return;
+        try {
+            const subRes = await fetch('/api/mod_subscription/current', { credentials: 'same-origin' });
+            if (!subRes.ok) return;
+            const sub = await subRes.json();
+            if (!sub.current_tier || sub.current_tier === 'free') return;
+            currentUser.has_pro = true;
+            currentUser.plan = 'paid';
+            currentUser.pricing_tier = sub.current_tier;
+            window.currentUser = currentUser;
+        } catch (e) {
+            console.error('Plan reconcile failed', e);
+        }
     }
 
     function updateNavForUser() {
@@ -7465,7 +7327,7 @@
     }
 
     // Tabs free-tier users can access without a paid plan
-    const FREE_TIER_TABS = ['dashboard','add','transactions','allocations','credit-score','fi-calculator','pro','upgrade-elite'];
+    const FREE_TIER_TABS = ['dashboard','add','transactions','allocations','import','credit-score','fi-calculator','pro','upgrade-elite'];
 
     document.querySelectorAll('.app-tab, .mobile-tab').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -12336,12 +12198,12 @@
                     <li style="margin-bottom:8px;">✓ Visual payoff timeline</li>
                     <li style="margin-bottom:8px;">✓ Side-by-side strategy comparison</li>
                 </ul>
-                <button class="upgrade-btn" onclick="window.location.href='/pricing.html'"
+                <button class="upgrade-btn" onclick="window.location.href='/tier-upgrade'"
                         style="background:var(--accent-purple);color:#fff;border:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.2s ease;">
                     Upgrade Now →
                 </button>
                 <p style="margin-top:16px;font-size:0.85rem;color:var(--text-muted);">
-                    Or <a href="/pricing.html" style="color:var(--accent-purple);text-decoration:underline;">compare plans</a>
+                    Or <a href="/tier-upgrade" style="color:var(--accent-purple);text-decoration:underline;">compare plans</a>
                 </p>
             </div>
         `;
@@ -17637,17 +17499,107 @@
         }
     }
 
+    const IMPORT_DOC_TYPES = [
+        { id: 'credit_reports', title: 'Credit Reports', detail: 'The report you download from AnnualCreditReport, Equifax, Experian, or TransUnion.' },
+        { id: 'benefits_packages', title: 'Employment Benefit Packages', detail: 'The benefits booklet or PDF your employer gives you to download.' },
+        { id: 'life_insurance', title: 'Life Insurance Plans', detail: 'Policy documents and illustrations you download from the carrier.' },
+        { id: 'other_documents', title: 'Other Documents', detail: 'Any other file you have to download before it can live in FACTS.' }
+    ];
+    let selectedImportDoc = 'credit_reports';
+
     async function initImportTab() {
+        renderImportDocTypes();
+        await selectImportDoc(selectedImportDoc);
+    }
+
+    function renderImportDocTypes() {
+        const wrap = document.getElementById('import-doc-types');
+        if (!wrap) return;
+        wrap.innerHTML = IMPORT_DOC_TYPES.map(function(type) {
+            const on = type.id === selectedImportDoc;
+            return '<button type="button" onclick="selectImportDoc(\'' + type.id + '\')" style="text-align:left;padding:14px 16px;border-radius:12px;cursor:pointer;background:' + (on ? 'rgba(16,185,129,0.12)' : 'var(--bg-card)') + ';border:1px solid ' + (on ? 'rgba(16,185,129,0.45)' : 'var(--border)') + ';color:var(--text-primary);">' +
+                '<div style="font-weight:700;margin-bottom:4px;">' + type.title + '</div>' +
+                '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;">' + type.detail + '</div></button>';
+        }).join('');
+    }
+
+    async function selectImportDoc(typeId) {
+        selectedImportDoc = typeId;
+        const type = IMPORT_DOC_TYPES.find(function(item) { return item.id === typeId; }) || IMPORT_DOC_TYPES[0];
+        const title = document.getElementById('import-doc-title');
+        const detail = document.getElementById('import-doc-detail');
+        if (title) title.textContent = type.title;
+        if (detail) detail.textContent = type.detail;
+        renderImportDocTypes();
+        await loadImportDocs();
+    }
+
+    async function loadImportDocs() {
+        const list = document.getElementById('import-doc-list');
+        if (!list) return;
+        list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">Loading documents…</p>';
         try {
-            // Load bank accounts cache if not already loaded (user may skip the Accounts tab)
-            if (bankAccountsCache.length === 0) {
-                await loadBankAccounts();
+            const res = await fetch('/api/vault/documents?category=' + encodeURIComponent(selectedImportDoc), { credentials: 'same-origin' });
+            const data = await res.json().catch(function() { return {}; });
+            if (!res.ok) throw new Error(data.error || 'Could not load documents');
+            const docs = data.documents || [];
+            if (!docs.length) {
+                list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">Nothing imported in this group yet.</p>';
+                return;
             }
-            // Import is available to ALL users — no Pro gate
-            document.getElementById('import-pro-gate').style.display = 'none';
-            document.getElementById('import-content').style.display = 'block';
+            list.innerHTML = docs.map(function(doc) {
+                const when = doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                const name = String(doc.file_name || 'Document').replace(/[&<>"']/g, function(ch) {
+                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+                });
+                return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">' +
+                    '<div><div style="font-weight:600;color:var(--text-primary);">' + name + '</div>' +
+                    '<div style="font-size:0.78rem;color:var(--text-muted);">' + when + '</div></div>' +
+                    '<a href="/api/vault/documents/' + doc.id + '/download" style="color:#34d399;font-size:0.85rem;font-weight:600;text-decoration:none;">Open</a></div>';
+            }).join('');
         } catch (err) {
-            console.error('Error initializing Import tab:', err);
+            list.innerHTML = '<p style="color:#f87171;font-size:0.85rem;">' + err.message + '</p>';
+        }
+    }
+
+    function handleImportDocDrop(event) {
+        event.preventDefault();
+        const zone = document.getElementById('import-doc-drop');
+        if (zone) zone.style.borderColor = 'var(--border)';
+        const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (file) uploadImportDoc(file);
+    }
+
+    function handleImportDocSelect(event) {
+        const file = event.target.files && event.target.files[0];
+        if (file) uploadImportDoc(file);
+        event.target.value = '';
+    }
+
+    async function uploadImportDoc(file) {
+        const status = document.getElementById('import-doc-status');
+        if (status) {
+            status.style.display = 'block';
+            status.style.color = 'var(--text-secondary)';
+            status.textContent = 'Importing ' + file.name + '…';
+        }
+        const body = new FormData();
+        body.append('file', file);
+        body.append('category', selectedImportDoc);
+        try {
+            const res = await fetch('/api/vault/documents', { method: 'POST', credentials: 'same-origin', body: body });
+            const data = await res.json().catch(function() { return {}; });
+            if (!res.ok) throw new Error(data.error || 'Import failed');
+            if (status) {
+                status.style.color = '#34d399';
+                status.textContent = file.name + ' is in the system.';
+            }
+            await loadImportDocs();
+        } catch (err) {
+            if (status) {
+                status.style.color = '#f87171';
+                status.textContent = err.message;
+            }
         }
     }
 
