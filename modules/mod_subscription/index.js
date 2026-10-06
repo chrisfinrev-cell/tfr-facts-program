@@ -106,7 +106,6 @@ const TIER_FEATURES = {
   ],
   sovereign_executive: [
     'Everything in Elite',
-    'Lifetime access (one-time payment)',
     'Unlimited AI coach',
     'Succession planning tools',
     'Sovereign oath & legacy vault',

@@ -7,6 +7,22 @@ function getDb(req) {
   return req.app.get('db') || pool;
 }
 
+// Same allowlist the logged-in app already uses to show the Admin control.
+// users.is_admin remains sufficient. These emails stay admin when that flag
+// was never set. Owner-only addresses are not included.
+const ADMIN_EMAILS = ['chris.finrev@gmail.com', 'ecci2760@gmail.com'];
+
+function isAllowlistedAdminEmail(email) {
+  const normalized = String(email || '').trim().toLowerCase();
+  if (!normalized) return false;
+  if (ADMIN_EMAILS.indexOf(normalized) !== -1) return true;
+  const fromEnv = String(process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map(function (e) { return e.trim().toLowerCase(); })
+    .filter(Boolean);
+  return fromEnv.indexOf(normalized) !== -1;
+}
+
 // --- MIDDLEWARE: REQUIRE ADMIN ---
 async function requireAdmin(req, res, next) {
   if (!req.session || !req.session.userId) {
@@ -15,8 +31,12 @@ async function requireAdmin(req, res, next) {
 
   const db = getDb(req);
   try {
-    const userRes = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.session.userId]);
-    if (userRes.rows.length === 0 || !userRes.rows[0].is_admin) {
+    const userRes = await db.query('SELECT is_admin, email FROM users WHERE id = $1', [req.session.userId]);
+    if (userRes.rows.length === 0) {
+      return res.status(403).json({ error: 'Forbidden: Admin access required.' });
+    }
+    const row = userRes.rows[0];
+    if (!row.is_admin && !isAllowlistedAdminEmail(row.email)) {
       return res.status(403).json({ error: 'Forbidden: Admin access required.' });
     }
     next();

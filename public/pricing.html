@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FACTS Pricing — Financial Allocation &amp; Control Tiers</title>
-  <meta name="description" content="Choose the FACTS tier that fits your financial journey. From free starter to Sovereign lifetime access — six tiers built around allocation, freedom, and financial clarity." />
+  <meta name="description" content="Choose the FACTS tier that fits your financial journey. From free starter to Sovereign — six tiers built around allocation, freedom, and financial clarity." />
 
   <!-- Google Fonts: Instrument Serif -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -355,11 +355,13 @@
     }
 
     .price__sovereign {
-      font-size: 1rem;
-      color: var(--amber);
-      font-style: italic;
+      font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+      font-weight: 700;
+      color: var(--white);
+      font-style: normal;
       font-family: 'Instrument Serif', serif;
-      margin-bottom: 4px;
+      line-height: 1.25;
+      margin-bottom: 0;
     }
 
     /* ─── Feature List ─────────────────────────────────────────── */
@@ -928,25 +930,20 @@
 
       <!-- Tier 6: Sovereign Executive -->
       <article class="card card--sovereign" aria-label="Sovereign Executive tier">
-        <div class="card__badge card__badge--exclusive">
-          &#9670;&nbsp; Lifetime Access
-        </div>
         <p class="card__tier">Sovereign</p>
         <h2 class="card__name">Sovereign</h2>
-        <p class="card__tagline">Lifetime access, one payment — never pay again.</p>
+        <p class="card__tagline">Pricing is not set.</p>
 
         <div class="card__price">
           <div class="price__amount">
-            <span class="price__currency">$</span>
-            <span class="price__number">19,997</span>
+            <span class="price__sovereign">future product pricing TBD</span>
           </div>
-          <p class="price__note">One-time investment. All future upgrades included.</p>
         </div>
 
         <ul class="card__features" aria-label="Sovereign Executive tier features">
           <li>
             <span class="feature__icon" aria-hidden="true">&#10003;</span>
-            <span class="feature__text"><strong>Lifetime access</strong> — all current and future features, Plaid consistently live</span>
+            <span class="feature__text"><strong>All current and future features</strong>, Plaid consistently live</span>
           </li>
           <li>
             <span class="feature__icon" aria-hidden="true">&#10003;</span>
@@ -1039,7 +1036,7 @@
       </button>
       <div class="faq__answer" id="faq-3" role="region">
         <div class="faq__answer-inner">
-          Sovereign is lifetime access — one investment of $19,997, no ongoing subscription — plus things that cannot be automated: a personal onboarding session, a direct line to the FACTS founder team, all future tier upgrades included, and legacy planning consultation. If self-serve monthly feels right, start with Individual or Family.
+          Sovereign includes a personal onboarding session, a direct line to the FACTS founder team, all future tier upgrades included, and legacy planning consultation. Future product pricing TBD. If self-serve monthly feels right, start with Individual or Family.
         </div>
       </div>
     </div>

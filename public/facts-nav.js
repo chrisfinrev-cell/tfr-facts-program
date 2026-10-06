@@ -27,14 +27,11 @@
     '/* FACTS Nav Injector — scoped styles */',
     '#fn-header { position: sticky; top: 0; z-index: 50; background: rgba(13,17,23,0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,255,255,0.06); }',
     '#fn-header * { box-sizing: border-box; }',
-    '#fn-bar { max-width: 80rem; margin: 0 auto; padding: 0 1rem; height: 4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }',
+    '#fn-bar { max-width: 80rem; margin: 0 auto; padding: 0 1rem; height: 5.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }',
 
-    /* Brand */
-    '#fn-brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; flex-shrink: 0; }',
-    '#fn-brand-icon { width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.125rem; background: rgba(201,162,39,0.12); border: 1px solid rgba(201,162,39,0.32); color: #c9a227; font-family: "Instrument Serif", serif; line-height: 1; }',
-    '#fn-brand-text { line-height: 1; }',
-    '#fn-brand-name { font-size: 0.875rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #fff; }',
-    '#fn-brand-sub { font-size: 0.75rem; letter-spacing: 0.04em; color: #c9a227; }',
+    /* Brand — lockup already includes the FACTS wordmark and tagline */
+    '#fn-brand { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; min-width: 0; }',
+    '#fn-brand-logo { display: block; height: 4.75rem; width: auto; border-radius: 10px; }',
 
     /* Desktop nav */
     '#fn-desktop-nav { display: none; align-items: center; gap: 1.5rem; }',
@@ -76,8 +73,8 @@
     '.fn-footer-col li { margin-bottom: 0.5rem; }',
     '.fn-footer-col li a { color: #6b7280; text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }',
     '.fn-footer-col li a:hover { color: #d1d5db; }',
-    '#fn-footer-brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }',
-    '#fn-footer-brand-icon { width: 2rem; height: 2rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700; background: rgba(201,162,39,0.1); border: 1px solid rgba(201,162,39,0.25); color: #c9a227; font-family: "Instrument Serif", serif; font-size: 0.875rem; }',
+    '#fn-footer-brand { display: block; margin-bottom: 1rem; }',
+    '#fn-footer-logo { display: block; width: 15rem; max-width: 100%; height: auto; border-radius: 12px; }',
     '#fn-footer-tagline { font-size: 0.75rem; color: #6b7280; line-height: 1.6; margin: 0; }',
     '#fn-footer-divider { background: linear-gradient(90deg, transparent, rgba(201,162,39,0.35), transparent); height: 1px; margin-bottom: 1.5rem; }',
     '#fn-footer-bottom { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.75rem; color: #6b7280; }',
@@ -155,8 +152,7 @@
 
     // Brand
     '<a href="/" id="fn-brand">',
-    '<div id="fn-brand-icon">₣</div>',
-    '<div id="fn-brand-text"><div id="fn-brand-name">FACTS</div><div id="fn-brand-sub">factsmoney.com</div></div>',
+    '<img id="fn-brand-logo" src="/facts-logo.jpg" alt="FACTS — Financial Allocation Control &amp; Tracking System">',
     '</a>',
 
     // Desktop nav links
@@ -199,10 +195,9 @@
     // Column 1: Brand
     '<div class="fn-footer-col">',
     '<div id="fn-footer-brand">',
-    '<div id="fn-footer-brand-icon">₣</div>',
-    '<div><div style="font-size:0.875rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#fff;">FACTS</div><div style="font-size:0.75rem;color:#6b7280;">FACTS</div></div>',
+    '<img id="fn-footer-logo" src="/facts-logo.jpg" alt="FACTS — Financial Allocation Control &amp; Tracking System">',
     '</div>',
-    '<p id="fn-footer-tagline">Financial Allocation Control &amp; Tracking System. The system that replaces budgeting with freedom.</p>',
+    '<p id="fn-footer-tagline">The system that replaces budgeting with freedom.</p>',
     '</div>',
 
     // Column 2: Product

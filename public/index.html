@@ -74,6 +74,9 @@
     header .gap-6 { gap: 1.5rem; }
     header .gap-1\.5 { gap: 0.375rem; }
     header .h-16 { height: 4rem; }
+    header > div.facts-nav-bar { height: 5.25rem; }
+    img.facts-lockup-header { display: block; height: 4.75rem; width: auto; max-width: none; border-radius: 10px; }
+    img.facts-lockup-footer { display: block; width: 15rem; max-width: 100%; height: auto; border-radius: 12px; }
     header .px-4 { padding-left: 1rem; padding-right: 1rem; }
     header .max-w-7xl { max-width: 80rem; margin-left: auto; margin-right: auto; }
     header .no-underline { text-decoration: none; }
@@ -307,15 +310,11 @@
 
 <!-- ═══════════════════════════ NAVIGATION ═══════════════════════════ -->
 <header class="sticky top-0 z-50 border-b" style="background:rgba(13,17,23,0.94); backdrop-filter:blur(14px); border-color:rgba(255,255,255,0.06);">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+  <div class="facts-nav-bar max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
 
-    <!-- Brand -->
-    <a href="/" class="flex items-center gap-3 no-underline flex-shrink-0">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg pulse-gold" style="background:rgba(201,162,39,0.12); border:1px solid rgba(201,162,39,0.32); color:#c9a227; font-family:'Instrument Serif',serif;">₣</div>
-      <div class="leading-none">
-        <div class="text-sm font-bold tracking-[0.12em] uppercase text-white">FACTS</div>
-        <div class="text-xs tracking-wide" style="color:#c9a227;">factsmoney.com</div>
-      </div>
+    <!-- Brand lockup includes the FACTS wordmark -->
+    <a href="/" class="flex items-center no-underline flex-shrink-0">
+      <img class="facts-lockup-header" src="/facts-logo.jpg" alt="FACTS — Financial Allocation Control &amp; Tracking System">
     </a>
 
     <!-- Desktop nav -->
@@ -570,10 +569,7 @@
 <!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
 <footer style="border-top:1px solid rgba(255,255,255,0.06); padding:2rem 1rem;">
   <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-    <div class="flex items-center gap-2">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold" style="background:rgba(201,162,39,0.12); border:1px solid rgba(201,162,39,0.3); color:#c9a227; font-family:'Instrument Serif',serif;">₣</div>
-      <span class="text-xs font-bold tracking-widest uppercase" style="color:rgba(255,255,255,0.4);">FACTS</span>
-    </div>
+    <img class="facts-lockup-footer" src="/facts-logo.jpg" alt="FACTS — Financial Allocation Control &amp; Tracking System">
     <div class="flex items-center gap-5">
       <a href="/about">About</a>
       <a href="/pricing">Pricing</a>

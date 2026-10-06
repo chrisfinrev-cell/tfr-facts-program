@@ -41,6 +41,7 @@
     .tier-card.selected{border-color:var(--accent-gold);background:#1a1500}
     .tier-card.current-tier{border-color:#374151;cursor:default}
     .plan-pay-btn{margin-top:14px;width:100%;padding:12px 16px;background:var(--accent-gold);color:#000;font-size:14px;font-weight:700;border:none;border-radius:10px;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+    a.plan-pay-btn{display:block;text-align:center;text-decoration:none;box-sizing:border-box}
     .plan-pay-btn:hover{background:#d97706}
     .plan-pay-btn:disabled{opacity:.5;cursor:wait}
     .plan-pay-btn.downgrade{background:transparent;color:var(--text-secondary);border:1px solid var(--border)}
@@ -49,6 +50,7 @@
     .tier-name{font-size:17px;font-weight:700}
     .tier-price{text-align:right}
     .price-amount{font-size:18px;font-weight:700;color:var(--accent-gold)}
+    .price-amount.price-tbd{font-size:13px;line-height:1.35;max-width:148px}
     .price-period{font-size:11px;color:var(--text-muted)}
     .tier-features{list-style:none}
     .tier-features li{font-size:13px;color:var(--text-secondary);padding:3px 0;display:flex;align-items:center;gap:8px}
@@ -233,7 +235,7 @@
     }
     const until = document.getElementById('paid-until-label');
     if (data.current_tier === 'sovereign_executive') {
-      until.textContent = 'Lifetime access';
+      until.textContent = '';
     } else if (data.paid_until) {
       const d = new Date(data.paid_until);
       until.textContent = isNaN(d.getTime())
@@ -262,19 +264,26 @@
 
     grid.innerHTML = allTiers.map(t => {
       const isCurrent = t.tier === currentTier;
+      const isSovereign = t.tier === 'sovereign_executive';
       const annualCents = t.monthly_cents * 10; // 2 months free
-      const displayCents = billing === 'annual' && t.tier !== 'sovereign_executive' ? annualCents : t.monthly_cents;
+      const displayCents = billing === 'annual' && !isSovereign ? annualCents : t.monthly_cents;
       const displayUSD = (displayCents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const periodLabel = t.tier === 'sovereign_executive' ? 'one-time' : billing === 'annual' ? '/year' : '/mo';
-      const features = (t.features || []).slice(0, 4);
+      const periodLabel = billing === 'annual' ? '/year' : '/mo';
+      const features = (t.features || []).filter(f => !/lifetime access/i.test(String(f)));
+      const shownFeatures = features.slice(0, 4);
       const color = TIER_COLORS[t.tier] || '#f59e0b';
       const movingUp = TIER_ORDER.indexOf(t.tier) > TIER_ORDER.indexOf(currentTier);
-      const priceText = displayCents === 0 ? 'Free' : '$' + displayUSD;
+      const priceText = isSovereign ? 'future product pricing TBD' : (displayCents === 0 ? 'Free' : '$' + displayUSD);
       const payLabel = isCurrent
         ? ''
         : movingUp
           ? `Pay ${priceText}${displayCents > 0 ? (periodLabel.charAt(0) === '/' ? periodLabel : ' ' + periodLabel) : ''}`
           : `Downgrade to ${t.display_name}`;
+      const action = isCurrent
+        ? ''
+        : isSovereign
+          ? `<a class="plan-pay-btn" href="/pricing.html">Inquire About Sovereign</a>`
+          : `<button type="button" class="plan-pay-btn${movingUp ? '' : ' downgrade'}" id="pay-${t.tier}" onclick="payForTier('${t.tier}', ${movingUp})">${payLabel}</button>`;
 
       return `<div class="tier-card${isCurrent ? ' current-tier' : ''}"
                    id="tier-card-${t.tier}"
@@ -285,15 +294,15 @@
             ${isCurrent ? '' : `<div style="font-size:12px;color:var(--text-muted);margin-top:2px">${movingUp ? 'Includes the paid tools' : 'Downgrade'}</div>`}
           </div>
           <div class="tier-price">
-            <div class="price-amount">${priceText}</div>
-            ${displayCents > 0 ? `<div class="price-period">${periodLabel}</div>` : ''}
+            <div class="price-amount${isSovereign ? ' price-tbd' : ''}">${priceText}</div>
+            ${!isSovereign && displayCents > 0 ? `<div class="price-period">${periodLabel}</div>` : ''}
           </div>
         </div>
         <ul class="tier-features">
-          ${features.map(f => `<li>${f}</li>`).join('')}
-          ${(t.features || []).length > 4 ? `<li style="color:var(--text-muted)">+ ${(t.features || []).length - 4} more</li>` : ''}
+          ${shownFeatures.map(f => `<li>${f}</li>`).join('')}
+          ${features.length > 4 ? `<li style="color:var(--text-muted)">+ ${features.length - 4} more</li>` : ''}
         </ul>
-        ${isCurrent ? '' : `<button type="button" class="plan-pay-btn${movingUp ? '' : ' downgrade'}" id="pay-${t.tier}" onclick="payForTier('${t.tier}', ${movingUp})">${payLabel}</button>`}
+        ${action}
       </div>`;
     }).join('');
 
@@ -309,6 +318,10 @@
   }
 
   async function payForTier(tier, movingUp) {
+    if (tier === 'sovereign_executive') {
+      window.location.href = '/pricing.html';
+      return;
+    }
     const btn = document.getElementById('pay-' + tier);
     if (btn) { btn.disabled = true; btn.textContent = movingUp ? 'Opening payment…' : 'Applying…'; }
     try {
@@ -362,11 +375,15 @@
         `<span style="color:${preview.direction === 'upgrade' ? 'var(--accent-green)' : 'var(--accent-red)'}">${preview.to_display}</span>`;
 
       const diffCents = preview.price_diff_cents;
-      const diffLabel = diffCents === 0 ? 'No change'
+      const diffLabel = tier === 'sovereign_executive'
+        ? 'future product pricing TBD'
+        : diffCents === 0 ? 'No change'
         : diffCents > 0 ? `<span class="arrow-up">+$${(diffCents/100).toFixed(2)}/mo</span>`
         : `<span class="arrow-down">−$${(Math.abs(diffCents)/100).toFixed(2)}/mo</span>`;
       document.getElementById('price-diff-label').innerHTML = diffLabel;
-      document.getElementById('billing-label').textContent = preview.billing === 'one_time' ? 'One-time purchase' : preview.billing === 'annual' ? 'Annual' : 'Monthly';
+      document.getElementById('billing-label').textContent = tier === 'sovereign_executive'
+        ? 'future product pricing TBD'
+        : preview.billing === 'one_time' ? 'One-time purchase' : preview.billing === 'annual' ? 'Annual' : 'Monthly';
 
       document.getElementById('confirm-panel').classList.add('visible');
 
@@ -383,7 +400,9 @@
       const ctaBtn = document.getElementById('cta-btn');
       ctaBtn.disabled = false;
       ctaBtn.style.background = preview.direction === 'downgrade' ? 'var(--accent-red)' : 'var(--accent-gold)';
-      ctaBtn.textContent = preview.direction === 'upgrade'
+      ctaBtn.textContent = tier === 'sovereign_executive'
+        ? 'Inquire About Sovereign'
+        : preview.direction === 'upgrade'
         ? `Upgrade to ${preview.to_display} →`
         : `Downgrade to ${preview.to_display}`;
 
@@ -403,6 +422,11 @@
     const stripeLink = btn.dataset.stripeLink;
 
     if (!selectedTier) return;
+
+    if (selectedTier === 'sovereign_executive') {
+      window.location.href = '/pricing.html';
+      return;
+    }
 
     if (direction === 'upgrade') {
       // For upgrades: register intent then redirect to Stripe
