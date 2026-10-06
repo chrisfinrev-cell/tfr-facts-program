@@ -2117,6 +2117,8 @@
     // AUTH & INIT
     // ═══════════════════════════════════════
     // Owner accounts get sovereign feature access but NOT admin panel access.
+    // ecci2760@gmail.com is also on the app's admin email list, so it is not owner-only.
+    const ADMIN_PANEL_EMAILS = ['chris.finrev@gmail.com', 'ecci2760@gmail.com'];
     const FUTURE_GEN_EMAILS = ['ecci2760@gmail.com', 'ecci2760f@gmail.com', 'dianes3cps@gmail.com'];
 
     async function init() {
@@ -2126,21 +2128,27 @@
         if (!authData.authenticated) { window.location.href = '/login.html'; return; }
         window.__ADMIN_USER__ = authData.user || {};
 
-        const proRes = await fetch('/api/pro-status');
-        const proData = await proRes.json();
-        isCreatorUser = proData.is_creator;
+        const userEmail = (authData.user && authData.user.email || '').toLowerCase().trim();
+        const emailIsAdmin = ADMIN_PANEL_EMAILS.indexOf(userEmail) !== -1;
+        const flagIsAdmin = !!(authData.user && authData.user.is_admin);
 
-        // Explicitly block Future Generations accounts — they are NOT admins.
-        // Belt-and-suspenders: backend requireAdminAllowlist already enforces this;
-        // this check prevents the panel from even rendering for these accounts.
-        const userEmail = (authData.user && authData.user.email || '').toLowerCase();
-        if (FUTURE_GEN_EMAILS.includes(userEmail)) {
+        try {
+          const proRes = await fetch('/api/pro-status');
+          const proData = await proRes.json();
+          isCreatorUser = !!proData.is_creator;
+        } catch (proErr) {
+          isCreatorUser = false;
+        }
+
+        // Owner-only accounts are not admins. The admin email list and the
+        // is_admin flag match the logged-in app and requireAdmin.
+        if (FUTURE_GEN_EMAILS.includes(userEmail) && !emailIsAdmin && !flagIsAdmin) {
           document.getElementById('loading').style.display = 'none';
           document.getElementById('access-denied').style.display = 'block';
           return;
         }
 
-        if (!isCreatorUser) {
+        if (!isCreatorUser && !emailIsAdmin && !flagIsAdmin) {
           document.getElementById('loading').style.display = 'none';
           document.getElementById('access-denied').style.display = 'block';
           return;

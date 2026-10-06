@@ -37,11 +37,10 @@
   var css = [
     '#tfr-header{position:sticky;top:0;z-index:50;background:rgba(7,8,13,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.06);}',
     '#tfr-header *{box-sizing:border-box;}',
-    '#tfr-bar{max-width:70rem;margin:0 auto;padding:0 1.25rem;height:4rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;}',
-    '#tfr-brand{display:flex;align-items:center;gap:.75rem;text-decoration:none;flex-shrink:0;color:inherit;}',
-    '#tfr-seal{width:2.25rem;height:2.25rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;letter-spacing:.06em;color:#c9a227;border:1px solid rgba(201,162,39,.4);background:#0d1117;font-family:Georgia,serif;}',
-    '#tfr-brand-name{font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#fff;}',
-    '#tfr-brand-sub{font-size:.7rem;color:#c9a227;letter-spacing:.02em;}',
+    '#tfr-bar{max-width:70rem;margin:0 auto;padding:0 1.25rem;height:5.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;}',
+    '#tfr-brand{display:flex;align-items:center;text-decoration:none;flex-shrink:0;color:inherit;}',
+    '.tfr-logo{height:4.6rem;width:auto;display:block;border-radius:10px;}',
+    '.tfr-logo-footer{height:7.5rem;width:auto;display:block;border-radius:12px;margin-bottom:.8rem;}',
     '#tfr-desktop{display:none;align-items:center;gap:1.35rem;}',
     '#tfr-cta{display:none;align-items:center;gap:.75rem;}',
     '.tfr-link{color:#9ca3af;font-size:.875rem;font-weight:500;text-decoration:none;}',
@@ -82,9 +81,7 @@
   var home = tfrHref('index.html');
   var navHTML = [
     '<header id="tfr-header"><div id="tfr-bar">',
-    '<a href="' + home + '" id="tfr-brand"><div id="tfr-seal">TFR</div>',
-    '<div><div id="tfr-brand-name">The Financial Revolution</div>',
-    '<div id="tfr-brand-sub">thefinancialrevolution.net</div></div></a>',
+    '<a href="' + home + '" id="tfr-brand"><img class="tfr-logo" src="' + tfrHref('tfr-logo.jpg') + '" alt="The Financial Revolution"></a>',
     '<nav id="tfr-desktop">' + links('tfr-link') + '</nav>',
     '<div id="tfr-cta"><a class="tfr-btn" href="' + appHref('/signup.html') + '">Open FACTS Engine →</a></div>',
     '<button id="tfr-ham" onclick="window._tfrToggle()" aria-label="Menu"><span class="tfr-ham-line"></span><span class="tfr-ham-line"></span><span class="tfr-ham-line"></span></button>',
@@ -94,7 +91,7 @@
 
   var footerHTML = [
     '<footer id="tfr-footer"><div id="tfr-footer-inner"><div id="tfr-footer-grid">',
-    '<div><div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem;"><div id="tfr-seal">TFR</div><div style="font-weight:700;letter-spacing:.08em;">THE FINANCIAL REVOLUTION</div></div>',
+    '<div><img class="tfr-logo-footer" src="' + tfrHref('tfr-logo.jpg') + '" alt="The Financial Revolution">',
     '<p style="color:#6b7280;font-size:.85rem;line-height:1.6;margin:0;">Education, programs, modules, and public tools. The allocation engine lives on factsmoney.com.</p></div>',
     '<div><h4>Learn</h4><ul>',
     '<li><a href="' + tfrHref('library.html') + '">Education Library</a></li>',

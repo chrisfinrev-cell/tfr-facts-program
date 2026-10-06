@@ -426,6 +426,26 @@
             margin-left: 8px;
             white-space: nowrap;
         }
+        /* Sits in the left header cluster so it stays on screen.
+           The tab-bar Admin control is past the overflow clip. */
+        .admin-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.14);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: 0.02em;
+            padding: 5px 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+        .admin-chip:hover { background: rgba(245, 158, 11, 0.24); color: #fbbf24; }
         .plan-badge.admin-clickable {
             cursor: pointer;
             position: relative;
@@ -1200,16 +1220,26 @@
         }
         .save-alloc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* ─── Toast ─── */
+        /* ─── Toast ───
+           Anchored to the top of the viewport. A bottom offset sits under the
+           fixed legal disclaimer and the OS taskbar, so only a sliver shows. */
         .toast {
-            position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+            position: fixed;
+            top: max(24px, env(safe-area-inset-top, 0px));
+            left: 50%;
+            right: auto;
+            bottom: auto;
+            z-index: 100002;
+            max-width: min(92vw, 440px);
             background: var(--bg-elevated); border: 1px solid var(--border);
             color: var(--text-primary); padding: 14px 24px; border-radius: 12px;
             font-size: 0.9rem; font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            transform: translateY(100px); opacity: 0; transition: all 0.3s ease;
+            transform: translateX(-50%) translateY(-140%);
+            opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease;
             pointer-events: none;
+            text-align: center;
         }
-        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { border-color: var(--accent-green); }
         .toast.error { border-color: var(--accent-rose); }
 
@@ -2021,9 +2051,9 @@
                 <!-- Sovereign Executive -->
                 <div class="pricing-card" style="border-color: #f59e0b; box-shadow: 0 4px 20px rgba(245,158,11,0.15); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(245,158,11,0.05) 100%);">
                     <h3 style="color: #f59e0b;">Sovereign Executive</h3>
-                    <div class="pricing-amount" style="color: #f59e0b;">$19,997<span class="small"> one-time</span></div>
+                    <div class="pricing-amount" style="color: #f59e0b; font-size: 1.35rem; line-height: 1.3;">future product pricing TBD</div>
                     <ul class="pricing-features">
-                        <li>✓ All 12 Levels — Lifetime</li>
+                        <li>✓ All 12 Levels</li>
                         <li>✓ Mastermind access</li>
                         <li>✓ P2P Visibility</li>
                         <li>✓ Direct line to founder</li>
@@ -2114,9 +2144,10 @@
     <!-- ════════ APP ════════ -->
     <div id="app-page">
         <header class="app-header">
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" style="background:none;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;padding:6px 10px;border-radius:8px;font-size:1.1rem;line-height:1;align-items:center;justify-content:center;">☰</button>
                 <div class="logo">FACTS</div>
+                <a href="/admin" id="header-admin-chip" class="admin-chip creator-only" style="display:none;" title="You're the admin. Open the admin console.">🔐 Admin</a>
                 <span class="plan-badge free" id="plan-badge">FREE</span>
             </div>
             <div class="app-tabs">
@@ -2141,10 +2172,17 @@
                 </div>
                 <div class="tab-dropdown" id="desktop-dropdown-tools">
                     <button class="app-tab dropdown-trigger" data-dropdown-group="tools" onclick="toggleDropdown('desktop-tools')">🔧 Tools <span class="dropdown-chevron">▾</span></button>
-                    <div class="dropdown-menu" style="min-width:190px;">
+                    <div class="dropdown-menu" style="min-width:340px;max-height:min(70vh,560px);overflow-y:auto;">
                         <div class="dropdown-section-label first-label">Free Tools</div>
                         <button class="dropdown-item" data-tab-child="credit-score" onclick="switchTab('credit-score');closeAllDropdowns()"><span class="item-label">📊 Credit Score</span><span class="badge-free">Free</span></button>
                         <button class="dropdown-item" data-tab-child="fi-calculator" onclick="switchTab('fi-calculator');closeAllDropdowns()"><span class="item-label">🎯 FI Calculator</span><span class="badge-free">Free</span></button>
+                        <button class="dropdown-item" onclick="window.location.href='/rate-radar';closeAllDropdowns()" style="color:#34d399;"><span class="item-label">📡 Rate Radar</span></button>
+                        <button class="dropdown-item" onclick="window.location.href='/shopping-calculator';closeAllDropdowns()" style="color:#39ff14;"><span class="item-label">🛒 Shopping Calc</span></button>
+                        <div class="dropdown-section-label" style="margin-top:4px;color:#d4a853;">Forensic Credit Scan</div>
+                        <a class="dropdown-item" href="/credit-analysis" onclick="closeAllDropdowns()"><span class="item-label">🔍 Structural Vulnerability Report</span><span class="badge-free">Free</span></a>
+                        <div class="dropdown-section-label" style="margin-top:4px;">Coming Soon</div>
+                        <div class="dropdown-item" style="opacity:0.55;cursor:default;"><span class="item-label">⚖️ Federal Dispute Pack</span><span style="font-size:0.62rem;background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3);padding:1px 6px;border-radius:3px;margin-left:4px;font-family:'Space Mono',monospace;">$19.99</span></div>
+                        <div class="dropdown-item" style="opacity:0.55;cursor:default;"><span class="item-label">📡 Credit Architecture Monitor</span><span style="font-size:0.62rem;background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3);padding:1px 6px;border-radius:3px;margin-left:4px;font-family:'Space Mono',monospace;">$9.99/mo</span></div>
                         <div class="dropdown-section-label" style="margin-top:4px;">Paid Tools ✨</div>
                         <button class="dropdown-item" data-tab-child="whatif" onclick="switchTab('whatif');closeAllDropdowns()"><span class="item-label">🔮 What-If</span><span class="badge-pro">Paid</span></button>
                         <button class="dropdown-item" data-tab-child="debt-consolidation" onclick="switchTab('debt-consolidation');closeAllDropdowns()"><span class="item-label">💳 Debt Reduction</span><span class="badge-pro">Paid</span></button>
@@ -2161,18 +2199,6 @@
                 <button class="app-tab" id="level2-nav-btn" onclick="handleLevel2NavClick(event)" title="Requires Level 1 completion">🔒 Level 2</button>
                 <button class="app-tab" data-tab="education">📚 Education</button>
                 <button class="app-tab" data-tab="future-generations">🌿 Future Gen</button>
-                <button class="app-tab" onclick="window.location.href='/rate-radar'" style="color:#34d399;">📡 Rate Radar</button>
-                <button class="app-tab" onclick="window.location.href='/shopping-calculator'" style="color:#39ff14;">🛒 Shopping Calc</button>
-                <div class="tab-dropdown" id="desktop-dropdown-credit-scan">
-                    <button class="app-tab dropdown-trigger" data-dropdown-group="credit-scan" onclick="toggleDropdown('desktop-credit-scan')" style="color:#d4a853;font-weight:600;">🔍 Forensic Credit Scan <span class="dropdown-chevron">▾</span></button>
-                    <div class="dropdown-menu" style="min-width:240px;">
-                        <div class="dropdown-section-label first-label">Credit Analysis</div>
-                        <a class="dropdown-item" href="/credit-analysis" onclick="closeAllDropdowns()"><span class="item-label">🔍 Structural Vulnerability Report</span><span class="badge-free">Free</span></a>
-                        <div class="dropdown-section-label" style="margin-top:4px;">Coming Soon</div>
-                        <div class="dropdown-item" style="opacity:0.55;cursor:default;"><span class="item-label">⚖️ Federal Dispute Pack</span><span style="font-size:0.62rem;background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3);padding:1px 6px;border-radius:3px;margin-left:4px;font-family:'Space Mono',monospace;">$19.99</span></div>
-                        <div class="dropdown-item" style="opacity:0.55;cursor:default;"><span class="item-label">📡 Credit Architecture Monitor</span><span style="font-size:0.62rem;background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3);padding:1px 6px;border-radius:3px;margin-left:4px;font-family:'Space Mono',monospace;">$9.99/mo</span></div>
-                    </div>
-                </div>
                 <button class="app-tab" data-tab="archive">🗄️ Archive</button>
                 <button class="app-tab" onclick="window.location.href='/sovereign'" style="color:#c9a227;font-weight:700;background:rgba(201,162,39,0.10);border:1px solid rgba(201,162,39,0.20);">⚔️ Sovereign</button>
                 <button class="app-tab creator-only" style="display:none;color:#f59e0b;" onclick="window.location.href='/admin.html'">🔐 Admin</button>
@@ -2237,6 +2263,7 @@
                     <strong style="color:var(--text-primary);font-size:1rem;">Navigate</strong>
                     <button onclick="closeMobileMenu()" style="background:none;border:none;color:var(--text-muted);font-size:1.4rem;cursor:pointer;padding:4px 8px;">✕</button>
                 </div>
+                <a href="/admin" id="mobile-menu-admin" class="mobile-menu-item creator-only" style="display:none;width:100%;margin-bottom:8px;color:#f59e0b;font-weight:700;border-color:rgba(245,158,11,0.45);background:rgba(245,158,11,0.10);text-align:center;">🔐 Admin — you're the admin</a>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
                     <button class="mobile-menu-item" onclick="switchTab('dashboard');closeMobileMenu()">📊 Dashboard</button>
                     <button class="mobile-menu-item" onclick="switchTab('add');closeMobileMenu()">➕ Add Txn</button>
@@ -2437,10 +2464,17 @@
             </div>
             <div class="tab-dropdown" id="mobile-dropdown-tools">
                 <button class="mobile-tab dropdown-trigger" data-dropdown-group="tools" onclick="toggleDropdown('mobile-tools')"><span class="tab-icon">🔧</span>Tools<span class="dropdown-chevron" style="font-size:0.5rem;">▾</span></button>
-                <div class="dropdown-menu" style="min-width:190px;">
+                <div class="dropdown-menu" style="min-width:340px;max-height:min(70vh,560px);overflow-y:auto;">
                     <div class="dropdown-section-label first-label">Free Tools</div>
                     <button class="dropdown-item" data-tab-child="credit-score" onclick="switchTab('credit-score');closeAllDropdowns()"><span class="item-label">📊 Credit Score</span><span class="badge-free">Free</span></button>
                     <button class="dropdown-item" data-tab-child="fi-calculator" onclick="switchTab('fi-calculator');closeAllDropdowns()"><span class="item-label">🎯 FI Calculator</span><span class="badge-free">Free</span></button>
+                    <button class="dropdown-item" onclick="window.location.href='/rate-radar';closeAllDropdowns()" style="color:#34d399;"><span class="item-label">📡 Rate Radar</span></button>
+                    <button class="dropdown-item" onclick="window.location.href='/shopping-calculator';closeAllDropdowns()" style="color:#39ff14;"><span class="item-label">🛒 Shopping Calc</span></button>
+                    <div class="dropdown-section-label" style="margin-top:4px;color:#d4a853;">Forensic Credit Scan</div>
+                    <a class="dropdown-item" href="/credit-analysis" onclick="closeAllDropdowns()"><span class="item-label">🔍 Structural Vulnerability Report</span><span class="badge-free">Free</span></a>
+                    <div class="dropdown-section-label" style="margin-top:4px;">Coming Soon</div>
+                    <div class="dropdown-item" style="opacity:0.55;cursor:default;"><span class="item-label">⚖️ Federal Dispute Pack</span><span style="font-size:0.62rem;background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3);padding:1px 6px;border-radius:3px;margin-left:4px;">$19.99</span></div>
+                    <div class="dropdown-item" style="opacity:0.55;cursor:default;"><span class="item-label">📡 Credit Architecture Monitor</span><span style="font-size:0.62rem;background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3);padding:1px 6px;border-radius:3px;margin-left:4px;">$9.99/mo</span></div>
                     <div class="dropdown-section-label" style="margin-top:4px;">Paid Tools ✨</div>
                     <button class="dropdown-item" data-tab-child="whatif" onclick="switchTab('whatif');closeAllDropdowns()"><span class="item-label">🔮 What-If</span><span class="badge-pro">Paid</span></button>
                     <button class="dropdown-item" data-tab-child="debt-consolidation" onclick="switchTab('debt-consolidation');closeAllDropdowns()"><span class="item-label">💳 Debt Reduction</span><span class="badge-pro">Paid</span></button>
@@ -2454,18 +2488,6 @@
             <button class="mobile-tab" onclick="window.location.href='/tier-upgrade'" style="color:#34d399;font-weight:700;"><span class="tab-icon">⬆️</span>Upgrade</button>
             <button class="mobile-tab" data-tab="education"><span class="tab-icon">📚</span>Education</button>
             <button class="mobile-tab" data-tab="future-generations"><span class="tab-icon">🌿</span>Generations</button>
-            <button class="mobile-tab" onclick="window.location.href='/rate-radar'" style="color:#34d399;"><span class="tab-icon">📡</span>Rate Radar</button>
-            <button class="mobile-tab" onclick="window.location.href='/shopping-calculator'" style="color:#39ff14;"><span class="tab-icon">🛒</span>Shopping Calc</button>
-            <div class="tab-dropdown" id="mobile-dropdown-credit-scan">
-                <button class="mobile-tab dropdown-trigger" data-dropdown-group="credit-scan" onclick="toggleDropdown('mobile-credit-scan')" style="color:#d4a853;font-weight:600;"><span class="tab-icon">🔍</span>Credit Scan<span class="dropdown-chevron" style="font-size:0.5rem;">▾</span></button>
-                <div class="dropdown-menu" style="min-width:240px;">
-                    <div class="dropdown-section-label first-label">Credit Analysis</div>
-                    <a class="dropdown-item" href="/credit-analysis" onclick="closeAllDropdowns()"><span class="item-label">🔍 Structural Vulnerability Report</span><span class="badge-free">Free</span></a>
-                    <div class="dropdown-section-label" style="margin-top:4px;">Coming Soon</div>
-                    <div class="dropdown-item" style="opacity:0.55;cursor:default;"><span class="item-label">⚖️ Federal Dispute Pack</span><span style="font-size:0.62rem;background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3);padding:1px 6px;border-radius:3px;margin-left:4px;">$19.99</span></div>
-                    <div class="dropdown-item" style="opacity:0.55;cursor:default;"><span class="item-label">📡 Credit Architecture Monitor</span><span style="font-size:0.62rem;background:rgba(212,168,83,0.15);color:#d4a853;border:1px solid rgba(212,168,83,0.3);padding:1px 6px;border-radius:3px;margin-left:4px;">$9.99/mo</span></div>
-                </div>
-            </div>
             <button class="mobile-tab" data-tab="archive"><span class="tab-icon">🗄️</span>Archive</button>
             <button class="mobile-tab" onclick="window.location.href='/sovereign'" style="color:#c9a227;font-weight:700;"><span class="tab-icon">⚔️</span>Sovereign</button>
             <button class="mobile-tab creator-only" style="display:none;color:#f59e0b;" onclick="window.location.href='/admin.html'"><span class="tab-icon">🔐</span>Admin</button>
@@ -3242,10 +3264,10 @@
 
                     <!-- Two Save Buttons: Temporary and Permanent -->
                     <div style="display:flex;gap:12px;margin-top:16px;">
-                        <button class="save-alloc-btn secondary" id="save-temporary-btn" onclick="saveAllocationsTemporary()" title="Apply these percentages to your next income transaction only, then revert">
+                        <button type="button" class="save-alloc-btn secondary" id="save-temporary-btn" onclick="saveAllocationsTemporary()" title="Apply these percentages to your next income transaction only, then revert">
                             Save as One-Time
                         </button>
-                        <button class="save-alloc-btn primary" id="save-permanent-btn" onclick="saveAllocationsPermanent()" title="Save as default percentages for all future income transactions">
+                        <button type="button" class="save-alloc-btn primary" id="save-permanent-btn" onclick="saveAllocationsPermanent()" title="Save as default percentages for all future income transactions">
                             Save as Permanent
                         </button>
                     </div>
@@ -6345,6 +6367,21 @@
     let categories = [];
     let subcategories = [];
 
+    // Shown when /api/categories has not returned the six buckets yet.
+    const FACTS_DEFAULT_BUCKETS = [
+        { id: null, slug: 'necessities', name: 'Necessities', icon: '🏠', percentage: 50 },
+        { id: null, slug: 'velocity', name: 'Velocity', icon: '⚡', percentage: 10 },
+        { id: null, slug: 'reserve', name: 'Reserve', icon: '🛡️', percentage: 10 },
+        { id: null, slug: 'lifestyle', name: 'Lifestyle', icon: '🌿', percentage: 10 },
+        { id: null, slug: 'growth', name: 'Growth', icon: '📈', percentage: 10 },
+        { id: null, slug: 'legacy', name: 'Legacy', icon: '👑', percentage: 10 }
+    ];
+
+    function factsBucketBy(slug, name) {
+        const key = String(slug || name || '').trim().toLowerCase();
+        return FACTS_DEFAULT_BUCKETS.find(b => b.slug === key || b.name.toLowerCase() === key) || null;
+    }
+
     // Investment/brokerage account types — transactions in these stay as Financial Freedom
     const INVESTMENT_ACCOUNT_TYPES = new Set([
         'Investment / Brokerage',
@@ -6371,12 +6408,29 @@
 
     // ─── Admin Detection ───
     // WHY: Server may not always set is_creator; hardcoded email list is the safety net.
+    // is_admin is the database flag. The email list covers the intended admin even
+    // when that flag was never written. Owner emails are not in this list.
     const ADMIN_EMAILS = ['chris.finrev@gmail.com', 'ecci2760@gmail.com'];
     function isAdminUser(user) {
         if (!user) return false;
+        if (user.is_admin) return true;
         if (user.is_creator) return true;
         var email = (user.email || '').toLowerCase().trim();
         return ADMIN_EMAILS.indexOf(email) !== -1;
+    }
+
+    function setCreatorOnlyVisible(el, visible) {
+        if (!visible) {
+            el.style.display = 'none';
+            return;
+        }
+        if (el.id === 'header-admin-chip' || el.classList.contains('admin-chip')) {
+            el.style.display = 'inline-flex';
+        } else if (el.classList.contains('mobile-menu-item')) {
+            el.style.display = 'block';
+        } else {
+            el.style.display = '';
+        }
     }
 
     // ─── Auth ───
@@ -6444,9 +6498,12 @@
 
     function updateNavForUser() {
         if (currentUser) {
-            document.getElementById('nav-login').style.display = 'none';
-            document.getElementById('nav-signup').style.display = 'none';
-            document.getElementById('nav-dashboard').style.display = '';
+            var navLogin = document.getElementById('nav-login');
+            var navSignup = document.getElementById('nav-signup');
+            var navDashboard = document.getElementById('nav-dashboard');
+            if (navLogin) navLogin.style.display = 'none';
+            if (navSignup) navSignup.style.display = 'none';
+            if (navDashboard) navDashboard.style.display = '';
             // Update header user display
             const displayLabel = currentUser.display_name || currentUser.name || currentUser.email;
             const displayNameEl = document.getElementById('user-display-name');
@@ -6504,8 +6561,11 @@
             var _isAdmin = isAdminUser(currentUser);
             if (_isAdmin) {
                 document.querySelectorAll('.creator-only').forEach(el => {
-                    el.style.display = '';
+                    setCreatorOnlyVisible(el, true);
                 });
+                if (displayNameEl && displayNameEl.textContent.indexOf(' · Admin') === -1) {
+                    displayNameEl.textContent = displayNameEl.textContent + ' · Admin';
+                }
 
                 // ── Admin Mode Header: "FACTS 🔴 ADMIN MODE" + danger stripe ──
                 var appHeader = document.querySelector('.app-header');
@@ -6535,7 +6595,7 @@
                 }
             } else {
                 document.querySelectorAll('.creator-only').forEach(el => {
-                    el.style.display = 'none';
+                    setCreatorOnlyVisible(el, false);
                 });
                 // Clean up admin mode if not admin
                 var appHeader = document.querySelector('.app-header');
@@ -7112,8 +7172,9 @@
                 const trigger = w.querySelector('.dropdown-trigger');
                 const menu = w.querySelector('.dropdown-menu');
                 const rect = trigger.getBoundingClientRect();
-                const menuWidth = 165;
                 const isMobile = !!w.closest('.mobile-tabs');
+                w.classList.add('open');
+                const menuWidth = menu.offsetWidth || 165;
                 // Horizontal: center on trigger, clamp to viewport
                 let left = rect.left + rect.width / 2 - menuWidth / 2;
                 left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
@@ -7381,16 +7442,19 @@
     // ─── API Calls ───
     async function loadCategories() {
         try {
-            const res = await fetch('/api/categories');
-            const data = await res.json();
+            const res = await fetch('/api/categories', { credentials: 'same-origin' });
+            const data = await res.json().catch(() => null);
 
-            // Handle new API format (returns {categories, has_temporary} or just array for backward compat)
-            if (data.categories) {
-                categories = data.categories;
-                hasTemporaryAllocations = data.has_temporary || false;
-            } else {
-                categories = data;
-                hasTemporaryAllocations = false;
+            // Only accept an array. An error object ({error: ...}) is not a category list
+            // and used to throw later in .map(), leaving the save buttons with nothing to save.
+            let list = null;
+            if (data && Array.isArray(data.categories)) list = data.categories;
+            else if (Array.isArray(data)) list = data;
+            if (list) {
+                categories = list;
+                hasTemporaryAllocations = !!(data && data.has_temporary);
+            } else if (!Array.isArray(categories)) {
+                categories = [];
             }
 
             renderCategoryPicker();
@@ -9637,20 +9701,42 @@
         document.getElementById('whatif-insights-list').innerHTML = insightsList;
     }
 
+    function allocationRowsForSettings() {
+        const source = (Array.isArray(categories) && categories.length) ? categories : FACTS_DEFAULT_BUCKETS;
+        return source.map(c => {
+            const bucket = factsBucketBy(c.slug, c.name);
+            const parsed = parseFloat(c.percentage);
+            const percentage = Number.isFinite(parsed) ? parsed : (bucket ? bucket.percentage : 0);
+            return {
+                id: c.id != null && c.id !== '' ? c.id : '',
+                slug: c.slug || (bucket ? bucket.slug : ''),
+                name: c.name || (bucket ? bucket.name : 'Category'),
+                icon: c.icon || (bucket ? bucket.icon : '📁'),
+                percentage
+            };
+        });
+    }
+
     async function loadAllocationSettings() {
-        if (categories.length === 0) await loadCategories();
+        try {
+            if (!Array.isArray(categories) || categories.length === 0) await loadCategories();
+        } catch (err) {
+            console.error('Failed to load allocation settings', err);
+        }
         const container = document.getElementById('alloc-settings-list');
-        container.innerHTML = categories.map(c => `
+        if (!container) return;
+        const rows = allocationRowsForSettings();
+        container.innerHTML = rows.map(c => `
             <div class="alloc-setting-row">
                 <div class="alloc-setting-info">
                     <span class="icon">${c.icon}</span>
-                    <span class="name">${c.name}</span>
+                    <span class="name">${escHtml(c.name)}</span>
                 </div>
-                <input type="range" class="alloc-range-slider" data-id="${c.id}"
-                    value="${parseFloat(c.percentage)}" min="0" max="100" step="1"
+                <input type="range" class="alloc-range-slider" data-id="${escHtml(c.id)}" data-slug="${escHtml(c.slug)}" data-name="${escHtml(c.name)}"
+                    value="${c.percentage}" min="0" max="100" step="1"
                     oninput="syncAllocSlider(this, 'range')">
-                <input type="number" class="alloc-pct-input" data-id="${c.id}"
-                    value="${parseFloat(c.percentage)}" min="0" max="100" step="1"
+                <input type="number" class="alloc-pct-input" data-id="${escHtml(c.id)}" data-slug="${escHtml(c.slug)}" data-name="${escHtml(c.name)}"
+                    value="${c.percentage}" min="0" max="100" step="1"
                     oninput="syncAllocSlider(this, 'input')">
                 <span style="color:var(--text-muted);font-size:0.9rem;">%</span>
             </div>
@@ -9658,28 +9744,92 @@
         updateAllocTotal();
         updateTemporaryIndicator();
 
-        // Load and render subcategory management
-        await loadSubcategories();
-        renderSubcategoryManagement();
+        // Load and render subcategory management once real category ids exist
+        if (Array.isArray(categories) && categories.some(c => c && c.id)) {
+            await loadSubcategories();
+            renderSubcategoryManagement();
+        }
     }
 
     function syncAllocSlider(el, source) {
         const id = el.dataset.id;
+        const slug = el.dataset.slug || '';
         const val = el.value;
+        const selector = id
+            ? '[data-id="' + id + '"]'
+            : '[data-slug="' + slug + '"]';
         if (source === 'range') {
-            // Sync number input from range slider
-            const numInput = document.querySelector('.alloc-pct-input[data-id="' + id + '"]');
+            const numInput = document.querySelector('#alloc-settings-list .alloc-pct-input' + selector);
             if (numInput) numInput.value = val;
         } else {
-            // Sync range slider from number input
-            const rangeInput = document.querySelector('.alloc-range-slider[data-id="' + id + '"]');
+            const rangeInput = document.querySelector('#alloc-settings-list .alloc-range-slider' + selector);
             if (rangeInput) rangeInput.value = val;
         }
         updateAllocTotal();
     }
 
+    function collectAllocationPayload() {
+        const inputs = document.querySelectorAll('#alloc-settings-list .alloc-pct-input');
+        const allocations = [];
+        inputs.forEach(inp => {
+            const id = parseInt(inp.dataset.id, 10);
+            const percentage = parseFloat(inp.value);
+            allocations.push({
+                category_id: Number.isFinite(id) ? id : null,
+                slug: inp.dataset.slug || '',
+                name: inp.dataset.name || '',
+                percentage: Number.isFinite(percentage) ? percentage : 0
+            });
+        });
+        return allocations;
+    }
+
+    async function saveAllocationSplit(url, successMessage) {
+        const allocations = collectAllocationPayload();
+        if (!allocations.length) {
+            showToast('Set the six category percentages first', 'error');
+            await loadAllocationSettings();
+            return;
+        }
+        const total = allocations.reduce((sum, a) => sum + a.percentage, 0);
+        if (Math.abs(total - 100) > 0.01) {
+            showToast('Percentages must total 100%', 'error');
+            return;
+        }
+
+        const tempBtn = document.getElementById('save-temporary-btn');
+        const permBtn = document.getElementById('save-permanent-btn');
+        if (tempBtn) tempBtn.disabled = true;
+        if (permBtn) permBtn.disabled = true;
+        try {
+            const res = await fetch(url, {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ allocations })
+            });
+            let data = {};
+            try { data = await res.json(); } catch (parseErr) { data = {}; }
+            if (!res.ok) {
+                showToast(data.error || 'Failed to save allocations', 'error');
+                return;
+            }
+            if (data && Array.isArray(data.categories) && data.categories.length) {
+                categories = data.categories;
+            }
+            hasTemporaryAllocations = !!(data && data.has_temporary);
+            updateTemporaryIndicator();
+            showToast(successMessage, 'success');
+            setTimeout(() => { switchTab('add'); setTimeout(() => setTxnType('income'), 150); }, 600);
+        } catch (err) {
+            showToast('Failed to save allocations', 'error');
+        } finally {
+            updateAllocTotal();
+        }
+    }
+
     function updateAllocTotal() {
-        const inputs = document.querySelectorAll('.alloc-pct-input');
+        const inputs = document.querySelectorAll('#alloc-settings-list .alloc-pct-input');
         let total = 0;
         inputs.forEach(inp => { total += parseFloat(inp.value) || 0; });
         const el = document.getElementById('alloc-total');
@@ -9701,65 +9851,19 @@
     }
 
     // Save allocations as TEMPORARY (one-time use, applies to next transaction only)
-    async function saveAllocationsTemporary() {
-        const inputs = document.querySelectorAll('.alloc-pct-input');
-        const allocations = [];
-        inputs.forEach(inp => {
-            allocations.push({ category_id: parseInt(inp.dataset.id), percentage: parseFloat(inp.value) });
-        });
-
-        try {
-            const res = await fetch('/api/allocations/temporary', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ allocations })
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                showToast(err.error || 'Failed to save', 'error');
-                return;
-            }
-            const data = await res.json();
-            categories = data.categories;
-            hasTemporaryAllocations = data.has_temporary;
-            updateTemporaryIndicator();
-            showToast('✅ One-time allocation saved! Taking you to log income now…', 'success');
-            // Auto-navigate to income entry
-            setTimeout(() => { switchTab('add'); setTimeout(() => setTxnType('income'), 150); }, 600);
-        } catch (err) {
-            showToast('Failed to save temporary allocations', 'error');
-        }
+    function saveAllocationsTemporary() {
+        return saveAllocationSplit(
+            '/api/allocations/temporary',
+            '✅ One-time allocation saved! Taking you to log income now…'
+        );
     }
 
     // Save allocations as PERMANENT (default for all future transactions)
-    async function saveAllocationsPermanent() {
-        const inputs = document.querySelectorAll('.alloc-pct-input');
-        const allocations = [];
-        inputs.forEach(inp => {
-            allocations.push({ category_id: parseInt(inp.dataset.id), percentage: parseFloat(inp.value) });
-        });
-
-        try {
-            const res = await fetch('/api/allocations/permanent', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ allocations })
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                showToast(err.error || 'Failed to save', 'error');
-                return;
-            }
-            const data = await res.json();
-            categories = data.categories;
-            hasTemporaryAllocations = data.has_temporary;
-            updateTemporaryIndicator();
-            showToast('✅ Permanent allocations saved! Taking you to log income now…', 'success');
-            // Auto-navigate to income entry
-            setTimeout(() => { switchTab('add'); setTimeout(() => setTxnType('income'), 150); }, 600);
-        } catch (err) {
-            showToast('Failed to save permanent allocations', 'error');
-        }
+    function saveAllocationsPermanent() {
+        return saveAllocationSplit(
+            '/api/allocations/permanent',
+            '✅ Permanent allocations saved! Taking you to log income now…'
+        );
     }
 
     // Live allocation breakdown on income entry form
@@ -9832,6 +9936,7 @@
     // ─── Subcategory Management ───
     function renderSubcategoryManagement() {
         const container = document.getElementById('subcategory-management');
+        if (!container || !Array.isArray(categories)) return;
         container.innerHTML = categories.map(cat => {
             const catSubs = subcategories.filter(s => s.category_id === cat.id);
             return `
@@ -10215,7 +10320,7 @@
                 </div>
                 <div style="max-width:400px;margin:16px auto 0;display:flex;gap:8px;">
                     <input type="text" id="settings-new-method-name" class="form-input" placeholder="e.g. Venmo, Zelle, Apple Pay" maxlength="100" style="flex:1;" onkeydown="if(event.key==='Enter'){addMethodFromSettings();}">
-                    <button onclick="addMethodFromSettings()" style="background:var(--accent-green);color:#fff;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;font-weight:600;white-space:nowrap;">+ Add</button>
+                    <button type="button" onclick="addMethodFromSettings()" style="background:var(--accent-green);color:#fff;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;font-weight:600;white-space:nowrap;">+ Add</button>
                 </div>`;
             return;
         }
@@ -10234,34 +10339,108 @@
                 </div>
                 <div style="display:flex;gap:8px;margin-top:4px;">
                     <input type="text" id="settings-new-method-name" class="form-input" placeholder="Add another method..." maxlength="100" style="flex:1;" onkeydown="if(event.key==='Enter'){addMethodFromSettings();}">
-                    <button onclick="addMethodFromSettings()" style="background:var(--accent-green);color:#fff;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;font-weight:600;white-space:nowrap;">+ Add</button>
+                    <button type="button" onclick="addMethodFromSettings()" style="background:var(--accent-green);color:#fff;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;font-weight:600;white-space:nowrap;">+ Add</button>
                 </div>
             </div>`;
+    }
+
+    function closeAddPaymentMethodModal() {
+        const modal = document.getElementById('add-payment-method-modal');
+        if (modal) modal.remove();
+    }
+
+    function openAddPaymentMethodModal(prefill) {
+        closeAddPaymentMethodModal();
+        const modal = document.createElement('div');
+        modal.id = 'add-payment-method-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:100003;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);padding:24px;box-sizing:border-box;';
+        modal.innerHTML = `
+            <div role="dialog" aria-modal="true" aria-labelledby="add-pm-title" style="background:#141b2d;border:1px solid #1e293b;border-radius:16px;padding:24px;width:min(420px,100%);max-height:min(520px, calc(100dvh - 48px));overflow:auto;box-shadow:0 24px 64px rgba(0,0,0,0.55);">
+                <h3 id="add-pm-title" style="margin:0 0 8px;font-size:1.15rem;color:#f1f5f9;">Add payment method</h3>
+                <p style="color:#94a3b8;font-size:0.9rem;margin:0 0 16px;line-height:1.45;">Enter a name such as Venmo, Zelle, or Apple Pay. It will show up in the transaction form.</p>
+                <input id="add-pm-name" type="text" maxlength="100" placeholder="e.g. Venmo, Zelle, Apple Pay" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:8px;border:1px solid #334155;background:#1a2332;color:#f1f5f9;font-size:1rem;">
+                <p id="add-pm-error" style="min-height:1.2em;margin:8px 0 0;color:#f87171;font-size:0.85rem;"></p>
+                <div style="display:flex;gap:10px;margin-top:16px;">
+                    <button type="button" id="add-pm-cancel" style="flex:1;padding:12px;border-radius:10px;border:1px solid #334155;background:transparent;color:#cbd5e1;font-weight:600;cursor:pointer;">Cancel</button>
+                    <button type="button" id="add-pm-confirm" style="flex:1;padding:12px;border-radius:10px;border:none;background:#10b981;color:#fff;font-weight:700;cursor:pointer;">Add</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+        const input = document.getElementById('add-pm-name');
+        const errorEl = document.getElementById('add-pm-error');
+        input.value = prefill || '';
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeAddPaymentMethodModal(); });
+        document.getElementById('add-pm-cancel').onclick = closeAddPaymentMethodModal;
+        document.getElementById('add-pm-confirm').onclick = () => confirmAddPaymentMethodModal();
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); confirmAddPaymentMethodModal(); }
+            if (e.key === 'Escape') closeAddPaymentMethodModal();
+        });
+        input.addEventListener('input', () => { if (errorEl) errorEl.textContent = ''; });
+        setTimeout(() => { input.focus(); input.select(); }, 0);
+    }
+
+    async function confirmAddPaymentMethodModal() {
+        const input = document.getElementById('add-pm-name');
+        const errorEl = document.getElementById('add-pm-error');
+        const name = input ? input.value.trim() : '';
+        if (!name) {
+            if (errorEl) errorEl.textContent = 'Enter a method name';
+            if (input) input.focus();
+            return;
+        }
+        const confirmBtn = document.getElementById('add-pm-confirm');
+        if (confirmBtn) confirmBtn.disabled = true;
+        const ok = await submitCustomPaymentMethod(name, errorEl);
+        if (ok) {
+            const inline = document.getElementById('settings-new-method-name');
+            if (inline) inline.value = '';
+            closeAddPaymentMethodModal();
+        } else if (confirmBtn) {
+            confirmBtn.disabled = false;
+        }
+    }
+
+    async function submitCustomPaymentMethod(name, errorEl) {
+        try {
+            const res = await fetch('/api/payment-methods/custom', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                const msg = data.error || 'Failed to save payment method';
+                if (errorEl) errorEl.textContent = msg;
+                else showToast(msg, 'error');
+                return false;
+            }
+            if (!_customPaymentMethods.find(m => m.name === name)) {
+                _customPaymentMethods.push(data.payment_method);
+                _customPaymentMethods.sort((a, b) => a.name.localeCompare(b.name));
+            }
+            refreshAllPaymentDropdowns();
+            renderPaymentMethodsManagement();
+            showToast('"' + name + '" added', 'success');
+            return true;
+        } catch (err) {
+            const msg = 'Failed to add payment method';
+            if (errorEl) errorEl.textContent = msg;
+            else showToast(msg, 'error');
+            return false;
+        }
     }
 
     async function addMethodFromSettings() {
         const input = document.getElementById('settings-new-method-name');
         const name = input ? input.value.trim() : '';
-        if (!name) { showToast('Enter a method name', 'error'); return; }
-        try {
-            const res = await fetch('/api/payment-methods/custom', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name })
-            });
-            const data = await res.json();
-            if (!data.success) { showToast(data.error || 'Failed to save', 'error'); return; }
-            if (!_customPaymentMethods.find(m => m.name === name)) {
-                _customPaymentMethods.push(data.payment_method);
-                _customPaymentMethods.sort((a,b) => a.name.localeCompare(b.name));
-            }
-            if (input) input.value = '';
-            refreshAllPaymentDropdowns();
-            renderPaymentMethodsManagement();
-            showToast(`"${name}" added`, 'success');
-        } catch (err) {
-            showToast('Failed to add payment method', 'error');
+        if (!name) {
+            openAddPaymentMethodModal('');
+            return;
         }
+        const ok = await submitCustomPaymentMethod(name, null);
+        if (ok && input) input.value = '';
     }
 
     async function loadGiftCardDropdown() {
@@ -11562,9 +11741,11 @@
 
     function showToast(msg, type) {
         const toast = document.getElementById('toast');
+        if (!toast) return;
         toast.textContent = msg;
-        toast.className = 'toast ' + type + ' show';
-        setTimeout(() => { toast.classList.remove('show'); }, 2500);
+        toast.className = 'toast ' + (type || '') + ' show';
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => { toast.classList.remove('show'); }, 2800);
     }
 
     // ─── Future Generations ───
@@ -16848,13 +17029,13 @@
         }
     }
 
-    function showToast(message) {
-        // Simple toast notification
-        const toast = document.createElement('div');
+    function showToast(message, type) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
         toast.textContent = message;
-        toast.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:white;padding:12px 24px;border-radius:8px;z-index:10000;font-size:0.9rem;';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        toast.className = 'toast ' + (type || '') + ' show';
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => { toast.classList.remove('show'); }, 2800);
     }
 
     function escapeHtml(text) {
