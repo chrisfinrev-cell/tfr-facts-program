@@ -1,7 +1,10 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const router = express.Router();
 const { pool } = require('../db/pool');
 const { createTargetedInvites, invitesToCsv, parseMeta } = require('../lib/inviteCodes');
+
+const ADMIN_UNLOCK_MS = 12 * 60 * 60 * 1000;
 
 function getDb(req) {
   return req.app.get('db') || pool;
@@ -23,21 +26,43 @@ function isAllowlistedAdminEmail(email) {
   return fromEnv.indexOf(normalized) !== -1;
 }
 
+function adminToolsUnlocked(req) {
+  const until = req.session && req.session.adminToolsUntil;
+  return typeof until === 'number' && until > Date.now();
+}
+
+async function loadAdminUser(req) {
+  const db = getDb(req);
+  const userRes = await db.query(
+    'SELECT is_admin, email, password_hash FROM users WHERE id = $1',
+    [req.session.userId]
+  );
+  return userRes.rows[0] || null;
+}
+
+function isAdminRow(row) {
+  return !!(row && (row.is_admin || isAllowlistedAdminEmail(row.email)));
+}
+
 // --- MIDDLEWARE: REQUIRE ADMIN ---
 async function requireAdmin(req, res, next) {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: 'Unauthorized. Please log in.' });
   }
 
-  const db = getDb(req);
   try {
-    const userRes = await db.query('SELECT is_admin, email FROM users WHERE id = $1', [req.session.userId]);
-    if (userRes.rows.length === 0) {
+    const row = await loadAdminUser(req);
+    if (!isAdminRow(row)) {
       return res.status(403).json({ error: 'Forbidden: Admin access required.' });
     }
-    const row = userRes.rows[0];
-    if (!row.is_admin && !isAllowlistedAdminEmail(row.email)) {
-      return res.status(403).json({ error: 'Forbidden: Admin access required.' });
+    if (!adminToolsUnlocked(req)) {
+      if (req.method === 'GET' && (req.originalUrl === '/admin' || req.path === '/admin')) {
+        return res.redirect(302, '/app?adminGate=1');
+      }
+      return res.status(403).json({
+        error: 'Enter your password to open admin tools.',
+        code: 'admin_locked'
+      });
     }
     next();
   } catch (err) {
@@ -45,6 +70,56 @@ async function requireAdmin(req, res, next) {
     return res.status(500).json({ error: 'Server error checking admin credentials.' });
   }
 }
+
+// Password gate for the admin suite. Uses this account's FACTS password.
+router.post('/api/admin/unlock', async (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ error: 'Unauthorized. Please log in.' });
+  }
+
+  const password = String((req.body && req.body.password) || '');
+  if (!password) {
+    return res.status(400).json({ error: 'Enter your password.' });
+  }
+
+  const lockedUntil = req.session.adminUnlockLockedUntil;
+  if (typeof lockedUntil === 'number' && lockedUntil > Date.now()) {
+    return res.status(429).json({ error: 'Too many tries. Wait a few minutes and try again.' });
+  }
+
+  try {
+    const row = await loadAdminUser(req);
+    if (!isAdminRow(row)) {
+      return res.status(403).json({ error: 'Forbidden: Admin access required.' });
+    }
+    if (!row.password_hash) {
+      return res.status(400).json({ error: 'No password is set on this account.' });
+    }
+    const match = await bcrypt.compare(password, row.password_hash);
+    if (!match) {
+      const fails = (req.session.adminUnlockFails || 0) + 1;
+      req.session.adminUnlockFails = fails;
+      if (fails >= 8) {
+        req.session.adminUnlockLockedUntil = Date.now() + 15 * 60 * 1000;
+        req.session.adminUnlockFails = 0;
+      }
+      return res.status(401).json({ error: 'That password does not match this account.' });
+    }
+    req.session.adminUnlockFails = 0;
+    req.session.adminUnlockLockedUntil = 0;
+    req.session.adminToolsUntil = Date.now() + ADMIN_UNLOCK_MS;
+    req.session.save(function (err) {
+      if (err) {
+        console.error('Admin unlock session error:', err);
+        return res.status(500).json({ error: 'Could not open admin tools.' });
+      }
+      return res.json({ ok: true });
+    });
+  } catch (err) {
+    console.error('Admin unlock error:', err);
+    return res.status(500).json({ error: 'Could not check that password.' });
+  }
+});
 
 // --- 1. POST /api/admin/generate-code ---
 // Create multi-use master codes in beta_codes (legacy), OR targeted beta_invites when recipient fields present.
