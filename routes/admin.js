@@ -3,27 +3,12 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const { pool } = require('../db/pool');
 const { createTargetedInvites, invitesToCsv, parseMeta } = require('../lib/inviteCodes');
+const { userIsAdminAccount } = require('../config/adminAccess');
 
 const ADMIN_UNLOCK_MS = 12 * 60 * 60 * 1000;
 
 function getDb(req) {
   return req.app.get('db') || pool;
-}
-
-// Same allowlist the logged-in app already uses to show the Admin control.
-// users.is_admin remains sufficient. These emails stay admin when that flag
-// was never set. Owner-only addresses are not included.
-const ADMIN_EMAILS = ['chris.finrev@gmail.com', 'ecci2760@gmail.com'];
-
-function isAllowlistedAdminEmail(email) {
-  const normalized = String(email || '').trim().toLowerCase();
-  if (!normalized) return false;
-  if (ADMIN_EMAILS.indexOf(normalized) !== -1) return true;
-  const fromEnv = String(process.env.ADMIN_EMAILS || '')
-    .split(',')
-    .map(function (e) { return e.trim().toLowerCase(); })
-    .filter(Boolean);
-  return fromEnv.indexOf(normalized) !== -1;
 }
 
 function adminToolsUnlocked(req) {
@@ -41,7 +26,7 @@ async function loadAdminUser(req) {
 }
 
 function isAdminRow(row) {
-  return !!(row && (row.is_admin || isAllowlistedAdminEmail(row.email)));
+  return userIsAdminAccount(row);
 }
 
 // --- MIDDLEWARE: REQUIRE ADMIN ---

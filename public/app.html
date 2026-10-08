@@ -2151,9 +2151,9 @@
     <div id="app-page">
         <header class="app-header">
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <a href="/admin" id="header-admin-chip" class="admin-chip creator-only" style="display:none;" title="Open the admin dashboard" aria-label="Open admin dashboard" onclick="openAdminGate(event)">🔐 Admin</a>
                 <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" style="background:none;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;padding:6px 10px;border-radius:8px;font-size:1.1rem;line-height:1;align-items:center;justify-content:center;">☰</button>
                 <button type="button" class="logo" id="facts-admin-entry" onclick="openAdminGate(event)">FACTS</button>
-                <a href="/admin" id="header-admin-chip" class="admin-chip creator-only" style="display:none;" title="You're the admin. Open the admin console." onclick="openAdminGate(event)">🔐 Admin</a>
                 <span class="plan-badge free" id="plan-badge">FREE</span>
             </div>
             <div class="app-tabs">
@@ -6426,11 +6426,14 @@
     let hasTemporaryAllocations = false; // Flag for temporary allocation state
 
     // ─── Admin Detection ───
-    // WHY: Server may not always set is_creator; hardcoded email list is the safety net.
-    // is_admin is the database flag. The email list covers the intended admin even
-    // when that flag was never written. Owner emails are not in this list.
-    const ADMIN_EMAILS = ['chris.finrev@gmail.com', 'ecci2760@gmail.com'];
+    // The server paints the upper-left Admin button and sets __SERVER_IS_ADMIN
+    // when this session can open the dashboard. The email list is the backup
+    // when that flag was not injected. Personal owner emails are not in this list.
+    const ADMIN_EMAILS = ['chris.finrev@gmail.com', 'ecci2760@gmail.com', 'wtrchrisparks@gmail.com', 'admin@factsmoney.com', 'admin@thefinancialrevolution.net'];
     function isAdminUser(user) {
+        if (window.__SERVER_IS_ADMIN === true) {
+            if (!user || !user.id || String(user.id) === String(window.__SERVER_USER_ID)) return true;
+        }
         if (!user) return false;
         if (user.is_admin) return true;
         if (user.is_creator) return true;
@@ -12113,6 +12116,13 @@
         if (window.__SERVER_AUTHENTICATED) {
             document.getElementById('landing-page').style.display = 'none';
             document.getElementById('app-page').style.display = 'block';
+        }
+        if (window.__SERVER_IS_ADMIN === true) {
+            var earlyAdmin = document.getElementById('header-admin-chip');
+            if (earlyAdmin) earlyAdmin.style.display = 'inline-flex';
+            if (new URLSearchParams(window.location.search).get('adminGate') === '1') {
+                openAdminGate();
+            }
         }
 
         const isAuthenticated = await checkAuth();

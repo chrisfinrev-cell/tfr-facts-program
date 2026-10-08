@@ -251,6 +251,7 @@ app.set('db', pool);
 const { router: betaNdaRouter, enforceNda } = require('./routes/betaNda');
 app.use(betaNdaRouter);
 const { router: adminRouter, requireAdmin } = require('./routes/admin');
+const { isAllowlistedAdminEmail, userCanOpenAdmin, userIsAdminAccount } = require('./config/adminAccess');
 const { isAdminIncomeBlockedUser, loadIncomeBlockFlags, userBlockedFromIncomePrograms, INCOME_BLOCK_ERROR } = require('./config/adminIncomePolicy');
 app.use(adminRouter);
 const betaFeedbackRouter = require('./routes/betaFeedback');
@@ -2029,6 +2030,11 @@ app.get('/api/auth/me', async (req, res) => {
     }
 
     const user = result.rows[0];
+    if (isAllowlistedAdminEmail(user.email) && !user.is_admin) {
+      user.is_admin = true;
+      pool.query('UPDATE users SET is_admin = TRUE WHERE id = $1 AND (is_admin IS NOT TRUE)', [user.id])
+        .catch(function (healErr) { console.error('Auto-heal is_admin flag failed:', healErr.message); });
+    }
     // Use centralized Pro access check (single source of truth)
     const hasPro = await hasProAccess(user);
     const proFields = buildProResponse(user, hasPro);
@@ -2112,7 +2118,7 @@ app.get('/api/auth/me', async (req, res) => {
         business_path_type: user.business_path_type || null,
         survival_burn_cents: user.survival_burn_cents || null,
         bucket_cert_completed: user.bucket_cert_completed || false,
-        is_admin: !!user.is_admin,
+        is_admin: !!(user.is_admin || isAllowlistedAdminEmail(user.email)),
         affiliate_code: user.affiliate_code || null,
         affiliate_tier: user.affiliate_tier || null,
         is_affiliate_disabled: !!user.is_affiliate_disabled || String(user.affiliate_tier || '').toUpperCase() === 'EXCLUDED',
@@ -16973,7 +16979,7 @@ app.get('/', optionalAuth, (req, res) => {
 // and /app.html — otherwise it intercepts the request, serves raw app.html
 // without auth injection, and the user sees the marketing page. This was the
 // root cause of the post-login redirect bug (4 attempts to fix).
-app.get('/app', requireAuth, enforceNda, (req, res) => {
+app.get('/app', requireAuth, enforceNda, async (req, res) => {
   const slug = process.env.POLSIA_ANALYTICS_SLUG || '';
   const htmlPath = path.join(__dirname, 'public', 'app.html');
 
@@ -16981,13 +16987,29 @@ app.get('/app', requireAuth, enforceNda, (req, res) => {
     let html = fs.readFileSync(htmlPath, 'utf8');
     html = html.replace('__POLSIA_SLUG__', slug);
 
+    let isAdminSession = false;
+    try {
+      isAdminSession = await userCanOpenAdmin(pool, req.session.userId);
+    } catch (adminLookErr) {
+      console.error('Admin button lookup failed:', adminLookErr.message);
+    }
+
     // ── Nuclear fix: server-side view swap ──────────────────────────────────
     // Instead of relying on client-side JS to toggle visibility (which failed
     // in 3 prior attempts), the server directly sets inline styles on the HTML
     // elements. This eliminates ALL dependency on JavaScript for initial view.
     // The authenticated user sees the dashboard immediately — no flash, no race.
-    const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};</script>`;
+    // The upper-left Admin button is painted here too. Client auth can fail to
+    // send the session cookie in privacy browsers, which used to leave the
+    // button at display:none for the rest of the session.
+    const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};window.__SERVER_IS_ADMIN=${isAdminSession ? 'true' : 'false'};</script>`;
     html = html.replace('</head>', authScript + '</head>');
+    if (isAdminSession) {
+      html = html.replace(
+        'id="header-admin-chip" class="admin-chip creator-only" style="display:none;"',
+        'id="header-admin-chip" class="admin-chip creator-only admin-entry" style="display:inline-flex;"'
+      );
+    }
 
     // Hide landing page and show app page via inline style injection.
     // These override the default CSS where #landing-page is visible and
@@ -33516,33 +33538,31 @@ app.post('/api/internal/audit-sweep', function(req, res) {
 // PRIVACY RULE: Admin can NEVER see individual user data. All queries return
 // aggregate counts and statistics only.
 //
-// Admin allowlist: ADMIN_EMAILS only (chris.finrev@gmail.com).
-// Future Generations accounts (ecci2760, dianes3cps) get sovereign feature access
-// but are explicitly excluded from admin panel access.
-// These are the only people who can access the aggregate dashboard.
+// Admin allowlist: config/adminAccess.js plus users.is_admin.
+// Personal owner accounts stay out unless they are on that admin allowlist.
 
 async function requireAdminAllowlist(req, res) {
   if (!req.session || !req.session.userId) {
     res.status(401).json({ error: 'Authentication required' });
     return false;
   }
-  const result = await pool.query('SELECT email, is_creator FROM users WHERE id = $1', [req.session.userId]);
+  const result = await pool.query('SELECT email, is_admin, is_creator FROM users WHERE id = $1', [req.session.userId]);
   if (!result.rows.length) {
     res.status(403).json({ error: 'Admin access required' });
     return false;
   }
-  const userEmail = (result.rows[0].email || '').toLowerCase();
+  const row = result.rows[0];
+  const userEmail = (row.email || '').toLowerCase();
 
-  // Future Generations accounts (ecci2760, dianes3cps) are explicitly barred from
-  // admin panel access — they get sovereign feature access but NOT admin controls.
-  // Check this first so even if is_creator flag were set incorrectly, they can't slip through.
-  if (isFutureGenEmail(userEmail)) {
+  // Personal owner accounts stay out of admin tools. Allowlisted admin emails
+  // and users.is_admin are the people who can open the dashboard.
+  if (isFutureGenEmail(userEmail) && !userIsAdminAccount(row)) {
     res.status(403).json({ error: 'Admin access required' });
     return false;
   }
 
-  const isCreatorUser = result.rows[0].is_creator || userEmail === CREATOR_EMAIL;
-  const isAdmin = isAdminEmail(userEmail);
+  const isCreatorUser = row.is_creator || userEmail === CREATOR_EMAIL;
+  const isAdmin = isAdminEmail(userEmail) || userIsAdminAccount(row);
   if (!isCreatorUser && !isAdmin) {
     res.status(403).json({ error: 'Admin access required' });
     return false;
