@@ -81,12 +81,21 @@ const pool = process.env.DATABASE_URL ? new Pool({
           ['admin@thefinancialrevolution.net', 'TFR Admin', false]
         ];
         for (const [email, name, isCreator] of hosts) {
-          const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1', [email]);
+          const existing = await pool.query('SELECT id, password_hash FROM users WHERE LOWER(email) = $1 LIMIT 1', [email]);
           if (existing.rows[0]) {
-            await pool.query(
-              `UPDATE users SET password_hash = $2, is_admin = TRUE, is_creator = $3, name = COALESCE(NULLIF(name, ''), $4), updated_at = NOW() WHERE id = $1`,
-              [existing.rows[0].id, hash, isCreator, name]
-            );
+            // Keep a password the person already set. Replacing it on every
+            // boot made login and password reset look broken.
+            if (existing.rows[0].password_hash) {
+              await pool.query(
+                `UPDATE users SET is_admin = TRUE, is_creator = $2, name = COALESCE(NULLIF(name, ''), $3), updated_at = NOW() WHERE id = $1`,
+                [existing.rows[0].id, isCreator, name]
+              );
+            } else {
+              await pool.query(
+                `UPDATE users SET password_hash = $2, is_admin = TRUE, is_creator = $3, name = COALESCE(NULLIF(name, ''), $4), updated_at = NOW() WHERE id = $1`,
+                [existing.rows[0].id, hash, isCreator, name]
+              );
+            }
           } else {
             await pool.query(
               `INSERT INTO users (email, name, password_hash, is_admin, is_creator, is_beta_tester, relationship_tag, is_affiliate_disabled, monthly_invites_remaining)
@@ -1644,7 +1653,9 @@ app.post('/api/auth/login', async (req, res) => {
                 COALESCE(two_factor_enabled, false) AS two_factor_enabled,
                 verification_method, verified_phone
          FROM users
-         WHERE LOWER(email) = $1 OR LOWER(user_id) = $1`,
+         WHERE LOWER(email) = $1 OR LOWER(user_id) = $1
+         ORDER BY CASE WHEN LOWER(email) = $1 THEN 0 ELSE 1 END
+         LIMIT 1`,
         [normalizedIdentifier]
       );
     } catch (selectErr) {
@@ -1827,14 +1838,34 @@ app.post('/api/auth/sandbox-exit', requireAuth, async (req, res) => {
   }
 });
 
+function passwordResetBaseUrl(req) {
+  const forwardedHost = String(req.get('x-forwarded-host') || '').split(',')[0].trim();
+  const host = forwardedHost || String(req.get('host') || '').trim();
+  const local = !host || host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  if (!local) {
+    const proto = String(req.get('x-forwarded-proto') || 'https').split(',')[0].trim() || 'https';
+    return `${proto}://${host}`;
+  }
+  return String(process.env.APP_URL || 'https://factsmoney.com').replace(/\/$/, '');
+}
+
+const RESET_EMAIL_SENT = 'Check your email for a link to choose a new password. It expires in one hour.';
+
 // POST /api/auth/forgot-password — Send password reset email
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email } = req.body || {};
 
     if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Valid email required' });
+      return res.status(400).json({ error: 'Enter the email on your FACTS account.' });
     }
+
+    if (!pool) {
+      return res.status(503).json({ error: 'Password reset is unavailable right now. Please try again.' });
+    }
+
+    const { ensurePasswordResetSchema } = require('./lib/ensureAuthSchema');
+    await ensurePasswordResetSchema(pool);
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -1847,45 +1878,48 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       [normalizedEmail, oneHourAgo]
     );
 
-    if (parseInt(recentRequests.rows[0].count) >= 3) {
-      // Return success message anyway to prevent email enumeration
+    if (parseInt(recentRequests.rows[0].count, 10) >= 3) {
       return res.json({
         success: true,
-        message: 'If an account exists with this email, a password reset link has been sent.'
+        message: RESET_EMAIL_SENT
       });
     }
 
-    // Check if user exists
     const userResult = await pool.query(
-      'SELECT id, email FROM users WHERE LOWER(email) = $1 AND password_hash IS NOT NULL',
+      'SELECT id, email FROM users WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
 
-    // Always return success to prevent email enumeration
+    // Same reply when no account exists, so the form does not reveal who is registered.
     if (userResult.rows.length === 0) {
       return res.json({
         success: true,
-        message: 'If an account exists with this email, a password reset link has been sent.'
+        message: RESET_EMAIL_SENT
       });
     }
 
     const user = userResult.rows[0];
 
-    // Generate secure random token
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    // Store token in database
-    await pool.query(
-      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+    const inserted = await pool.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3) RETURNING id',
       [user.id, token, expiresAt]
     );
+    const tokenId = inserted.rows[0].id;
 
-    // Send reset email via Polsia email proxy
-    const resetUrl = `${process.env.APP_URL || 'https://financial-revolution.polsia.app'}/reset-password.html?token=${token}`;
+    const resetUrl = `${passwordResetBaseUrl(req)}/reset-password.html?token=${token}`;
 
+    if (!process.env.POLSIA_API_KEY) {
+      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
+      console.error('POST /api/auth/forgot-password: POLSIA_API_KEY is not set');
+      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
+    }
+
+    let emailResponse;
     try {
-      const emailResponse = await fetch('https://polsia.com/api/proxy/email/send', {
+      emailResponse = await fetch('https://polsia.com/api/proxy/email/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1907,6 +1941,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                 </a>
               </p>
               <p style="color: #666; font-size: 14px; line-height: 1.6;">
+                Or copy this link into your browser:<br>
+                <a href="${resetUrl}" style="color: #10b981;">${resetUrl}</a>
+              </p>
+              <p style="color: #666; font-size: 14px; line-height: 1.6;">
                 This link expires in 1 hour.
               </p>
               <p style="color: #666; font-size: 14px; line-height: 1.6; margin-top: 24px;">
@@ -1917,18 +1955,22 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           transactional: true
         })
       });
-
-      if (!emailResponse.ok) {
-        console.error('Email send failed:', await emailResponse.text());
-      }
     } catch (emailErr) {
+      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
       console.error('Error sending reset email:', emailErr.message);
-      // Don't fail the request - user shouldn't know if email failed
+      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
+    }
+
+    if (!emailResponse.ok) {
+      const emailBody = await emailResponse.text();
+      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
+      console.error('Email send failed:', emailResponse.status, emailBody);
+      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
     }
 
     res.json({
       success: true,
-      message: 'If an account exists with this email, a password reset link has been sent.'
+      message: RESET_EMAIL_SENT
     });
   } catch (err) {
     console.error('POST /api/auth/forgot-password error:', err.message);
