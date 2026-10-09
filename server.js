@@ -324,7 +324,8 @@ app.get('/admin', async (req, res) => {
   let html = fs.readFileSync(htmlPath, 'utf8');
   const until = req.session.adminToolsUntil;
   const locked = !(typeof until === 'number' && until > Date.now());
-  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};</script></head>`);
+  const adminSession = JSON.stringify({ isAdmin: true, email: email || '' }).replace(/</g, '\\u003c');
+  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};window.__ADMIN_SESSION=${adminSession};</script></head>`);
   res.setHeader('Cache-Control', 'no-store');
   res.type('html').send(html);
 });
@@ -2276,7 +2277,7 @@ app.get('/api/auth/me', async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       authenticated: true,
       user: {
         id: user.id,
@@ -2321,7 +2322,27 @@ app.get('/api/auth/me', async (req, res) => {
     });
   } catch (err) {
     console.error('GET /api/auth/me error:', err.message);
-    res.json({ authenticated: false });
+    try {
+      const slim = await pool.query(
+        'SELECT id, email, name, is_admin, is_creator FROM users WHERE id = $1',
+        [req.session.userId]
+      );
+      if (!slim.rows.length) return res.json({ authenticated: false });
+      const user = slim.rows[0];
+      return res.json({
+        authenticated: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          is_admin: !!(user.is_admin || isAllowlistedAdminEmail(user.email)),
+          is_creator: !!user.is_creator
+        }
+      });
+    } catch (fallbackErr) {
+      console.error('GET /api/auth/me fallback error:', fallbackErr.message);
+      return res.json({ authenticated: false });
+    }
   }
 });
 
