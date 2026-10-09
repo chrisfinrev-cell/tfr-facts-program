@@ -438,6 +438,19 @@ app.use(function auditLockoutGuard(req, res, next) {
     .catch(function() { next(); });
 });
 
+// Link previews do not run JavaScript. On the TFR domain, "/" must be the
+// education site so the shared card uses The Financial Revolution logo,
+// not the FACTS lockup on the engine homepage.
+app.use(function tfrEducationHost(req, res, next) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  const host = String(req.headers.host || '').split(':')[0].toLowerCase();
+  if (host !== 'thefinancialrevolution.net' && host !== 'www.thefinancialrevolution.net') return next();
+  if (req.path === '/' || req.path === '/index.html') {
+    return res.redirect(302, '/tfr/');
+  }
+  next();
+});
+
 // ─── Report Issue Injection Middleware ─────────────────────────────────────────
 // Intercepts HTML GET requests before express.static, reads the file, injects
 // the Report Issue script tag before </body>, then sends the modified HTML.
