@@ -19,7 +19,9 @@
       return res.json();
     }).then(function(data) {
       // NDA redirect
-      if (data.authenticated && data.user && data.user.nda_required && !data.user.nda_accepted) {
+      if (data.authenticated && data.user && data.user.is_admin) {
+        // Allowlisted admins stay on /admin. Do not pull them to the NDA page.
+      } else if (data.authenticated && data.user && data.user.nda_required && !data.user.nda_accepted) {
         window.location.href = '/nda.html?next=' + encodeURIComponent(window.location.pathname + window.location.search);
         return;
       }

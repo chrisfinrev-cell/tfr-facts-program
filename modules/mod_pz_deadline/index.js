@@ -78,6 +78,7 @@ function isBypassEmail(email) {
 function applyDeadlineLockoutMiddleware(app, pool) {
   const BYPASS_PATHS = [
     '/', '/index.html', '/login', '/login.html', '/signup', '/signup.html',
+    '/admin', '/admin.html',
     '/phase-zero', '/phase-zero.html', '/lockout', '/lockout.html',
     '/forgot-password', '/forgot-password.html',
     '/reset-password', '/reset-password.html',

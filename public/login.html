@@ -518,7 +518,8 @@
                 .then(function(r) {
                     // Handle legacy 303 redirect (belt-and-suspenders)
                     if (r.type === 'opaqueredirect' || r.status === 303 || r.redirected) {
-                        window.location.href = '/app';
+                        var nextUrl = new URLSearchParams(window.location.search).get('next') || '';
+                        window.location.href = (nextUrl.charAt(0) === '/' && nextUrl.indexOf('//') !== 0) ? nextUrl : '/app';
                         return;
                     }
                     return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; });
@@ -595,7 +596,10 @@
                 })
                 .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
                 .then(function(result) {
-                    if (result.ok) { window.location.href = '/app'; return; }
+                    if (result.ok) {
+                        window.location.href = (result.data && result.data.redirect) || '/app';
+                        return;
+                    }
                     throw new Error(result.data.error || 'Verification failed. Please try again.');
                 })
                 .catch(function(err) {

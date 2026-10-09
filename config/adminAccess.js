@@ -31,6 +31,11 @@ function userIsAdminAccount(row) {
   return !!(row && (row.is_admin || isAllowlistedAdminEmail(row.email)));
 }
 
+/** Where a successful login should land. Allowlisted admins stay on the admin panel. */
+function loginRedirectFor(user) {
+  return userIsAdminAccount(user) ? '/admin' : '/app';
+}
+
 async function userCanOpenAdmin(db, userId) {
   if (!db || !userId) return false;
   const result = await db.query(
@@ -44,5 +49,6 @@ module.exports = {
   ADMIN_EMAILS,
   isAllowlistedAdminEmail,
   userIsAdminAccount,
-  userCanOpenAdmin
-};
+  userCanOpenAdmin,
+  loginRedirectFor
+}
