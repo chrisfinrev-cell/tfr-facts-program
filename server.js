@@ -81,12 +81,21 @@ const pool = process.env.DATABASE_URL ? new Pool({
           ['admin@thefinancialrevolution.net', 'TFR Admin', false]
         ];
         for (const [email, name, isCreator] of hosts) {
-          const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1', [email]);
+          const existing = await pool.query('SELECT id, password_hash FROM users WHERE LOWER(email) = $1 LIMIT 1', [email]);
           if (existing.rows[0]) {
-            await pool.query(
-              `UPDATE users SET password_hash = $2, is_admin = TRUE, is_creator = $3, name = COALESCE(NULLIF(name, ''), $4), updated_at = NOW() WHERE id = $1`,
-              [existing.rows[0].id, hash, isCreator, name]
-            );
+            // Keep a password the person already set. Replacing it on every
+            // boot made login and password reset look broken.
+            if (existing.rows[0].password_hash) {
+              await pool.query(
+                `UPDATE users SET is_admin = TRUE, is_creator = $2, name = COALESCE(NULLIF(name, ''), $3), updated_at = NOW() WHERE id = $1`,
+                [existing.rows[0].id, isCreator, name]
+              );
+            } else {
+              await pool.query(
+                `UPDATE users SET password_hash = $2, is_admin = TRUE, is_creator = $3, name = COALESCE(NULLIF(name, ''), $4), updated_at = NOW() WHERE id = $1`,
+                [existing.rows[0].id, hash, isCreator, name]
+              );
+            }
           } else {
             await pool.query(
               `INSERT INTO users (email, name, password_hash, is_admin, is_creator, is_beta_tester, relationship_tag, is_affiliate_disabled, monthly_invites_remaining)
@@ -251,6 +260,7 @@ app.set('db', pool);
 const { router: betaNdaRouter, enforceNda } = require('./routes/betaNda');
 app.use(betaNdaRouter);
 const { router: adminRouter, requireAdmin } = require('./routes/admin');
+const { isAllowlistedAdminEmail, userCanOpenAdmin, userIsAdminAccount, loginRedirectFor } = require('./config/adminAccess');
 const { isAdminIncomeBlockedUser, loadIncomeBlockFlags, userBlockedFromIncomePrograms, INCOME_BLOCK_ERROR } = require('./config/adminIncomePolicy');
 app.use(adminRouter);
 const betaFeedbackRouter = require('./routes/betaFeedback');
@@ -258,9 +268,65 @@ app.use('/api/beta', betaFeedbackRouter);
 const adminDashboardRouter = require('./routes/adminDashboard');
 app.use('/api/admin/dashboard', adminDashboardRouter);
 
-// Serve Admin UI (Protected by admin middleware)
-app.get('/admin', requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+function escapeAdminHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function adminStayPage(title, bodyHtml) {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>${escapeAdminHtml(title)}</title>
+<style>
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#0a0f1a; color:#f1f5f9; font-family:Segoe UI,sans-serif; }
+  .card { max-width:460px; margin:24px; background:#111827; border:1px solid #334155; border-radius:14px; padding:28px; }
+  h1 { font-size:1.25rem; margin:0 0 12px; }
+  p { color:#cbd5e1; line-height:1.5; margin:0 0 16px; }
+  a { color:#34d399; }
+</style></head><body><div class="card">${bodyHtml}</div></body></html>`;
+}
+
+// Admin UI stays on /admin. Allowlisted admins are not bounced to the app or login.
+app.get('/admin', async (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.redirect(302, '/login.html?next=/admin');
+  }
+
+  let allowed = false;
+  let email = req.session.email || '';
+  try {
+    allowed = await userCanOpenAdmin(pool, req.session.userId);
+    if (!email && pool) {
+      const found = await pool.query('SELECT email FROM users WHERE id = $1', [req.session.userId]);
+      email = (found.rows[0] && found.rows[0].email) || '';
+    }
+  } catch (err) {
+    console.error('Admin page lookup failed:', err.message);
+    return res.status(500).type('html').send(adminStayPage(
+      'Admin page',
+      '<h1>Admin page could not open</h1><p>This page could not check the signed-in account. Refresh and stay here. You are not being sent back to login.</p>'
+    ));
+  }
+
+  if (!allowed) {
+    const who = email
+      ? `You are signed in as <strong>${escapeAdminHtml(email)}</strong>.`
+      : 'You are signed in.';
+    return res.status(403).type('html').send(adminStayPage(
+      'Admin access',
+      `<h1>This account cannot open admin</h1><p>${who} Admin tools are only available on an admin account. This message stays on this page.</p><p><a href="/app">Back to the app</a></p>`
+    ));
+  }
+
+  const htmlPath = path.join(__dirname, 'public', 'admin.html');
+  let html = fs.readFileSync(htmlPath, 'utf8');
+  const until = req.session.adminToolsUntil;
+  const locked = !(typeof until === 'number' && until > Date.now());
+  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};</script></head>`);
+  res.setHeader('Cache-Control', 'no-store');
+  res.type('html').send(html);
 });
 
 // NDA Gate Page Route
@@ -300,6 +366,7 @@ pzDeadlineModule.applyDeadlineLockoutMiddleware(app, pool);
 (function initPhaseZeroGate() {
   var PZ_BYPASS_PATHS = [
     '/', '/index.html', '/login', '/login.html', '/signup', '/signup.html',
+    '/admin', '/admin.html',
     '/bleed-calculator', '/stolen-calculator', '/facts-funnel', '/forensic-scan',  // Public calculators — no auth needed
     '/app', '/app.html',                       // App dashboard — Phase Zero check inside app
     '/phase-zero', '/phase-zero.html', '/phase-zero-widget.js',
@@ -557,35 +624,54 @@ app.post('/api/contact', async function (req, res) {
   }
 });
 
+let launchWaitlistNameReady = null;
+function ensureLaunchWaitlistNameColumn() {
+  if (!launchWaitlistNameReady) {
+    launchWaitlistNameReady = pool.query(
+      'ALTER TABLE launch_waitlist ADD COLUMN IF NOT EXISTS name VARCHAR(200)'
+    ).catch(function (err) {
+      launchWaitlistNameReady = null;
+      throw err;
+    });
+  }
+  return launchWaitlistNameReady;
+}
+
 // API: Launch waitlist email capture
 app.post('/api/launch-waitlist', async function (req, res) {
   try {
     var body            = req.body || {};
     var email           = (body.email || '').toString().trim().toLowerCase();
+    var name            = (body.name || '').toString().trim().slice(0, 200) || null;
     var ref_code        = body.ref_code ? body.ref_code.toString().trim().slice(0, 100) : null;
     var sovereign_score = Number.isFinite(Number(body.sovereign_score)) ? Math.round(Number(body.sovereign_score)) : null;
     var monthly_income  = Number.isFinite(Number(body.monthly_income))  ? Number(body.monthly_income)  : null;
     var liquid_reserves = Number.isFinite(Number(body.liquid_reserves)) ? Number(body.liquid_reserves) : null;
     var fixed_expenses  = Number.isFinite(Number(body.fixed_expenses))  ? Number(body.fixed_expenses)  : null;
     var total_debt      = Number.isFinite(Number(body.total_debt))      ? Number(body.total_debt)      : null;
+    var source          = (body.source || 'factsmoney_coming_soon').toString().trim().slice(0, 80);
+    if (!/^[a-z0-9_]+$/i.test(source)) source = 'factsmoney_coming_soon';
 
     // Basic email validation
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ ok: false, error: 'A valid email is required.' });
     }
 
+    await ensureLaunchWaitlistNameColumn();
     await pool.query(
       `INSERT INTO launch_waitlist
-         (email, ref_code, sovereign_score, monthly_income, liquid_reserves, fixed_expenses, total_debt, source)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'factsmoney_coming_soon')
+         (email, name, ref_code, sovereign_score, monthly_income, liquid_reserves, fixed_expenses, total_debt, source)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (LOWER(email)) DO UPDATE SET
+         name            = COALESCE(EXCLUDED.name, launch_waitlist.name),
          ref_code        = COALESCE(EXCLUDED.ref_code, launch_waitlist.ref_code),
          sovereign_score = COALESCE(EXCLUDED.sovereign_score, launch_waitlist.sovereign_score),
          monthly_income  = COALESCE(EXCLUDED.monthly_income, launch_waitlist.monthly_income),
          liquid_reserves = COALESCE(EXCLUDED.liquid_reserves, launch_waitlist.liquid_reserves),
          fixed_expenses  = COALESCE(EXCLUDED.fixed_expenses, launch_waitlist.fixed_expenses),
-         total_debt      = COALESCE(EXCLUDED.total_debt, launch_waitlist.total_debt)`,
-      [email, ref_code, sovereign_score, monthly_income, liquid_reserves, fixed_expenses, total_debt]
+         total_debt      = COALESCE(EXCLUDED.total_debt, launch_waitlist.total_debt),
+         source          = COALESCE(EXCLUDED.source, launch_waitlist.source)`,
+      [email, name, ref_code, sovereign_score, monthly_income, liquid_reserves, fixed_expenses, total_debt, source]
     );
 
     return res.json({ ok: true });
@@ -1110,9 +1196,19 @@ app.post('/api/auth/signup', async (req, res) => {
     // Determine if this is the creator email (for is_creator flag on new users)
     const isCreatorEmail = normalizedEmail === CREATOR_EMAIL;
 
+    // During beta, a code is required. Set BETA_INVITE_ONLY=false to open public signup.
+    const betaInviteOnly = String(process.env.BETA_INVITE_ONLY || 'true').toLowerCase() !== 'false';
+    const suppliedInvite = invite_code && String(invite_code).trim();
+    if (betaInviteOnly && !suppliedInvite && !isCreatorEmail && !isAllowlistedAdminEmail(normalizedEmail)) {
+      return res.status(403).json({
+        code: 'BETA_INVITE_REQUIRED',
+        error: 'FACTS is in beta testing and is invite only. A beta code is required to create an account.'
+      });
+    }
+
     // ─── INVITE CODE: Optional — validate only if provided ───────────────
-    // Invite/promo code is always optional. If provided, we validate it.
-    // (Launch gate removed — app is live, signup must work without a code.)
+    // Promo codes, admin master beta codes, and targeted beta invites are all valid.
+    let pendingBeta = null;
     if (invite_code && invite_code.trim()) {
       const promoCheck = await pool.query(
         'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
@@ -1120,14 +1216,16 @@ app.post('/api/auth/signup', async (req, res) => {
       );
 
       if (promoCheck.rows.length === 0) {
-        return res.status(400).json({ error: 'Invalid invite code. Please check and try again, or leave the field empty.' });
-      }
-
-      if (promoCheck.rows[0].status !== 'active') {
+        const { findActiveBetaInvite } = require('./lib/inviteCodes');
+        pendingBeta = await findActiveBetaInvite(pool, invite_code);
+        if (!pendingBeta) {
+          return res.status(400).json({ error: 'Invalid invite code. Please check the code and try again.' });
+        }
+      } else if (promoCheck.rows[0].status !== 'active') {
         return res.status(400).json({ error: 'This invite code has already been used.' });
       }
     }
-    // No code provided — that's fine, proceed with signup
+    // No code: allowed only when BETA_INVITE_ONLY=false, or for creator/admin emails.
 
     // Check if user already exists with a password (registered account)
     const existingUser = await pool.query(
@@ -1193,7 +1291,49 @@ app.post('/api/auth/signup', async (req, res) => {
              WHERE id = $2`,
             [invite_code.trim().toUpperCase(), userId]
           );
+        } else if (pendingBeta) {
+        if (pendingBeta.kind === 'invite') {
+          const claimed = await client.query(
+            `UPDATE beta_invites
+             SET uses_count = uses_count + 1,
+                 claimed_by_user_id = COALESCE(claimed_by_user_id, $2),
+                 claimed_at = COALESCE(claimed_at, NOW())
+             WHERE id = $1 AND uses_count < max_uses
+             RETURNING id`,
+            [pendingBeta.row.id, userId]
+          );
+          if (claimed.rows.length === 0) {
+            const used = new Error('This invite code has already been used.');
+            used.status = 400;
+            throw used;
+          }
+        } else {
+          const claimed = await client.query(
+            `UPDATE beta_codes
+             SET uses_count = uses_count + 1
+             WHERE id = $1 AND uses_count < max_uses
+             RETURNING id`,
+            [pendingBeta.row.id]
+          );
+          if (claimed.rows.length === 0) {
+            const used = new Error('This invite code has already been used.');
+            used.status = 400;
+            throw used;
+          }
         }
+        await client.query('SAVEPOINT beta_claim_user');
+        try {
+          await client.query(
+            `UPDATE users SET is_beta_tester = TRUE, updated_at = NOW() WHERE id = $1`,
+            [userId]
+          );
+          await client.query('RELEASE SAVEPOINT beta_claim_user');
+        } catch (betaFlagErr) {
+          await client.query('ROLLBACK TO SAVEPOINT beta_claim_user');
+          console.warn('[Signup] is_beta_tester update skipped:', betaFlagErr.message);
+        }
+        }
+
       }
 
       // ─── Generate unique referral code for new user ───────────────────
@@ -1344,6 +1484,9 @@ app.post('/api/auth/signup', async (req, res) => {
     console.error('POST /api/auth/signup error:', err.message);
     if (err.code === '23505') {
       return res.status(409).json({ error: 'An account with this email already exists.' });
+    }
+    if (err.status === 400) {
+      return res.status(400).json({ error: err.message });
     }
     res.status(500).json({ error: 'Failed to create account' });
   }
@@ -1607,15 +1750,20 @@ async function completeLogin(req, res, user) {
   // next request (to /app) can arrive before the session row exists,
   // causing requireAuth to see an empty session — especially on mobile
   // where round-trips are fast relative to DB write latency.
+  const landing = loginRedirectFor(user);
+  if (landing === '/admin') {
+    req.session.adminToolsUntil = Date.now() + (12 * 60 * 60 * 1000);
+  }
+
   await new Promise((resolve, reject) => {
     req.session.save(err => err ? reject(err) : resolve());
   });
 
-  // Return JSON so the client does a full-page navigation to /app.
-  // Previous approach (303 redirect) broke on DuckDuckGo Android because
-  // fetch's automatic redirect following doesn't reliably include the
-  // Set-Cookie from the 303 response in the follow-up GET request.
-  return res.json({ success: true, redirect: '/app' });
+  // Return JSON so the client does a full-page navigation.
+  // Admins land on /admin and stay there. Everyone else lands on /app.
+  // A 303 redirect broke on DuckDuckGo Android because fetch's automatic
+  // redirect following doesn't reliably include the Set-Cookie.
+  return res.json({ success: true, redirect: landing });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1643,7 +1791,9 @@ app.post('/api/auth/login', async (req, res) => {
                 COALESCE(two_factor_enabled, false) AS two_factor_enabled,
                 verification_method, verified_phone
          FROM users
-         WHERE LOWER(email) = $1 OR LOWER(user_id) = $1`,
+         WHERE LOWER(email) = $1 OR LOWER(user_id) = $1
+         ORDER BY CASE WHEN LOWER(email) = $1 THEN 0 ELSE 1 END
+         LIMIT 1`,
         [normalizedIdentifier]
       );
     } catch (selectErr) {
@@ -1826,14 +1976,34 @@ app.post('/api/auth/sandbox-exit', requireAuth, async (req, res) => {
   }
 });
 
+function passwordResetBaseUrl(req) {
+  const forwardedHost = String(req.get('x-forwarded-host') || '').split(',')[0].trim();
+  const host = forwardedHost || String(req.get('host') || '').trim();
+  const local = !host || host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  if (!local) {
+    const proto = String(req.get('x-forwarded-proto') || 'https').split(',')[0].trim() || 'https';
+    return `${proto}://${host}`;
+  }
+  return String(process.env.APP_URL || 'https://factsmoney.com').replace(/\/$/, '');
+}
+
+const RESET_EMAIL_SENT = 'Check your email for a link to choose a new password. It expires in one hour.';
+
 // POST /api/auth/forgot-password — Send password reset email
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email } = req.body || {};
 
     if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Valid email required' });
+      return res.status(400).json({ error: 'Enter the email on your FACTS account.' });
     }
+
+    if (!pool) {
+      return res.status(503).json({ error: 'Password reset is unavailable right now. Please try again.' });
+    }
+
+    const { ensurePasswordResetSchema } = require('./lib/ensureAuthSchema');
+    await ensurePasswordResetSchema(pool);
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -1846,45 +2016,48 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       [normalizedEmail, oneHourAgo]
     );
 
-    if (parseInt(recentRequests.rows[0].count) >= 3) {
-      // Return success message anyway to prevent email enumeration
+    if (parseInt(recentRequests.rows[0].count, 10) >= 3) {
       return res.json({
         success: true,
-        message: 'If an account exists with this email, a password reset link has been sent.'
+        message: RESET_EMAIL_SENT
       });
     }
 
-    // Check if user exists
     const userResult = await pool.query(
-      'SELECT id, email FROM users WHERE LOWER(email) = $1 AND password_hash IS NOT NULL',
+      'SELECT id, email FROM users WHERE LOWER(email) = $1',
       [normalizedEmail]
     );
 
-    // Always return success to prevent email enumeration
+    // Same reply when no account exists, so the form does not reveal who is registered.
     if (userResult.rows.length === 0) {
       return res.json({
         success: true,
-        message: 'If an account exists with this email, a password reset link has been sent.'
+        message: RESET_EMAIL_SENT
       });
     }
 
     const user = userResult.rows[0];
 
-    // Generate secure random token
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    // Store token in database
-    await pool.query(
-      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+    const inserted = await pool.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3) RETURNING id',
       [user.id, token, expiresAt]
     );
+    const tokenId = inserted.rows[0].id;
 
-    // Send reset email via Polsia email proxy
-    const resetUrl = `${process.env.APP_URL || 'https://financial-revolution.polsia.app'}/reset-password.html?token=${token}`;
+    const resetUrl = `${passwordResetBaseUrl(req)}/reset-password.html?token=${token}`;
 
+    if (!process.env.POLSIA_API_KEY) {
+      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
+      console.error('POST /api/auth/forgot-password: POLSIA_API_KEY is not set');
+      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
+    }
+
+    let emailResponse;
     try {
-      const emailResponse = await fetch('https://polsia.com/api/proxy/email/send', {
+      emailResponse = await fetch('https://polsia.com/api/proxy/email/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1906,6 +2079,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                 </a>
               </p>
               <p style="color: #666; font-size: 14px; line-height: 1.6;">
+                Or copy this link into your browser:<br>
+                <a href="${resetUrl}" style="color: #10b981;">${resetUrl}</a>
+              </p>
+              <p style="color: #666; font-size: 14px; line-height: 1.6;">
                 This link expires in 1 hour.
               </p>
               <p style="color: #666; font-size: 14px; line-height: 1.6; margin-top: 24px;">
@@ -1916,18 +2093,22 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           transactional: true
         })
       });
-
-      if (!emailResponse.ok) {
-        console.error('Email send failed:', await emailResponse.text());
-      }
     } catch (emailErr) {
+      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
       console.error('Error sending reset email:', emailErr.message);
-      // Don't fail the request - user shouldn't know if email failed
+      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
+    }
+
+    if (!emailResponse.ok) {
+      const emailBody = await emailResponse.text();
+      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
+      console.error('Email send failed:', emailResponse.status, emailBody);
+      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
     }
 
     res.json({
       success: true,
-      message: 'If an account exists with this email, a password reset link has been sent.'
+      message: RESET_EMAIL_SENT
     });
   } catch (err) {
     console.error('POST /api/auth/forgot-password error:', err.message);
@@ -2029,6 +2210,11 @@ app.get('/api/auth/me', async (req, res) => {
     }
 
     const user = result.rows[0];
+    if (isAllowlistedAdminEmail(user.email) && !user.is_admin) {
+      user.is_admin = true;
+      pool.query('UPDATE users SET is_admin = TRUE WHERE id = $1 AND (is_admin IS NOT TRUE)', [user.id])
+        .catch(function (healErr) { console.error('Auto-heal is_admin flag failed:', healErr.message); });
+    }
     // Use centralized Pro access check (single source of truth)
     const hasPro = await hasProAccess(user);
     const proFields = buildProResponse(user, hasPro);
@@ -2112,7 +2298,7 @@ app.get('/api/auth/me', async (req, res) => {
         business_path_type: user.business_path_type || null,
         survival_burn_cents: user.survival_burn_cents || null,
         bucket_cert_completed: user.bucket_cert_completed || false,
-        is_admin: !!user.is_admin,
+        is_admin: !!(user.is_admin || isAllowlistedAdminEmail(user.email)),
         affiliate_code: user.affiliate_code || null,
         affiliate_tier: user.affiliate_tier || null,
         is_affiliate_disabled: !!user.is_affiliate_disabled || String(user.affiliate_tier || '').toUpperCase() === 'EXCLUDED',
@@ -16973,7 +17159,7 @@ app.get('/', optionalAuth, (req, res) => {
 // and /app.html — otherwise it intercepts the request, serves raw app.html
 // without auth injection, and the user sees the marketing page. This was the
 // root cause of the post-login redirect bug (4 attempts to fix).
-app.get('/app', requireAuth, enforceNda, (req, res) => {
+app.get('/app', requireAuth, enforceNda, async (req, res) => {
   const slug = process.env.POLSIA_ANALYTICS_SLUG || '';
   const htmlPath = path.join(__dirname, 'public', 'app.html');
 
@@ -16981,13 +17167,29 @@ app.get('/app', requireAuth, enforceNda, (req, res) => {
     let html = fs.readFileSync(htmlPath, 'utf8');
     html = html.replace('__POLSIA_SLUG__', slug);
 
+    let isAdminSession = false;
+    try {
+      isAdminSession = await userCanOpenAdmin(pool, req.session.userId);
+    } catch (adminLookErr) {
+      console.error('Admin button lookup failed:', adminLookErr.message);
+    }
+
     // ── Nuclear fix: server-side view swap ──────────────────────────────────
     // Instead of relying on client-side JS to toggle visibility (which failed
     // in 3 prior attempts), the server directly sets inline styles on the HTML
     // elements. This eliminates ALL dependency on JavaScript for initial view.
     // The authenticated user sees the dashboard immediately — no flash, no race.
-    const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};</script>`;
+    // The upper-left Admin button is painted here too. Client auth can fail to
+    // send the session cookie in privacy browsers, which used to leave the
+    // button at display:none for the rest of the session.
+    const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};window.__SERVER_IS_ADMIN=${isAdminSession ? 'true' : 'false'};</script>`;
     html = html.replace('</head>', authScript + '</head>');
+    if (isAdminSession) {
+      html = html.replace(
+        'id="header-admin-chip" class="admin-chip creator-only" style="display:none;"',
+        'id="header-admin-chip" class="admin-chip creator-only admin-entry" style="display:inline-flex;"'
+      );
+    }
 
     // Hide landing page and show app page via inline style injection.
     // These override the default CSS where #landing-page is visible and
@@ -30219,8 +30421,9 @@ app.get('/api/admin/waitlist', async (req, res) => {
 app.get('/api/admin/launch-waitlist', requireAuth, async (req, res) => {
   if (!(await requireCreator(req, res))) return;
   try {
+    await ensureLaunchWaitlistNameColumn();
     const result = await pool.query(
-      `SELECT id, email, ref_code, sovereign_score, monthly_income, liquid_reserves,
+      `SELECT id, email, name, ref_code, sovereign_score, monthly_income, liquid_reserves,
               fixed_expenses, total_debt, source, created_at
        FROM launch_waitlist
        ORDER BY created_at DESC`
@@ -33516,33 +33719,31 @@ app.post('/api/internal/audit-sweep', function(req, res) {
 // PRIVACY RULE: Admin can NEVER see individual user data. All queries return
 // aggregate counts and statistics only.
 //
-// Admin allowlist: ADMIN_EMAILS only (chris.finrev@gmail.com).
-// Future Generations accounts (ecci2760, dianes3cps) get sovereign feature access
-// but are explicitly excluded from admin panel access.
-// These are the only people who can access the aggregate dashboard.
+// Admin allowlist: config/adminAccess.js plus users.is_admin.
+// Personal owner accounts stay out unless they are on that admin allowlist.
 
 async function requireAdminAllowlist(req, res) {
   if (!req.session || !req.session.userId) {
     res.status(401).json({ error: 'Authentication required' });
     return false;
   }
-  const result = await pool.query('SELECT email, is_creator FROM users WHERE id = $1', [req.session.userId]);
+  const result = await pool.query('SELECT email, is_admin, is_creator FROM users WHERE id = $1', [req.session.userId]);
   if (!result.rows.length) {
     res.status(403).json({ error: 'Admin access required' });
     return false;
   }
-  const userEmail = (result.rows[0].email || '').toLowerCase();
+  const row = result.rows[0];
+  const userEmail = (row.email || '').toLowerCase();
 
-  // Future Generations accounts (ecci2760, dianes3cps) are explicitly barred from
-  // admin panel access — they get sovereign feature access but NOT admin controls.
-  // Check this first so even if is_creator flag were set incorrectly, they can't slip through.
-  if (isFutureGenEmail(userEmail)) {
+  // Personal owner accounts stay out of admin tools. Allowlisted admin emails
+  // and users.is_admin are the people who can open the dashboard.
+  if (isFutureGenEmail(userEmail) && !userIsAdminAccount(row)) {
     res.status(403).json({ error: 'Admin access required' });
     return false;
   }
 
-  const isCreatorUser = result.rows[0].is_creator || userEmail === CREATOR_EMAIL;
-  const isAdmin = isAdminEmail(userEmail);
+  const isCreatorUser = row.is_creator || userEmail === CREATOR_EMAIL;
+  const isAdmin = isAdminEmail(userEmail) || userIsAdminAccount(row);
   if (!isCreatorUser && !isAdmin) {
     res.status(403).json({ error: 'Admin access required' });
     return false;

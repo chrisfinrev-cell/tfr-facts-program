@@ -386,6 +386,12 @@
             position: sticky; top: 0; z-index: 50;
         }
         .app-header .logo { font-size: 1.2rem; }
+        button.logo {
+            background: none; border: none; padding: 0;
+            font: inherit; color: var(--accent-green); cursor: default;
+        }
+        button.logo.admin-entry { cursor: pointer; }
+        button.logo.admin-entry:hover { color: #34d399; }
         .plan-badge {
             background: var(--accent-green); color: #000;
             padding: 4px 12px; border-radius: 6px; font-size: 0.7rem;
@@ -1850,7 +1856,7 @@
                 <a href="/login.html" class="nav-link" id="nav-login">Log In</a>
                 <a href="/signup.html" class="nav-cta" id="nav-signup">Sign Up Free</a>
                 <button class="nav-cta" id="nav-dashboard" style="display:none" onclick="openApp()">Dashboard →</button>
-                <a href="/admin.html" class="nav-link creator-only" id="nav-admin" style="display:none;color:#f59e0b;font-weight:600;">🔐 Admin</a>
+                <a href="/admin" class="nav-link creator-only" id="nav-admin" style="display:none;color:#f59e0b;font-weight:600;" onclick="openAdminGate(event)">🔐 Admin</a>
             </div>
         </nav>
 
@@ -2145,9 +2151,9 @@
     <div id="app-page">
         <header class="app-header">
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <a href="/admin" id="header-admin-chip" class="admin-chip creator-only" style="display:none;" title="Open the admin dashboard" aria-label="Open admin dashboard" onclick="openAdminGate(event)">🔐 Admin</a>
                 <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" style="background:none;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;padding:6px 10px;border-radius:8px;font-size:1.1rem;line-height:1;align-items:center;justify-content:center;">☰</button>
-                <div class="logo">FACTS</div>
-                <a href="/admin" id="header-admin-chip" class="admin-chip creator-only" style="display:none;" title="You're the admin. Open the admin console.">🔐 Admin</a>
+                <button type="button" class="logo" id="facts-admin-entry" onclick="openAdminGate(event)">FACTS</button>
                 <span class="plan-badge free" id="plan-badge">FREE</span>
             </div>
             <div class="app-tabs">
@@ -2201,12 +2207,12 @@
                 <button class="app-tab" data-tab="future-generations">🌿 Future Gen</button>
                 <button class="app-tab" data-tab="archive">🗄️ Archive</button>
                 <button class="app-tab" onclick="window.location.href='/sovereign'" style="color:#c9a227;font-weight:700;background:rgba(201,162,39,0.10);border:1px solid rgba(201,162,39,0.20);">⚔️ Sovereign</button>
-                <button class="app-tab creator-only" style="display:none;color:#f59e0b;" onclick="window.location.href='/admin.html'">🔐 Admin</button>
+                <button class="app-tab creator-only" style="display:none;color:#f59e0b;" onclick="openAdminGate(event)">🔐 Admin</button>
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
                 <a id="user-display" href="/settings" title="Account Settings" style="font-size:0.85rem;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;border:1px solid transparent;transition:all 0.15s ease;cursor:pointer;" onmouseover="this.style.color='#e8c96a';this.style.borderColor='rgba(201,162,39,0.25)';this.style.background='rgba(201,162,39,0.06)'" onmouseout="this.style.color='var(--text-secondary)';this.style.borderColor='transparent';this.style.background='transparent'"><span id="user-avatar-badge" style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#000;background:#10b981;flex-shrink:0;"></span><span id="user-display-name"></span></a>
                 <!-- Admin button: only visible to creator accounts -->
-                <a href="/admin.html" id="header-admin-btn" class="back-btn creator-only" style="display:none;color:#f59e0b;background:rgba(245,158,11,0.10);border-color:rgba(245,158,11,0.30);font-weight:600;text-decoration:none;" title="Admin Panel">🔐 Admin</a>
+                <a href="/admin" id="header-admin-btn" class="back-btn creator-only" style="display:none;color:#f59e0b;background:rgba(245,158,11,0.10);border-color:rgba(245,158,11,0.30);font-weight:600;text-decoration:none;" title="Admin Panel" onclick="openAdminGate(event)">🔐 Admin</a>
                 <!-- Training Mode button: only visible to creator accounts -->
                 <button id="sandbox-enter-btn" class="back-btn creator-only" onclick="enterSandboxMode()" style="display:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;" title="Switch to the sandbox training account with demo data">🧪 Training Mode</button>
                 <!-- Exit Sandbox button: only visible when in sandbox mode -->
@@ -2226,6 +2232,19 @@
                 <button class="back-btn" onclick="handleLogout()">Log Out</button>
             </div>
         </header>
+        <div id="admin-gate" role="dialog" aria-modal="true" aria-labelledby="admin-gate-title" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.72);align-items:center;justify-content:center;padding:24px;">
+            <form id="admin-gate-form" onsubmit="submitAdminGate(event)" style="width:min(420px,100%);background:#111827;border:1px solid rgba(16,185,129,0.35);border-radius:14px;padding:22px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,0.45);">
+                <div id="admin-gate-title" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.15rem;color:#10b981;margin-bottom:6px;">Admin tools</div>
+                <p style="color:#94a3b8;font-size:0.88rem;line-height:1.5;margin:0 0 14px;">Enter the password for this FACTS account. That opens the admin suite.</p>
+                <label for="admin-gate-password" style="display:block;font-size:0.75rem;color:#cbd5e1;margin-bottom:6px;">Password</label>
+                <input id="admin-gate-password" type="password" autocomplete="current-password" required style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;background:#0a0f1a;color:#f1f5f9;font-size:1rem;">
+                <p id="admin-gate-error" style="min-height:1.2em;color:#f87171;font-size:0.82rem;margin:8px 0 0;"></p>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+                    <button type="button" onclick="closeAdminGate()" style="background:none;border:1px solid #334155;color:#cbd5e1;border-radius:8px;padding:8px 14px;cursor:pointer;">Cancel</button>
+                    <button type="submit" id="admin-gate-submit" style="background:#10b981;color:#000;font-weight:700;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;">Open admin tools</button>
+                </div>
+            </form>
+        </div>
         <!-- Ring chart tooltip (global, positioned fixed) -->
         <div id="ring-tooltip"></div>
 
@@ -2263,7 +2282,7 @@
                     <strong style="color:var(--text-primary);font-size:1rem;">Navigate</strong>
                     <button onclick="closeMobileMenu()" style="background:none;border:none;color:var(--text-muted);font-size:1.4rem;cursor:pointer;padding:4px 8px;">✕</button>
                 </div>
-                <a href="/admin" id="mobile-menu-admin" class="mobile-menu-item creator-only" style="display:none;width:100%;margin-bottom:8px;color:#f59e0b;font-weight:700;border-color:rgba(245,158,11,0.45);background:rgba(245,158,11,0.10);text-align:center;">🔐 Admin — you're the admin</a>
+                <a href="/admin" id="mobile-menu-admin" class="mobile-menu-item creator-only" style="display:none;width:100%;margin-bottom:8px;color:#f59e0b;font-weight:700;border-color:rgba(245,158,11,0.45);background:rgba(245,158,11,0.10);text-align:center;" onclick="openAdminGate(event)">🔐 Admin — you're the admin</a>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
                     <button class="mobile-menu-item" onclick="switchTab('dashboard');closeMobileMenu()">📊 Dashboard</button>
                     <button class="mobile-menu-item" onclick="switchTab('add');closeMobileMenu()">➕ Add Txn</button>
@@ -2490,7 +2509,7 @@
             <button class="mobile-tab" data-tab="future-generations"><span class="tab-icon">🌿</span>Generations</button>
             <button class="mobile-tab" data-tab="archive"><span class="tab-icon">🗄️</span>Archive</button>
             <button class="mobile-tab" onclick="window.location.href='/sovereign'" style="color:#c9a227;font-weight:700;"><span class="tab-icon">⚔️</span>Sovereign</button>
-            <button class="mobile-tab creator-only" style="display:none;color:#f59e0b;" onclick="window.location.href='/admin.html'"><span class="tab-icon">🔐</span>Admin</button>
+            <button class="mobile-tab creator-only" style="display:none;color:#f59e0b;" onclick="openAdminGate(event)"><span class="tab-icon">🔐</span>Admin</button>
         </div>
 
         <div class="app-content">
@@ -6407,16 +6426,68 @@
     let hasTemporaryAllocations = false; // Flag for temporary allocation state
 
     // ─── Admin Detection ───
-    // WHY: Server may not always set is_creator; hardcoded email list is the safety net.
-    // is_admin is the database flag. The email list covers the intended admin even
-    // when that flag was never written. Owner emails are not in this list.
-    const ADMIN_EMAILS = ['chris.finrev@gmail.com', 'ecci2760@gmail.com'];
+    // The server paints the upper-left Admin button and sets __SERVER_IS_ADMIN
+    // when this session can open the dashboard. The email list is the backup
+    // when that flag was not injected. Personal owner emails are not in this list.
+    const ADMIN_EMAILS = ['chris.finrev@gmail.com', 'ecci2760@gmail.com', 'wtrchrisparks@gmail.com', 'admin@factsmoney.com', 'admin@thefinancialrevolution.net'];
     function isAdminUser(user) {
+        if (window.__SERVER_IS_ADMIN === true) {
+            if (!user || !user.id || String(user.id) === String(window.__SERVER_USER_ID)) return true;
+        }
         if (!user) return false;
         if (user.is_admin) return true;
         if (user.is_creator) return true;
         var email = (user.email || '').toLowerCase().trim();
         return ADMIN_EMAILS.indexOf(email) !== -1;
+    }
+
+    function openAdminGate(event) {
+        if (event) event.preventDefault();
+        if (!isAdminUser(currentUser)) return;
+        var gate = document.getElementById('admin-gate');
+        var err = document.getElementById('admin-gate-error');
+        var input = document.getElementById('admin-gate-password');
+        if (err) err.textContent = '';
+        if (input) input.value = '';
+        if (gate) gate.style.display = 'flex';
+        if (input) setTimeout(function () { input.focus(); }, 0);
+    }
+
+    function closeAdminGate() {
+        var gate = document.getElementById('admin-gate');
+        if (gate) gate.style.display = 'none';
+    }
+
+    async function submitAdminGate(event) {
+        event.preventDefault();
+        var input = document.getElementById('admin-gate-password');
+        var err = document.getElementById('admin-gate-error');
+        var submit = document.getElementById('admin-gate-submit');
+        var password = input ? input.value : '';
+        if (!password) {
+            if (err) err.textContent = 'Enter your password.';
+            return;
+        }
+        if (submit) submit.disabled = true;
+        try {
+            var res = await fetch('/api/admin/unlock', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password })
+            });
+            var data = {};
+            try { data = await res.json(); } catch (parseErr) { data = {}; }
+            if (!res.ok) {
+                if (err) err.textContent = data.error || 'That password did not open admin tools.';
+                return;
+            }
+            window.location.href = '/admin';
+        } catch (gateErr) {
+            if (err) err.textContent = 'Could not reach the server. Try again.';
+        } finally {
+            if (submit) submit.disabled = false;
+        }
     }
 
     function setCreatorOnlyVisible(el, visible) {
@@ -6559,6 +6630,16 @@
 
             // Show admin panel link for creator/admin
             var _isAdmin = isAdminUser(currentUser);
+            var factsEntry = document.getElementById('facts-admin-entry');
+            if (factsEntry) {
+                if (_isAdmin) {
+                    factsEntry.classList.add('admin-entry');
+                    factsEntry.title = 'Open admin tools';
+                } else {
+                    factsEntry.classList.remove('admin-entry');
+                    factsEntry.removeAttribute('title');
+                }
+            }
             if (_isAdmin) {
                 document.querySelectorAll('.creator-only').forEach(el => {
                     setCreatorOnlyVisible(el, true);
@@ -6592,6 +6673,9 @@
                         e.stopPropagation();
                         showAdminTierSwitcher(planBadge);
                     };
+                }
+                if (new URLSearchParams(window.location.search).get('adminGate') === '1') {
+                    openAdminGate();
                 }
             } else {
                 document.querySelectorAll('.creator-only').forEach(el => {
@@ -12032,6 +12116,13 @@
         if (window.__SERVER_AUTHENTICATED) {
             document.getElementById('landing-page').style.display = 'none';
             document.getElementById('app-page').style.display = 'block';
+        }
+        if (window.__SERVER_IS_ADMIN === true) {
+            var earlyAdmin = document.getElementById('header-admin-chip');
+            if (earlyAdmin) earlyAdmin.style.display = 'inline-flex';
+            if (new URLSearchParams(window.location.search).get('adminGate') === '1') {
+                openAdminGate();
+            }
         }
 
         const isAuthenticated = await checkAuth();
@@ -17680,12 +17771,18 @@
         }
     }
 
+    const ANNUAL_CREDIT_REPORT_LINK = '<a href="https://www.annualcreditreport.com" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:#34d399;font-weight:600;text-decoration:underline;">AnnualCreditReport</a>';
     const IMPORT_DOC_TYPES = [
         { id: 'credit_reports', title: 'Credit Reports', detail: 'The report you download from AnnualCreditReport, Equifax, Experian, or TransUnion.' },
         { id: 'benefits_packages', title: 'Employment Benefit Packages', detail: 'The benefits booklet or PDF your employer gives you to download.' },
         { id: 'life_insurance', title: 'Life Insurance Plans', detail: 'Policy documents and illustrations you download from the carrier.' },
         { id: 'other_documents', title: 'Other Documents', detail: 'Any other file you have to download before it can live in FACTS.' }
     ];
+
+    function importDocDetailHtml(type) {
+        if (type.id !== 'credit_reports') return type.detail;
+        return 'The report you download from ' + ANNUAL_CREDIT_REPORT_LINK + ', Equifax, Experian, or TransUnion.';
+    }
     let selectedImportDoc = 'credit_reports';
 
     async function initImportTab() {
@@ -17698,9 +17795,9 @@
         if (!wrap) return;
         wrap.innerHTML = IMPORT_DOC_TYPES.map(function(type) {
             const on = type.id === selectedImportDoc;
-            return '<button type="button" onclick="selectImportDoc(\'' + type.id + '\')" style="text-align:left;padding:14px 16px;border-radius:12px;cursor:pointer;background:' + (on ? 'rgba(16,185,129,0.12)' : 'var(--bg-card)') + ';border:1px solid ' + (on ? 'rgba(16,185,129,0.45)' : 'var(--border)') + ';color:var(--text-primary);">' +
+            return '<div role="button" tabindex="0" onclick="selectImportDoc(\'' + type.id + '\')" style="text-align:left;padding:14px 16px;border-radius:12px;cursor:pointer;background:' + (on ? 'rgba(16,185,129,0.12)' : 'var(--bg-card)') + ';border:1px solid ' + (on ? 'rgba(16,185,129,0.45)' : 'var(--border)') + ';color:var(--text-primary);">' +
                 '<div style="font-weight:700;margin-bottom:4px;">' + type.title + '</div>' +
-                '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;">' + type.detail + '</div></button>';
+                '<div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;">' + importDocDetailHtml(type) + '</div></div>';
         }).join('');
     }
 
@@ -17710,7 +17807,7 @@
         const title = document.getElementById('import-doc-title');
         const detail = document.getElementById('import-doc-detail');
         if (title) title.textContent = type.title;
-        if (detail) detail.textContent = type.detail;
+        if (detail) detail.innerHTML = importDocDetailHtml(type);
         renderImportDocTypes();
         await loadImportDocs();
     }
