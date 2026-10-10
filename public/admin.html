@@ -109,8 +109,7 @@
     .header a { color: #6366f1; text-decoration: none; font-size: 14px; }
 
     /* Tabs */
-    .tabs { display: flex; background: #1a1b23; border-bottom: 1px solid #27272a; padding: 0 24px; gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-    .tabs::-webkit-scrollbar { display: none; }
+    .tabs { display: flex; flex-wrap: wrap; background: #1a1b23; border-bottom: 1px solid #27272a; padding: 0 24px 4px; gap: 0; }
     .tab { padding: 12px 20px; cursor: pointer; font-size: 14px; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; transition: all .2s; white-space: nowrap; flex-shrink: 0; }
     .tab:hover { color: #a1a1aa; }
     .tab.active { color: #10b981; border-bottom-color: #10b981; }
@@ -531,6 +530,8 @@
             <div class="loading-center"><div class="loader"></div></div>
           </div>
         </div>
+      </div>
+
       <div class="panel" id="panel-waitlist">
         <div style="margin-bottom:20px;">
           <h2 style="font-size:18px;margin-bottom:4px;">Feature Waitlist</h2>

@@ -358,11 +358,16 @@ router.get('/api/admin/tracking', requireAdmin, async (req, res) => {
   const db = getDb(req);
 
   try {
-    const masterCodes = await db.query(
-      `SELECT id, code, max_uses, uses_count, created_at
-       FROM beta_codes
-       ORDER BY created_at DESC`
-    );
+    let masterCodes = { rows: [] };
+    try {
+      masterCodes = await db.query(
+        `SELECT id, code, max_uses, uses_count, created_at
+         FROM beta_codes
+         ORDER BY created_at DESC`
+      );
+    } catch (codeErr) {
+      console.warn('beta_codes tracking unavailable:', codeErr.message);
+    }
 
     let targetedInvites = { rows: [] };
     try {
@@ -388,26 +393,31 @@ router.get('/api/admin/tracking', requireAdmin, async (req, res) => {
       }
     }
 
-    const userLineage = await db.query(
-      `SELECT
-          u.id AS user_id,
-          u.email,
-          u.referral_code,
-          u.affiliate_code,
-          u.referred_by_code,
-          u.affiliate_tier,
-          u.monthly_invites_remaining,
-          u.lifetime_invites_issued,
-          u.nda_accepted_at,
-          u.created_at,
-          u.is_admin,
-          u.income_programs_blocked,
-          inviter.email AS invited_by_email,
-          (SELECT COUNT(*) FROM users WHERE referrer_id = u.id) AS total_recruits
-       FROM users u
-       LEFT JOIN users inviter ON u.referrer_id = inviter.id
-       ORDER BY u.created_at DESC`
-    );
+    let userLineage = { rows: [] };
+    try {
+      userLineage = await db.query(
+        `SELECT
+            u.id AS user_id,
+            u.email,
+            u.referral_code,
+            u.affiliate_code,
+            u.referred_by_code,
+            u.affiliate_tier,
+            u.monthly_invites_remaining,
+            u.lifetime_invites_issued,
+            u.nda_accepted_at,
+            u.created_at,
+            u.is_admin,
+            u.income_programs_blocked,
+            inviter.email AS invited_by_email,
+            (SELECT COUNT(*) FROM users WHERE referrer_id = u.id) AS total_recruits
+         FROM users u
+         LEFT JOIN users inviter ON u.referrer_id = inviter.id
+         ORDER BY u.created_at DESC`
+      );
+    } catch (lineageErr) {
+      console.warn('user lineage tracking unavailable:', lineageErr.message);
+    }
 
     return res.json({
       success: true,

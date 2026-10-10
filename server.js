@@ -33976,6 +33976,22 @@ app.get('/api/admin/support-tickets', requireAuth, async (req, res) => {
   try {
     if (!(await requireAdminAllowlist(req, res))) return;
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS support_tickets (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        subject TEXT,
+        description TEXT,
+        screenshot_url TEXT,
+        page_url TEXT,
+        status VARCHAR(32) DEFAULT 'open',
+        admin_notes TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        resolved_at TIMESTAMPTZ
+      )
+    `);
+
     const { status, limit = 50, offset = 0 } = req.query;
     let query = `
       SELECT
