@@ -324,7 +324,8 @@ app.get('/admin', async (req, res) => {
   let html = fs.readFileSync(htmlPath, 'utf8');
   const until = req.session.adminToolsUntil;
   const locked = !(typeof until === 'number' && until > Date.now());
-  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};</script></head>`);
+  const adminSession = JSON.stringify({ isAdmin: true, email: email || '' }).replace(/</g, '\\u003c');
+  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};window.__ADMIN_SESSION=${adminSession};</script></head>`);
   res.setHeader('Cache-Control', 'no-store');
   res.type('html').send(html);
 });
@@ -436,6 +437,19 @@ app.use(function auditLockoutGuard(req, res, next) {
       });
     })
     .catch(function() { next(); });
+});
+
+// Link previews do not run JavaScript. On the TFR domain, "/" must be the
+// education site so the shared card uses The Financial Revolution logo,
+// not the FACTS lockup on the engine homepage.
+app.use(function tfrEducationHost(req, res, next) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  const host = String(req.headers.host || '').split(':')[0].toLowerCase();
+  if (host !== 'thefinancialrevolution.net' && host !== 'www.thefinancialrevolution.net') return next();
+  if (req.path === '/' || req.path === '/index.html') {
+    return res.redirect(302, '/tfr/');
+  }
+  next();
 });
 
 // ─── Report Issue Injection Middleware ─────────────────────────────────────────
@@ -2263,7 +2277,7 @@ app.get('/api/auth/me', async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       authenticated: true,
       user: {
         id: user.id,
@@ -2308,7 +2322,27 @@ app.get('/api/auth/me', async (req, res) => {
     });
   } catch (err) {
     console.error('GET /api/auth/me error:', err.message);
-    res.json({ authenticated: false });
+    try {
+      const slim = await pool.query(
+        'SELECT id, email, name, is_admin, is_creator FROM users WHERE id = $1',
+        [req.session.userId]
+      );
+      if (!slim.rows.length) return res.json({ authenticated: false });
+      const user = slim.rows[0];
+      return res.json({
+        authenticated: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          is_admin: !!(user.is_admin || isAllowlistedAdminEmail(user.email)),
+          is_creator: !!user.is_creator
+        }
+      });
+    } catch (fallbackErr) {
+      console.error('GET /api/auth/me fallback error:', fallbackErr.message);
+      return res.json({ authenticated: false });
+    }
   }
 });
 

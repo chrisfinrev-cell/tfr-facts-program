@@ -2200,78 +2200,82 @@
       if (stay) stay.style.display = 'block';
     }
 
+    function openAdminWorkspace(user) {
+      window.__ADMIN_USER__ = user || {};
+      const loadingEl = document.getElementById('loading');
+      const panel = document.getElementById('admin-panel');
+      const stay = document.getElementById('admin-stay-message');
+      const denied = document.getElementById('access-denied');
+      const tabs = document.querySelector('.tabs');
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (stay) stay.style.display = 'none';
+      if (denied) denied.style.display = 'none';
+      if (tabs) tabs.style.display = '';
+      if (panel) panel.style.display = 'block';
+      initTierSwitcher();
+      document.querySelectorAll('.tab').forEach(function (tab) {
+        if (tab.dataset.bound === '1') return;
+        tab.dataset.bound = '1';
+        tab.addEventListener('click', function () { switchTab(tab.dataset.tab); });
+      });
+    }
+
     async function init() {
       if (window.__ADMIN_LOCKED === true) {
         showAdminPasswordGate();
         return;
       }
+
+      const injected = window.__ADMIN_SESSION || null;
+      let authUser = null;
       try {
         const authRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
         const authData = await authRes.json();
-        if (!authData.authenticated) {
-          showAdminStay('This admin page could not confirm the signed-in account. Refresh this page. You are not being sent back to login.');
-          return;
-        }
-        window.__ADMIN_USER__ = authData.user || {};
+        if (authData && authData.authenticated && authData.user) authUser = authData.user;
+      } catch (authErr) {
+        authUser = null;
+      }
 
-        const userEmail = (authData.user && authData.user.email || '').toLowerCase().trim();
-        const emailIsAdmin = ADMIN_PANEL_EMAILS.indexOf(userEmail) !== -1;
-        const flagIsAdmin = !!(authData.user && authData.user.is_admin);
+      const serverConfirmed = !!(injected && injected.isAdmin);
+      if (!authUser && !serverConfirmed) {
+        showAdminStay('This admin page could not confirm the signed-in account. Refresh this page. You are not being sent back to login.');
+        return;
+      }
 
-        try {
-          const proRes = await fetch('/api/pro-status');
-          const proData = await proRes.json();
-          isCreatorUser = !!proData.is_creator;
-        } catch (proErr) {
-          isCreatorUser = false;
-        }
+      const user = authUser || { email: injected.email || '', is_admin: true };
+      window.__ADMIN_USER__ = user;
 
-        // Owner-only accounts are not admins. The admin email list and the
-        // is_admin flag match the logged-in app and requireAdmin.
-        if (FUTURE_GEN_EMAILS.includes(userEmail) && !emailIsAdmin && !flagIsAdmin) {
-          document.getElementById('loading').style.display = 'none';
-          document.getElementById('access-denied').style.display = 'block';
-          return;
-        }
+      const userEmail = String(user.email || '').toLowerCase().trim();
+      const emailIsAdmin = ADMIN_PANEL_EMAILS.indexOf(userEmail) !== -1;
+      const flagIsAdmin = !!user.is_admin || serverConfirmed;
 
-        if (!isCreatorUser && !emailIsAdmin && !flagIsAdmin) {
-          document.getElementById('loading').style.display = 'none';
-          document.getElementById('access-denied').style.display = 'block';
-          return;
-        }
+      try {
+        const proRes = await fetch('/api/pro-status');
+        const proData = await proRes.json();
+        isCreatorUser = !!proData.is_creator;
+      } catch (proErr) {
+        isCreatorUser = false;
+      }
 
+      if (FUTURE_GEN_EMAILS.includes(userEmail) && !emailIsAdmin && !flagIsAdmin) {
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('access-denied').style.display = 'block';
+        return;
+      }
 
-        // Init tier switcher (only for creator/admin users)
-        initTierSwitcher();
+      if (!isCreatorUser && !emailIsAdmin && !flagIsAdmin) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('access-denied').style.display = 'block';
+        return;
+      }
 
-        // Init tabs
-        document.querySelectorAll('.tab').forEach(tab => {
-          tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-        });
+      openAdminWorkspace(user);
 
-        // Wrap init calls in a timeout — if they hang, show error instead of infinite spinner
-        const initTimeout = setTimeout(() => {
-          const loadingEl = document.getElementById('loading');
-          const adminPanel = document.getElementById('admin-panel');
-          if (loadingEl && loadingEl.style.display !== 'none') {
-            loadingEl.style.display = 'none';
-            if (adminPanel) {
-              const errEl = document.createElement('div');
-              errEl.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7f1d1d;padding:16px;text-align:center;color:white;z-index:9999';
-              errEl.textContent = '⚠ Admin panel timed out loading — try refreshing. If issue persists, contact support.';
-              adminPanel.prepend(errEl);
-            }
-          }
-        }, 15000);
-
+      try {
         await loadTree();
         loadPromoCodes();
-        clearTimeout(initTimeout);
       } catch (err) {
-        console.error('Auth failed:', err);
-        showAdminStay('The admin panel hit an error and is staying on this page. Refresh to try again.');
+        console.error('Admin data load failed:', err);
       }
     }
 
