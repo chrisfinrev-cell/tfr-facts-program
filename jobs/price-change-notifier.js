@@ -7,8 +7,9 @@
  * Runs daily at 9 AM UTC.
  */
 
-const APP_URL = process.env.APP_URL || 'https://financial-revolution.polsia.app';
-const EMAIL_FROM = 'noreply@facts-finance.polsia.app';
+const { sendEmail } = require('../lib/mailer');
+
+const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
 
 // Notice milestones in days
 const NOTICE_DAYS = [60, 30, 15, 7, 1];
@@ -33,22 +34,14 @@ async function sendRateChangeEmail(email, userName, {
   });
 
   try {
-    const response = await fetch('https://api.polsia.app/v1/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
-        to: email,
-        subject: buildSubjectLine(noticeDays, planType, currentRateCents, newRateCents, effectiveDate),
-        html,
-        from: EMAIL_FROM
-      })
+    const result = await sendEmail({
+      to: email,
+      subject: buildSubjectLine(noticeDays, planType, currentRateCents, newRateCents, effectiveDate),
+      html
     });
 
-    if (!response.ok) {
-      console.error(`[PriceNotifier] Email send failed for ${email}: HTTP ${response.status}`);
+    if (!result.sent) {
+      console.error(`[PriceNotifier] Email send failed for ${email}: ${result.error}`);
       return false;
     }
 
@@ -162,7 +155,7 @@ function buildRateChangeEmailHtml({ userName, noticeDays, currentRateCents, newR
 
     <!-- Footer -->
     <p style="color:#94a3b8;font-size:12px;text-align:center;line-height:1.6;">
-      FACTS Finance · <a href="${APP_URL}" style="color:#94a3b8;">financial-revolution.polsia.app</a><br>
+      FACTS Finance · <a href="${APP_URL}" style="color:#94a3b8;">app.factsmoney.com</a><br>
       You're receiving this because you have an active paid subscription.<br>
       To cancel, visit your subscription settings in the app.
     </p>

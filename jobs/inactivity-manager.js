@@ -9,10 +9,11 @@
  */
 
 const { Pool } = require('pg');
+const { sendEmail } = require('../lib/mailer');
 
-// Email sending via Polsia email proxy
+// Email sending via Resend
 async function sendInactivityWarning(email, userName, plan, daysInactive, gracePeriodDays) {
-  const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+  const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
   const daysRemaining = gracePeriodDays - daysInactive;
 
   const html = `
@@ -46,24 +47,16 @@ async function sendInactivityWarning(email, userName, plan, daysInactive, graceP
     </div>
   `;
 
-  // Send via Polsia email proxy
+  // Send via Resend
   try {
-    const response = await fetch('https://api.polsia.app/v1/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
-        to: email,
-        subject: `Action Required: Your FACTS Account Will Be Deleted in ${daysRemaining} Days`,
-        html: html,
-        from: 'noreply@facts-finance.polsia.app'
-      })
+    const result = await sendEmail({
+      to: email,
+      subject: `Action Required: Your FACTS Account Will Be Deleted in ${daysRemaining} Days`,
+      html: html
     });
 
-    if (!response.ok) {
-      console.error(`[Inactivity] Email send failed for ${email}:`, response.status);
+    if (!result.sent) {
+      console.error(`[Inactivity] Email send failed for ${email}:`, result.error);
       return false;
     }
 

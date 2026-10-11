@@ -888,6 +888,45 @@
       <!-- ═══════ BETA INVITES / FOUNDER TRACKER ═══════ -->
       <div class="panel" id="panel-beta-invites">
         <div class="section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h2>Your 100 Beta Codes</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadBetaPool()">↻ Refresh</button>
+          </div>
+          <div class="stats-row" style="margin-bottom:16px;">
+            <div class="stat-card"><div class="label">Available</div><div class="value green" id="pool-available">—</div></div>
+            <div class="stat-card"><div class="label">Sent</div><div class="value yellow" id="pool-assigned">—</div></div>
+            <div class="stat-card"><div class="label">Signed Up</div><div class="value blue" id="pool-signed-up">—</div></div>
+          </div>
+          <form class="form-row" onsubmit="assignPoolCode(event)">
+            <div class="form-group">
+              <label>Name (optional)</label>
+              <input type="text" id="poolName" placeholder="Jane Doe">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="poolEmail" placeholder="jane@example.com" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="poolSendBtn">Send a Code</button>
+          </form>
+          <p id="poolResult" style="margin-top:12px;font-size:0.9rem;color:#a1a1aa;"></p>
+          <div class="table-wrap" style="margin-top:12px;max-height:420px;overflow-y:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Status</th>
+                  <th>Sent To</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="poolCodesBody"><tr><td colspan="4">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;color:#71717a;text-transform:uppercase;letter-spacing:1px;margin:28px 0 12px;">Other ways to invite</h3>
+
+        <div class="section">
           <h2>Issue Master Admin Invite Code</h2>
           <div class="form-row">
             <div class="form-group">
@@ -2280,6 +2319,66 @@
       }
     }
 
+    const POOL_STATUS_LABELS = { available: 'Available', assigned: 'Sent', signed_up: 'Signed up' };
+
+    async function loadBetaPool() {
+      const body = document.getElementById('poolCodesBody');
+      const data = await adminJson('/api/admin/beta-pool');
+      if (!data) return;
+      if (!data.success) {
+        if (body) body.innerHTML = '<tr><td colspan="4" style="color:#fca5a5;">' + escHtml(data.error || 'Could not load your beta codes.') + '</td></tr>';
+        return;
+      }
+      document.getElementById('pool-available').textContent = data.available;
+      document.getElementById('pool-assigned').textContent = data.assigned;
+      document.getElementById('pool-signed-up').textContent = data.signedUp;
+      body.innerHTML = (data.codes || []).map(function (c) {
+        const who = c.status === 'signed_up'
+          ? escHtml(c.claimed_by_email || c.sent_to_email || '—')
+          : escHtml([c.sent_to_name, c.sent_to_email].filter(Boolean).join(' · ') || '—');
+        const emailNote = c.status === 'assigned' && c.last_email_error
+          ? '<div style="font-size:11px;color:#fca5a5;">Email not sent. Share it yourself.</div>'
+          : '';
+        const copy = c.status === 'signed_up'
+          ? ''
+          : '<button class="btn btn-secondary btn-sm" onclick="copyToClipboard(decodeURIComponent(\'' + encodeURIComponent(c.code) + '\'))">Copy Code</button> ' +
+            '<button class="btn btn-secondary btn-sm" onclick="copyToClipboard(decodeURIComponent(\'' + encodeURIComponent(c.signup_url) + '\'))">Copy Link</button>';
+        return '<tr><td><code>' + escHtml(c.code) + '</code></td><td>' + (POOL_STATUS_LABELS[c.status] || c.status) +
+          '</td><td>' + who + emailNote + '</td><td style="white-space:nowrap;">' + copy + '</td></tr>';
+      }).join('') || '<tr><td colspan="4">No codes yet.</td></tr>';
+    }
+
+    async function assignPoolCode(event) {
+      event.preventDefault();
+      const nameEl = document.getElementById('poolName');
+      const emailEl = document.getElementById('poolEmail');
+      const resultEl = document.getElementById('poolResult');
+      const btn = document.getElementById('poolSendBtn');
+      const email = emailEl.value.trim();
+      if (!email) return;
+      btn.disabled = true;
+      try {
+        const data = await adminJson('/api/admin/beta-pool/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: nameEl.value.trim(), email: email })
+        });
+        if (!data) return;
+        if (data.success) {
+          resultEl.style.color = data.emailSent ? '#6ee7b7' : '#fbbf24';
+          resultEl.innerHTML = escHtml(data.message) + ' <strong><code>' + escHtml(data.code) + '</code></strong>';
+          nameEl.value = '';
+          emailEl.value = '';
+        } else {
+          resultEl.style.color = '#fca5a5';
+          resultEl.textContent = data.error || 'Could not send a code.';
+        }
+        loadBetaPool();
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
     async function loadBetaInviteTracking() {
       const data = await adminJson('/api/admin/tracking');
       if (!data) return;
@@ -2430,7 +2529,7 @@
       if (tabName === 'education') loadEducationAdmin();
       if (tabName === 'shop-save') loadShopAdmin();
       if (tabName === 'nda') loadNdaStatus();
-      if (tabName === 'beta-invites') loadBetaInviteTracking();
+      if (tabName === 'beta-invites') { loadBetaPool(); loadBetaInviteTracking(); }
       if (tabName === 'resources') loadResourcesAdmin();
       if (tabName === 'feed') loadFeedAdmin();
       if (tabName === 'waitlist') loadWaitlist();

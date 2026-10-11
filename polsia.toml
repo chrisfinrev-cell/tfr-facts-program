@@ -1,8 +1,0 @@
-[package]
-name = "facts-finance-2"
-
-[[crons]]
-name = "process-delayed-onboarding-emails"
-schedule = "*/5 * * * *"
-command = "node modules/mod_onboarding/cron-delayed-emails.js"
-description = "Process mod_onboarding.delayed_emails — sends queued follow-up emails 2 and 3 at scheduled time"

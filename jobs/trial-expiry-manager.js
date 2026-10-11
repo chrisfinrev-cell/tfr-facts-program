@@ -14,13 +14,15 @@
  * Runs daily at 4 AM UTC.
  */
 
+const { sendEmail } = require('../lib/mailer');
+
 const TRIAL_DURATION_DAYS = 21;
 
 /**
  * Send trial reminder email.
  */
 async function sendTrialEmail(email, userName, type, appUrl) {
-  const baseUrl = appUrl || process.env.APP_URL || 'https://financial-revolution.polsia.app';
+  const baseUrl = appUrl || process.env.APP_URL || 'https://app.factsmoney.com';
 
   let subject, html;
 
@@ -124,22 +126,10 @@ async function sendTrialEmail(email, userName, type, appUrl) {
   }
 
   try {
-    const response = await fetch('https://api.polsia.app/v1/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
-        to: email,
-        subject,
-        html,
-        from: 'noreply@facts-finance.polsia.app'
-      })
-    });
+    const result = await sendEmail({ to: email, subject, html });
 
-    if (!response.ok) {
-      console.error(`[TrialExpiry] Email send failed for ${email} (type=${type}):`, response.status);
+    if (!result.sent) {
+      console.error(`[TrialExpiry] Email send failed for ${email} (type=${type}):`, result.error);
       return false;
     }
     console.log(`[TrialExpiry] ${type} email sent to ${email}`);
@@ -157,7 +147,7 @@ async function runTrialExpiryJob(pool) {
   console.log('[TrialExpiry] Starting trial lifecycle check');
   const startTime = Date.now();
 
-  const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+  const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
   const now = new Date();
 
   const client = await pool.connect();

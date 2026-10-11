@@ -2,7 +2,17 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const { pool } = require('../db/pool');
-const { createTargetedInvites, invitesToCsv, parseMeta } = require('../lib/inviteCodes');
+const {
+  createTargetedInvites,
+  invitesToCsv,
+  parseMeta,
+  ensureBetaInviteTables,
+  recordInviteEmailResult,
+  ADMIN_POOL_SIZE,
+  ensureAdminPool,
+  listAdminPool,
+  assignPoolInvite
+} = require('../lib/inviteCodes');
 const { sendBetaInviteEmail, signupUrlForCode, appBaseUrl } = require('../lib/betaInviteEmail');
 const { userIsAdminAccount } = require('../config/adminAccess');
 
@@ -110,6 +120,13 @@ router.post('/api/admin/generate-code', requireAdmin, async (req, res) => {
   const body = req.body || {};
   const db = getDb(req);
 
+  try {
+    await ensureBetaInviteTables(db);
+  } catch (err) {
+    console.error('Error preparing beta invite tables:', err);
+    return res.status(500).json({ error: `Failed to prepare invite tables: ${err.message}` });
+  }
+
   const hasRecipient =
     Boolean(body.sentToName || body.name || body.sentToEmail || body.email || body.meta || body.recipientMetadata);
 
@@ -155,30 +172,9 @@ router.post('/api/admin/generate-code', requireAdmin, async (req, res) => {
     return res.json({ success: true, message: `Master code ${formattedCode} created with ${maxUses} uses.` });
   } catch (err) {
     console.error('Error generating admin code:', err);
-    return res.status(500).json({ error: 'Failed to create admin invite code.' });
+    return res.status(500).json({ error: `Failed to create admin invite code: ${err.message}` });
   }
 });
-
-async function ensureInviteEmailColumns(db) {
-  await db.query('ALTER TABLE beta_invites ADD COLUMN IF NOT EXISTS last_emailed_at TIMESTAMPTZ');
-  await db.query('ALTER TABLE beta_invites ADD COLUMN IF NOT EXISTS last_email_error TEXT');
-}
-
-async function recordInviteEmailResult(db, inviteId, result) {
-  if (!inviteId) return;
-  try {
-    await ensureInviteEmailColumns(db);
-    await db.query(
-      `UPDATE beta_invites
-       SET last_emailed_at = CASE WHEN $2::boolean THEN NOW() ELSE last_emailed_at END,
-           last_email_error = $3
-       WHERE id = $1`,
-      [inviteId, !!result.sent, result.sent ? null : (result.error || 'Send failed')]
-    );
-  } catch (err) {
-    console.warn('Could not record beta invite email status:', err.message);
-  }
-}
 
 async function deliverInviteRows(db, rows) {
   const base = appBaseUrl();
@@ -246,6 +242,7 @@ router.post('/api/admin/generate-invites', requireAdmin, async (req, res) => {
   const body = req.body || {};
   const db = getDb(req);
   try {
+    await ensureBetaInviteTables(db);
     const created = await createTargetedInvites(db, {
       count: body.count || 1,
       name: body.sentToName || body.name,
@@ -259,7 +256,72 @@ router.post('/api/admin/generate-invites', requireAdmin, async (req, res) => {
     return respondWithDeliveries(res, created, deliveries);
   } catch (err) {
     console.error('Error generating invites:', err);
-    return res.status(500).json({ error: 'Failed to create invite codes.' });
+    return res.status(500).json({ error: `Failed to create invite codes: ${err.message}` });
+  }
+});
+
+// --- Admin pool: the fixed set of 100 codes the admin hands out ---
+router.get('/api/admin/beta-pool', requireAdmin, async (req, res) => {
+  const db = getDb(req);
+  try {
+    await ensureAdminPool(db, req.session.userId);
+    const base = appBaseUrl();
+    const codes = (await listAdminPool(db)).map((row) => ({
+      ...row,
+      signup_url: signupUrlForCode(row.code, base)
+    }));
+    const count = (status) => codes.filter((row) => row.status === status).length;
+    return res.json({
+      success: true,
+      size: ADMIN_POOL_SIZE,
+      available: count('available'),
+      assigned: count('assigned'),
+      signedUp: count('signed_up'),
+      codes
+    });
+  } catch (err) {
+    console.error('Error loading admin beta pool:', err);
+    return res.status(500).json({ error: `Could not load your beta codes: ${err.message}` });
+  }
+});
+
+// Assigns the next available pool code (or a chosen one) to a person and emails it.
+router.post('/api/admin/beta-pool/assign', requireAdmin, async (req, res) => {
+  const db = getDb(req);
+  const body = req.body || {};
+  const email = String(body.email || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Enter the email of the person getting this code.' });
+  }
+  try {
+    await ensureAdminPool(db, req.session.userId);
+    const invite = await assignPoolInvite(db, {
+      pool: 'admin',
+      inviteId: parseInt(body.inviteId, 10) || null,
+      name: body.name,
+      email
+    });
+    if (!invite) {
+      return res.status(409).json({ error: `All ${ADMIN_POOL_SIZE} of your beta codes are already assigned.` });
+    }
+    const result = await sendBetaInviteEmail({
+      to: invite.sent_to_email,
+      name: invite.sent_to_name,
+      code: invite.code,
+      signupUrl: signupUrlForCode(invite.code, appBaseUrl())
+    });
+    await recordInviteEmailResult(db, invite.id, result);
+    return res.json({
+      success: true,
+      code: invite.code,
+      emailSent: !!result.sent,
+      message: result.sent
+        ? `Assigned ${invite.code} to ${invite.sent_to_email} and emailed it.`
+        : `Assigned ${invite.code} to ${invite.sent_to_email}. The email did not go out: ${result.error} Share the code yourself.`
+    });
+  } catch (err) {
+    console.error('Error assigning admin beta code:', err);
+    return res.status(500).json({ error: `Could not assign a beta code: ${err.message}` });
   }
 });
 
@@ -358,6 +420,12 @@ router.get('/api/admin/tracking', requireAdmin, async (req, res) => {
   const db = getDb(req);
 
   try {
+    try {
+      await ensureBetaInviteTables(db);
+    } catch (prepErr) {
+      console.warn('beta invite tables could not be prepared:', prepErr.message);
+    }
+
     let masterCodes = { rows: [] };
     try {
       masterCodes = await db.query(
@@ -376,6 +444,7 @@ router.get('/api/admin/tracking', requireAdmin, async (req, res) => {
                 claimed_by_user_id, claimed_at, max_uses, uses_count, created_at,
                 last_emailed_at, last_email_error
          FROM beta_invites
+         WHERE COALESCE(recipient_metadata->>'pool', '') NOT IN ('admin', 'member')
          ORDER BY created_at DESC
          LIMIT 500`
       );

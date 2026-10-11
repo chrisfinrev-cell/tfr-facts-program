@@ -28,38 +28,16 @@
  * affiliate_monthly_status, commissions_on_compliance_hold) for backward compatibility.
  */
 
-const https = require('https');
+const mailer = require('../lib/mailer');
 
-const APP_URL = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
 
 // ─── Email helper ────────────────────────────────────────────────────────────
 
-function sendEmail(to, subject, htmlBody) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify({ to, subject, html: htmlBody });
-    const options = {
-      hostname: 'polsia.com',
-      port: 443,
-      path: '/api/email-proxy/send',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(data),
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      }
-    };
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (c) => { body += c; });
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) resolve(JSON.parse(body));
-        else reject(new Error(`Email failed: ${res.statusCode} ${body}`));
-      });
-    });
-    req.on('error', reject);
-    req.write(data);
-    req.end();
-  });
+async function sendEmail(to, subject, htmlBody) {
+  const result = await mailer.sendEmail({ to, subject, html: htmlBody });
+  if (!result.sent) throw new Error(`Email failed: ${result.error || 'unknown error'}`);
+  return result;
 }
 
 // ─── Email templates ─────────────────────────────────────────────────────────

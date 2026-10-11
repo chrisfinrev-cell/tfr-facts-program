@@ -22,6 +22,9 @@ const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const crypto = require('crypto');
 const OpenAI = require('openai');
+const { sendEmail, emailConfigured } = require('./lib/mailer');
+const { getOpenAI } = require('./lib/aiClient');
+const { uploadFile } = require('./lib/fileStorage');
 const nodeFetch = require('node-fetch'); // r2-proxy: use node-fetch v2, not native fetch
 const FormData = require('form-data');   // r2-proxy: use form-data for correct multipart boundaries
 
@@ -575,7 +578,7 @@ app.get('/factsmoney', function (req, res) {
   res.sendFile(path.join(__dirname, 'public', 'factsmoney.html'));
 });
 
-// API: Contact form — forwards to chris.finrev@gmail.com via Polsia email proxy
+// API: Contact form — forwards to chris.finrev@gmail.com via Resend
 app.post('/api/contact', async function (req, res) {
   try {
     var body    = req.body || {};
@@ -590,9 +593,8 @@ app.post('/api/contact', async function (req, res) {
       return res.status(400).json({ ok: false, error: 'A valid email address is required.' });
     }
 
-    var POLSIA_API_KEY = process.env.POLSIA_API_KEY;
-    if (!POLSIA_API_KEY) {
-      console.error('[Contact] POLSIA_API_KEY not set');
+    if (!emailConfigured()) {
+      console.error('[Contact] RESEND_API_KEY not set');
       return res.status(500).json({ ok: false, error: 'Email service not configured.' });
     }
 
@@ -611,23 +613,16 @@ app.post('/api/contact', async function (req, res) {
       + '<hr style="margin:24px 0;border:none;border-top:1px solid #eee;" />'
       + '<p style="font-family:sans-serif;font-size:12px;color:#aaa;">Sent via factsmoney.com contact form</p>';
 
-    var emailRes = await fetch('https://polsia.com/api/proxy/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + POLSIA_API_KEY
-      },
-      body: JSON.stringify({
-        to: 'chris.finrev@gmail.com',
-        subject: 'FACTS Contact: ' + name,
-        body: emailBody,
-        html: emailHtml
-      })
+    var emailResult = await sendEmail({
+      to: 'chris.finrev@gmail.com',
+      subject: 'FACTS Contact: ' + name,
+      text: emailBody,
+      html: emailHtml,
+      replyTo: email
     });
 
-    if (!emailRes.ok) {
-      var errData = await emailRes.json().catch(function() { return {}; });
-      console.error('[Contact] Email proxy error:', emailRes.status, errData);
+    if (!emailResult.sent) {
+      console.error('[Contact] Email send error:', emailResult.error);
       return res.status(500).json({ ok: false, error: 'Failed to send message. Please try again.' });
     }
 
@@ -1212,7 +1207,10 @@ app.post('/api/auth/signup', async (req, res) => {
 
     // During beta, a code is required. Set BETA_INVITE_ONLY=false to open public signup.
     const betaInviteOnly = String(process.env.BETA_INVITE_ONLY || 'true').toLowerCase() !== 'false';
-    const suppliedInvite = invite_code && String(invite_code).trim();
+    const suppliedInvite = (invite_code && String(invite_code).trim())
+      || (betaInviteOnly && ref_code && String(ref_code).trim())
+      || '';
+    let effectiveRefCode = ref_code;
     if (betaInviteOnly && !suppliedInvite && !isCreatorEmail && !isAllowlistedAdminEmail(normalizedEmail)) {
       return res.status(403).json({
         code: 'BETA_INVITE_REQUIRED',
@@ -1223,15 +1221,27 @@ app.post('/api/auth/signup', async (req, res) => {
     // ─── INVITE CODE: Optional — validate only if provided ───────────────
     // Promo codes, admin master beta codes, and targeted beta invites are all valid.
     let pendingBeta = null;
-    if (invite_code && invite_code.trim()) {
+    if (suppliedInvite) {
       const promoCheck = await pool.query(
         'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
-        [invite_code.trim()]
+        [suppliedInvite]
       );
 
       if (promoCheck.rows.length === 0) {
-        const { findActiveBetaInvite } = require('./lib/inviteCodes');
-        pendingBeta = await findActiveBetaInvite(pool, invite_code);
+        const { findActiveBetaInvite, findMemberReferralInvite } = require('./lib/inviteCodes');
+        pendingBeta = await findActiveBetaInvite(pool, suppliedInvite);
+        if (!pendingBeta) {
+          const referral = await findMemberReferralInvite(pool, suppliedInvite);
+          if (referral && referral.remaining <= 0) {
+            return res.status(400).json({
+              error: `This referral code has already brought in ${referral.limit} people this month. Ask them again next month, or ask for a beta code.`
+            });
+          }
+          if (referral) {
+            pendingBeta = { kind: 'referral', row: referral.user };
+            effectiveRefCode = referral.user.referral_code;
+          }
+        }
         if (!pendingBeta) {
           return res.status(400).json({ error: 'Invalid invite code. Please check the code and try again.' });
         }
@@ -1280,11 +1290,11 @@ app.post('/api/auth/signup', async (req, res) => {
       await seedUserAllocations(client, userId);
 
       // ─── Redeem invite code if provided ───────────────────────────────
-      if (invite_code && invite_code.trim()) {
+      if (suppliedInvite) {
         // Re-validate code in transaction (double-check it's still active)
         const promoResult = await client.query(
           'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
-          [invite_code.trim()]
+          [suppliedInvite]
         );
 
         if (promoResult.rows.length > 0 && promoResult.rows[0].status === 'active') {
@@ -1303,7 +1313,7 @@ app.post('/api/auth/signup', async (req, res) => {
             `UPDATE users
              SET promo_code_used = $1, updated_at = NOW()
              WHERE id = $2`,
-            [invite_code.trim().toUpperCase(), userId]
+            [suppliedInvite.toUpperCase(), userId]
           );
         } else if (pendingBeta) {
         if (pendingBeta.kind === 'invite') {
@@ -1321,6 +1331,11 @@ app.post('/api/auth/signup', async (req, res) => {
             used.status = 400;
             throw used;
           }
+        } else if (pendingBeta.kind === 'referral') {
+          await client.query(
+            'INSERT INTO beta_referral_signups (referrer_user_id, user_id) VALUES ($1, $2)',
+            [pendingBeta.row.id, userId]
+          );
         } else {
           const claimed = await client.query(
             `UPDATE beta_codes
@@ -1364,11 +1379,11 @@ app.post('/api/auth/signup', async (req, res) => {
 
       // ─── Set referred_by_user_id if a valid referral code was provided ──
       let signupReferrerId = null; // hoisted so we can use it after COMMIT
-      if (ref_code && ref_code.trim() && !isCreatorEmail) {
+      if (effectiveRefCode && effectiveRefCode.trim() && !isCreatorEmail) {
         try {
           const refOwner = await client.query(
             'SELECT id FROM users WHERE referral_code = $1',
-            [ref_code.trim().toUpperCase()]
+            [effectiveRefCode.trim().toUpperCase()]
           );
           if (refOwner.rows.length > 0) {
             signupReferrerId = refOwner.rows[0].id;
@@ -1596,16 +1611,10 @@ async function send2faCode(userId) {
 
   const appName = 'FACTS';
   try {
-    await fetch('https://polsia.com/api/proxy/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
+    await sendEmail({
         to: email,
         subject: `${code} is your ${appName} verification code`,
-        body: `Your ${appName} login verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, someone may be trying to access your account. You can ignore this email.`,
+        text: `Your ${appName} login verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, someone may be trying to access your account. You can ignore this email.`,
         html: `
           <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#0a0f1a;border-radius:16px;">
             <h2 style="color:#10b981;margin:0 0 8px;font-size:1.4rem;">${appName} Verification Code</h2>
@@ -1617,11 +1626,9 @@ async function send2faCode(userId) {
               <span style="font-size:2.5rem;font-weight:700;letter-spacing:12px;color:#10b981;font-family:'Courier New',monospace;">${code}</span>
             </div>
             <p style="color:#64748b;font-size:0.85rem;line-height:1.5;">
-              If you didn't try to sign in, someone may have your password. Consider changing it immediately at <a href="${process.env.APP_URL || 'https://financial-revolution.polsia.app'}" style="color:#10b981;">financial-revolution.polsia.app</a>.
+              If you didn't try to sign in, someone may have your password. Consider changing it immediately at <a href="${process.env.APP_URL || 'https://app.factsmoney.com'}" style="color:#10b981;">app.factsmoney.com</a>.
             </p>
-          </div>`,
-        transactional: true
-      })
+          </div>`
     });
   } catch (emailErr) {
     console.error('[2FA] Email send error:', emailErr.message);
@@ -2063,24 +2070,18 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     const resetUrl = `${passwordResetBaseUrl(req)}/reset-password.html?token=${token}`;
 
-    if (!process.env.POLSIA_API_KEY) {
+    if (!emailConfigured()) {
       await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
-      console.error('POST /api/auth/forgot-password: POLSIA_API_KEY is not set');
+      console.error('POST /api/auth/forgot-password: RESEND_API_KEY is not set');
       return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
     }
 
-    let emailResponse;
+    let emailResult;
     try {
-      emailResponse = await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      emailResult = await sendEmail({
           to: user.email,
           subject: 'Reset Your FACTS Password',
-          body: `You requested a password reset for your FACTS account.\n\nClick this link to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
+          text: `You requested a password reset for your FACTS account.\n\nClick this link to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <h2 style="color: #10b981; margin-bottom: 24px;">Reset Your Password</h2>
@@ -2103,9 +2104,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                 If you didn't request this, you can safely ignore this email.
               </p>
             </div>
-          `,
-          transactional: true
-        })
+          `
       });
     } catch (emailErr) {
       await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
@@ -2113,10 +2112,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
     }
 
-    if (!emailResponse.ok) {
-      const emailBody = await emailResponse.text();
+    if (!emailResult.sent) {
       await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
-      console.error('Email send failed:', emailResponse.status, emailBody);
+      console.error('Email send failed:', emailResult.error);
       return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
     }
 
@@ -7492,16 +7490,10 @@ async function sendHouseholdInviteEmail({ toEmail, inviterName, householdName, i
     ? `<p style="font-size:14px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:12px 14px;color:#c9a84c;margin:0 0 20px;line-height:1.6">${customNote}</p>`
     : '';
   try {
-    await fetch('https://polsia.com/api/proxy/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
+    await sendEmail({
         to: toEmail,
         subject: `${inviterName} invited you to join their FACTS family`,
-        html_body: `
+        html: `
           <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;background:#0a0f1a;color:#e8e0d4;padding:32px 24px;border-radius:12px">
             <div style="margin-bottom:24px">
               <span style="font-size:22px;font-weight:700;color:#c9a84c;letter-spacing:-0.5px">FACTS</span>
@@ -7523,9 +7515,7 @@ async function sendHouseholdInviteEmail({ toEmail, inviterName, householdName, i
               If you didn't expect this invite, you can safely ignore this email.
             </p>
           </div>
-        `,
-        transactional: true
-      })
+        `
     });
   } catch (e) {
     console.error('[family Invite Email] Failed to send:', e.message);
@@ -7611,7 +7601,7 @@ app.post('/api/households/:id/invite', requireAuth, async (req, res) => {
     `, [id, crypto.randomBytes(8).toString('hex'), req.userId, req.userId, email.toLowerCase(), role, token, expires_at]);
 
     const invite = result.rows[0];
-    const APP_URL = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
     const inviteUrl = `${APP_URL}/family-invite.html?token=${token}`;
 
     // Get inviter's name
@@ -8635,7 +8625,7 @@ app.post('/api/households/:id/invite-sub-account', requireAuth, async (req, res)
       [householdId, token.substring(0, 20), req.userId, email, token, expiresAt]
     );
 
-    const APP_URL = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
     const inviteUrl = `${APP_URL}/family-invite.html?token=${token}&incubator=1`;
 
     // Send invite email
@@ -8766,18 +8756,12 @@ async function sendGracePeriodEmail({ toEmail, toName, householdName, graceExpir
       left: `You've left the <strong>${householdName}</strong> Family Plan. Your 30-day grace period ends on <strong>${graceDate}</strong>.`
     };
     const messageBody = messageMap[reason] || `Your Family Plan status has changed. Grace period ends ${graceDate}.`;
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
 
-    await fetch('https://polsia.com/api/proxy/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
+    await sendEmail({
         to: toEmail,
         subject,
-        html_body: `
+        html: `
           <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;background:#0a0f1a;color:#e8e0d4;padding:32px 24px;border-radius:12px">
             <div style="margin-bottom:20px">
               <span style="font-size:20px;font-weight:700;color:#c9a84c;letter-spacing:-0.5px">FACTS</span>
@@ -8791,7 +8775,6 @@ async function sendGracePeriodEmail({ toEmail, toName, householdName, graceExpir
             </a>
           </div>
         `
-      })
     });
   } catch (err) {
     console.error('[FamilyPlan] sendGracePeriodEmail failed:', err.message);
@@ -11820,7 +11803,7 @@ app.post('/api/subscriptions/verify', async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // Handles automatic subscription renewals, cancellations, and payment failures.
 // Requires STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET env vars.
-// Register this URL in the Stripe Dashboard: https://financial-revolution.polsia.app/api/stripe-webhook
+// Register this URL in the Stripe Dashboard: https://app.factsmoney.com/api/stripe-webhook
 // Events to enable: checkout.session.completed, invoice.payment_succeeded,
 //                   customer.subscription.deleted, invoice.payment_failed
 
@@ -13328,7 +13311,7 @@ app.get('/api/affiliate/dashboard', async (req, res) => {
       affiliate: {
         id: affiliate.id, email: affiliate.email,
         referral_code: affiliate.referral_code,
-        referral_link: `https://financial-revolution.polsia.app/pricing.html?ref=${affiliate.referral_code}`,
+        referral_link: `${process.env.APP_URL || 'https://app.factsmoney.com'}/pricing.html?ref=${affiliate.referral_code}`,
         status: affiliate.status,
         pending_balance_cents: affiliate.pending_balance_cents,
         approved_balance_cents: affiliate.approved_balance_cents,
@@ -13807,7 +13790,7 @@ app.post('/api/affiliate/stripe-connect/onboard', async (req, res) => {
     }
 
     // Create onboarding link
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const accountLink = await stripeClient.accountLinks.create({
       account: stripeAccountId,
       refresh_url: `${appUrl}/affiliate-dashboard.html?connect=retry`,
@@ -15106,7 +15089,7 @@ app.get('/api/future-generations/dashboard', requireAuth, async (req, res) => {
     res.json({
       member: true,
       referral_code: affiliate.referral_code,
-      referral_link: `https://financial-revolution.polsia.app/pricing.html?ref=${affiliate.referral_code}`,
+      referral_link: `${process.env.APP_URL || 'https://app.factsmoney.com'}/pricing.html?ref=${affiliate.referral_code}`,
       active_referrals: parseInt(referralCount.rows[0]?.active_referrals || 0),
       total_referrals: parseInt(referralCount.rows[0]?.total_referrals || 0),
       balance_cents: totalBalance,
@@ -17176,12 +17159,10 @@ app.get('/', optionalAuth, (req, res) => {
     return res.redirect('/app');
   }
 
-  const slug = process.env.POLSIA_ANALYTICS_SLUG || '';
   const htmlPath = path.join(__dirname, 'public', 'index.html');
 
   if (fs.existsSync(htmlPath)) {
-    let html = fs.readFileSync(htmlPath, 'utf8');
-    html = html.replace('__POLSIA_SLUG__', slug);
+    const html = fs.readFileSync(htmlPath, 'utf8');
     res.type('html').send(html);
   } else {
     res.json({ message: 'FACTS — Brand Hub' });
@@ -17194,12 +17175,10 @@ app.get('/', optionalAuth, (req, res) => {
 // without auth injection, and the user sees the marketing page. This was the
 // root cause of the post-login redirect bug (4 attempts to fix).
 app.get('/app', requireAuth, enforceNda, async (req, res) => {
-  const slug = process.env.POLSIA_ANALYTICS_SLUG || '';
   const htmlPath = path.join(__dirname, 'public', 'app.html');
 
   if (fs.existsSync(htmlPath)) {
     let html = fs.readFileSync(htmlPath, 'utf8');
-    html = html.replace('__POLSIA_SLUG__', slug);
 
     let isAdminSession = false;
     try {
@@ -17289,14 +17268,14 @@ function initializeInactivityScheduler() {
 
 // Initialize scheduler on startup — skip if in-process crons are disabled
 let scheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     scheduler = initializeInactivityScheduler();
   } catch (err) {
     console.error('[Scheduler] Failed to initialize:', err.message);
   }
 } else {
-  console.log('[Scheduler] Inactivity scheduler skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[Scheduler] Inactivity scheduler skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // Initialize price change notifier scheduler (runs daily at 9 AM UTC)
@@ -17335,14 +17314,14 @@ function initializePriceChangeNotifierScheduler() {
 }
 
 let priceScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     priceScheduler = initializePriceChangeNotifierScheduler();
   } catch (err) {
     console.error('[PriceScheduler] Failed to initialize:', err.message);
   }
 } else {
-  console.log('[PriceScheduler] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[PriceScheduler] Skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // Initialize promo grace period scheduler (runs daily at 3 AM UTC)
@@ -17382,14 +17361,14 @@ function initializePromoGraceScheduler() {
 }
 
 let promoGraceScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     promoGraceScheduler = initializePromoGraceScheduler();
   } catch (err) {
     console.error('[PromoGrace] Failed to initialize scheduler:', err.message);
   }
 } else {
-  console.log('[PromoGrace] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[PromoGrace] Skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // Initialize trial expiry scheduler (runs daily at 4 AM UTC)
@@ -17431,14 +17410,14 @@ function initializeTrialExpiryScheduler() {
 }
 
 let trialExpiryScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     trialExpiryScheduler = initializeTrialExpiryScheduler();
   } catch (err) {
     console.error('[TrialExpiry] Failed to initialize scheduler:', err.message);
   }
 } else {
-  console.log('[TrialExpiry] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[TrialExpiry] Skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // POST /api/admin/trigger-trial-expiry — Manual trigger for trial expiry job (admin only)
@@ -17495,14 +17474,14 @@ function initializeAffiliateJobsScheduler() {
 }
 
 let affiliateJobsScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     affiliateJobsScheduler = initializeAffiliateJobsScheduler();
   } catch (err) {
     console.error('[AffiliateJobs] Failed to initialize scheduler:', err.message);
   }
 } else {
-  console.log('[AffiliateJobs] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[AffiliateJobs] Skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // Initialize heartbeat compliance schedulers (Monthly Heartbeat v2)
@@ -17581,14 +17560,14 @@ function initializeHeartbeatComplianceScheduler() {
 }
 
 let heartbeatComplianceScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     heartbeatComplianceScheduler = initializeHeartbeatComplianceScheduler();
   } catch (err) {
     console.error('[HeartbeatV2] Failed to initialize schedulers:', err.message);
   }
 } else {
-  console.log('[HeartbeatV2] Schedulers skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[HeartbeatV2] Schedulers skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -18775,7 +18754,7 @@ app.get('/api/news', async (req, res) => {
       try {
         const response = await fetch(feed.url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; FinancialRevolution/1.0; +https://financial-revolution.polsia.app/news)',
+            'User-Agent': 'Mozilla/5.0 (compatible; FinancialRevolution/1.0; +https://app.factsmoney.com/news)',
             'Accept': 'application/rss+xml, application/xml, text/xml, */*'
           },
           signal: AbortSignal.timeout(8000)
@@ -20942,7 +20921,7 @@ app.post('/api/junior/profiles', requireAuth, async (req, res) => {
       'INSERT INTO junior_profiles (parent_user_id, name, avatar_emoji, access_code) VALUES ($1,$2,$3,$4) RETURNING *',
       [req.userId, name.trim(), avatar_emoji, code]
     );
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     res.json({ profile: r.rows[0], share_url: `${appUrl}/junior-command?kid=${r.rows[0].id}&code=${code}` });
   } catch (err) {
     console.error('[Junior] POST profiles:', err.message);
@@ -20983,7 +20962,7 @@ app.delete('/api/junior/profiles/:id', requireAuth, async (req, res) => {
 app.get('/api/junior/family-progress', requireAuth, async (req, res) => {
   try {
     const kids = (await pool.query('SELECT * FROM junior_profiles WHERE parent_user_id = $1 ORDER BY created_at ASC', [req.userId])).rows;
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const result = [];
     for (const k of kids) {
       const missions  = (await pool.query("SELECT * FROM apprentice_missions WHERE kid_id = $1 ORDER BY created_at DESC LIMIT 20", [k.id])).rows;
@@ -22939,7 +22918,7 @@ app.get('/api/user/referral-code', requireAuth, async (req, res) => {
       );
     }
 
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const referralLink = `${appUrl}/signup.html?ref=${referralCode}`;
 
     // Count referrals made by this user
@@ -24450,18 +24429,12 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
       [userId, normalizedEmail, token, expiresAt]
     );
 
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const confirmUrl = `${appUrl}/settings?action=confirm-email&token=${token}`;
 
     // Send confirmation email
     try {
-      await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      await sendEmail({
           to: normalizedEmail,
           subject: 'Confirm your new FACTS email address',
           html: `
@@ -24478,9 +24451,7 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
               <p style="color:#666;font-size:0.875rem;">This link expires in 24 hours. If you didn't request this change, you can safely ignore this email.</p>
             </div>
           `,
-          body: `Confirm your FACTS email change: ${confirmUrl}\n\nThis link expires in 24 hours.`,
-          transactional: true
-        })
+          text: `Confirm your FACTS email change: ${confirmUrl}\n\nThis link expires in 24 hours.`
       });
     } catch (emailErr) {
       console.error('[Settings] Email change confirmation email failed:', emailErr.message);
@@ -24488,13 +24459,7 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
 
     // Also notify old email
     try {
-      await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      await sendEmail({
           to: user.email,
           subject: 'FACTS: Email change requested',
           html: `
@@ -24506,9 +24471,7 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
               </p>
             </div>
           `,
-          body: `A request was made to change your FACTS account email to ${normalizedEmail}. If this wasn't you, please change your password.`,
-          transactional: true
-        })
+          text: `A request was made to change your FACTS account email to ${normalizedEmail}. If this wasn't you, please change your password.`
       });
     } catch (notifyErr) {
       console.error('[Settings] Old email notification failed:', notifyErr.message);
@@ -24689,13 +24652,7 @@ app.post('/api/settings/delete-account', requireAuth, async (req, res) => {
 
     // Send farewell email before deletion
     try {
-      await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      await sendEmail({
           to: user.email,
           subject: 'Your FACTS account has been deleted',
           html: `
@@ -24706,14 +24663,12 @@ app.post('/api/settings/delete-account', requireAuth, async (req, res) => {
               </p>
               <p style="color:#333;line-height:1.6;">
                 If you ever want to start fresh, you're always welcome back at
-                <a href="https://financial-revolution.polsia.app" style="color:#10b981;">financial-revolution.polsia.app</a>.
+                <a href="https://app.factsmoney.com" style="color:#10b981;">app.factsmoney.com</a>.
               </p>
               <p style="color:#666;font-size:0.875rem;margin-top:24px;">If you did not request this deletion, please contact us immediately.</p>
             </div>
           `,
-          body: `Your FACTS account has been deleted. All data has been permanently erased.`,
-          transactional: true
-        })
+          text: `Your FACTS account has been deleted. All data has been permanently erased.`
       });
     } catch (emailErr) {
       console.error('[Settings] Account deletion email failed:', emailErr.message);
@@ -25187,8 +25142,8 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
       affiliate: {
         id: aff.id,
         referral_code: aff.referral_code,
-        referral_link: `https://financial-revolution.polsia.app/pricing.html?ref=${aff.referral_code}`,
-        family_referral_link: `https://financial-revolution.polsia.app/pricing.html?ref=${aff.referral_code}&legacy=1`,
+        referral_link: `${process.env.APP_URL || 'https://app.factsmoney.com'}/pricing.html?ref=${aff.referral_code}`,
+        family_referral_link: `${process.env.APP_URL || 'https://app.factsmoney.com'}/pricing.html?ref=${aff.referral_code}&legacy=1`,
         referral_link_mode: aff.referral_link_mode || 'general',
         status: aff.status,
         pending_balance_cents: aff.pending_balance_cents || 0,
@@ -25487,7 +25442,7 @@ app.post('/api/affiliate/succession/initiate-transfer', requireAuth, async (req,
     const transferId = insertResult.rows[0].id;
 
     // Generate the sign URL for the successor
-    const baseUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const baseUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const signUrl = `${baseUrl}/succession-sign?token=${signToken}`;
 
     console.log(`[Succession] Transfer #${transferId} initiated by user ${userId}. Successor sign URL: ${signUrl}`);
@@ -26198,7 +26153,7 @@ app.post('/api/affiliate/graduate', requireAuth, async (req, res) => {
     );
     if (existingAffiliate.rows.length > 0) {
       const aff = existingAffiliate.rows[0];
-      const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+      const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
       return res.json({
         success: true,
         already_affiliate: true,
@@ -26258,7 +26213,7 @@ app.post('/api/affiliate/graduate', requireAuth, async (req, res) => {
     }
 
     const aff = result.rows[0];
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const referralLink = `${appUrl}/signup?ref=${referralCode}`;
 
     console.log(`[Graduation] User ${userId} graduated to affiliate. Code: ${referralCode}, Level: ${placement.affiliateLevel}`);
@@ -29826,7 +29781,7 @@ app.post('/api/receipts/scan', requireAuth, receiptScanUpload.single('file'), as
     const isBusinessPro = pricing_tier === 'business_bundle';
 
     // Call AI vision to extract receipt data
-    const aiClient = new OpenAI();
+    const aiClient = getOpenAI();
     const mimeType = ['image/heic', 'image/heif'].includes(req.file.mimetype) ? 'image/jpeg' : req.file.mimetype;
     const b64 = req.file.buffer.toString('base64');
     const today = new Date().toISOString().split('T')[0];
@@ -33136,7 +33091,7 @@ app.post('/api/phase-zero/ai-suggest', requireAuth, async (req, res) => {
     // Try AI first, fall back to rule-based
     var suggestion = null;
     try {
-      var aiClient = new OpenAI();
+      var aiClient = getOpenAI();
       var prompt = `You are a FACTS Protocol financial architect. Based on the user's answers, suggest optimal allocation percentages across 6 buckets that sum to exactly 100.
 
 User answers:
@@ -33268,20 +33223,14 @@ app.post('/api/email-verify/send', requireAuth, async (req, res) => {
       [userId, otp, expiresAt, attempts, !!(windowOpen)]
     );
 
-    // Send OTP via Polsia email proxy
+    // Send OTP via Resend
     var appName = 'FACTS';
-    var appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    var appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     try {
-      await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      await sendEmail({
           to: user.email,
           subject: `${otp} is your ${appName} verification code`,
-          body: `Your ${appName} Phase Zero verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`,
+          text: `Your ${appName} Phase Zero verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`,
           html: `
             <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#0a0f1a;border-radius:16px;">
               <h2 style="color:#10b981;margin:0 0 8px;font-size:1.4rem;">${appName} Verification Code</h2>
@@ -33296,9 +33245,7 @@ app.post('/api/email-verify/send', requireAuth, async (req, res) => {
                 If you didn't request this, you can safely ignore this email.<br>
                 <a href="${appUrl}" style="color:#10b981;">${appUrl}</a>
               </p>
-            </div>`,
-          transactional: true
-        })
+            </div>`
       });
     } catch (emailErr) {
       console.error('[PhaseZero] email-verify send error:', emailErr.message);
@@ -33929,27 +33876,10 @@ app.post('/api/support/tickets', optionalAuth, supportUpload.single('screenshot'
     // Upload screenshot to R2 if provided
     if (req.file) {
       try {
-        const POLSIA_API_KEY = process.env.POLSIA_API_KEY;
-        if (POLSIA_API_KEY) {
-          const filename = `support-${Date.now()}-${req.file.originalname}`;
-          const formData = new FormData();
-          formData.append('file', req.file.buffer, {
-            filename,
-            contentType: req.file.mimetype,
-          });
-
-          const r2Res = await nodeFetch('https://polsia.com/api/proxy/r2/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${POLSIA_API_KEY}`,
-              ...formData.getHeaders(), // CRITICAL: includes Content-Type with boundary
-            },
-            body: formData,
-          });
-          const r2Data = await r2Res.json().catch(() => ({}));
-          if (r2Data.success && r2Data.file && r2Data.file.url) {
-            screenshot_url = r2Data.file.url;
-          }
+        const filename = `support-${Date.now()}-${req.file.originalname}`;
+        const uploadedUrl = await uploadFile(req.file.buffer, filename, req.file.mimetype, { folder: 'support-screenshots' });
+        if (uploadedUrl) {
+          screenshot_url = uploadedUrl;
         }
       } catch (uploadErr) {
         console.error('[SupportTickets] screenshot upload failed:', uploadErr.message);
@@ -34094,7 +34024,7 @@ app.post('/api/advisory/invite', requireAuth, async (req, res) => {
     );
 
     const session = result.rows[0];
-    const shareLink = `${process.env.APP_URL || 'https://financial-revolution.polsia.app'}/advisory-join?token=${token}`;
+    const shareLink = `${process.env.APP_URL || 'https://app.factsmoney.com'}/advisory-join?token=${token}`;
 
     res.json({
       success: true,
@@ -34299,8 +34229,8 @@ app.get('/api/advisory/active', requireAuth, async (req, res) => {
 // ─── Cron: expire stale advisory sessions every 5 minutes ───────────────────
 (function initAdvisoryCron() {
   // Guard: only start in-process schedulers when Blaxel shadow is not active
-  if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED !== 'true') {
-    console.log('[Advisory] Cleanup cron skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  if (process.env.IN_PROCESS_CRONS_ENABLED !== 'true') {
+    console.log('[Advisory] Cleanup cron skipped: IN_PROCESS_CRONS_ENABLED != true');
     return;
   }
   try {

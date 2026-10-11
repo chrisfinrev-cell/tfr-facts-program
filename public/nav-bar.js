@@ -256,6 +256,7 @@
       { label: 'Scorecard',     icon: '🏅', href: '/scorecard' },
       { label: 'Wallet',        icon: '💰', href: '/wallet' },
       { label: 'Rewards',       icon: '🎁', href: '/rewards' },
+      { label: 'Invites',       icon: '🎟️', href: '/invites.html' },
       { label: 'Project Net Zero', icon: '🎯', href: '/brokerage-tracker' },
       { label: 'SSC',           icon: '⚡', href: '/ssc' },
       { label: 'Calculator',    icon: '🛒', href: '/shopping-calculator' }

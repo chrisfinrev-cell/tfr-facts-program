@@ -28,10 +28,9 @@
 const express  = require('express');
 const { Pool } = require('pg');
 const multer   = require('multer');
-const FormData = require('form-data');
-const fetch    = require('node-fetch');
-const OpenAI   = require('openai');
 const { asyncRoute } = require('../../module-error-boundary');
+const { getOpenAI, chat } = require('../../lib/aiClient');
+const { uploadFile } = require('../../lib/fileStorage');
 
 // ─── DB Pool ──────────────────────────────────────────────────────────────────
 let _pool = null;
@@ -106,57 +105,14 @@ function toMonthly(amount, frequency) {
   return Math.round(parseFloat(amount) * mult * 100) / 100;
 }
 
-// ─── Polsia AI call (for comparison engine) ───────────────────────────────────
-async function callPolsiaAI(messages, systemPrompt, task = 'rate-radar-compare') {
-  const POLSIA_API_URL = process.env.POLSIA_API_URL || 'https://polsia.com/api/proxy/ai';
-  const POLSIA_API_KEY = process.env.POLSIA_API_KEY;
-  if (!POLSIA_API_KEY) throw new Error('POLSIA_API_KEY not configured');
-
-  const res = await fetch(`${POLSIA_API_URL}/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${POLSIA_API_KEY}`,
-      'x-polsia-task': task,
-    },
-    body: JSON.stringify({ max_tokens: 2048, system: systemPrompt, messages }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => 'unknown error');
-    throw new Error(`AI proxy error ${res.status}: ${err}`);
-  }
-
-  const data = await res.json();
-  return data.content?.[0]?.text || '';
+// ─── AI call (for comparison engine) ──────────────────────────────────────────
+async function callAI(messages, systemPrompt) {
+  return (await chat(messages, systemPrompt, { maxTokens: 2048 })) || '';
 }
 
-// ─── OpenAI proxy (for OCR — utility task, not product AI) ───────────────────
-function getOpenAI() {
-  return new OpenAI();  // Uses OPENAI_BASE_URL + OPENAI_API_KEY from env
-}
-
-// ─── Upload file to R2 ────────────────────────────────────────────────────────
-async function uploadToR2(buffer, filename, mimeType) {
-  const POLSIA_API_KEY = process.env.POLSIA_API_KEY;
-  if (!POLSIA_API_KEY) return null;
-
-  const formData = new FormData();
-  formData.append('file', buffer, { filename, contentType: mimeType });
-
-  try {
-    const res = await fetch('https://polsia.com/api/proxy/r2/upload', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${POLSIA_API_KEY}`,
-        ...formData.getHeaders(),
-      },
-      body: formData,
-    });
-    const result = await res.json();
-    if (result.success) return result.file.url;
-  } catch (e) { /* non-fatal — comparison still works without stored file */ }
-  return null;
+// ─── Upload file to storage (non-fatal — comparison works without it) ────────
+async function uploadBillFile(buffer, filename, mimeType) {
+  return uploadFile(buffer, filename, mimeType, { folder: 'rate-radar' });
 }
 
 // ─── AI comparison engine ─────────────────────────────────────────────────────
@@ -209,7 +165,7 @@ Notes: ${bill.notes || 'none'}
 
 Return JSON only.`;
 
-  const text = await callPolsiaAI(
+  const text = await callAI(
     [{ role: 'user', content: prompt }],
     COMPARISON_SYSTEM_PROMPT
   );
@@ -220,7 +176,7 @@ Return JSON only.`;
   return JSON.parse(jsonMatch[0]);
 }
 
-// ─── OCR extraction via OpenAI proxy ─────────────────────────────────────────
+// ─── OCR extraction via OpenAI ───────────────────────────────────────────────
 async function extractBillFromFile(buffer, mimeType, fileUrl) {
   const openai = getOpenAI();
 
@@ -426,7 +382,7 @@ router.post('/bills/scan', upload.single('bill'), asyncRoute(async (req, res) =>
   }
 
   // Upload to R2 for storage (non-blocking failure)
-  const fileUrl = await uploadToR2(req.file.buffer, req.file.originalname, req.file.mimetype);
+  const fileUrl = await uploadBillFile(req.file.buffer, req.file.originalname, req.file.mimetype);
 
   // Extract bill data via OCR
   let extracted;

@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.connectOverCDP('wss://connect.anchorbrowser.io/?sessionId=85a93706-fa69-4264-b814-ebe4e92c95cc');
   const page = await browser.newPage();
-  await page.goto('https://financial-revolution.polsia.app/facts-funnel');
+  await page.goto('https://app.factsmoney.com/facts-funnel');
   await page.waitForTimeout(2000);
 
   // Test slider interaction - set income to 150000

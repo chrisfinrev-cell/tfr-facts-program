@@ -56,13 +56,14 @@ jobs:
       - run: npm run affiliate-jobs
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          POLSIA_API_KEY: ${{ secrets.POLSIA_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 ```
 
 ## Environment Variables Required
 
 - `DATABASE_URL` - PostgreSQL connection string (Neon)
-- `POLSIA_API_KEY` - For sending dunning emails via Polsia Email Proxy
+- `RESEND_API_KEY` - For sending dunning emails via Resend
+- `EMAIL_FROM` - Optional sender, e.g. `FACTS <noreply@factsmoney.com>` (domain must be verified in Resend)
 
 ## Email Templates
 
@@ -118,8 +119,8 @@ To test without sending emails, modify the `sendEmail` function to log instead o
 - Ensure job ran successfully
 
 **Emails not sending?**
-- Verify `POLSIA_API_KEY` is set
-- Check Polsia email proxy status
+- Verify `RESEND_API_KEY` is set
+- Check the Resend dashboard (domain verified, sending logs)
 - Review job logs for email errors
 
 **Grace period not working?**

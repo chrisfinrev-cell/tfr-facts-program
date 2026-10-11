@@ -8,9 +8,8 @@ const { Pool } = require('pg');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
-const FormData = require('form-data');
-const fetch = require('node-fetch');
-const OpenAI = require('openai');
+const { getOpenAI } = require('../../lib/aiClient');
+const { uploadFile } = require('../../lib/fileStorage');
 const asyncRoute = fn => (req, res, next) => { Promise.resolve(fn(req, res, next)).catch(next); };
 
 const router = express.Router();
@@ -71,33 +70,12 @@ function bucketDisplayName(slug) {
   return BUCKET_DISPLAY[slug] || slug.charAt(0).toUpperCase() + slug.slice(1);
 }
 
-// ── R2 Upload ────────────────────────────────────────────────────────────────
-async function uploadToR2(buffer, filename, mimeType) {
-  const POLSIA_API_KEY = process.env.POLSIA_API_KEY;
-  if (!POLSIA_API_KEY) return null;
-
-  const formData = new FormData();
-  formData.append('file', buffer, { filename, contentType: mimeType });
-
-  try {
-    const res = await fetch('https://polsia.com/api/proxy/r2/upload', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${POLSIA_API_KEY}`,
-        ...formData.getHeaders(),
-      },
-      body: formData,
-    });
-    const result = await res.json();
-    if (result.success) return result.file.url;
-  } catch (e) { /* non-fatal — scan still works without stored image */ }
-  return null;
+// ── Receipt image upload (non-fatal — scan still works without stored image) ─
+async function uploadReceiptImage(buffer, filename, mimeType) {
+  return uploadFile(buffer, filename, mimeType, { folder: 'receipts' });
 }
 
 // ── OpenAI Vision OCR ────────────────────────────────────────────────────────
-function getOpenAI() {
-  return new OpenAI();  // Uses OPENAI_BASE_URL + OPENAI_API_KEY from env
-}
 
 // System prompt for receipt parsing
 const RECEIPT_OCR_PROMPT = `You are a grocery receipt parser for a shopping calculator app.
@@ -1080,10 +1058,10 @@ router.post('/receipt-scan', upload.single('receipt'), asyncRoute(async (req, re
     });
   }
 
-  // Upload to R2
+  // Upload receipt image
   const ext = req.file.originalname.split('.').pop() || 'jpg';
   const r2Key = `receipts/${user_id || session_key}/${Date.now()}.${ext}`;
-  const imageUrl = await uploadToR2(req.file.buffer, r2Key, req.file.mimetype);
+  const imageUrl = await uploadReceiptImage(req.file.buffer, `${user_id || session_key}-${Date.now()}.${ext}`, req.file.mimetype);
 
   let parsedItems = [];
   let ocrError = null;
