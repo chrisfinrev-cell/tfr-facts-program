@@ -39,6 +39,7 @@ async function cleanup(userId) {
     await client.query('DELETE FROM transactions WHERE user_id = $1', [userId]).catch(function () {});
     await client.query('DELETE FROM debts WHERE user_id = $1', [userId]).catch(function () {});
     await client.query('DELETE FROM user_bucket_state WHERE user_id = $1', [userId]).catch(function () {});
+    await client.query('DELETE FROM user_reserve_protocol WHERE user_id = $1', [userId]).catch(function () {});
     await client.query('DELETE FROM users WHERE id = $1', [userId]);
     await client.query('COMMIT');
     console.log('Cleanup removed temporary user id=' + userId);
@@ -116,7 +117,7 @@ async function main() {
 
     ok = (sweep.surplus_cents === 25000 ? pass('velocity surplus is 25000 cents') : fail('velocity surplus ' + sweep.surplus_cents + ' !== 25000')) && ok;
     const targets = sweep.targets || [];
-    ok = (targets.length === 2 ? pass('two high-interest debts targeted (5.50% loan excluded)') : fail('expected 2 sweep targets, got ' + targets.length)) && ok;
+    ok = (targets.length === 2 ? pass('two higher-rate debts targeted (5.50% loan not reached)') : fail('expected 2 sweep targets, got ' + targets.length)) && ok;
     if (targets[0]) {
       ok = (targets[0].interest_rate === 24.99 && targets[0].applied_cents === 18000 ? pass('highest APR (24.99%) received $180.00 first') : fail('first target should be 24.99% for 18000 cents')) && ok;
     }

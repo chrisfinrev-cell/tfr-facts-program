@@ -33732,116 +33732,32 @@ async function requireAdminAllowlist(req, res) {
   return true;
 }
 
+const { collectAggregateMetrics, emptyAggregate } = require('./modules/admin/aggregate-metrics');
+
 // GET /api/admin/aggregate-metrics — Aggregate user & engagement metrics (no individual data)
 app.get('/api/admin/aggregate-metrics', requireAuth, async (req, res) => {
   try {
     if (!(await requireAdminAllowlist(req, res))) return;
+  } catch (err) {
+    console.error('[AdminDashboard] admin check error:', err.message);
+    if (!res.headersSent) res.status(403).json({ success: false, error: 'Admin access required' });
+    return;
+  }
 
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-
-    // User counts
-    const [totalUsers, activeUsers7d, activeUsers30d] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM users WHERE is_creator = false'),
-      pool.query(`SELECT COUNT(DISTINCT user_id) FROM user_activity_events WHERE event_date >= $1`, [sevenDaysAgo.toISOString().split('T')[0]]),
-      pool.query(`SELECT COUNT(DISTINCT user_id) FROM user_activity_events WHERE event_date >= $1`, [thirtyDaysAgo.toISOString().split('T')[0]])
-    ]);
-
-    // Tier distribution — uses plan + subscription_tier columns
-    const tierDist = await pool.query(`
-      SELECT
-        CASE
-          WHEN is_creator THEN 'Admin'
-          WHEN plan = 'paid' AND paid_until > NOW() THEN
-            COALESCE(NULLIF(TRIM(pricing_tier), ''), NULLIF(TRIM(subscription_tier), ''), 'Paid')
-          WHEN trial_expires_at IS NOT NULL AND trial_expires_at > NOW() THEN 'Trial'
-          WHEN promo_code_used IS NOT NULL AND (promo_grace_expired IS NULL OR promo_grace_expired = false) THEN 'Promo'
-          ELSE 'Free'
-        END AS tier_label,
-        COUNT(*) AS user_count
-      FROM users
-      GROUP BY 1
-      ORDER BY user_count DESC
-    `);
-
-    // New registrations trend (last 30 days, by day)
-    const regTrend = await pool.query(`
-      SELECT DATE(created_at) AS day, COUNT(*) AS new_users
-      FROM users
-      WHERE created_at >= $1
-      GROUP BY 1
-      ORDER BY 1
-    `, [thirtyDaysAgo]);
-
-    // Feature usage (top events from user_activity_events)
-    const featureUsage = await pool.query(`
-      SELECT event_type, COUNT(*) AS usage_count, COUNT(DISTINCT user_id) AS unique_users
-      FROM user_activity_events
-      WHERE event_date >= $1
-      GROUP BY event_type
-      ORDER BY usage_count DESC
-      LIMIT 20
-    `, [thirtyDaysAgo.toISOString().split('T')[0]]);
-
-    // Module adoption (add-on attachment rates)
-    const moduleAdoption = await pool.query(`
-      SELECT module_key, COUNT(DISTINCT user_id) AS users_with_module
-      FROM user_module_overrides
-      WHERE enabled = true
-      GROUP BY module_key
-      ORDER BY users_with_module DESC
-    `).catch(() => ({ rows: [] })); // table may not exist yet
-
-    // Daily active users (last 30 days)
-    const dauTrend = await pool.query(`
-      SELECT event_date::date AS day, COUNT(DISTINCT user_id) AS active_users
-      FROM user_activity_events
-      WHERE event_date >= $1
-      GROUP BY 1
-      ORDER BY 1
-    `, [thirtyDaysAgo.toISOString().split('T')[0]]);
-
-    // Revenue metrics (from subscriptions table)
-    const revenueMetrics = await pool.query(`
-      SELECT
-        COALESCE(plan, 'unknown') AS plan_type,
-        COUNT(*) AS count,
-        SUM(amount_cents) / 100.0 AS total_revenue,
-        AVG(amount_cents) / 100.0 AS avg_amount
-      FROM subscriptions
-      WHERE status IN ('completed', 'active')
-        AND created_at >= $1
-      GROUP BY plan_type
-      ORDER BY total_revenue DESC
-    `, [thirtyDaysAgo]).catch(() => ({ rows: [] }));
-
-    // MRR estimate (active paid users × avg price per tier)
-    const mrrData = await pool.query(`
-      SELECT COUNT(*) AS paid_count, SUM(amount_cents) / 100.0 AS mrr
-      FROM subscriptions
-      WHERE status IN ('completed', 'active')
-        AND (expires_at IS NULL OR expires_at > NOW())
-    `).catch(() => ({ rows: [{ paid_count: 0, mrr: 0 }] }));
-
-    res.json({
-      success: true,
-      user_counts: {
-        total: parseInt(totalUsers.rows[0].count),
-        active_7d: parseInt(activeUsers7d.rows[0].count),
-        active_30d: parseInt(activeUsers30d.rows[0].count)
-      },
-      tier_distribution: tierDist.rows,
-      registration_trend: regTrend.rows,
-      feature_usage: featureUsage.rows,
-      module_adoption: moduleAdoption.rows,
-      dau_trend: dauTrend.rows,
-      revenue_metrics: revenueMetrics.rows,
-      mrr: mrrData.rows[0]
-    });
+  let client;
+  try {
+    client = await pool.connect();
+    try { await client.query("SET statement_timeout = '8000'"); } catch (timeoutErr) { /* keep going */ }
+    const payload = await collectAggregateMetrics(client);
+    res.json(payload);
   } catch (err) {
     console.error('[AdminDashboard] aggregate-metrics error:', err.message);
-    res.status(500).json({ error: 'Failed to load aggregate metrics' });
+    if (!res.headersSent) res.json(emptyAggregate(['aggregate']));
+  } finally {
+    if (client) {
+      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be closed */ }
+      client.release();
+    }
   }
 });
 

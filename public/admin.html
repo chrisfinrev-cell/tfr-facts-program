@@ -324,6 +324,7 @@
         <p style="color:#52525b;font-size:12px;margin-bottom:20px;">
           ⚠️ Aggregate data only — no individual user information is ever shown here.
         </p>
+        <div id="agg-dashboard-error" role="status" style="display:none;margin-bottom:16px;padding:10px 12px;border-radius:8px;background:#3f1d1d;color:#fca5a5;font-size:13px;"></div>
 
         <!-- Key Metrics Cards -->
         <div class="stats-row" id="agg-metrics-cards" style="margin-bottom:24px;">
@@ -5007,23 +5008,79 @@
     // ═══════════════════════════════════════
     // AGGREGATE DASHBOARD
     // ═══════════════════════════════════════
-    async function loadAggDashboard() {
-      try {
-        const res = await fetch('/api/admin/aggregate-metrics');
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Failed');
+    const ADMIN_FETCH_MS = 15000;
 
-        // Key metrics
-        document.getElementById('agg-total').textContent = (data.user_counts.total || 0).toLocaleString();
-        document.getElementById('agg-7d').textContent = (data.user_counts.active_7d || 0).toLocaleString();
-        document.getElementById('agg-30d').textContent = (data.user_counts.active_30d || 0).toLocaleString();
-        const mrr = data.mrr && data.mrr.mrr ? parseFloat(data.mrr.mrr) : 0;
-        document.getElementById('agg-mrr').textContent = '$' + mrr.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        document.getElementById('agg-paid').textContent = (data.mrr && data.mrr.paid_count ? data.mrr.paid_count : 0).toLocaleString();
+    function fetchWithTimeout(url, options, ms) {
+      const timeoutMs = ms || ADMIN_FETCH_MS;
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
+      const opts = Object.assign({ credentials: 'same-origin' }, options || {});
+      opts.signal = controller.signal;
+      return fetch(url, opts).finally(function () { clearTimeout(timer); });
+    }
 
-        // Tier distribution
-        const tierEl = document.getElementById('agg-tier-table');
-        if (data.tier_distribution && data.tier_distribution.length) {
+    let aggLoadToken = 0;
+
+    function setAggStat(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function setAggSection(id, html) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
+
+    function showAggBanner(message) {
+      const banner = document.getElementById('agg-dashboard-error');
+      if (!banner) return;
+      if (!message) {
+        banner.style.display = 'none';
+        banner.textContent = '';
+        return;
+      }
+      banner.style.display = 'block';
+      banner.textContent = message;
+    }
+
+    function showAggDashboardError(message) {
+      showAggBanner(message || 'Could not load dashboard metrics. Showing 0.');
+      setAggStat('agg-total', '0');
+      setAggStat('agg-7d', '0');
+      setAggStat('agg-30d', '0');
+      setAggStat('agg-mrr', '$0');
+      setAggStat('agg-paid', '0');
+      const note = '<p style="color:#fca5a5;font-size:13px;">' + escHtml(message || 'Could not load this section. Showing 0.') + '</p>';
+      ['agg-tier-table', 'agg-module-table', 'agg-feature-table', 'agg-dau-chart', 'agg-revenue-table'].forEach(function (id) {
+        setAggSection(id, note);
+      });
+    }
+
+    function aggSectionNote(data, key, emptyText) {
+      const failed = data.warnings && data.warnings.indexOf(key) !== -1;
+      return '<p style="color:' + (failed ? '#fca5a5' : '#52525b') + ';font-size:13px;">' +
+        escHtml(failed ? 'Could not load this section. Showing 0.' : emptyText) + '</p>';
+    }
+
+    function renderAggDashboard(data) {
+      const counts = data.user_counts || {};
+      setAggStat('agg-total', Number(counts.total || 0).toLocaleString());
+      setAggStat('agg-7d', Number(counts.active_7d || 0).toLocaleString());
+      setAggStat('agg-30d', Number(counts.active_30d || 0).toLocaleString());
+      const mrrRaw = data.mrr && data.mrr.mrr != null ? parseFloat(data.mrr.mrr) : 0;
+      const mrr = Number.isFinite(mrrRaw) ? mrrRaw : 0;
+      setAggStat('agg-mrr', '$' + mrr.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+      const paid = data.mrr && data.mrr.paid_count != null ? Number(data.mrr.paid_count) : 0;
+      setAggStat('agg-paid', (Number.isFinite(paid) ? paid : 0).toLocaleString());
+
+      if (data.warnings && data.warnings.length) {
+        showAggBanner('Some metrics could not be read and were set to 0.');
+      } else {
+        showAggBanner('');
+      }
+
+      const tierEl = document.getElementById('agg-tier-table');
+      if (tierEl && data.tier_distribution && data.tier_distribution.length) {
           const total = data.tier_distribution.reduce((s, r) => s + parseInt(r.user_count), 0);
           tierEl.innerHTML = `<div class="table-wrap"><table>
             <tr><th>Tier</th><th>Users</th><th>Share</th></tr>
@@ -5038,26 +5095,24 @@
                 </div></td></tr>`;
             }).join('')}
           </table></div>`;
-        } else {
-          tierEl.innerHTML = '<p style="color:#52525b;font-size:13px;">No data yet</p>';
-        }
+      } else if (tierEl) {
+        tierEl.innerHTML = aggSectionNote(data, 'tiers', 'No tier data yet. 0 users in each tier.');
+      }
 
-        // Module adoption
-        const modEl = document.getElementById('agg-module-table');
-        if (data.module_adoption && data.module_adoption.length) {
+      const modEl = document.getElementById('agg-module-table');
+      if (modEl && data.module_adoption && data.module_adoption.length) {
           modEl.innerHTML = `<div class="table-wrap"><table>
             <tr><th>Module</th><th>Users</th></tr>
             ${data.module_adoption.map(r =>
               `<tr><td><span class="badge badge-blue">${escA(r.module_key)}</span></td><td>${parseInt(r.users_with_module).toLocaleString()}</td></tr>`
             ).join('')}
           </table></div>`;
-        } else {
-          modEl.innerHTML = '<p style="color:#52525b;font-size:13px;">No module data yet</p>';
-        }
+      } else if (modEl) {
+        modEl.innerHTML = aggSectionNote(data, 'modules', 'No add-on modules adopted yet. 0 users.');
+      }
 
-        // Feature usage
-        const featEl = document.getElementById('agg-feature-table');
-        if (data.feature_usage && data.feature_usage.length) {
+      const featEl = document.getElementById('agg-feature-table');
+      if (featEl && data.feature_usage && data.feature_usage.length) {
           const maxUsage = Math.max(...data.feature_usage.map(r => parseInt(r.usage_count)));
           featEl.innerHTML = `<div class="table-wrap"><table>
             <tr><th>#</th><th>Feature / Event</th><th>Events (30d)</th><th>Unique Users</th></tr>
@@ -5078,26 +5133,24 @@
               </tr>`;
             }).join('')}
           </table></div>`;
-        } else {
-          featEl.innerHTML = '<p style="color:#52525b;font-size:13px;">No feature usage data yet (activity events not tracked)</p>';
-        }
+      } else if (featEl) {
+        featEl.innerHTML = aggSectionNote(data, 'features', 'No feature usage in the last 30 days. 0 events.');
+      }
 
-        // DAU Bar Chart
-        const dauEl = document.getElementById('agg-dau-chart');
-        if (data.dau_trend && data.dau_trend.length) {
+      const dauEl = document.getElementById('agg-dau-chart');
+      if (dauEl && data.dau_trend && data.dau_trend.length) {
           const maxDau = Math.max(...data.dau_trend.map(r => parseInt(r.active_users || 0)), 1);
           dauEl.innerHTML = data.dau_trend.map(r => {
             const h = Math.max(4, Math.round((parseInt(r.active_users)/maxDau) * 100));
             const d = new Date(r.day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             return `<div title="${d}: ${r.active_users} active" style="flex:1;background:#10b981;border-radius:3px 3px 0 0;height:${h}px;min-height:4px;opacity:0.8;"></div>`;
           }).join('');
-        } else {
-          dauEl.innerHTML = '<p style="color:#52525b;font-size:13px;flex:1;text-align:center;">No DAU data yet</p>';
-        }
+      } else if (dauEl) {
+        dauEl.innerHTML = aggSectionNote(data, 'dau', 'No daily active users in the last 30 days. 0.');
+      }
 
-        // Revenue breakdown
-        const revEl = document.getElementById('agg-revenue-table');
-        if (data.revenue_metrics && data.revenue_metrics.length) {
+      const revEl = document.getElementById('agg-revenue-table');
+      if (revEl && data.revenue_metrics && data.revenue_metrics.length) {
           revEl.innerHTML = `<div class="table-wrap"><table>
             <tr><th>Plan</th><th>Subscriptions</th><th>Revenue (30d)</th><th>Avg Price</th></tr>
             ${data.revenue_metrics.map(r =>
@@ -5106,13 +5159,55 @@
                <td>$${parseFloat(r.avg_amount||0).toFixed(2)}</td></tr>`
             ).join('')}
           </table></div>`;
-        } else {
-          revEl.innerHTML = '<p style="color:#52525b;font-size:13px;">No revenue data in the last 30 days</p>';
-        }
+      } else if (revEl) {
+        revEl.innerHTML = aggSectionNote(data, 'revenue', 'No revenue in the last 30 days. $0.');
+      }
+    }
 
+    function clearAggPlaceholders() {
+      ['agg-total', 'agg-7d', 'agg-30d', 'agg-paid'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const text = (el.textContent || '').trim();
+        if (!text || text === '—' || text === '---' || text === '-') el.textContent = '0';
+      });
+      const mrrEl = document.getElementById('agg-mrr');
+      if (mrrEl) {
+        const text = (mrrEl.textContent || '').trim();
+        if (!text || text === '—' || text === '---' || text === '-') mrrEl.textContent = '$0';
+      }
+      ['agg-tier-table', 'agg-module-table', 'agg-feature-table', 'agg-dau-chart', 'agg-revenue-table'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el && el.querySelector('.loader')) {
+          el.innerHTML = '<p style="color:#71717a;font-size:13px;">Loading…</p>';
+        }
+      });
+    }
+
+    async function loadAggDashboard() {
+      const token = ++aggLoadToken;
+      clearAggPlaceholders();
+      showAggBanner('');
+      const watchdog = setTimeout(function () {
+        if (token !== aggLoadToken) return;
+        showAggDashboardError('Dashboard timed out. Showing 0.');
+      }, ADMIN_FETCH_MS + 500);
+      try {
+        const res = await fetchWithTimeout('/api/admin/aggregate-metrics', { credentials: 'same-origin' }, ADMIN_FETCH_MS);
+        const data = await res.json().catch(function () { return {}; });
+        if (token !== aggLoadToken) return;
+        clearTimeout(watchdog);
+        if (!res.ok || !data || data.success === false) {
+          showAggDashboardError((data && data.error) || 'Could not load metrics. Showing 0.');
+          return;
+        }
+        renderAggDashboard(data);
       } catch (err) {
-        console.error('[AggDashboard]', err.message);
-        toast('Failed to load aggregate metrics: ' + err.message, true);
+        if (token !== aggLoadToken) return;
+        clearTimeout(watchdog);
+        console.error('[AggDashboard]', err && err.message);
+        const timedOut = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
+        showAggDashboardError(timedOut ? 'Dashboard timed out. Showing 0.' : 'Could not load metrics. Showing 0.');
       }
     }
 
