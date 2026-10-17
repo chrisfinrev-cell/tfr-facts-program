@@ -3,8 +3,10 @@
 // Accounts that can open the admin dashboard from inside the app.
 // users.is_admin remains sufficient. These emails stay admin when that flag
 // was never written. Personal owner addresses are not included.
+const FOUNDER_ADMIN_EMAIL = 'chris.finrev@gmail.com';
+
 const ADMIN_EMAILS = [
-  'chris.finrev@gmail.com',
+  FOUNDER_ADMIN_EMAIL,
   'ecci2760@gmail.com',
   'wtrchrisparks@gmail.com',
   'admin@factsmoney.com',
@@ -21,14 +23,24 @@ function adminEmailSet() {
   return emails;
 }
 
+function isFounderAdminEmail(email) {
+  return String(email || '').trim().toLowerCase() === FOUNDER_ADMIN_EMAIL;
+}
+
 function isAllowlistedAdminEmail(email) {
   const normalized = String(email || '').trim().toLowerCase();
   if (!normalized) return false;
-  return adminEmailSet().has(normalized);
+  return adminEmailSet().has(normalized) || isFounderAdminEmail(normalized);
+}
+
+function roleIsAdmin(role) {
+  const name = String(role || '').trim().toUpperCase();
+  return name === 'ADMIN' || name === 'SUPER_ADMIN';
 }
 
 function userIsAdminAccount(row) {
-  return !!(row && (row.is_admin || isAllowlistedAdminEmail(row.email)));
+  if (!row) return false;
+  return !!(row.is_admin || roleIsAdmin(row.role) || isAllowlistedAdminEmail(row.email));
 }
 
 /** Where a successful login should land. Allowlisted admins stay on the admin panel. */
@@ -36,19 +48,37 @@ function loginRedirectFor(user) {
   return userIsAdminAccount(user) ? '/admin' : '/app';
 }
 
+async function loadAdminFlags(db, userId) {
+  if (!db || !userId) return null;
+  try {
+    const result = await db.query(
+      'SELECT email, is_admin, is_creator, role FROM users WHERE id = $1',
+      [userId]
+    );
+    return result.rows[0] || null;
+  } catch (err) {
+    if (err && err.code !== '42703') throw err;
+    const result = await db.query(
+      'SELECT email, is_admin, is_creator FROM users WHERE id = $1',
+      [userId]
+    );
+    return result.rows[0] || null;
+  }
+}
+
 async function userCanOpenAdmin(db, userId) {
-  if (!db || !userId) return false;
-  const result = await db.query(
-    'SELECT is_admin, email FROM users WHERE id = $1',
-    [userId]
-  );
-  return userIsAdminAccount(result.rows[0]);
+  const row = await loadAdminFlags(db, userId);
+  return userIsAdminAccount(row);
 }
 
 module.exports = {
+  FOUNDER_ADMIN_EMAIL,
   ADMIN_EMAILS,
+  isFounderAdminEmail,
   isAllowlistedAdminEmail,
+  roleIsAdmin,
   userIsAdminAccount,
+  loadAdminFlags,
   userCanOpenAdmin,
   loginRedirectFor
 }

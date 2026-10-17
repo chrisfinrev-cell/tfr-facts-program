@@ -1,5 +1,7 @@
 'use strict';
 
+const { isFounderAdminEmail } = require('./adminAccess');
+
 const INCOME_BLOCK_ERROR =
   'This account is not eligible for income-generating programs.';
 
@@ -10,8 +12,10 @@ function creatorEmail() {
 function isFounderAdmin(user) {
   if (!user) return false;
   if (user.is_admin === true || user.is_creator === true) return true;
+  const role = String(user.role || '').trim().toUpperCase();
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return true;
   const email = user.email && String(user.email).toLowerCase();
-  return !!(email && email === creatorEmail());
+  return !!(email && (email === creatorEmail() || isFounderAdminEmail(email)));
 }
 
 function isAdminIncomeBlockedUser(user) {

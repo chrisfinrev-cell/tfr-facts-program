@@ -14,7 +14,7 @@ const {
   assignPoolInvite
 } = require('../lib/inviteCodes');
 const { sendBetaInviteEmail, signupUrlForCode, appBaseUrl } = require('../lib/betaInviteEmail');
-const { userIsAdminAccount } = require('../config/adminAccess');
+const { userIsAdminAccount, loadAdminFlags } = require('../config/adminAccess');
 
 const ADMIN_UNLOCK_MS = 12 * 60 * 60 * 1000;
 
@@ -29,11 +29,18 @@ function adminToolsUnlocked(req) {
 
 async function loadAdminUser(req) {
   const db = getDb(req);
-  const userRes = await db.query(
-    'SELECT is_admin, email, password_hash FROM users WHERE id = $1',
-    [req.session.userId]
-  );
-  return userRes.rows[0] || null;
+  const flags = await loadAdminFlags(db, req.session.userId);
+  if (!flags) return null;
+  try {
+    const secret = await db.query(
+      'SELECT password_hash FROM users WHERE id = $1',
+      [req.session.userId]
+    );
+    flags.password_hash = secret.rows[0] ? secret.rows[0].password_hash : null;
+  } catch (err) {
+    flags.password_hash = null;
+  }
+  return flags;
 }
 
 function isAdminRow(row) {

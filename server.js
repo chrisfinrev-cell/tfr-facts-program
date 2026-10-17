@@ -107,6 +107,8 @@ const pool = process.env.DATABASE_URL ? new Pool({
             );
           }
         }
+        const { promoteFounderAdmin } = require('./lib/promoteFounderAdmin');
+        await promoteFounderAdmin(pool);
         console.log('[boot] admin bootstrap complete');
       } catch (bootErr) {
         console.error('[boot] admin bootstrap failed:', bootErr.message);
@@ -263,7 +265,7 @@ app.set('db', pool);
 const { router: betaNdaRouter, enforceNda } = require('./routes/betaNda');
 app.use(betaNdaRouter);
 const { router: adminRouter, requireAdmin } = require('./routes/admin');
-const { isAllowlistedAdminEmail, userCanOpenAdmin, userIsAdminAccount, loginRedirectFor } = require('./config/adminAccess');
+const { isAllowlistedAdminEmail, userCanOpenAdmin, userIsAdminAccount, loginRedirectFor, isFounderAdminEmail, loadAdminFlags } = require('./config/adminAccess');
 const { isAdminIncomeBlockedUser, loadIncomeBlockFlags, userBlockedFromIncomePrograms, INCOME_BLOCK_ERROR } = require('./config/adminIncomePolicy');
 app.use(adminRouter);
 const betaFeedbackRouter = require('./routes/betaFeedback');
@@ -753,6 +755,19 @@ function isAdminEmail(email) {
   return !!(email && ADMIN_EMAILS.includes(email.toLowerCase()));
 }
 
+function isPrivilegedAdminEmail(email) {
+  const normalized = String(email || '').trim().toLowerCase();
+  if (!normalized) return false;
+  return normalized === CREATOR_EMAIL || isAdminEmail(normalized) || isFounderAdminEmail(normalized);
+}
+
+function requestIsAdmin(req) {
+  const bodyEmail = req && req.body && req.body.adminEmail;
+  const session = req && req.session;
+  const sessionEmail = session && (session.email || (session.user && session.user.email));
+  return isPrivilegedAdminEmail(bodyEmail) || isPrivilegedAdminEmail(sessionEmail);
+}
+
 function isOwnerEmail(email) {
   return !!(email && OWNER_EMAILS.includes(email.toLowerCase()));
 }
@@ -1041,7 +1056,11 @@ async function isCreator(userOrId) {
     user = result.rows[0];
   }
   if (user.is_creator) return true;
-  return user.email && user.email.toLowerCase() === CREATOR_EMAIL;
+  const email = user.email && String(user.email).toLowerCase();
+  if (!email) return false;
+  if (email === CREATOR_EMAIL) return true;
+  if (isFounderAdminEmail(email)) return true;
+  return isAdminEmail(email);
 }
 
 /**
@@ -13705,7 +13724,7 @@ app.post('/api/affiliate/enter-orphan-queue', async (req, res) => {
 app.post('/api/admin/trigger-orphan-placement', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin only' });
     }
 
@@ -13730,7 +13749,7 @@ app.post('/api/admin/trigger-orphan-placement', async (req, res) => {
 app.post('/api/admin/trigger-depth-gates', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin only' });
     }
     console.log('[API] Manual 4x5 depth gate check triggered by admin');
@@ -17773,7 +17792,7 @@ app.post('/api/admin/trigger-inactivity-job', async (req, res) => {
     // Verify creator email (uses centralized CREATOR_EMAIL constant)
     const { adminEmail } = req.body;
 
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -17798,7 +17817,7 @@ app.post('/api/admin/trigger-inactivity-job', async (req, res) => {
 app.post('/api/admin/trigger-price-notifier', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!priceScheduler) {
@@ -17819,7 +17838,7 @@ app.post('/api/admin/trigger-price-notifier', async (req, res) => {
 app.post('/api/admin/trigger-promo-grace-job', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!promoGraceScheduler) {
@@ -17841,7 +17860,7 @@ app.post('/api/admin/trigger-promo-grace-job', async (req, res) => {
 app.post('/api/admin/trigger-affiliate-jobs', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!affiliateJobsScheduler) {
@@ -17862,7 +17881,7 @@ app.post('/api/admin/trigger-affiliate-jobs', async (req, res) => {
 app.post('/api/admin/trigger-heartbeat-compliance', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!heartbeatComplianceScheduler) {
@@ -17884,7 +17903,7 @@ app.post('/api/admin/trigger-heartbeat-compliance', async (req, res) => {
 app.post('/api/admin/trigger-heartbeat-day1', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!heartbeatComplianceScheduler) {
@@ -17905,7 +17924,7 @@ app.post('/api/admin/trigger-heartbeat-day1', async (req, res) => {
 app.post('/api/admin/trigger-heartbeat-cliff-warnings', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!heartbeatComplianceScheduler) {
@@ -17925,7 +17944,7 @@ app.post('/api/admin/trigger-heartbeat-cliff-warnings', async (req, res) => {
 app.post('/api/admin/trigger-heartbeat-day5', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!heartbeatComplianceScheduler) {
@@ -33708,12 +33727,11 @@ async function requireAdminAllowlist(req, res) {
     res.status(401).json({ error: 'Authentication required' });
     return false;
   }
-  const result = await pool.query('SELECT email, is_admin, is_creator FROM users WHERE id = $1', [req.session.userId]);
-  if (!result.rows.length) {
+  const row = await loadAdminFlags(pool, req.session.userId);
+  if (!row) {
     res.status(403).json({ error: 'Admin access required' });
     return false;
   }
-  const row = result.rows[0];
   const userEmail = (row.email || '').toLowerCase();
 
   // Personal owner accounts stay out of admin tools. Allowlisted admin emails

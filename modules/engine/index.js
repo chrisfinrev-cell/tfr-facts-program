@@ -17,12 +17,13 @@
 const express = require('express');
 const { asyncRoute } = require('../../module-error-boundary');
 const { pool } = require('../../db/pool');
-const { processIncomeTransaction, BUCKETS, sharesForNecessity } = require('./facts-income-processor');
+const { processIncomeTransaction, sharesForNecessity } = require('./facts-income-processor');
 const { DEFAULT_BUCKET_TARGETS } = require('../shared/constants');
 const { withManualExecutionNotice } = require('../shared/edu-compliance');
 const { requireAuth } = require('../../routes/auth');
 const { processIncomeAllocationSweep } = require('./transactionalEngine');
 const { lockReserveProtocol, persistReserveProtocol, optionsForUser } = require('./reserve-protocol-store');
+const { sessionUserId, ensurePaycheckLedger, insertPaycheckEntry, insertDeductions } = require('./paycheck-ledger');
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.get('/health', asyncRoute(async (req, res) => {
 router.post('/process', asyncRoute(async (req, res) => {
   const body = req.body || {};
   const splits = body.custom_splits || body.customSplits || DEFAULT_BUCKET_TARGETS;
-  const userId = req.session?.userId || null;
+  const userId = sessionUserId(req);
   if (body.save === true && !userId) {
     return res.status(401).json({ error: 'Authentication required to save paycheck entries' });
   }
@@ -56,50 +57,25 @@ router.post('/process', asyncRoute(async (req, res) => {
       lifestylePercent: merged.lifestylePercent,
       discretionaryPercent: merged.discretionaryPercent
     }), splits);
-    const matchTarget = BUCKETS.includes(body.employer_match_target)
-      ? body.employer_match_target
-      : 'GROWTH';
-    const inserted = await client.query(
-      `INSERT INTO mod_income.paycheck_entries (
-         user_id, source_name, entry_date, calculation_mode,
-         gross_amount, net_amount, employer_match, employer_match_target,
-         liquid_take_home, bucket_allocations
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-       RETURNING id`,
-      [
-        userId,
-        body.source_name || 'Paycheck',
-        body.entry_date || new Date(),
-        String(body.calculation_mode || 'GROSS').toUpperCase() === 'NET' ? 'NET' : 'GROSS',
-        Number(body.gross_amount) || 0,
-        Number(body.net_amount) || 0,
-        Number(body.employer_match) || 0,
-        matchTarget,
-        result.summary.net_liquid_take_home,
-        JSON.stringify(result.bucket_allocations)
-      ]
-    );
-    const entryId = inserted.rows[0].id;
-    for (const item of Array.isArray(body.deductions) ? body.deductions : []) {
-      if (!item || !item.label || !BUCKETS.includes(item.target_bucket)) continue;
-      await client.query(
-        `INSERT INTO mod_income.income_deductions (entry_id, label, amount, target_bucket)
-         VALUES ($1,$2,$3,$4)`,
-        [entryId, String(item.label), Number(item.amount) || 0, item.target_bucket]
-      );
-    }
+    const ledger = await ensurePaycheckLedger(client);
+    const entryId = await insertPaycheckEntry(client, userId, body, result);
+    await insertDeductions(client, entryId, body.deductions, ledger);
     if (result.reserve_protocol) {
       await persistReserveProtocol(client, userId, result.reserve_protocol.state);
     }
     await client.query('COMMIT');
     result.saved_id = entryId;
+    result.user_id = userId;
     res.json(result);
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
+  } catch (err) {
+    try { await client.query('ROLLBACK'); } catch (rollbackErr) { /* already closed */ }
+    console.error('[paycheck] save failed:', err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Could not save this paycheck. Try again.' });
     }
+  } finally {
+    client.release();
+  }
 }));
 
 router.get('/transactions', requireAuth, asyncRoute(async (req, res) => {

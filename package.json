@@ -7,6 +7,7 @@
     "dev": "node server.js",
     "build": "npm run migrate && node scripts/seed-sandbox.js && node scripts/ensure-pwa-icons.js",
     "migrate": "node migrate.js",
+    "promote:admin": "node scripts/promote-founder-admin.js",
     "schema:export": "node db/export-schema.js",
     "test:engine": "node scripts/test-engine.js",
     "test:reserve-protocol": "node scripts/test-reserve-velocity-protocol.js",

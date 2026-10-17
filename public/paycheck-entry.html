@@ -373,7 +373,10 @@
           return;
         }
         if (!out.res.ok) {
-          setStatus(out.data.error || 'Save failed.', 'error');
+          const message = out.data.error && out.data.error !== 'Server error'
+            ? out.data.error
+            : (out.data.message || 'Could not save this paycheck. Try again.');
+          setStatus(message, 'error');
           return;
         }
         setStatus('Paycheck entry processed and recorded successfully.', 'ok');

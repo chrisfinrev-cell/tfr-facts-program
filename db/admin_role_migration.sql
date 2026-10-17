@@ -1,8 +1,14 @@
 -- 1. Add admin status column
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_creator BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) DEFAULT 'member';
 
--- 2. Grant superadmin rights to the founder account
-UPDATE users SET is_admin = TRUE WHERE LOWER(email) = LOWER('chris.finrev@gmail.com');
+-- 2. Grant admin rights to the founder account
+UPDATE users
+   SET is_admin = TRUE,
+       is_creator = TRUE,
+       role = 'ADMIN'
+ WHERE LOWER(email) = LOWER('chris.finrev@gmail.com');
 
 -- 3. Admin can invite testers but cannot hold income-program house positions
 DELETE FROM affiliate_houses

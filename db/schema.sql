@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS users (
   phase_zero_completed_at TIMESTAMPTZ,
   pz_deadline_lockout_until TIMESTAMPTZ,
   heartbeat_in_truth BOOLEAN DEFAULT TRUE,
-  heartbeat_consecutive_passes INTEGER NOT NULL DEFAULT 0
+  heartbeat_consecutive_passes INTEGER NOT NULL DEFAULT 0,
+  role VARCHAR(32) NOT NULL DEFAULT 'member'
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique_idx ON users (LOWER(email));
 CREATE INDEX IF NOT EXISTS users_stripe_subscription_id_idx ON users (stripe_subscription_id);
@@ -327,17 +328,22 @@ CREATE SCHEMA IF NOT EXISTS mod_income;
 CREATE TABLE IF NOT EXISTS mod_income.paycheck_entries (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  source_name VARCHAR(255),
   entry_date DATE NOT NULL DEFAULT CURRENT_DATE,
   calculation_mode VARCHAR(8) NOT NULL DEFAULT 'GROSS',
   gross_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
   net_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
   employer_match NUMERIC(12,2) NOT NULL DEFAULT 0,
+  employer_match_target VARCHAR(16) DEFAULT 'GROWTH',
+  liquid_take_home NUMERIC(12,2),
+  bucket_allocations JSONB,
   result JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS mod_income.income_deductions (
   id SERIAL PRIMARY KEY,
   paycheck_id INTEGER NOT NULL REFERENCES mod_income.paycheck_entries(id) ON DELETE CASCADE,
+  entry_id INTEGER,
   label TEXT,
   amount NUMERIC(12,2) NOT NULL DEFAULT 0,
   target_bucket TEXT
