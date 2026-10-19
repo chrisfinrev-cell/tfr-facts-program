@@ -14350,7 +14350,7 @@ app.post('/api/admin/legacy-placement', requireAuth, async (req, res) => {
 // Admin: Affiliate seed-phase status — X/100 first-line slots filled
 app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
   try {
-    if (!(await requireCreator(req, res))) return;
+    if (!(await requireAdminOrCreator(req, res))) return;
 
     const firstLineCount = await getFirstLineAffiliateCount();
     const seedComplete = firstLineCount >= 100;
@@ -17969,16 +17969,26 @@ app.post('/api/admin/trigger-heartbeat-day5', async (req, res) => {
 async function requireCreator(req, res) {
   const creatorCheck = await isCreator(req.userId);
   if (!creatorCheck) {
-    res.status(403).json({ error: 'Admin access required' });
+    res.status(403).json({ error: 'Admin access required', users: [], success: false });
     return false;
   }
   return true;
 }
 
+async function requireAdminOrCreator(req, res) {
+  try {
+    const { userCanOpenAdmin } = require('./config/adminAccess');
+    if (await userCanOpenAdmin(pool, req.userId)) return true;
+  } catch (err) {
+    console.warn('admin check failed:', err.message);
+  }
+  return requireCreator(req, res);
+}
+
 // GET /api/admin/affiliate-tree — Full affiliate referral tree
 app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
   try {
-    if (!(await requireCreator(req, res))) return;
+    if (!(await requireAdminOrCreator(req, res))) return;
 
     // Get all users with affiliate info (including new tree placement fields)
     const usersResult = await pool.query(`
@@ -18007,10 +18017,10 @@ app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
     });
 
     // Build user list with referral counts
-    const users = usersResult.rows.map(u => ({
+    const users = (usersResult.rows || []).map(u => ({
       id: u.id,
-      name: u.name || u.email.split('@')[0],
-      email: u.email,
+      name: u.name || (u.email ? String(u.email).split('@')[0] : 'User'),
+      email: u.email || '',
       referred_by_user_id: u.referred_by_user_id,
       plan: u.plan,
       is_creator: u.is_creator,
@@ -18032,7 +18042,7 @@ app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
     res.json({ success: true, users });
   } catch (err) {
     console.error('GET /api/admin/affiliate-tree error:', err.message);
-    res.status(500).json({ error: 'Failed to load affiliate tree' });
+    res.status(500).json({ success: false, users: [], error: 'Failed to load affiliate tree' });
   }
 });
 
