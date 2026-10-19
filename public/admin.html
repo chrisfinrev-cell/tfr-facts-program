@@ -257,9 +257,9 @@
   </div>
 
   <div class="tabs">
-    <div class="tab" data-tab="agg-dashboard">📊 Dashboard</div>
+    <div class="tab active" data-tab="agg-dashboard">📊 Dashboard</div>
     <div class="tab" data-tab="support-tickets">🎫 Support Tickets</div>
-    <div class="tab active" data-tab="tree">Future Generations Tree</div>
+    <div class="tab" data-tab="tree">Future Generations Tree</div>
     <div class="tab" data-tab="commissions">Commission Verify</div>
     <div class="tab" data-tab="accounts">👥 Accounts</div>
     <div class="tab" data-tab="test">Test Mode</div>
@@ -316,7 +316,7 @@
     <div class="main">
 
       <!-- ═══════ AGGREGATE DASHBOARD ═══════ -->
-      <div class="panel" id="panel-agg-dashboard">
+      <div class="panel active" id="panel-agg-dashboard">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
           <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">Platform Aggregate Dashboard</h2>
           <button class="btn btn-secondary btn-sm" onclick="loadAggDashboard()">↻ Refresh</button>
@@ -418,7 +418,7 @@
       </div>
 
       <!-- ═══════ ORGANIZATION TAB ═══════ -->
-      <div class="panel active" id="panel-tree">
+      <div class="panel" id="panel-tree">
         <div class="stats-row" id="tree-stats"></div>
 
         <!-- Seed Phase Status Widget -->
@@ -889,14 +889,21 @@
       <!-- ═══════ BETA INVITES / FOUNDER TRACKER ═══════ -->
       <div class="panel" id="panel-beta-invites">
         <div class="section">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h2>Your 100 Beta Codes</h2>
-            <button class="btn btn-secondary btn-sm" onclick="loadBetaPool()">↻ Refresh</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+            <div>
+              <h2>Shared Beta Invite Codes</h2>
+              <p style="font-size:13px;color:#a1a1aa;margin:6px 0 0;">One list of 100 <code>FIN-REV</code> codes. Every administrator can copy and share these.</p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="generateSharedInviteCodes()">Generate 100 Codes</button>
+              <button class="btn btn-secondary btn-sm" onclick="copyAllActiveInviteCodes()">Copy All Active</button>
+              <button class="btn btn-secondary btn-sm" onclick="loadBetaPool()">↻ Refresh</button>
+            </div>
           </div>
           <div class="stats-row" style="margin-bottom:16px;">
-            <div class="stat-card"><div class="label">Available</div><div class="value green" id="pool-available">—</div></div>
-            <div class="stat-card"><div class="label">Sent</div><div class="value yellow" id="pool-assigned">—</div></div>
-            <div class="stat-card"><div class="label">Signed Up</div><div class="value blue" id="pool-signed-up">—</div></div>
+            <div class="stat-card"><div class="label">Active</div><div class="value green" id="pool-available">—</div></div>
+            <div class="stat-card"><div class="label">Used</div><div class="value blue" id="pool-signed-up">—</div></div>
+            <div class="stat-card"><div class="label">Revoked</div><div class="value yellow" id="pool-assigned">—</div></div>
           </div>
           <form class="form-row" onsubmit="assignPoolCode(event)">
             <div class="form-group">
@@ -907,7 +914,7 @@
               <label>Email</label>
               <input type="email" id="poolEmail" placeholder="jane@example.com" required>
             </div>
-            <button type="submit" class="btn btn-primary" id="poolSendBtn">Send a Code</button>
+            <button type="submit" class="btn btn-primary" id="poolSendBtn">Email a Code</button>
           </form>
           <p id="poolResult" style="margin-top:12px;font-size:0.9rem;color:#a1a1aa;"></p>
           <div class="table-wrap" style="margin-top:12px;max-height:420px;overflow-y:auto;">
@@ -916,11 +923,12 @@
                 <tr>
                   <th>Code</th>
                   <th>Status</th>
-                  <th>Sent To</th>
+                  <th>Created By</th>
+                  <th>Used By</th>
                   <th></th>
                 </tr>
               </thead>
-              <tbody id="poolCodesBody"><tr><td colspan="4">Loading…</td></tr></tbody>
+              <tbody id="poolCodesBody"><tr><td colspan="5">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -963,7 +971,7 @@
             </div>
             <button class="btn btn-primary" onclick="createTargetedInviteCodes()">Create &amp; Send Codes</button>
           </div>
-          <p style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary);">The code is emailed to the recipient. They sign up with the link in that email.</p>
+          <p style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary);">The code is saved even if email is not configured. Copy it from the result if the message does not go out.</p>
           <p id="targetedInviteResult" style="margin-top:12px;font-size:0.85rem;color:var(--text-secondary);"></p>
         </div>
 
@@ -2175,6 +2183,22 @@
     let allUsers = [];
     let selectedUserId = null;
     let isCreatorUser = false;
+    const DEFAULT_ADMIN_TAB = 'agg-dashboard';
+    const ADMIN_FETCH_MS = 15000;
+
+    function fetchWithTimeout(url, options, ms) {
+      const timeoutMs = ms || ADMIN_FETCH_MS;
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
+      const opts = Object.assign({ credentials: 'same-origin' }, options || {});
+      opts.signal = controller.signal;
+      return fetch(url, opts).finally(function () { clearTimeout(timer); });
+    }
+
+    function hidePageLoader() {
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+    }
 
     // ═══════════════════════════════════════
     // AUTH & INIT
@@ -2262,6 +2286,7 @@
     }
 
     async function init() {
+      try {
       if (window.__ADMIN_LOCKED === true) {
         showAdminPasswordGate();
         return;
@@ -2270,8 +2295,8 @@
       const injected = window.__ADMIN_SESSION || null;
       let authUser = null;
       try {
-        const authRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
-        const authData = await authRes.json();
+        const authRes = await fetchWithTimeout('/api/auth/me', { credentials: 'same-origin' }, 10000);
+        const authData = await authRes.json().catch(function () { return {}; });
         if (authData && authData.authenticated && authData.user) authUser = authData.user;
       } catch (authErr) {
         authUser = null;
@@ -2291,8 +2316,8 @@
       const flagIsAdmin = !!user.is_admin || serverConfirmed;
 
       try {
-        const proRes = await fetch('/api/pro-status');
-        const proData = await proRes.json();
+        const proRes = await fetchWithTimeout('/api/pro-status', { credentials: 'same-origin' }, 10000);
+        const proData = await proRes.json().catch(function () { return {}; });
         isCreatorUser = !!proData.is_creator;
       } catch (proErr) {
         isCreatorUser = false;
@@ -2313,40 +2338,112 @@
       openAdminWorkspace(user);
 
       try {
-        await loadTree();
+        switchTab(DEFAULT_ADMIN_TAB);
         loadPromoCodes();
       } catch (err) {
         console.error('Admin data load failed:', err);
       }
+      } catch (err) {
+        console.error('Admin init failed:', err);
+        showAdminStay('The admin page could not finish loading. Refresh this page. You are not being sent back to login.');
+      } finally {
+        hidePageLoader();
+      }
     }
 
-    const POOL_STATUS_LABELS = { available: 'Available', assigned: 'Sent', signed_up: 'Signed up' };
+    const POOL_STATUS_LABELS = { ACTIVE: 'Active', USED: 'Used', REVOKED: 'Revoked', available: 'Active', assigned: 'Sent', signed_up: 'Used' };
+    window.__ACTIVE_INVITE_CODES__ = [];
 
     async function loadBetaPool() {
       const body = document.getElementById('poolCodesBody');
-      const data = await adminJson('/api/admin/beta-pool');
-      if (!data) return;
-      if (!data.success) {
-        if (body) body.innerHTML = '<tr><td colspan="4" style="color:#fca5a5;">' + escHtml(data.error || 'Could not load your beta codes.') + '</td></tr>';
+      if (body) body.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+      try {
+        const data = await adminJson('/api/admin/invite-codes');
+        if (!data) {
+          if (body) body.innerHTML = '<tr><td colspan="5">Unlock admin tools to view invite codes.</td></tr>';
+          return;
+        }
+        if (!data.success) {
+          if (body) body.innerHTML = '<tr><td colspan="5" style="color:#fca5a5;">' + escHtml(data.error || 'Could not load beta codes.') + '</td></tr>';
+          window.__ACTIVE_INVITE_CODES__ = [];
+          return;
+        }
+        const codes = Array.isArray(data.codes) ? data.codes.filter(Boolean) : [];
+        const activeCodes = Array.isArray(data.activeCodes)
+          ? data.activeCodes.filter(Boolean)
+          : codes.filter(function (c) { return c && (c.status === 'ACTIVE' || c.status === 'available'); });
+        const activeEl = document.getElementById('pool-available');
+        const revokedEl = document.getElementById('pool-assigned');
+        const usedEl = document.getElementById('pool-signed-up');
+        if (activeEl) activeEl.textContent = data.active != null ? data.active : activeCodes.length;
+        if (revokedEl) revokedEl.textContent = data.revoked != null ? data.revoked : 0;
+        if (usedEl) usedEl.textContent = data.used != null ? data.used : 0;
+        window.__ACTIVE_INVITE_CODES__ = activeCodes;
+        if (!body) return;
+        if (!codes.length) {
+          body.innerHTML = '<tr><td colspan="5">No codes yet. Generate the shared list of 100.</td></tr>';
+          return;
+        }
+        body.innerHTML = codes.map(function (c) {
+          if (!c || !c.code) return '';
+          const status = c.status || c.inviteStatus || 'ACTIVE';
+          const copy = status === 'USED' || status === 'REVOKED' || status === 'signed_up'
+            ? ''
+            : '<button class="btn btn-secondary btn-sm" onclick="copyToClipboard(decodeURIComponent(\'' + encodeURIComponent(c.code) + '\'))">Copy Code</button> ' +
+              '<button class="btn btn-secondary btn-sm" onclick="copyToClipboard(decodeURIComponent(\'' + encodeURIComponent(c.signup_url || ('/signup.html?code=' + encodeURIComponent(c.code))) + '\'))">Copy Link</button>';
+          return '<tr><td><code>' + escHtml(c.code) + '</code></td><td>' + escHtml(POOL_STATUS_LABELS[status] || status) +
+            '</td><td>' + escHtml(c.createdBy || '—') + '</td><td>' + escHtml(c.usedBy || '—') +
+            '</td><td style="white-space:nowrap;">' + copy + '</td></tr>';
+        }).join('') || '<tr><td colspan="5">No codes yet. Generate the shared list of 100.</td></tr>';
+      } catch (err) {
+        window.__ACTIVE_INVITE_CODES__ = [];
+        if (body) body.innerHTML = '<tr><td colspan="5" style="color:#fca5a5;">Could not load beta codes. ' + escHtml(err.message || '') + '</td></tr>';
+      }
+    }
+
+    async function generateSharedInviteCodes() {
+      const resultEl = document.getElementById('poolResult');
+      if (resultEl) {
+        resultEl.style.color = '#a1a1aa';
+        resultEl.textContent = 'Generating shared FIN-REV codes…';
+      }
+      try {
+        const data = await adminJson('/api/admin/invite-codes/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count: 100, prefix: 'FIN-REV' })
+        });
+        if (!data) {
+          if (resultEl) {
+            resultEl.style.color = '#fca5a5';
+            resultEl.textContent = 'Unlock admin tools to generate codes.';
+          }
+          return;
+        }
+        if (resultEl) {
+          resultEl.style.color = data.success ? '#6ee7b7' : '#fca5a5';
+          resultEl.textContent = data.message || data.error || 'Could not generate codes.';
+        }
+      } catch (err) {
+        if (resultEl) {
+          resultEl.style.color = '#fca5a5';
+          resultEl.textContent = err.message || 'Could not generate codes.';
+        }
+      }
+      loadBetaPool();
+    }
+
+    function copyAllActiveInviteCodes() {
+      const codes = (window.__ACTIVE_INVITE_CODES__ || []).map(function (c) { return c.code; }).filter(Boolean);
+      if (!codes.length) {
+        const resultEl = document.getElementById('poolResult');
+        if (resultEl) {
+          resultEl.style.color = '#fbbf24';
+          resultEl.textContent = 'No active codes to copy. Generate the shared list first.';
+        }
         return;
       }
-      document.getElementById('pool-available').textContent = data.available;
-      document.getElementById('pool-assigned').textContent = data.assigned;
-      document.getElementById('pool-signed-up').textContent = data.signedUp;
-      body.innerHTML = (data.codes || []).map(function (c) {
-        const who = c.status === 'signed_up'
-          ? escHtml(c.claimed_by_email || c.sent_to_email || '—')
-          : escHtml([c.sent_to_name, c.sent_to_email].filter(Boolean).join(' · ') || '—');
-        const emailNote = c.status === 'assigned' && c.last_email_error
-          ? '<div style="font-size:11px;color:#fca5a5;">Email not sent. Share it yourself.</div>'
-          : '';
-        const copy = c.status === 'signed_up'
-          ? ''
-          : '<button class="btn btn-secondary btn-sm" onclick="copyToClipboard(decodeURIComponent(\'' + encodeURIComponent(c.code) + '\'))">Copy Code</button> ' +
-            '<button class="btn btn-secondary btn-sm" onclick="copyToClipboard(decodeURIComponent(\'' + encodeURIComponent(c.signup_url) + '\'))">Copy Link</button>';
-        return '<tr><td><code>' + escHtml(c.code) + '</code></td><td>' + (POOL_STATUS_LABELS[c.status] || c.status) +
-          '</td><td>' + who + emailNote + '</td><td style="white-space:nowrap;">' + copy + '</td></tr>';
-      }).join('') || '<tr><td colspan="4">No codes yet.</td></tr>';
+      copyToClipboard(codes.join('\n'));
     }
 
     async function assignPoolCode(event) {
@@ -2381,12 +2478,19 @@
     }
 
     async function loadBetaInviteTracking() {
+      const masterBody = document.getElementById('masterCodesBody');
+      const targetedBody = document.getElementById('targetedInvitesBody');
+      const lineageBody = document.getElementById('lineageBody');
+      try {
       const data = await adminJson('/api/admin/tracking');
       if (!data) return;
-      if (!data.success) return alert(data.error || 'Failed to load data.');
+      if (!data.success) {
+        if (masterBody) masterBody.innerHTML = '<tr><td colspan="5" style="color:#fca5a5;">' + escHtml(data.error || 'Failed to load data.') + '</td></tr>';
+        return;
+      }
 
-      const masterBody = document.getElementById('masterCodesBody');
-      masterBody.innerHTML = (data.masterCodes || []).map(c => `
+      if (masterBody) {
+        masterBody.innerHTML = (data.masterCodes || []).map(c => `
         <tr>
           <td><strong>${escHtml(c.code)}</strong></td>
           <td>${c.uses_count} / ${c.max_uses}</td>
@@ -2395,8 +2499,8 @@
           <td><button class="btn btn-secondary btn-sm" onclick="sendMasterBetaCode(decodeURIComponent('${encodeURIComponent(c.code || '')}'))">Email</button></td>
         </tr>
       `).join('') || '<tr><td colspan="5">No master codes yet.</td></tr>';
+      }
 
-      const targetedBody = document.getElementById('targetedInvitesBody');
       if (targetedBody) {
         targetedBody.innerHTML = (data.targetedInvites || []).map(i => `
           <tr>
@@ -2415,8 +2519,8 @@
         `).join('') || '<tr><td colspan="7">No targeted invites yet.</td></tr>';
       }
 
-      const lineageBody = document.getElementById('lineageBody');
-      lineageBody.innerHTML = (data.userLineage || []).map(u => `
+      if (lineageBody) {
+        lineageBody.innerHTML = (data.userLineage || []).map(u => `
         <tr>
           <td>${u.email}${u.affiliate_tier ? `<br><small>${u.affiliate_tier}</small>` : ''}</td>
           <td><code>${u.referral_code || 'N/A'}</code></td>
@@ -2432,6 +2536,12 @@
             : `<button class="btn btn-sm ${u.income_programs_blocked ? 'btn-primary' : 'btn-secondary'}" onclick="setIncomeEligibility(${u.user_id}, ${u.income_programs_blocked ? 'false' : 'true'})">${u.income_programs_blocked ? 'Blocked — Allow' : 'Eligible — Block'}</button>`}</td>
         </tr>
       `).join('') || '<tr><td colspan="8">No beta testers yet.</td></tr>';
+      }
+      } catch (err) {
+        if (masterBody) masterBody.innerHTML = '<tr><td colspan="5" style="color:#fca5a5;">Could not load invite tracking.</td></tr>';
+        if (targetedBody) targetedBody.innerHTML = '<tr><td colspan="7" style="color:#fca5a5;">Could not load targeted invites.</td></tr>';
+        if (lineageBody) lineageBody.innerHTML = '<tr><td colspan="8" style="color:#fca5a5;">Could not load lineage.</td></tr>';
+      }
     }
 
     async function setIncomeEligibility(userId, blocked) {
@@ -2446,52 +2556,96 @@
     }
 
     async function createBetaInviteCode() {
-      const code = document.getElementById('newCode').value;
-      const maxUses = document.getElementById('maxUses').value;
-
-      const data = await adminJson('/api/admin/generate-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, maxUses })
-      });
-      if (!data) return;
-      alert(data.message || data.error);
-      loadBetaInviteTracking();
+      try {
+        const code = (document.getElementById('newCode').value || '').trim();
+        const maxUses = document.getElementById('maxUses').value;
+        if (!code) {
+          alert('Enter a code name (e.g. VIP-FOUNDER-2026).');
+          return;
+        }
+        const data = await adminJson('/api/admin/generate-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code, codeName: code, maxUses: maxUses })
+        });
+        if (!data) return;
+        if (!data.success) {
+          alert(data.error || 'Could not create the master invite code.');
+          return;
+        }
+        alert(data.message || ('Master code ' + (data.code || code) + ' is ready.'));
+        loadBetaInviteTracking();
+      } catch (err) {
+        alert(err.message || 'Could not create the master invite code.');
+      }
     }
 
     async function adminJson(url, options) {
-      const res = await fetch(url, Object.assign({ credentials: 'same-origin' }, options || {}));
-      const data = await res.json().catch(function () { return {}; });
-      if (data && data.code === 'admin_locked') {
-        showAdminPasswordGate();
-        return null;
+      try {
+        const res = await fetchWithTimeout(url, options, ADMIN_FETCH_MS);
+        const data = await res.json().catch(function () { return {}; });
+        if (data && data.code === 'admin_locked') {
+          showAdminPasswordGate();
+          return null;
+        }
+        if (!res.ok && data && !data.error && !data.success) {
+          data.success = false;
+          data.error = data.error || ('Request failed (' + res.status + ')');
+        }
+        return data || { success: false, error: 'Empty response.' };
+      } catch (err) {
+        const timedOut = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
+        return {
+          success: false,
+          error: timedOut ? 'Request timed out. Try again.' : (err.message || 'Request failed.')
+        };
       }
-      return data;
     }
 
     async function createTargetedInviteCodes() {
-      const name = document.getElementById('inviteSentToName').value;
-      const email = document.getElementById('inviteSentToEmail').value.trim();
-      const count = document.getElementById('inviteCount').value || 1;
-      const metaRaw = document.getElementById('inviteMeta').value || '{}';
-      let meta = {};
-      try { meta = JSON.parse(metaRaw); } catch (e) { return alert('Metadata must be valid JSON'); }
-      if (!email || email.indexOf('@') === -1) {
-        return alert('Enter the recipient email. The beta code is sent to that address.');
-      }
-
-      const data = await adminJson('/api/admin/generate-invites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, count, meta, maxUses: 1 })
-      });
-      if (!data) return;
       const resultEl = document.getElementById('targetedInviteResult');
-      const codes = (data.invites || []).map(i => i.code).join(', ');
-      const summary = data.message || data.error || (data.success ? 'Invite sent.' : 'Failed to send invite.');
-      if (resultEl) resultEl.textContent = summary + (codes ? ' ' + codes : '');
-      alert(summary);
-      loadBetaInviteTracking();
+      try {
+        const name = document.getElementById('inviteSentToName').value;
+        const email = document.getElementById('inviteSentToEmail').value.trim();
+        const count = document.getElementById('inviteCount').value || 1;
+        const metaRaw = document.getElementById('inviteMeta').value || '{}';
+        let meta = {};
+        try { meta = JSON.parse(metaRaw); } catch (e) { return alert('Metadata must be valid JSON. Example: {"cohort":"investors"}'); }
+        if (!email || email.indexOf('@') === -1) {
+          return alert('Enter the recipient email so the code can be stored on that invite.');
+        }
+
+        const data = await adminJson('/api/admin/generate-invites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            recipientName: name,
+            email: email,
+            recipientEmail: email,
+            count: count,
+            meta: meta,
+            metadata: meta,
+            maxUses: 1
+          })
+        });
+        if (!data) return;
+        const codes = (data.codes || (data.invites || []).map(function (invite) { return invite.code; })).filter(Boolean).join(', ');
+        const created = !!(data.success || data.created || codes);
+        const summary = data.message || data.error || (created ? 'Invite code created.' : 'Failed to create invite code.');
+        if (resultEl) {
+          resultEl.style.color = created ? (data.emailSent ? '#6ee7b7' : '#fbbf24') : '#fca5a5';
+          resultEl.textContent = summary + (codes ? ' Code: ' + codes : '');
+        }
+        alert(summary + (codes ? '\n\nCode: ' + codes : ''));
+        loadBetaInviteTracking();
+      } catch (err) {
+        if (resultEl) {
+          resultEl.style.color = '#fca5a5';
+          resultEl.textContent = err.message || 'Failed to create invite code.';
+        }
+        alert(err.message || 'Failed to create invite code.');
+      }
     }
 
     async function sendTargetedInvite(id, existingEmail) {
@@ -2525,21 +2679,30 @@
     function switchTab(tabName) {
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
       document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tabName}`));
-      if (tabName === 'commissions') loadCommissions();
-      if (tabName === 'accounts') { loadAffiliates(); loadFoundingMembers(); }
-      if (tabName === 'education') loadEducationAdmin();
-      if (tabName === 'shop-save') loadShopAdmin();
-      if (tabName === 'nda') loadNdaStatus();
-      if (tabName === 'beta-invites') { loadBetaPool(); loadBetaInviteTracking(); }
-      if (tabName === 'resources') loadResourcesAdmin();
-      if (tabName === 'feed') loadFeedAdmin();
-      if (tabName === 'waitlist') loadWaitlist();
-      if (tabName === 'users') { loadUserSearch(); loadDeletionLog(); }
-      if (tabName === 'succession') loadSuccessionAdmin();
-      if (tabName === 'trials') loadTrialStats();
-      if (tabName === 'launch-waitlist') loadLaunchWaitlist();
-      if (tabName === 'phase-zero') loadPhaseZero();
-      if (tabName === 'gamification') loadGamificationPreview();
+      try {
+        if (tabName === 'agg-dashboard') loadAggDashboard();
+        if (tabName === 'tree') loadTree();
+        if (tabName === 'support-tickets') loadTickets();
+        if (tabName === 'vault-cycles') loadVaultCycles();
+        if (tabName === 'commissions') loadCommissions();
+        if (tabName === 'accounts') { loadAffiliates(); loadFoundingMembers(); }
+        if (tabName === 'education') loadEducationAdmin();
+        if (tabName === 'shop-save') loadShopAdmin();
+        if (tabName === 'nda') loadNdaStatus();
+        if (tabName === 'beta-invites') { loadBetaPool(); loadBetaInviteTracking(); }
+        if (tabName === 'resources') loadResourcesAdmin();
+        if (tabName === 'feed') loadFeedAdmin();
+        if (tabName === 'waitlist') loadWaitlist();
+        if (tabName === 'users') { loadUserSearch(); loadDeletionLog(); }
+        if (tabName === 'succession') loadSuccessionAdmin();
+        if (tabName === 'trials') loadTrialStats();
+        if (tabName === 'launch-waitlist') loadLaunchWaitlist();
+        if (tabName === 'phase-zero') loadPhaseZero();
+        if (tabName === 'gamification') loadGamificationPreview();
+      } catch (err) {
+        console.error('Admin tab load failed:', tabName, err);
+        toast('This tab could not finish loading.', true);
+      }
     }
 
     // ═══════════════════════════════════════
@@ -2685,27 +2848,57 @@
     // ═══════════════════════════════════════
     // ORGANIZATION
     // ═══════════════════════════════════════
+    function showTreeMessage(title, detail, isError) {
+      allUsers = Array.isArray(allUsers) ? allUsers : [];
+      const container = document.getElementById('tree-view');
+      if (!container) return;
+      const retry = '<div style="margin-top:12px;"><button class="btn btn-secondary btn-sm" type="button" onclick="loadTree()">Try again</button></div>';
+      container.innerHTML = '<div class="empty-state"><div class="icon">' + (isError ? '⚠️' : '🌳') + '</div><p>' +
+        escHtml(title || 'No organization data.') + '</p>' +
+        (detail ? '<p style="color:#71717a;font-size:13px;margin-top:6px;">' + escHtml(detail) + '</p>' : '') +
+        retry + '</div>';
+    }
+
     async function loadTree() {
+      const container = document.getElementById('tree-view');
+      if (container) container.innerHTML = '<div class="loading-center"><div class="loader"></div></div>';
       try {
         const [treeRes] = await Promise.all([
-          fetch('/api/admin/affiliate-tree'),
+          fetchWithTimeout('/api/admin/affiliate-tree', { credentials: 'same-origin' }, ADMIN_FETCH_MS),
           loadSeedStatus()
         ]);
-        if (!treeRes.ok) throw new Error('Failed to load');
-        const data = await treeRes.json();
-        allUsers = data.users;
+        const data = await treeRes.json().catch(function () { return {}; });
+        if (!treeRes.ok || data.success === false) {
+          allUsers = [];
+          showTreeMessage(
+            'Could not load the Future Generations tree.',
+            data.error || ('Request failed (' + treeRes.status + ').'),
+            true
+          );
+          renderTreeStats();
+          return;
+        }
+        allUsers = Array.isArray(data.users) ? data.users : [];
         renderTree();
         renderTreeStats();
         populateSelects();
       } catch (err) {
         console.error(err);
+        const timedOut = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
+        allUsers = [];
+        showTreeMessage(
+          timedOut ? 'The organization tree timed out.' : 'Could not load the Future Generations tree.',
+          timedOut ? 'The query took too long. Open this tab again or try refresh.' : (err.message || 'Unknown error'),
+          true
+        );
+        renderTreeStats();
         toast('Failed to load organization', true);
       }
     }
 
     async function loadSeedStatus() {
       try {
-        const res = await fetch('/api/admin/affiliate-seed-status');
+        const res = await fetchWithTimeout('/api/admin/affiliate-seed-status', { credentials: 'same-origin' }, ADMIN_FETCH_MS);
         if (!res.ok) return;
         const data = await res.json();
         if (!data.success) return;
@@ -2736,7 +2929,8 @@
         const levelColors = ['#f59e0b','#8b5cf6','#10b981','#3b82f6','#ec4899'];
         const byLevelEl = document.getElementById('seed-level-breakdown');
         const grouped = {};
-        level_breakdown.forEach(r => {
+        (level_breakdown || []).forEach(r => {
+          if (!r) return;
           if (!grouped[r.level]) grouped[r.level] = 0;
           grouped[r.level] += r.count;
         });
@@ -2751,13 +2945,16 @@
     }
 
     function renderTreeStats() {
+      if (!Array.isArray(allUsers)) allUsers = [];
+      const statsEl = document.getElementById('tree-stats');
+      if (!statsEl) return;
       const total = allUsers.length;
       const affiliates = allUsers.filter(u => u.affiliate_id).length;
       const withReferrer = allUsers.filter(u => u.referred_by_user_id).length;
       const testUsers = allUsers.filter(u => u.is_test_user).length;
       const totalEarnings = allUsers.reduce((s, u) => s + (u.lifetime_earnings_cents || 0), 0);
 
-      document.getElementById('tree-stats').innerHTML = `
+      statsEl.innerHTML = `
         <div class="stat-card">
           <div class="label">Total Users</div>
           <div class="value">${total}</div>
@@ -2783,13 +2980,19 @@
 
     function renderTree() {
       const container = document.getElementById('tree-view');
+      if (!container) return;
+      if (!Array.isArray(allUsers)) allUsers = [];
 
       // Build tree structure
       const userMap = {};
-      allUsers.forEach(u => userMap[u.id] = { ...u, children: [] });
+      allUsers.forEach(u => {
+        if (!u || u.id == null) return;
+        userMap[u.id] = { ...u, children: [] };
+      });
 
       const roots = [];
       allUsers.forEach(u => {
+        if (!u || u.id == null || !userMap[u.id]) return;
         if (u.referred_by_user_id && userMap[u.referred_by_user_id]) {
           userMap[u.referred_by_user_id].children.push(userMap[u.id]);
         } else {
@@ -2806,6 +3009,7 @@
     }
 
     function renderNode(node, isRoot = false) {
+      if (!node) return '';
       const hasChildren = node.children && node.children.length > 0;
       const isSelected = node.id === selectedUserId;
       const isTest = node.is_test_user;
@@ -2831,7 +3035,8 @@
       if (node.lifetime_earnings_cents > 0) badges += `<span class="badge badge-green">$${(node.lifetime_earnings_cents / 100).toFixed(2)}</span>`;
 
       const avatarClass = isTest ? 'test' : (node.affiliate_id ? '' : 'no-affiliate');
-      const initial = (node.name || node.email)[0].toUpperCase();
+      const label = node.name || (node.email ? String(node.email).split('@')[0] : 'User');
+      const initial = (label[0] || '?').toUpperCase();
 
       const childrenHtml = hasChildren
         ? `<div class="children" id="children-${node.id}">${node.children.map(c => renderNode(c)).join('')}</div>`
@@ -2846,8 +3051,8 @@
           <div class="node-card ${isSelected ? 'selected' : ''} ${isTest ? 'test-user' : ''}" onclick="selectUser(${node.id})" id="node-${node.id}">
             <div class="avatar ${avatarClass}">${initial}</div>
             <div class="info">
-              <div class="name">${escHtml(node.name || node.email.split('@')[0])}</div>
-              <div class="email">${escHtml(node.email)}</div>
+              <div class="name">${escHtml(label)}</div>
+              <div class="email">${escHtml(node.email || '')}</div>
               <div class="badges">${badges}</div>
             </div>
             ${toggleBtn}
@@ -5008,17 +5213,6 @@
     // ═══════════════════════════════════════
     // AGGREGATE DASHBOARD
     // ═══════════════════════════════════════
-    const ADMIN_FETCH_MS = 15000;
-
-    function fetchWithTimeout(url, options, ms) {
-      const timeoutMs = ms || ADMIN_FETCH_MS;
-      const controller = new AbortController();
-      const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
-      const opts = Object.assign({ credentials: 'same-origin' }, options || {});
-      opts.signal = controller.signal;
-      return fetch(url, opts).finally(function () { clearTimeout(timer); });
-    }
-
     let aggLoadToken = 0;
 
     function setAggStat(id, value) {
@@ -5332,16 +5526,7 @@
       }
     }
 
-    // Load panels when tab is clicked
-    const origTabClick = document.querySelectorAll('.tab');
-    origTabClick.forEach(tab => {
-      tab.addEventListener('click', function() {
-        const tabId = this.dataset.tab;
-        if (tabId === 'agg-dashboard') loadAggDashboard();
-        if (tabId === 'support-tickets') loadTickets();
-        if (tabId === 'vault-cycles') loadVaultCycles();
-      });
-    });
+    // Tab clicks are handled by switchTab (bound in openAdminWorkspace).
 
     // ═══════════════════════════════════════
     // VAULT CYCLES
@@ -5426,7 +5611,11 @@
     // ═══════════════════════════════════════
     // INIT
     // ═══════════════════════════════════════
-    init();
+    init().catch(function (err) {
+      console.error('Admin init failed:', err);
+      hidePageLoader();
+      showAdminStay('The admin page could not finish loading. Refresh this page. You are not being sent back to login.');
+    });
   </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>

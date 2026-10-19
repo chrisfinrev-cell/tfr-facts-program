@@ -443,7 +443,7 @@
                 </button>
                 <div id="invite-code-fields" style="display:block;margin-top:10px;">
                     <label for="invite-code" style="font-size:0.78rem;">Beta invite code</label>
-                    <input type="text" class="form-input" id="invite-code" name="invite-code" placeholder="Enter your beta code" autocomplete="off" style="margin-top:6px;">
+                    <input type="text" class="form-input" id="invite-code" name="invite-code" placeholder="FIN-REV-XXXX-XXXX" autocomplete="off" style="margin-top:6px;">
                     <div style="margin-top: 6px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
                         A beta code is required while we are in testing. Without one, you can join the launch list.
                     </div>
@@ -746,6 +746,7 @@
             }
             if (inviteCode) {
                 payload.invite_code = inviteCode;
+                payload.inviteCode = inviteCode;
             }
             if (refCode) {
                 payload.ref_code = refCode;

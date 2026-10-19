@@ -11,6 +11,7 @@
     "schema:export": "node db/export-schema.js",
     "test:engine": "node scripts/test-engine.js",
     "test:reserve-protocol": "node scripts/test-reserve-velocity-protocol.js",
+    "test:invite-codes": "node scripts/test-invite-codes.js",
     "web:dev": "npm --prefix web run dev",
     "invite:generate": "node scripts/generate-invite-codes.js",
     "affiliate-jobs": "node jobs/affiliate-jobs.js"

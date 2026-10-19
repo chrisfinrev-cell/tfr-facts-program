@@ -3,7 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { pool } = require('../db/pool');
-const { parseRecipientMetadata } = require('../lib/inviteCodes');
+const { parseRecipientMetadata, findInviteCode, redeemInviteCode, INVALID_INVITE_ERROR } = require('../lib/inviteCodes');
 const {
   DISCLOSURE_BANNER,
   FORCE_EXCLUDED_EMAILS,
@@ -112,8 +112,19 @@ router.post('/api/auth/register-beta', async (req, res) => {
     let inviteMetadata = {};
     let inviterRelationshipTag = 'STANDARD';
 
+    // A0) Shared admin invite_codes (FIN-REV list)
+    const sharedInvite = await findInviteCode(db, normalizedCode);
+    if (sharedInvite) {
+      if (sharedInvite.status !== 'ACTIVE') {
+        return res.status(400).json({ error: INVALID_INVITE_ERROR });
+      }
+    }
+
     // A) Targeted beta_invites (recipient-mapped codes)
     try {
+      if (sharedInvite) {
+        affiliateCode = sharedInvite.code;
+      } else {
       const inviteRes = await db.query(
         `SELECT *
          FROM beta_invites
@@ -152,6 +163,7 @@ router.post('/api/auth/register-beta', async (req, res) => {
           }
         }
       }
+      }
     } catch (inviteLookupErr) {
       console.warn('beta_invites lookup skipped:', inviteLookupErr.message);
     }
@@ -161,7 +173,7 @@ router.post('/api/auth/register-beta', async (req, res) => {
     }
 
     // B) Master beta_codes
-    if (!claimedInvite) {
+    if (!sharedInvite && !claimedInvite) {
       const masterCodeRes = await db.query(
         'SELECT * FROM beta_codes WHERE UPPER(code) = $1 AND uses_count < max_uses',
         [normalizedCode]
@@ -183,7 +195,7 @@ router.post('/api/auth/register-beta', async (req, res) => {
         );
 
         if (userCodeRes.rows.length === 0) {
-          return res.status(400).json({ error: 'Invalid or expired invite code.' });
+          return res.status(400).json({ error: INVALID_INVITE_ERROR });
         }
 
         if (!isAffiliateEligible(userCodeRes.rows[0])) {
@@ -260,6 +272,13 @@ router.post('/api/auth/register-beta', async (req, res) => {
     }
 
     const newUser = newUserRes.rows[0];
+
+    if (sharedInvite) {
+      const redeemed = await redeemInviteCode(db, sharedInvite.code, newUser.id);
+      if (!redeemed) {
+        return res.status(400).json({ error: INVALID_INVITE_ERROR });
+      }
+    }
 
     if (claimedInvite) {
       await db.query(

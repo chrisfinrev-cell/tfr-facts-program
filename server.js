@@ -1188,7 +1188,8 @@ app.post('/api/auth/signup', async (req, res) => {
     return res.status(503).json({ error: 'Service temporarily unavailable. Please try again in a moment.' });
   }
   try {
-    const { email, password, name, user_id, invite_code, ref_code, disclaimer_accepted } = req.body;
+    const { email, password, name, user_id, ref_code, disclaimer_accepted } = req.body;
+    const invite_code = (req.body && (req.body.invite_code || req.body.inviteCode)) || '';
 
     if (!email || !email.includes('@')) {
       return res.status(400).json({ error: 'Valid email required' });
@@ -1238,34 +1239,49 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     // ─── INVITE CODE: Optional — validate only if provided ───────────────
-    // Promo codes, admin master beta codes, and targeted beta invites are all valid.
+    // Shared admin invite_codes first, then promo / targeted / member referral.
+    let pendingInviteCode = null;
     let pendingBeta = null;
     if (suppliedInvite) {
-      const promoCheck = await pool.query(
-        'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
-        [suppliedInvite]
-      );
+      const {
+        findInviteCode,
+        findActiveBetaInvite,
+        findMemberReferralInvite,
+        INVALID_INVITE_ERROR
+      } = require('./lib/inviteCodes');
 
-      if (promoCheck.rows.length === 0) {
-        const { findActiveBetaInvite, findMemberReferralInvite } = require('./lib/inviteCodes');
-        pendingBeta = await findActiveBetaInvite(pool, suppliedInvite);
-        if (!pendingBeta) {
-          const referral = await findMemberReferralInvite(pool, suppliedInvite);
-          if (referral && referral.remaining <= 0) {
-            return res.status(400).json({
-              error: `This referral code has already brought in ${referral.limit} people this month. Ask them again next month, or ask for a beta code.`
-            });
-          }
-          if (referral) {
-            pendingBeta = { kind: 'referral', row: referral.user };
-            effectiveRefCode = referral.user.referral_code;
-          }
+      const sharedInvite = await findInviteCode(pool, suppliedInvite);
+      if (sharedInvite) {
+        if (sharedInvite.status !== 'ACTIVE') {
+          return res.status(400).json({ error: INVALID_INVITE_ERROR });
         }
-        if (!pendingBeta) {
-          return res.status(400).json({ error: 'Invalid invite code. Please check the code and try again.' });
+        pendingInviteCode = sharedInvite;
+      } else {
+        const promoCheck = await pool.query(
+          'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
+          [suppliedInvite]
+        );
+
+        if (promoCheck.rows.length === 0) {
+          pendingBeta = await findActiveBetaInvite(pool, suppliedInvite);
+          if (!pendingBeta) {
+            const referral = await findMemberReferralInvite(pool, suppliedInvite);
+            if (referral && referral.remaining <= 0) {
+              return res.status(400).json({
+                error: `This referral code has already brought in ${referral.limit} people this month. Ask them again next month, or ask for a beta code.`
+              });
+            }
+            if (referral) {
+              pendingBeta = { kind: 'referral', row: referral.user };
+              effectiveRefCode = referral.user.referral_code;
+            }
+          }
+          if (!pendingBeta) {
+            return res.status(400).json({ error: INVALID_INVITE_ERROR });
+          }
+        } else if (promoCheck.rows[0].status !== 'active') {
+          return res.status(400).json({ error: INVALID_INVITE_ERROR });
         }
-      } else if (promoCheck.rows[0].status !== 'active') {
-        return res.status(400).json({ error: 'This invite code has already been used.' });
       }
     }
     // No code: allowed only when BETA_INVITE_ONLY=false, or for creator/admin emails.
@@ -1310,8 +1326,31 @@ app.post('/api/auth/signup', async (req, res) => {
 
       // ─── Redeem invite code if provided ───────────────────────────────
       if (suppliedInvite) {
+        if (pendingInviteCode) {
+          const { redeemInviteCode, INVALID_INVITE_ERROR } = require('./lib/inviteCodes');
+          const redeemed = await redeemInviteCode(client, suppliedInvite, userId);
+          if (!redeemed) {
+            const used = new Error(INVALID_INVITE_ERROR);
+            used.status = 400;
+            throw used;
+          }
+          await client.query('SAVEPOINT beta_claim_user');
+          try {
+            await client.query(
+              `UPDATE users SET is_beta_tester = TRUE, updated_at = NOW() WHERE id = $1`,
+              [userId]
+            );
+            await client.query('RELEASE SAVEPOINT beta_claim_user');
+          } catch (betaFlagErr) {
+            await client.query('ROLLBACK TO SAVEPOINT beta_claim_user');
+            console.warn('[Signup] is_beta_tester update skipped:', betaFlagErr.message);
+          }
+        }
+
         // Re-validate code in transaction (double-check it's still active)
-        const promoResult = await client.query(
+        const promoResult = pendingInviteCode
+          ? { rows: [] }
+          : await client.query(
           'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
           [suppliedInvite]
         );
