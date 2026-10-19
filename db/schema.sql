@@ -335,7 +335,10 @@ CREATE TABLE IF NOT EXISTS mod_income.paycheck_entries (
   net_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
   employer_match NUMERIC(12,2) NOT NULL DEFAULT 0,
   employer_match_target VARCHAR(16) DEFAULT 'GROWTH',
-  liquid_take_home NUMERIC(12,2),
+  total_economic_compensation NUMERIC(12,2) NOT NULL DEFAULT 0,
+  deductions JSONB NOT NULL DEFAULT '[]'::jsonb,
+  liquid_take_home NUMERIC(12,2) NOT NULL DEFAULT 0,
+  net_liquid_take_home NUMERIC(12,2) NOT NULL DEFAULT 0,
   bucket_allocations JSONB,
   result JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

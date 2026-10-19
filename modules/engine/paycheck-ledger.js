@@ -1,5 +1,9 @@
 'use strict';
 
+const BUCKETS = Object.freeze([
+  'NECESSITIES', 'VELOCITY', 'RESERVE', 'LIFESTYLE', 'GROWTH', 'LEGACY'
+]);
+
 function sessionUserId(req) {
   if (!req) return null;
   const session = req.session || {};
@@ -49,11 +53,143 @@ function deductionLinkPlan(entryIdType, columns) {
   return fallback ? [fallback.name] : [];
 }
 
+function finiteNumber(value) {
+  if (typeof value === 'string') {
+    value = value.trim().replace(/[$,]/g, '');
+  }
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Number(n.toFixed(2));
+}
+
+function finiteDeductions(deductions) {
+  const items = Array.isArray(deductions) ? deductions : [];
+  const out = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i] || {};
+    const label = item.label == null ? '' : String(item.label).trim();
+    const target = item.target_bucket == null ? '' : String(item.target_bucket).trim().toUpperCase();
+    const amount = finiteNumber(item.amount);
+    if (!label && amount === 0) continue;
+    out.push({ label: label, amount: amount, target_bucket: target });
+  }
+  return out;
+}
+
+function finiteBuckets(allocations) {
+  const source = allocations && typeof allocations === 'object' ? allocations : {};
+  const out = {};
+  for (let i = 0; i < BUCKETS.length; i++) {
+    const bucket = BUCKETS[i];
+    const raw = source[bucket] !== undefined ? source[bucket] : source[bucket.toLowerCase()];
+    out[bucket] = finiteNumber(raw);
+  }
+  return out;
+}
+
+function paycheckEntryColumnDdls() {
+  return [
+    'source_name VARCHAR(255)',
+    'entry_date DATE DEFAULT CURRENT_DATE',
+    "calculation_mode VARCHAR(8) DEFAULT 'GROSS'",
+    'gross_amount NUMERIC(12, 2) DEFAULT 0.00',
+    'net_amount NUMERIC(12, 2) DEFAULT 0.00',
+    'employer_match NUMERIC(12, 2) DEFAULT 0.00',
+    "employer_match_target VARCHAR(16) DEFAULT 'GROWTH'",
+    'total_economic_compensation NUMERIC(12, 2) DEFAULT 0.00',
+    "deductions JSONB DEFAULT '[]'::jsonb",
+    'liquid_take_home NUMERIC(12, 2) DEFAULT 0.00',
+    'net_liquid_take_home NUMERIC(12, 2) DEFAULT 0.00',
+    'bucket_allocations JSONB',
+    'created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP'
+  ];
+}
+
+function paycheckAlterStatements() {
+  return paycheckEntryColumnDdls().map(function (ddl) {
+    return 'ALTER TABLE mod_income.paycheck_entries ADD COLUMN IF NOT EXISTS ' + ddl;
+  });
+}
+
+function liquidAmount(summary, body) {
+  if (summary && summary.net_liquid_take_home != null) return finiteNumber(summary.net_liquid_take_home);
+  if (summary && summary.liquid_take_home != null) return finiteNumber(summary.liquid_take_home);
+  if (body && body.net_liquid_take_home != null) return finiteNumber(body.net_liquid_take_home);
+  if (body && body.liquid_take_home != null) return finiteNumber(body.liquid_take_home);
+  return 0;
+}
+
+function economicAmount(summary, body) {
+  if (summary && summary.total_economic_compensation != null) {
+    return finiteNumber(summary.total_economic_compensation);
+  }
+  if (body && body.total_economic_compensation != null) return finiteNumber(body.total_economic_compensation);
+  return 0;
+}
+
+function paycheckSaveErrorMessage(error) {
+  const raw = error && typeof error.message === 'string' ? error.message : '';
+  return raw.trim() ? raw : 'Could not save this paycheck. Try again.';
+}
+
+function requireInsertUserId(userId) {
+  const id = Number(userId);
+  if (!Number.isInteger(id) || id <= 0) {
+    const error = new Error('Authentication required to save paycheck entries');
+    error.status = 401;
+    throw error;
+  }
+  return id;
+}
+
+function buildPaycheckInsert(userId, body, result) {
+  const sessionId = requireInsertUserId(userId);
+  const source = body || {};
+  const summary = (result && result.summary) || {};
+  const matchTarget = BUCKETS.indexOf(source.employer_match_target) !== -1
+    ? source.employer_match_target
+    : 'GROWTH';
+  const mode = String(source.calculation_mode || 'GROSS').toUpperCase() === 'NET' ? 'NET' : 'GROSS';
+  const deductions = finiteDeductions(source.deductions);
+  const buckets = finiteBuckets(result && result.bucket_allocations);
+  const liquid = liquidAmount(summary, source);
+  const economic = economicAmount(summary, source);
+  const values = [
+    sessionId,
+    source.source_name || 'Paycheck',
+    source.entry_date || new Date(),
+    mode,
+    finiteNumber(source.gross_amount),
+    finiteNumber(source.net_amount),
+    finiteNumber(source.employer_match),
+    matchTarget,
+    economic,
+    JSON.stringify(deductions),
+    liquid,
+    liquid,
+    JSON.stringify(buckets)
+  ];
+  const text = `INSERT INTO mod_income.paycheck_entries (
+       user_id, source_name, entry_date, calculation_mode,
+       gross_amount, net_amount, employer_match, employer_match_target,
+       total_economic_compensation, deductions,
+       liquid_take_home, net_liquid_take_home, bucket_allocations
+     ) VALUES (
+       $1,$2,$3,$4,
+       $5::numeric,$6::numeric,$7::numeric,$8,
+       $9::numeric,$10::jsonb,
+       $11::numeric,$12::numeric,$13::jsonb
+     )
+     RETURNING id`;
+  return { text: text, values: values, deductions: deductions, buckets: buckets, liquid: liquid, economic: economic };
+}
+
 async function columnInfo(client, table) {
   const result = await client.query(
     `SELECT column_name, udt_name, is_nullable
        FROM information_schema.columns
-      WHERE table_schema = 'mod_income' AND table_name = $1`,
+      WHERE table_schema = 'mod_income' AND table_name = $1
+      ORDER BY ordinal_position`,
     [table]
   );
   return result.rows.map(function (row) {
@@ -78,26 +214,18 @@ async function ensurePaycheckLedger(client) {
       net_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
       employer_match NUMERIC(12, 2) DEFAULT 0.00,
       employer_match_target VARCHAR(16) DEFAULT 'GROWTH',
-      liquid_take_home NUMERIC(12, 2),
+      total_economic_compensation NUMERIC(12, 2) DEFAULT 0.00,
+      deductions JSONB DEFAULT '[]'::jsonb,
+      liquid_take_home NUMERIC(12, 2) DEFAULT 0.00,
+      net_liquid_take_home NUMERIC(12, 2) DEFAULT 0.00,
       bucket_allocations JSONB,
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  const entryColumns = [
-    'source_name VARCHAR(255)',
-    'entry_date DATE DEFAULT CURRENT_DATE',
-    'calculation_mode VARCHAR(8) DEFAULT \'GROSS\'',
-    'gross_amount NUMERIC(12, 2) DEFAULT 0.00',
-    'net_amount NUMERIC(12, 2) DEFAULT 0.00',
-    'employer_match NUMERIC(12, 2) DEFAULT 0.00',
-    'employer_match_target VARCHAR(16) DEFAULT \'GROWTH\'',
-    'liquid_take_home NUMERIC(12, 2)',
-    'bucket_allocations JSONB',
-    'created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP'
-  ];
-  for (let i = 0; i < entryColumns.length; i++) {
+  const entryDdls = paycheckEntryColumnDdls();
+  for (let i = 0; i < entryDdls.length; i++) {
     await client.query(
-      'ALTER TABLE mod_income.paycheck_entries ADD COLUMN IF NOT EXISTS ' + entryColumns[i]
+      'ALTER TABLE mod_income.paycheck_entries ADD COLUMN IF NOT EXISTS ' + entryDdls[i]
     );
   }
 
@@ -134,40 +262,13 @@ async function ensurePaycheckLedger(client) {
 }
 
 async function insertPaycheckEntry(client, userId, body, result) {
-  const summary = (result && result.summary) || {};
-  const liquid = summary.net_liquid_take_home != null
-    ? summary.net_liquid_take_home
-    : summary.liquid_take_home;
-  const matchTarget = ['NECESSITIES', 'RESERVE', 'VELOCITY', 'GROWTH', 'LIFESTYLE', 'LEGACY']
-    .indexOf(body.employer_match_target) !== -1
-    ? body.employer_match_target
-    : 'GROWTH';
-  const mode = String(body.calculation_mode || 'GROSS').toUpperCase() === 'NET' ? 'NET' : 'GROSS';
-  const inserted = await client.query(
-    `INSERT INTO mod_income.paycheck_entries (
-       user_id, source_name, entry_date, calculation_mode,
-       gross_amount, net_amount, employer_match, employer_match_target,
-       liquid_take_home, bucket_allocations
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-     RETURNING id`,
-    [
-      userId,
-      body.source_name || 'Paycheck',
-      body.entry_date || new Date(),
-      mode,
-      Number(body.gross_amount) || 0,
-      Number(body.net_amount) || 0,
-      Number(body.employer_match) || 0,
-      matchTarget,
-      liquid != null ? liquid : null,
-      JSON.stringify((result && result.bucket_allocations) || {})
-    ]
-  );
+  const built = buildPaycheckInsert(userId, body, result);
+  const inserted = await client.query(built.text, built.values);
   return inserted.rows[0].id;
 }
 
 async function insertDeductions(client, entryId, deductions, ledger) {
-  const items = Array.isArray(deductions) ? deductions : [];
+  const items = finiteDeductions(deductions);
   const info = ledger || await ensurePaycheckLedger(client);
   const links = deductionLinkPlan(info.entryIdType, info.deductions);
   const allowed = ['NECESSITIES', 'RESERVE', 'VELOCITY', 'GROWTH', 'LIFESTYLE', 'LEGACY'];
@@ -177,10 +278,13 @@ async function insertDeductions(client, entryId, deductions, ledger) {
     const columns = links.concat(['label', 'amount', 'target_bucket']);
     const values = links.map(function () { return entryId; }).concat([
       String(item.label),
-      Number(item.amount) || 0,
+      item.amount,
       item.target_bucket
     ]);
-    const placeholders = values.map(function (_, index) { return '$' + (index + 1); });
+    const placeholders = values.map(function (_, index) {
+      const cast = index === links.length + 1 ? '::numeric' : '';
+      return '$' + (index + 1) + cast;
+    });
     await client.query(
       'INSERT INTO mod_income.income_deductions (' + columns.join(', ') + ') VALUES (' + placeholders.join(',') + ')',
       values
@@ -189,8 +293,17 @@ async function insertDeductions(client, entryId, deductions, ledger) {
 }
 
 module.exports = {
+  BUCKETS,
   sessionUserId,
+  paycheckSaveErrorMessage,
+  requireInsertUserId,
   deductionLinkPlan,
+  finiteNumber,
+  finiteDeductions,
+  finiteBuckets,
+  paycheckEntryColumnDdls,
+  paycheckAlterStatements,
+  buildPaycheckInsert,
   ensurePaycheckLedger,
   insertPaycheckEntry,
   insertDeductions

@@ -372,10 +372,9 @@
           window.location.href = '/login.html?next=/paycheck-entry.html';
           return;
         }
-        if (!out.res.ok) {
-          const message = out.data.error && out.data.error !== 'Server error'
-            ? out.data.error
-            : (out.data.message || 'Could not save this paycheck. Try again.');
+        if (!out.res.ok || (out.data && out.data.success === false)) {
+          const data = out.data || {};
+          const message = data.error || data.message || 'Could not save this paycheck. Try again.';
           setStatus(message, 'error');
           return;
         }

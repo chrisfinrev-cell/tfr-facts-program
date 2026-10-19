@@ -23,7 +23,13 @@ const { withManualExecutionNotice } = require('../shared/edu-compliance');
 const { requireAuth } = require('../../routes/auth');
 const { processIncomeAllocationSweep } = require('./transactionalEngine');
 const { lockReserveProtocol, persistReserveProtocol, optionsForUser } = require('./reserve-protocol-store');
-const { sessionUserId, ensurePaycheckLedger, insertPaycheckEntry, insertDeductions } = require('./paycheck-ledger');
+const {
+  sessionUserId,
+  ensurePaycheckLedger,
+  insertPaycheckEntry,
+  insertDeductions,
+  paycheckSaveErrorMessage
+} = require('./paycheck-ledger');
 
 const router = express.Router();
 
@@ -31,20 +37,23 @@ router.get('/health', asyncRoute(async (req, res) => {
   res.json({ status: 'ok', module: 'engine', version: '1.0.0' });
 }));
 
-router.post('/process', asyncRoute(async (req, res) => {
+async function savePaycheckLedger(req, res) {
   const body = req.body || {};
   const splits = body.custom_splits || body.customSplits || DEFAULT_BUCKET_TARGETS;
   const userId = sessionUserId(req);
   if (body.save === true && !userId) {
-    return res.status(401).json({ error: 'Authentication required to save paycheck entries' });
+    res.status(401).json({ success: false, error: 'Authentication required to save paycheck entries' });
+    return;
   }
 
   if (!(userId && body.save === true)) {
-    return res.json(processIncomeTransaction(body, splits));
+    res.json(processIncomeTransaction(body, splits));
+    return;
   }
 
-  const client = await pool.connect();
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
     const stored = await lockReserveProtocol(client, userId);
     const merged = optionsForUser(stored, body);
@@ -66,30 +75,53 @@ router.post('/process', asyncRoute(async (req, res) => {
     await client.query('COMMIT');
     result.saved_id = entryId;
     result.user_id = userId;
+    result.success = true;
     res.json(result);
-  } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (rollbackErr) { /* already closed */ }
-    console.error('[paycheck] save failed:', err.message);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Could not save this paycheck. Try again.' });
+  } catch (error) {
+    console.error("Save paycheck failed:", error);
+    console.error("Ledger save error:", error);
+    if (client) {
+      try { await client.query('ROLLBACK'); } catch (rollbackErr) { /* already closed */ }
     }
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: paycheckSaveErrorMessage(error) });
+    }
+  } finally {
+    if (client) {
+      try { client.release(); } catch (releaseErr) {
+        console.error("Save paycheck failed:", releaseErr);
+      }
+    }
+  }
+}
+
+router.post('/process', (req, res) => {
+  Promise.resolve(savePaycheckLedger(req, res)).catch((error) => {
+    console.error("Save paycheck failed:", error);
+    if (res.headersSent) return;
+    res.status(500).json({ success: false, error: paycheckSaveErrorMessage(error) });
+  });
+});
+
+router.get('/transactions', requireAuth, asyncRoute(async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await ensurePaycheckLedger(client);
+    const { rows } = await client.query(
+      `SELECT id, source_name, entry_date, calculation_mode,
+              gross_amount, net_amount, employer_match, employer_match_target,
+              total_economic_compensation, deductions,
+              liquid_take_home, net_liquid_take_home, bucket_allocations, created_at
+         FROM mod_income.paycheck_entries
+        WHERE user_id = $1
+        ORDER BY entry_date DESC, created_at DESC
+        LIMIT 50`,
+      [req.userId]
+    );
+    res.json(withManualExecutionNotice({ entries: rows }));
   } finally {
     client.release();
   }
-}));
-
-router.get('/transactions', requireAuth, asyncRoute(async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT id, source_name, entry_date, calculation_mode,
-            gross_amount, net_amount, employer_match, employer_match_target,
-            liquid_take_home, bucket_allocations, created_at
-       FROM mod_income.paycheck_entries
-      WHERE user_id = $1
-      ORDER BY entry_date DESC, created_at DESC
-      LIMIT 50`,
-    [req.userId]
-  );
-  res.json(withManualExecutionNotice({ entries: rows }));
 }));
 
 router.post('/execute-sweep', requireAuth, asyncRoute(async (req, res) => {
