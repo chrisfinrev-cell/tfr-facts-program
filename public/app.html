@@ -7169,17 +7169,16 @@
     }
 
     async function handleLogout() {
+        if (typeof factsLogout === 'function') {
+            await factsLogout('/login');
+            return;
+        }
+        try { localStorage.clear(); } catch (e) { /* ignore */ }
+        try { sessionStorage.clear(); } catch (e) { /* ignore */ }
         try {
-            await fetch('/api/auth/logout', { method: 'POST' });
-        } catch (err) { /* ignore */ }
-        // Clear privacy/presentation mode on logout (resets per-session)
-        try { sessionStorage.removeItem('facts-privacy-mode'); } catch (e) { /* ignore */ }
-        document.body.classList.remove('privacy-mode');
-        _applyPrivacyModeUI(false);
-        currentUser = null;
-        window.currentUser = null;
-        showLanding();
-        updateNavForUser();
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+        } catch (err) { /* still leave the page */ }
+        window.location.replace('/login');
     }
 
     // ─── Sandbox / Training Mode ─────────────────────────────────────────────
@@ -18080,9 +18079,12 @@
         if (warningTimer) clearTimeout(warningTimer);
         if (countdownInterval) clearInterval(countdownInterval);
 
-        // Clean up localStorage
-        try { localStorage.removeItem('_facts_last_activity'); } catch(e) {}
-
+        if (typeof factsLogout === 'function') {
+            await factsLogout('/login?reason=timeout');
+            return;
+        }
+        try { localStorage.clear(); } catch (e) { /* ignore */ }
+        try { sessionStorage.clear(); } catch (e) { /* ignore */ }
         try {
             await fetch('/api/auth/logout', {
                 method: 'POST',
@@ -18091,9 +18093,7 @@
         } catch (err) {
             console.error('Logout request failed:', err);
         }
-
-        // Redirect to login page
-        window.location.href = '/login.html?reason=timeout';
+        window.location.replace('/login?reason=timeout');
     }
 
     function logoutNow() {
@@ -24908,6 +24908,7 @@ document.addEventListener('click', function(e) {
 <script src="/analytics-tracker.js" defer></script>
 <!-- FACTS AI Coach — floating chat widget (tier-gated) -->
 <script src="/js/ai-coach.js" defer></script>
+<script src="/js/facts-logout.js"></script>
 <script src="/js/global-footer.js"></script>
 </body>
 </html>

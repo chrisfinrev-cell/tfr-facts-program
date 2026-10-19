@@ -259,6 +259,12 @@ if (pool) {
 }
 app.use(session(sessionOpts));
 
+const { isPrivateRequest, applyPrivateCache } = require('./lib/privateCache');
+app.use(function privateCacheHeaders(req, res, next) {
+  if (isPrivateRequest(req.path)) applyPrivateCache(res);
+  next();
+});
+
 const { createAuthRouter } = require('./routes/auth');
 app.use('/api/auth', createAuthRouter());
 app.set('db', pool);
@@ -331,7 +337,10 @@ app.get('/admin', async (req, res) => {
   const locked = !(typeof until === 'number' && until > Date.now());
   const adminSession = JSON.stringify({ isAdmin: true, email: email || '' }).replace(/</g, '\\u003c');
   html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};window.__ADMIN_SESSION=${adminSession};</script></head>`);
-  res.setHeader('Cache-Control', 'no-store');
+  applyPrivateCache(res);
+  if (!html.includes('facts-logout.js')) {
+    html = html.replace(/<\/body>/i, '\n<script src="/js/facts-logout.js"></script>\n</body>');
+  }
   res.type('html').send(html);
 });
 
@@ -494,7 +503,14 @@ app.use(function tfrEducationHost(req, res, next) {
         html = html.replace(/<\/body>/i, REPORT_INJECT + '\n</body>');
       }
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-cache');
+      if (isPrivateRequest(p)) {
+        applyPrivateCache(res);
+        if (!html.includes('facts-logout.js')) {
+          html = html.replace(/<\/body>/i, '\n<script src="/js/facts-logout.js"></script>\n</body>');
+        }
+      } else {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
       res.send(html);
     } catch (e) {
       next(); // fall through to static serving on error
@@ -1962,14 +1978,23 @@ app.post('/api/auth/login', async (req, res) => {
 
 // POST /api/auth/logout
 app.post('/api/auth/logout', (req, res) => {
-  req.session.destroy(err => {
+  applyPrivateCache(res);
+  const cookieOpts = {
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  };
+  function finish(err) {
+    res.clearCookie('connect.sid', cookieOpts);
     if (err) {
-      console.error('Logout error:', err.message);
-      return res.status(500).json({ error: 'Logout failed' });
+      console.error('Logout error:', err.message || err);
+      return res.status(500).json({ success: false, error: 'Logout failed' });
     }
-    res.clearCookie('connect.sid');
     res.json({ success: true });
-  });
+  }
+  if (!req.session) return finish();
+  req.session.destroy(finish);
 });
 
 // POST /api/auth/sandbox-login — Switch into sandbox training account
@@ -17272,6 +17297,10 @@ app.get('/app', requireAuth, enforceNda, async (req, res) => {
     if (html.includes('</body>') && !html.includes('report-issue.js')) {
       html = html.replace(/<\/body>/i, '\n<script src="/report-issue.js" defer></script>\n</body>');
     }
+    if (html.includes('</body>') && !html.includes('facts-logout.js')) {
+      html = html.replace(/<\/body>/i, '\n<script src="/js/facts-logout.js"></script>\n</body>');
+    }
+    applyPrivateCache(res);
 
     res.type('html').send(html);
   } else {

@@ -293,7 +293,14 @@
   }
 
   function logout() {
-    fetch('/api/auth/logout', { method: 'POST' }).finally(() => { window.location.href = '/login.html'; });
+    if (typeof factsLogout === 'function') {
+      factsLogout('/login');
+      return;
+    }
+    try { localStorage.clear(); } catch (e) { /* ignore */ }
+    try { sessionStorage.clear(); } catch (e) { /* ignore */ }
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+      .finally(function () { window.location.replace('/login'); });
   }
 
   // ─── State ───────────────────────────────────────────────────────────────
@@ -729,6 +736,7 @@
 </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
+<script src="/js/facts-logout.js"></script>
 <script src="/js/global-footer.js"></script>
 </body>
 </html>
