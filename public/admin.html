@@ -2315,12 +2315,14 @@
       const emailIsAdmin = ADMIN_PANEL_EMAILS.indexOf(userEmail) !== -1;
       const flagIsAdmin = !!user.is_admin || serverConfirmed;
 
+      if (window.__SAFE_MODE === false) {
       try {
         const proRes = await fetchWithTimeout('/api/pro-status', { credentials: 'same-origin' }, 10000);
         const proData = await proRes.json().catch(function () { return {}; });
         isCreatorUser = !!proData.is_creator;
       } catch (proErr) {
         isCreatorUser = false;
+      }
       }
 
       if (FUTURE_GEN_EMAILS.includes(userEmail) && !emailIsAdmin && !flagIsAdmin) {
@@ -2336,6 +2338,8 @@
       }
 
       openAdminWorkspace(user);
+
+      if (window.__SAFE_MODE !== false) return;
 
       try {
         switchTab(DEFAULT_ADMIN_TAB);
@@ -2681,6 +2685,7 @@
       document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tabName}`));
       try {
         if (tabName === 'agg-dashboard') loadAggDashboard();
+        if (tabName === 'promo') loadPromoCodes();
         if (tabName === 'tree') loadTree();
         if (tabName === 'support-tickets') loadTickets();
         if (tabName === 'vault-cycles') loadVaultCycles();

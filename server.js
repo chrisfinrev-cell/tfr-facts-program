@@ -80,6 +80,9 @@ app.use(function requestTimeoutGuard(req, res, next) {
   next();
 });
 
+const { SAFE_MODE, safeModeMiddleware } = require('./lib/safeMode');
+app.use(safeModeMiddleware);
+
 if (!process.env.DATABASE_URL) {
   // WARN instead of crash — allows static files to be served while DB env is restored
   console.error('WARNING: DATABASE_URL not set — database features will fail. Static files still served.');
@@ -365,7 +368,7 @@ app.get('/admin', async (req, res) => {
   const until = req.session.adminToolsUntil;
   const locked = !(typeof until === 'number' && until > Date.now());
   const adminSession = JSON.stringify({ isAdmin: true, email: email || '' }).replace(/</g, '\\u003c');
-  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};window.__ADMIN_SESSION=${adminSession};</script></head>`);
+  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};window.__ADMIN_SESSION=${adminSession};window.__SAFE_MODE=${SAFE_MODE ? 'true' : 'false'};</script></head>`);
   applyPrivateCache(res);
   if (!html.includes('facts-logout.js')) {
     html = html.replace(/<\/body>/i, '\n<script src="/js/facts-logout.js"></script>\n</body>');
@@ -391,6 +394,34 @@ function requireAuth(req, res, next) {
   req.userId = req.session.userId;
   next();
 }
+
+app.get('/api/admin/boot', requireAuth, async (req, res) => {
+  try {
+    const allowed = await userCanOpenAdmin(pool, req.userId);
+    if (!allowed) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+    let email = (req.session && req.session.email) || '';
+    if (!email && pool) {
+      try {
+        const found = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+        email = (found.rows[0] && found.rows[0].email) || '';
+      } catch (emailErr) {
+        console.error('Admin boot email lookup failed:', emailErr.message);
+      }
+    }
+    return res.status(200).json({
+      success: true,
+      safeMode: SAFE_MODE,
+      user: { email: email, role: 'admin' },
+      activeModules: SAFE_MODE ? ['auth', 'core-dashboard'] : ['auth', 'core-dashboard', 'admin'],
+      message: SAFE_MODE ? 'Safe Mode active. Sub-modules isolated.' : 'Full admin boot.'
+    });
+  } catch (error) {
+    console.error('Admin boot failed:', error);
+    return res.status(500).json({ success: false, error: 'Boot failed' });
+  }
+});
 
 // Optional auth — attaches req.userId if available but doesn't block
 function optionalAuth(req, res, next) {
@@ -17393,7 +17424,7 @@ app.get('/app', requireAuth, enforceNda, async (req, res) => {
     // The upper-left Admin button is painted here too. Client auth can fail to
     // send the session cookie in privacy browsers, which used to leave the
     // button at display:none for the rest of the session.
-    const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};window.__SERVER_IS_ADMIN=${isAdminSession ? 'true' : 'false'};</script>`;
+    const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};window.__SERVER_IS_ADMIN=${isAdminSession ? 'true' : 'false'};window.__SAFE_MODE=${SAFE_MODE ? 'true' : 'false'};</script>`;
     html = html.replace('</head>', authScript + '</head>');
     if (isAdminSession) {
       html = html.replace(

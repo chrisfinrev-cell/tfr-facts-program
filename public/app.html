@@ -6547,7 +6547,7 @@
                 }
 
                 try {
-                    await reconcilePlanAccess();
+                    if (window.__SAFE_MODE === false) await reconcilePlanAccess();
                     updateNavForUser();
                     if (typeof applyFreeTierLocks === 'function') applyFreeTierLocks();
                 } catch (uiErr) {
@@ -6932,8 +6932,10 @@
         document.getElementById('app-page').style.display = 'block';
         // Ensure correct nav is visible after app page is shown
         ensureNavVisibility();
-        switchTab('dashboard'); // Always land on Dashboard (also calls loadDashboard internally)
+        switchTab('dashboard');
         loadCategories();
+        if (window.__SAFE_MODE !== false) return;
+
         loadReferralWidget();
 
         // ── Check for pending archive deletion warnings (must be acknowledged) ──
@@ -7303,6 +7305,7 @@
     // Tab switching
     // Track engagement activity events for challenge verification (fire-and-forget)
     function engTrackActivity(eventType) {
+        if (window.__SAFE_MODE !== false) return;
         fetch('/api/engagement/activity', {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
@@ -7860,6 +7863,8 @@
 
             // Render Allocation Readiness hero
             renderAllocReadiness(totalIncome, categories);
+
+            if (window.__SAFE_MODE !== false) return;
 
             // Load bills widget
             loadDashboardBillsWidget();
@@ -12199,13 +12204,12 @@
             sessionStorage.removeItem('facts-auth-reload');
             // Auto-open app for logged-in users — skip landing page, land on Dashboard
             openApp();
-            // Load custom payment methods for dropdowns
-            loadCustomPaymentMethods().then(() => {
-                // Rebuild main payment dropdown with custom methods
-                if (typeof currentType !== 'undefined') setTxnType(currentType);
-            });
-            // Check if user was recently offboarded and needs the welcome screen
-            setTimeout(() => checkOffboardingStatus(), 1500);
+            if (window.__SAFE_MODE === false) {
+                loadCustomPaymentMethods().then(() => {
+                    if (typeof currentType !== 'undefined') setTxnType(currentType);
+                });
+                setTimeout(() => checkOffboardingStatus(), 1500);
+            }
         } else if (window.__SERVER_AUTHENTICATED) {
             // Edge case: server said authenticated but client fetch disagreed.
             // Retry once — the session may have just been written. If still
@@ -12213,9 +12217,11 @@
             const retry = await checkAuth();
             if (retry) {
                 openApp();
-                loadCustomPaymentMethods().then(() => {
-                    if (typeof currentType !== 'undefined') setTxnType(currentType);
-                });
+                if (window.__SAFE_MODE === false) {
+                    loadCustomPaymentMethods().then(() => {
+                        if (typeof currentType !== 'undefined') setTxnType(currentType);
+                    });
+                }
             } else if (!sessionStorage.getItem('facts-auth-reload')) {
                 // One retry only. Reloading again loops forever when the
                 // session that served /app does not match /api/auth/me.
