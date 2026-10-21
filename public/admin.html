@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel — Financial Revolution</title>
+  <link rel="icon" href="data:,">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0f1117; color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
@@ -229,7 +230,6 @@
       .node-card { min-width: 200px; }
     }
   </style>
-  <script defer src="/nav-bar.js"></script>
 </head>
 <body>
   <div class="admin-header">
@@ -2293,16 +2293,20 @@
       }
 
       const injected = window.__ADMIN_SESSION || null;
+      const serverConfirmed = !!(injected && injected.isAdmin);
+      if (serverConfirmed && window.__SAFE_MODE !== false) {
+        openAdminWorkspace({ email: injected.email || '', is_admin: true });
+        return;
+      }
+
       let authUser = null;
       try {
-        const authRes = await fetchWithTimeout('/api/auth/me', { credentials: 'same-origin' }, 10000);
+        const authRes = await fetchWithTimeout('/api/auth/me', { credentials: 'same-origin' }, 5000);
         const authData = await authRes.json().catch(function () { return {}; });
         if (authData && authData.authenticated && authData.user) authUser = authData.user;
       } catch (authErr) {
         authUser = null;
       }
-
-      const serverConfirmed = !!(injected && injected.isAdmin);
       if (!authUser && !serverConfirmed) {
         showAdminStay('This admin page could not confirm the signed-in account. Refresh this page. You are not being sent back to login.');
         return;
@@ -2817,10 +2821,15 @@
         // Highlight active button
         const activeBtn = buttons.querySelector('[data-tier="' + currentTier + '"]');
         if (activeBtn) activeBtn.classList.add('active');
+      } else if (window.__SAFE_MODE !== false) {
+        banner.style.display = 'flex';
+        badge.textContent = 'Current: ' + currentTier;
+        badge.style.display = 'inline-block';
       } else {
-        // Show banner with current tier anyway (admin may want to switch)
-        // Fetch fresh user data to check testing_override status
-        fetch('/api/auth/me').then(r => r.json()).then(data => {
+        banner.style.display = 'flex';
+        badge.textContent = 'Current: ' + currentTier;
+        badge.style.display = 'inline-block';
+        fetchWithTimeout('/api/auth/me', { credentials: 'same-origin' }, 5000).then(r => r.json()).then(data => {
           const u = data.user || {};
           const testing = u.testing_override;
           const tier = normalizeTierName(u.pricing_tier || 'free');
@@ -2868,11 +2877,14 @@
       const container = document.getElementById('tree-view');
       if (container) container.innerHTML = '<div class="loading-center"><div class="loader"></div></div>';
       try {
-        const [treeRes] = await Promise.all([
-          fetchWithTimeout('/api/admin/affiliate-tree', { credentials: 'same-origin' }, ADMIN_FETCH_MS),
-          loadSeedStatus()
-        ]);
-        const data = await treeRes.json().catch(function () { return {}; });
+        const treeRes = await fetchWithTimeout('/api/admin/affiliate-tree', { credentials: 'same-origin' }, 5000);
+        const raw = await treeRes.text();
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch (parseErr) {
+          throw new Error('Referral tree returned a non-JSON response (HTTP ' + treeRes.status + ').');
+        }
         if (!treeRes.ok || data.success === false) {
           allUsers = [];
           showTreeMessage(
@@ -2887,6 +2899,9 @@
         renderTree();
         renderTreeStats();
         populateSelects();
+        loadSeedStatus().catch(function (seedErr) {
+          console.error('Seed status failed:', seedErr);
+        });
       } catch (err) {
         console.error(err);
         const timedOut = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
@@ -2909,6 +2924,7 @@
         if (!data.success) return;
 
         const widget = document.getElementById('seed-status-widget');
+        if (!widget) return;
         widget.style.display = 'block';
 
         const { seed_phase, placement_mode, total_affiliates, level_breakdown } = data;
@@ -5621,10 +5637,15 @@
       hidePageLoader();
       showAdminStay('The admin page could not finish loading. Refresh this page. You are not being sent back to login.');
     });
+
+    window.addEventListener('load', function () {
+      ['/js/facts-logout.js', '/js/global-footer.js'].forEach(function (src) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        document.body.appendChild(s);
+      });
+    });
   </script>
-<script defer src="/legal-disclaimer.js"></script>
-<script src="/analytics-tracker.js" defer></script>
-<script src="/js/facts-logout.js"></script>
-<script src="/js/global-footer.js"></script>
 </body>
 </html>

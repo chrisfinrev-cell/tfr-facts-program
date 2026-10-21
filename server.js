@@ -56,9 +56,16 @@ app.get('/health', (req, res) => {
 // Stop a stuck database or middleware call from leaving the browser tab spinning.
 app.use(function requestTimeoutGuard(req, res, next) {
   if (req.path === '/api/plaid/sync') return next();
+  if (req.path === '/favicon.ico') {
+    res.status(204).end();
+    return;
+  }
   const timer = setTimeout(function () {
-    if (res.headersSent) return;
     console.error('[TIMEOUT] Request timed out: ' + req.method + ' ' + req.originalUrl);
+    if (res.headersSent) {
+      res.destroy();
+      return;
+    }
     if (req.path.indexOf('/api/') === 0) {
       res.status(504).json({
         success: false,
@@ -289,6 +296,15 @@ const sessionOpts = {
 if (pool) {
   sessionOpts.store = new pgSession({ pool, tableName: 'session', createTableIfMissing: true });
 }
+// Scripts, styles, and images must not wait on the session store. A stuck
+// session lookup keeps the browser tab spinning after the page is visible.
+const earlyStatic = express.static(path.join(__dirname, 'public'), { fallthrough: true, index: false });
+app.use(function assetsBeforeSession(req, res, next) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  if (req.path.startsWith('/api/')) return next();
+  if (!/\.(?:js|css|png|jpe?g|gif|svg|webp|ico|woff2?|map|txt|webmanifest)$/i.test(req.path)) return next();
+  return earlyStatic(req, res, next);
+});
 app.use(session(sessionOpts));
 
 const { isPrivateRequest, applyPrivateCache } = require('./lib/privateCache');
@@ -14559,14 +14575,19 @@ app.post('/api/admin/legacy-placement', requireAuth, async (req, res) => {
 
 // Admin: Affiliate seed-phase status — X/100 first-line slots filled
 app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
+  let client;
   try {
     if (!(await requireAdminOrCreator(req, res))) return;
+    if (!pool) return res.status(500).json({ success: false, error: 'Database unavailable' });
+    client = await pool.connect();
+    await client.query("SET statement_timeout = '5000'");
 
-    const firstLineCount = await getFirstLineAffiliateCount();
+    const firstLine = await client.query("SELECT COUNT(*) FROM affiliates WHERE affiliate_level = 1");
+    const firstLineCount = parseInt(firstLine.rows[0].count, 10);
     const seedComplete = firstLineCount >= 100;
 
     // Level breakdown
-    const levelBreakdown = await pool.query(`
+    const levelBreakdown = await client.query(`
       SELECT affiliate_level, placement_method, COUNT(*) as count
       FROM affiliates
       GROUP BY affiliate_level, placement_method
@@ -14574,7 +14595,7 @@ app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
     `);
 
     // Total org size
-    const totalAffiliates = await pool.query('SELECT COUNT(*) FROM affiliates');
+    const totalAffiliates = await client.query('SELECT COUNT(*) FROM affiliates');
 
     res.json({
       success: true,
@@ -14595,7 +14616,12 @@ app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error('GET /api/admin/affiliate-seed-status error:', err.message);
-    res.status(500).json({ error: 'Failed to load seed status' });
+    if (!res.headersSent) res.status(500).json({ success: false, error: 'Failed to load seed status' });
+  } finally {
+    if (client) {
+      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be dead */ }
+      client.release();
+    }
   }
 });
 
@@ -18201,11 +18227,15 @@ async function requireAdminOrCreator(req, res) {
 
 // GET /api/admin/affiliate-tree — Full affiliate referral tree
 app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
+  let client;
   try {
     if (!(await requireAdminOrCreator(req, res))) return;
+    if (!pool) return res.status(500).json({ success: false, users: [], error: 'Database unavailable' });
+    client = await pool.connect();
+    await client.query("SET statement_timeout = '5000'");
 
     // Get all users with affiliate info (including new tree placement fields)
-    const usersResult = await pool.query(`
+    const usersResult = await client.query(`
       SELECT u.id, u.name, u.email, u.referred_by_user_id, u.plan, u.paid_until,
              u.is_creator, u.promo_code_used, u.created_at,
              a.id as affiliate_id, a.referral_code, a.status as affiliate_status,
@@ -18218,7 +18248,7 @@ app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
     `);
 
     // Get referral counts per user (how many direct referrals)
-    const referralCounts = await pool.query(`
+    const referralCounts = await client.query(`
       SELECT referred_by_user_id, COUNT(*) as referral_count
       FROM users
       WHERE referred_by_user_id IS NOT NULL
@@ -18256,7 +18286,14 @@ app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
     res.json({ success: true, users });
   } catch (err) {
     console.error('GET /api/admin/affiliate-tree error:', err.message);
-    res.status(500).json({ success: false, users: [], error: 'Failed to load affiliate tree' });
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, users: [], error: 'Failed to load affiliate tree' });
+    }
+  } finally {
+    if (client) {
+      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be dead */ }
+      client.release();
+    }
   }
 });
 
