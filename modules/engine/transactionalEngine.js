@@ -12,6 +12,7 @@ const { sharesForNecessity } = require('./necessity-pull');
 const { applyReserveVelocityProtocol, protocolEngaged } = require('./reserve-velocity-protocol');
 const { lockReserveProtocol, persistReserveProtocol, optionsForUser } = require('./reserve-protocol-store');
 const { withManualExecutionNotice } = require('../shared/edu-compliance');
+const { loadTransactionColumns } = require('../../lib/transaction-columns');
 
 function toCents(amount) {
   const n = Number(amount);
@@ -184,11 +185,32 @@ async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource, 
     }
     const shares = allocateByPercent(incomeCents, buckets);
 
+    const txnCols = await loadTransactionColumns(client);
+    const txnFields = ['user_id', 'type'];
+    const txnValues = [uid, 'income'];
+    if (txnCols.amount_cents) {
+      txnFields.push('amount_cents');
+      txnValues.push(incomeCents);
+    }
+    if (txnCols.amount) {
+      txnFields.push('amount');
+      txnValues.push(incomeCents / 100);
+    }
+    if (txnCols.description) {
+      txnFields.push('description');
+      txnValues.push(source);
+    }
+    if (txnCols.occurred_at) {
+      txnFields.push('occurred_at');
+      txnValues.push(new Date());
+    } else if (txnCols.transaction_date) {
+      txnFields.push('transaction_date');
+      txnValues.push(new Date().toISOString().split('T')[0]);
+    }
+    const txnPlaceholders = txnValues.map(function (_, index) { return '$' + (index + 1); }).join(', ');
     const txn = await client.query(
-      `INSERT INTO transactions (user_id, amount_cents, type, description, occurred_at)
-       VALUES ($1, $2, 'income', $3, NOW())
-       RETURNING id`,
-      [uid, incomeCents, source]
+      `INSERT INTO transactions (${txnFields.join(', ')}) VALUES (${txnPlaceholders}) RETURNING id`,
+      txnValues
     );
     const transactionId = txn.rows[0].id;
 

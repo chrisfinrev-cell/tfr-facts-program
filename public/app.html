@@ -7593,15 +7593,20 @@
             // Silently check family status for Mine/Theirs/Ours tag chips
             checkHouseholdStatus();
 
-            const res = await fetch('/api/dashboard');
-            const data = await res.json();
-
-            document.getElementById('total-income').textContent = '$' + formatNum(data.total_income);
-            document.getElementById('total-expenses').textContent = '$' + formatNum(data.total_expenses);
-
-            const balEl = document.getElementById('net-balance');
-            balEl.textContent = (parseFloat(data.net_balance) >= 0 ? '+$' : '-$') + formatNum(Math.abs(parseFloat(data.net_balance)));
-            balEl.className = 'value ' + (parseFloat(data.net_balance) >= 0 ? 'positive' : 'negative');
+            let data = { total_income: 0, total_expenses: 0, net_balance: 0, categories: [], recent_transactions: [] };
+            const dashController = new AbortController();
+            const dashTimer = setTimeout(function () { dashController.abort(); }, 12000);
+            try {
+                const res = await fetch('/api/dashboard', { signal: dashController.signal });
+                const body = await res.json().catch(function () { return {}; });
+                if (res.ok && body) data = body;
+                else console.error('Dashboard Fetch Error:', (body && body.error) || res.status);
+            } catch (fetchErr) {
+                console.error('Dashboard Fetch Error:', fetchErr);
+            } finally {
+                clearTimeout(dashTimer);
+            }
+            paintDashboardTotals(data);
 
             // Allocation status — enhanced two-row view
             const ALLOC_COACHING = {
@@ -7888,7 +7893,29 @@
     }
 
     function centsToDollars(cents) {
-        return (Number(cents || 0) / 100);
+        const num = Number(cents);
+        if (!Number.isFinite(num)) return 0;
+        return num / 100;
+    }
+
+    function paintHeaderFromBuckets(buckets) {
+        if (!buckets || !buckets.length) return;
+        const incomeEl = document.getElementById('total-income');
+        const headerText = incomeEl ? incomeEl.textContent : '';
+        const headerAmount = finiteMoney(String(headerText || '').replace(/[^0-9.-]/g, ''));
+        const headerBroken = !headerText || headerText.indexOf('NaN') !== -1 || headerAmount === 0;
+        let deposited = 0;
+        let spent = 0;
+        buckets.forEach(function (b) {
+            deposited += centsToDollars(b.deposited_cents);
+            spent += centsToDollars(b.spent_cents);
+        });
+        if (!headerBroken || (deposited <= 0 && spent <= 0)) return;
+        paintDashboardTotals({
+            total_income: deposited,
+            total_expenses: spent,
+            net_balance: deposited - spent
+        });
     }
 
     function liveBucketNameMatches(cardName, bucket) {
@@ -7964,6 +7991,8 @@
                         '</div>';
                 }
             }
+
+            paintHeaderFromBuckets(buckets);
 
             const debtPath = document.getElementById('debt-elimination-path');
             if (debtPath && pay.has_debt) {
@@ -8988,12 +9017,7 @@
             document.getElementById('expenses-label').textContent = 'family Expenses';
             document.getElementById('balance-label').textContent = 'family Balance';
 
-            document.getElementById('total-income').textContent = '$' + formatNum(dashData.total_income);
-            document.getElementById('total-expenses').textContent = '$' + formatNum(dashData.total_expenses);
-
-            const balEl = document.getElementById('net-balance');
-            balEl.textContent = (parseFloat(dashData.net_balance) >= 0 ? '+$' : '-$') + formatNum(Math.abs(parseFloat(dashData.net_balance)));
-            balEl.className = 'value ' + (parseFloat(dashData.net_balance) >= 0 ? 'positive' : 'negative');
+            paintDashboardTotals(dashData);
 
             // Show allocation status
             const hhTotalIncome = parseFloat(dashData.total_income) || 0;
@@ -10861,6 +10885,7 @@
                     (remaining < 0 ? '-' : '') + '$' + formatNum(Math.abs(remaining)) + '</strong> remaining this month';
             });
         });
+        paintHeaderFromBuckets(buckets);
     }
 
     function showSweepNotificationCard(payload) {
@@ -11080,15 +11105,23 @@
         }
 
         try {
-            const res = await fetch('/api/transactions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
+            const saveController = new AbortController();
+            const saveTimer = setTimeout(function () { saveController.abort(); }, 12000);
+            let res;
+            try {
+                res = await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody),
+                    signal: saveController.signal
+                });
+            } finally {
+                clearTimeout(saveTimer);
+            }
 
             if (!res.ok) {
-                const err = await res.json();
-                showToast(err.error || 'Failed to save', 'error');
+                const err = await res.json().catch(function () { return {}; });
+                showToast(err.error || err.message || 'Failed to save', 'error');
                 return;
             }
 
@@ -11805,8 +11838,29 @@
         } catch (err) { showToast('Failed to delete', 'error'); }
     }
 
+    function finiteMoney(n) {
+        const num = Number(n);
+        return Number.isFinite(num) ? num : 0;
+    }
+
     function formatNum(n) {
-        return parseFloat(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return finiteMoney(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function paintDashboardTotals(data) {
+        const income = finiteMoney(data && data.total_income);
+        const expenses = finiteMoney(data && data.total_expenses);
+        const netRaw = Number(data && data.net_balance);
+        const net = Number.isFinite(netRaw) ? netRaw : income - expenses;
+        const incomeEl = document.getElementById('total-income');
+        const expenseEl = document.getElementById('total-expenses');
+        const balEl = document.getElementById('net-balance');
+        if (incomeEl) incomeEl.textContent = '$' + formatNum(income);
+        if (expenseEl) expenseEl.textContent = '$' + formatNum(expenses);
+        if (balEl) {
+            balEl.textContent = (net >= 0 ? '+$' : '-$') + formatNum(Math.abs(net));
+            balEl.className = 'value ' + (net >= 0 ? 'positive' : 'negative');
+        }
     }
 
     function formatDate(d) {
