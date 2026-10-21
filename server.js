@@ -53,6 +53,33 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'facts-finance-2' });
 });
 
+// Stop a stuck database or middleware call from leaving the browser tab spinning.
+app.use(function requestTimeoutGuard(req, res, next) {
+  if (req.path === '/api/plaid/sync') return next();
+  const timer = setTimeout(function () {
+    if (res.headersSent) return;
+    console.error('[TIMEOUT] Request timed out: ' + req.method + ' ' + req.originalUrl);
+    if (req.path.indexOf('/api/') === 0) {
+      res.status(504).json({
+        success: false,
+        error: 'Gateway Timeout: The server took too long to respond.'
+      });
+      return;
+    }
+    res.status(504).type('html').send(
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>FACTS</title></head>' +
+      '<body style="font-family:sans-serif;background:#0a0f1a;color:#f8fafc;padding:40px">' +
+      '<p>This page took too long to load.</p>' +
+      '<p><a href="/app" style="color:#38bdf8">Try again</a></p>' +
+      '</body></html>'
+    );
+  }, 10000);
+  function clearTimer() { clearTimeout(timer); }
+  res.on('finish', clearTimer);
+  res.on('close', clearTimer);
+  next();
+});
+
 if (!process.env.DATABASE_URL) {
   // WARN instead of crash — allows static files to be served while DB env is restored
   console.error('WARNING: DATABASE_URL not set — database features will fail. Static files still served.');
@@ -60,7 +87,9 @@ if (!process.env.DATABASE_URL) {
 
 const pool = process.env.DATABASE_URL ? new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
+  ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
+  connectionTimeoutMillis: 8000,
+  max: 10
 }) : null;
 
 // Self-heal auth columns on boot so login never 500s on schema drift.

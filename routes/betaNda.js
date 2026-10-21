@@ -58,6 +58,7 @@ async function enforceNda(req, res, next) {
     }
   } catch (err) {
     console.error('NDA enforcement check failed:', err);
+    return next();
   }
 
   return res.redirect('/nda');

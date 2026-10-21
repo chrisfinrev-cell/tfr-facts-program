@@ -2,6 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>
+    (function () {
+      if (!window.fetch || window.__factsFetchTimeout) return;
+      window.__factsFetchTimeout = true;
+      var orig = window.fetch.bind(window);
+      window.fetch = function (input, init) {
+        var opts = init ? Object.assign({}, init) : {};
+        if (opts.signal) return orig(input, opts);
+        var controller = new AbortController();
+        var timer = setTimeout(function () { controller.abort(); }, 10000);
+        opts.signal = controller.signal;
+        return orig(input, opts).finally(function () { clearTimeout(timer); });
+      };
+    })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>FACTS — Allocate Every Dollar Before You Spend | Free Budget App</title>
     <meta name="description" content="Stop tracking expenses AFTER you spend. FACTS allocates every dollar BEFORE you spend it. Simple 6-category system. Free forever. Bank-level encryption. Take control now.">
@@ -14907,7 +14922,7 @@
 
 
     <!-- Plaid Link SDK -->
-    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js" defer></script>
 
     <!-- Financial Freedom Calculator JavaScript -->
     <script>
