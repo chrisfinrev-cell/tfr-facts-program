@@ -467,7 +467,7 @@
             </div>
           </div>
           <div id="tree-view" class="tree-container">
-            <div class="loading-center"><div class="loader"></div></div>
+            <div class="empty-state"><p>The organization chart loads when you open this tab. Codes are created under Beta Invites. Transactions are entered in the app.</p></div>
           </div>
         </div>
       </div>
@@ -1734,6 +1734,41 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // Every admin tab uses fetch. Give each one the same deadline so a stuck
+    // database call cannot leave a spinner on the screen.
+    (function () {
+      var nativeFetch = window.fetch.bind(window);
+      window.fetch = function (input, init) {
+        var opts = init || {};
+        if (opts.signal) return nativeFetch(input, opts);
+        var controller = new AbortController();
+        var next = Object.assign({}, opts, { signal: controller.signal });
+        if (!next.credentials) next.credentials = 'same-origin';
+        return new Promise(function (resolve, reject) {
+          var settled = false;
+          var timer = setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            controller.abort();
+            var err = new Error('This admin request timed out.');
+            err.name = 'AbortError';
+            reject(err);
+          }, 8000);
+          nativeFetch(input, next).then(function (res) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resolve(res);
+          }, function (err) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            reject(err);
+          });
+        });
+      };
+    })();
+
     // ══════════════════════════════════════════
     // WAITLIST
     // ══════════════════════════════════════════
@@ -2189,10 +2224,21 @@
     function fetchWithTimeout(url, options, ms) {
       const timeoutMs = ms || ADMIN_FETCH_MS;
       const controller = new AbortController();
-      const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
       const opts = Object.assign({ credentials: 'same-origin' }, options || {});
       opts.signal = controller.signal;
-      return fetch(url, opts).finally(function () { clearTimeout(timer); });
+      let timer;
+      const timeout = new Promise(function (_, reject) {
+        timer = setTimeout(function () {
+          controller.abort();
+          const err = new Error('Request timed out');
+          err.name = 'AbortError';
+          reject(err);
+        }, timeoutMs);
+      });
+      return Promise.race([
+        fetch(url, opts).finally(function () { clearTimeout(timer); }),
+        timeout
+      ]);
     }
 
     function hidePageLoader() {
@@ -2684,7 +2730,23 @@
       alert(data.message || data.error || 'Could not send that code.');
     }
 
+    let panelWatchToken = 0;
+    function armPanelWatch() {
+      const token = ++panelWatchToken;
+      setTimeout(function () {
+        if (token !== panelWatchToken) return;
+        const panel = document.querySelector('.panel.active');
+        if (!panel) return;
+        panel.querySelectorAll('.loader').forEach(function (loader) {
+          const host = loader.closest('.loading-center') || loader.parentElement;
+          if (!host) return;
+          host.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">This section did not finish loading. Refresh the tab.</p></div>';
+        });
+      }, 8000);
+    }
+
     function switchTab(tabName) {
+      armPanelWatch();
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
       document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tabName}`));
       try {
@@ -2873,9 +2935,21 @@
         retry + '</div>';
     }
 
+    let treeLoadToken = 0;
+
     async function loadTree() {
       const container = document.getElementById('tree-view');
+      const token = ++treeLoadToken;
       if (container) container.innerHTML = '<div class="loading-center"><div class="loader"></div></div>';
+      const watchdog = setTimeout(function () {
+        if (token !== treeLoadToken) return;
+        treeLoadToken += 1;
+        showTreeMessage(
+          'The organization chart took too long.',
+          'This tab is only the referral chart. Create codes under Beta Invites. Enter income and expenses in the app.',
+          true
+        );
+      }, 6000);
       try {
         const treeRes = await fetchWithTimeout('/api/admin/affiliate-tree', { credentials: 'same-origin' }, 5000);
         const raw = await treeRes.text();
@@ -2885,6 +2959,7 @@
         } catch (parseErr) {
           throw new Error('Referral tree returned a non-JSON response (HTTP ' + treeRes.status + ').');
         }
+        if (token !== treeLoadToken) return;
         if (!treeRes.ok || data.success === false) {
           allUsers = [];
           showTreeMessage(
@@ -2895,6 +2970,7 @@
           renderTreeStats();
           return;
         }
+        if (token !== treeLoadToken) return;
         allUsers = Array.isArray(data.users) ? data.users : [];
         renderTree();
         renderTreeStats();
@@ -2903,16 +2979,19 @@
           console.error('Seed status failed:', seedErr);
         });
       } catch (err) {
+        if (token !== treeLoadToken) return;
         console.error(err);
-        const timedOut = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
+        const timedOut = err && (err.name === 'AbortError' || /aborted|timed out/i.test(err.message || ''));
         allUsers = [];
         showTreeMessage(
-          timedOut ? 'The organization tree timed out.' : 'Could not load the Future Generations tree.',
-          timedOut ? 'The query took too long. Open this tab again or try refresh.' : (err.message || 'Unknown error'),
+          timedOut ? 'The organization chart took too long.' : 'Could not load the Future Generations tree.',
+          timedOut ? 'This tab is only the referral chart. Create codes under Beta Invites. Enter income and expenses in the app.' : (err.message || 'Unknown error'),
           true
         );
         renderTreeStats();
         toast('Failed to load organization', true);
+      } finally {
+        clearTimeout(watchdog);
       }
     }
 
@@ -3396,6 +3475,8 @@
         html += '</tbody></table>';
         document.getElementById('commission-table-wrap').innerHTML = html;
       } catch (err) {
+        const wrap = document.getElementById('commission-table-wrap');
+        if (wrap) wrap.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">' + escHtml(err.message || 'Could not load commissions.') + '</p></div>';
         toast('Failed to load commissions', true);
       }
     }
@@ -3434,6 +3515,8 @@
         html += '</tbody></table>';
         document.getElementById('promo-table-wrap').innerHTML = html;
       } catch (err) {
+        const wrap = document.getElementById('promo-table-wrap');
+        if (wrap) wrap.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">' + escHtml(err.message || 'Could not load promo codes.') + '</p></div>';
         toast('Failed to load promo codes', true);
       }
     }
@@ -3494,6 +3577,8 @@
         renderAffiliatesTable(allAffiliates);
       } catch (err) {
         console.error(err);
+        const wrap = document.getElementById('affiliates-table-wrap');
+        if (wrap) wrap.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">' + escHtml(err.message || 'Could not load accounts.') + '</p></div>';
         toast('Failed to load affiliates', true);
       }
     }
@@ -3685,6 +3770,8 @@
         document.getElementById('founding-members-table-wrap').innerHTML = html;
       } catch (err) {
         console.error(err);
+        const wrap = document.getElementById('founding-members-table-wrap');
+        if (wrap) wrap.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">' + escHtml(err.message || 'Could not load founding members.') + '</p></div>';
         toast('Failed to load founding members', true);
       }
     }

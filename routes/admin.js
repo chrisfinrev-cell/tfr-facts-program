@@ -287,9 +287,11 @@ router.post('/api/admin/generate-invites', requireAdmin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error generating invites:', err);
+    const detail = err && (err.message || err.detail || (typeof err === 'string' ? err : ''));
+    const code = err && err.code ? ' (' + err.code + ')' : '';
     return res.status(err && err.status ? err.status : 500).json({
       success: false,
-      error: err.message || 'Failed to create invite codes.'
+      error: (detail || 'Failed to create invite codes.') + code
     });
   }
 
