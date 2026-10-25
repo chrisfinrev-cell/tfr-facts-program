@@ -19,6 +19,7 @@
 
 require('dotenv').config();
 const { Pool } = require('pg');
+const mailer = require('../lib/mailer');
 
 if (!process.env.DATABASE_URL) {
   console.error('ERROR: DATABASE_URL environment variable is required');
@@ -52,33 +53,21 @@ function daysUntil(date) {
 }
 
 async function sendEmail(toEmail, subject, htmlBody) {
-  // Use Polsia email proxy if configured, otherwise just log
-  const emailProxyUrl = process.env.POLSIA_EMAIL_PROXY_URL;
-  const emailProxyKey = process.env.POLSIA_API_KEY;
-
-  if (!emailProxyUrl || !emailProxyKey) {
-    console.log(`[Archive Warnings] EMAIL (no proxy configured): To: ${toEmail}, Subject: ${subject}`);
+  // Use Resend if configured, otherwise just log
+  if (!mailer.emailConfigured()) {
+    console.log(`[Archive Warnings] EMAIL (no email provider configured): To: ${toEmail}, Subject: ${subject}`);
     return false;
   }
 
-  try {
-    const res = await fetch(`${emailProxyUrl}/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${emailProxyKey}`
-      },
-      body: JSON.stringify({ to: toEmail, subject, html: htmlBody })
-    });
-    return res.ok;
-  } catch (err) {
-    console.error('[Archive Warnings] Email send error:', err.message);
-    return false;
+  const result = await mailer.sendEmail({ to: toEmail, subject, html: htmlBody });
+  if (!result.sent) {
+    console.error('[Archive Warnings] Email send error:', result.error);
   }
+  return result.sent;
 }
 
 function buildWarningEmail(user, year, deletionDate, daysLeft, warningLevel) {
-  const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+  const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
   const exportUrl = `${appUrl}/app?tab=archive&export=${year}`;
   const deletionDateStr = deletionDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 

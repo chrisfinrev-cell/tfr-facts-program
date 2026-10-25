@@ -12,7 +12,7 @@
  */
 
 const { Pool } = require('pg');
-const https = require('https');
+const mailer = require('../lib/mailer');
 
 const VESTING_DAYS = 30;         // 30-day pending wallet — vesting window after referral signup (updated from 90d)
 const GRACE_PERIOD_DAYS = 21;    // 21-day grace for SUBSCRIPTION PAYMENT FAILURES only (not heartbeat)
@@ -39,45 +39,15 @@ const REQUIRED_HEARTBEATS = 3;   // Must complete 3 consecutive monthly Heartbea
 // The 90-day cliff is the PRIMARY forfeiture mechanism under the current rules.
 // The 21-day grace applies only to subscription payment resolution.
 
-const APP_URL = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
 
-// Email sending via Polsia Email Proxy
+// Email sending via Resend
 async function sendEmail(to, subject, htmlBody) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify({
-      to,
-      subject,
-      html: htmlBody
-    });
-
-    const options = {
-      hostname: 'polsia.com',
-      port: 443,
-      path: '/api/email-proxy/send',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(data),
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => { body += chunk; });
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(JSON.parse(body));
-        } else {
-          reject(new Error(`Email send failed: ${res.statusCode} ${body}`));
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.write(data);
-    req.end();
-  });
+  const result = await mailer.sendEmail({ to, subject, html: htmlBody });
+  if (!result.sent) {
+    throw new Error(`Email send failed: ${result.error || 'unknown error'}`);
+  }
+  return result;
 }
 
 // ─── Email Templates ──────────────────────────────────────

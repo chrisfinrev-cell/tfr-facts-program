@@ -22,6 +22,9 @@ const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const crypto = require('crypto');
 const OpenAI = require('openai');
+const { sendEmail, emailConfigured } = require('./lib/mailer');
+const { getOpenAI } = require('./lib/aiClient');
+const { uploadFile } = require('./lib/fileStorage');
 const nodeFetch = require('node-fetch'); // r2-proxy: use node-fetch v2, not native fetch
 const FormData = require('form-data');   // r2-proxy: use form-data for correct multipart boundaries
 
@@ -50,6 +53,43 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'facts-finance-2' });
 });
 
+// Stop a stuck database or middleware call from leaving the browser tab spinning.
+app.use(function requestTimeoutGuard(req, res, next) {
+  if (req.path === '/api/plaid/sync') return next();
+  if (req.path === '/favicon.ico') {
+    res.status(204).end();
+    return;
+  }
+  const timer = setTimeout(function () {
+    console.error('[TIMEOUT] Request timed out: ' + req.method + ' ' + req.originalUrl);
+    if (res.headersSent) {
+      res.destroy();
+      return;
+    }
+    if (req.path.indexOf('/api/') === 0) {
+      res.status(504).json({
+        success: false,
+        error: 'Gateway Timeout: The server took too long to respond.'
+      });
+      return;
+    }
+    res.status(504).type('html').send(
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>FACTS</title></head>' +
+      '<body style="font-family:sans-serif;background:#0a0f1a;color:#f8fafc;padding:40px">' +
+      '<p>This page took too long to load.</p>' +
+      '<p><a href="/app" style="color:#38bdf8">Try again</a></p>' +
+      '</body></html>'
+    );
+  }, 10000);
+  function clearTimer() { clearTimeout(timer); }
+  res.on('finish', clearTimer);
+  res.on('close', clearTimer);
+  next();
+});
+
+const { SAFE_MODE, safeModeMiddleware } = require('./lib/safeMode');
+app.use(safeModeMiddleware);
+
 if (!process.env.DATABASE_URL) {
   // WARN instead of crash — allows static files to be served while DB env is restored
   console.error('WARNING: DATABASE_URL not set — database features will fail. Static files still served.');
@@ -57,7 +97,9 @@ if (!process.env.DATABASE_URL) {
 
 const pool = process.env.DATABASE_URL ? new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
+  ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
+  connectionTimeoutMillis: 8000,
+  max: 10
 }) : null;
 
 // Self-heal auth columns on boot so login never 500s on schema drift.
@@ -104,6 +146,8 @@ const pool = process.env.DATABASE_URL ? new Pool({
             );
           }
         }
+        const { promoteFounderAdmin } = require('./lib/promoteFounderAdmin');
+        await promoteFounderAdmin(pool);
         console.log('[boot] admin bootstrap complete');
       } catch (bootErr) {
         console.error('[boot] admin bootstrap failed:', bootErr.message);
@@ -252,7 +296,22 @@ const sessionOpts = {
 if (pool) {
   sessionOpts.store = new pgSession({ pool, tableName: 'session', createTableIfMissing: true });
 }
+// Scripts, styles, and images must not wait on the session store. A stuck
+// session lookup keeps the browser tab spinning after the page is visible.
+const earlyStatic = express.static(path.join(__dirname, 'public'), { fallthrough: true, index: false });
+app.use(function assetsBeforeSession(req, res, next) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  if (req.path.startsWith('/api/')) return next();
+  if (!/\.(?:js|css|png|jpe?g|gif|svg|webp|ico|woff2?|map|txt|webmanifest)$/i.test(req.path)) return next();
+  return earlyStatic(req, res, next);
+});
 app.use(session(sessionOpts));
+
+const { isPrivateRequest, applyPrivateCache } = require('./lib/privateCache');
+app.use(function privateCacheHeaders(req, res, next) {
+  if (isPrivateRequest(req.path)) applyPrivateCache(res);
+  next();
+});
 
 const { createAuthRouter } = require('./routes/auth');
 app.use('/api/auth', createAuthRouter());
@@ -260,7 +319,7 @@ app.set('db', pool);
 const { router: betaNdaRouter, enforceNda } = require('./routes/betaNda');
 app.use(betaNdaRouter);
 const { router: adminRouter, requireAdmin } = require('./routes/admin');
-const { isAllowlistedAdminEmail, userCanOpenAdmin, userIsAdminAccount, loginRedirectFor } = require('./config/adminAccess');
+const { isAllowlistedAdminEmail, userCanOpenAdmin, userIsAdminAccount, loginRedirectFor, isFounderAdminEmail, loadAdminFlags } = require('./config/adminAccess');
 const { isAdminIncomeBlockedUser, loadIncomeBlockFlags, userBlockedFromIncomePrograms, INCOME_BLOCK_ERROR } = require('./config/adminIncomePolicy');
 app.use(adminRouter);
 const betaFeedbackRouter = require('./routes/betaFeedback');
@@ -294,20 +353,35 @@ app.get('/admin', async (req, res) => {
     return res.redirect(302, '/login.html?next=/admin');
   }
 
-  let allowed = false;
   let email = req.session.email || '';
+  let allowed = isAllowlistedAdminEmail(email);
   try {
-    allowed = await userCanOpenAdmin(pool, req.session.userId);
+    if (!allowed) {
+      allowed = await Promise.race([
+        userCanOpenAdmin(pool, req.session.userId),
+        new Promise(function (_, reject) {
+          setTimeout(function () { reject(new Error('admin lookup timed out')); }, 4000);
+        })
+      ]);
+    }
     if (!email && pool) {
-      const found = await pool.query('SELECT email FROM users WHERE id = $1', [req.session.userId]);
+      const found = await Promise.race([
+        pool.query('SELECT email FROM users WHERE id = $1', [req.session.userId]),
+        new Promise(function (_, reject) {
+          setTimeout(function () { reject(new Error('admin email lookup timed out')); }, 4000);
+        })
+      ]);
       email = (found.rows[0] && found.rows[0].email) || '';
+      if (!allowed) allowed = isAllowlistedAdminEmail(email);
     }
   } catch (err) {
     console.error('Admin page lookup failed:', err.message);
-    return res.status(500).type('html').send(adminStayPage(
-      'Admin page',
-      '<h1>Admin page could not open</h1><p>This page could not check the signed-in account. Refresh and stay here. You are not being sent back to login.</p>'
-    ));
+    if (!allowed) {
+      return res.status(500).type('html').send(adminStayPage(
+        'Admin page',
+        '<h1>Admin page could not open</h1><p>This page could not check the signed-in account. Refresh and stay here. You are not being sent back to login.</p>'
+      ));
+    }
   }
 
   if (!allowed) {
@@ -322,11 +396,13 @@ app.get('/admin', async (req, res) => {
 
   const htmlPath = path.join(__dirname, 'public', 'admin.html');
   let html = fs.readFileSync(htmlPath, 'utf8');
-  const until = req.session.adminToolsUntil;
-  const locked = !(typeof until === 'number' && until > Date.now());
+  req.session.adminToolsUntil = Date.now() + (12 * 60 * 60 * 1000);
   const adminSession = JSON.stringify({ isAdmin: true, email: email || '' }).replace(/</g, '\\u003c');
-  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=${locked ? 'true' : 'false'};window.__ADMIN_SESSION=${adminSession};</script></head>`);
-  res.setHeader('Cache-Control', 'no-store');
+  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=false;window.__ADMIN_SESSION=${adminSession};window.__SAFE_MODE=${SAFE_MODE ? 'true' : 'false'};</script></head>`);
+  applyPrivateCache(res);
+  if (!html.includes('facts-logout.js')) {
+    html = html.replace(/<\/body>/i, '\n<script src="/js/facts-logout.js"></script>\n</body>');
+  }
   res.type('html').send(html);
 });
 
@@ -348,6 +424,34 @@ function requireAuth(req, res, next) {
   req.userId = req.session.userId;
   next();
 }
+
+app.get('/api/admin/boot', requireAuth, async (req, res) => {
+  try {
+    const allowed = await userCanOpenAdmin(pool, req.userId);
+    if (!allowed) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+    let email = (req.session && req.session.email) || '';
+    if (!email && pool) {
+      try {
+        const found = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+        email = (found.rows[0] && found.rows[0].email) || '';
+      } catch (emailErr) {
+        console.error('Admin boot email lookup failed:', emailErr.message);
+      }
+    }
+    return res.status(200).json({
+      success: true,
+      safeMode: SAFE_MODE,
+      user: { email: email, role: 'admin' },
+      activeModules: SAFE_MODE ? ['auth', 'core-dashboard'] : ['auth', 'core-dashboard', 'admin'],
+      message: SAFE_MODE ? 'Safe Mode active. Sub-modules isolated.' : 'Full admin boot.'
+    });
+  } catch (error) {
+    console.error('Admin boot failed:', error);
+    return res.status(500).json({ success: false, error: 'Boot failed' });
+  }
+});
 
 // Optional auth — attaches req.userId if available but doesn't block
 function optionalAuth(req, res, next) {
@@ -489,7 +593,14 @@ app.use(function tfrEducationHost(req, res, next) {
         html = html.replace(/<\/body>/i, REPORT_INJECT + '\n</body>');
       }
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-cache');
+      if (isPrivateRequest(p)) {
+        applyPrivateCache(res);
+        if (!html.includes('facts-logout.js')) {
+          html = html.replace(/<\/body>/i, '\n<script src="/js/facts-logout.js"></script>\n</body>');
+        }
+      } else {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
       res.send(html);
     } catch (e) {
       next(); // fall through to static serving on error
@@ -575,7 +686,7 @@ app.get('/factsmoney', function (req, res) {
   res.sendFile(path.join(__dirname, 'public', 'factsmoney.html'));
 });
 
-// API: Contact form — forwards to chris.finrev@gmail.com via Polsia email proxy
+// API: Contact form — forwards to chris.finrev@gmail.com via Resend
 app.post('/api/contact', async function (req, res) {
   try {
     var body    = req.body || {};
@@ -590,9 +701,8 @@ app.post('/api/contact', async function (req, res) {
       return res.status(400).json({ ok: false, error: 'A valid email address is required.' });
     }
 
-    var POLSIA_API_KEY = process.env.POLSIA_API_KEY;
-    if (!POLSIA_API_KEY) {
-      console.error('[Contact] POLSIA_API_KEY not set');
+    if (!emailConfigured()) {
+      console.error('[Contact] RESEND_API_KEY not set');
       return res.status(500).json({ ok: false, error: 'Email service not configured.' });
     }
 
@@ -611,23 +721,16 @@ app.post('/api/contact', async function (req, res) {
       + '<hr style="margin:24px 0;border:none;border-top:1px solid #eee;" />'
       + '<p style="font-family:sans-serif;font-size:12px;color:#aaa;">Sent via factsmoney.com contact form</p>';
 
-    var emailRes = await fetch('https://polsia.com/api/proxy/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + POLSIA_API_KEY
-      },
-      body: JSON.stringify({
-        to: 'chris.finrev@gmail.com',
-        subject: 'FACTS Contact: ' + name,
-        body: emailBody,
-        html: emailHtml
-      })
+    var emailResult = await sendEmail({
+      to: 'chris.finrev@gmail.com',
+      subject: 'FACTS Contact: ' + name,
+      text: emailBody,
+      html: emailHtml,
+      replyTo: email
     });
 
-    if (!emailRes.ok) {
-      var errData = await emailRes.json().catch(function() { return {}; });
-      console.error('[Contact] Email proxy error:', emailRes.status, errData);
+    if (!emailResult.sent) {
+      console.error('[Contact] Email send error:', emailResult.error);
       return res.status(500).json({ ok: false, error: 'Failed to send message. Please try again.' });
     }
 
@@ -756,6 +859,19 @@ const FUTURE_GEN_EMAILS = OWNER_EMAILS;
 
 function isAdminEmail(email) {
   return !!(email && ADMIN_EMAILS.includes(email.toLowerCase()));
+}
+
+function isPrivilegedAdminEmail(email) {
+  const normalized = String(email || '').trim().toLowerCase();
+  if (!normalized) return false;
+  return normalized === CREATOR_EMAIL || isAdminEmail(normalized) || isFounderAdminEmail(normalized);
+}
+
+function requestIsAdmin(req) {
+  const bodyEmail = req && req.body && req.body.adminEmail;
+  const session = req && req.session;
+  const sessionEmail = session && (session.email || (session.user && session.user.email));
+  return isPrivilegedAdminEmail(bodyEmail) || isPrivilegedAdminEmail(sessionEmail);
 }
 
 function isOwnerEmail(email) {
@@ -1046,7 +1162,11 @@ async function isCreator(userOrId) {
     user = result.rows[0];
   }
   if (user.is_creator) return true;
-  return user.email && user.email.toLowerCase() === CREATOR_EMAIL;
+  const email = user.email && String(user.email).toLowerCase();
+  if (!email) return false;
+  if (email === CREATOR_EMAIL) return true;
+  if (isFounderAdminEmail(email)) return true;
+  return isAdminEmail(email);
 }
 
 /**
@@ -1174,7 +1294,8 @@ app.post('/api/auth/signup', async (req, res) => {
     return res.status(503).json({ error: 'Service temporarily unavailable. Please try again in a moment.' });
   }
   try {
-    const { email, password, name, user_id, invite_code, ref_code, disclaimer_accepted } = req.body;
+    const { email, password, name, user_id, ref_code, disclaimer_accepted } = req.body;
+    const invite_code = (req.body && (req.body.invite_code || req.body.inviteCode)) || '';
 
     if (!email || !email.includes('@')) {
       return res.status(400).json({ error: 'Valid email required' });
@@ -1212,7 +1333,10 @@ app.post('/api/auth/signup', async (req, res) => {
 
     // During beta, a code is required. Set BETA_INVITE_ONLY=false to open public signup.
     const betaInviteOnly = String(process.env.BETA_INVITE_ONLY || 'true').toLowerCase() !== 'false';
-    const suppliedInvite = invite_code && String(invite_code).trim();
+    const suppliedInvite = (invite_code && String(invite_code).trim())
+      || (betaInviteOnly && ref_code && String(ref_code).trim())
+      || '';
+    let effectiveRefCode = ref_code;
     if (betaInviteOnly && !suppliedInvite && !isCreatorEmail && !isAllowlistedAdminEmail(normalizedEmail)) {
       return res.status(403).json({
         code: 'BETA_INVITE_REQUIRED',
@@ -1221,22 +1345,49 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     // ─── INVITE CODE: Optional — validate only if provided ───────────────
-    // Promo codes, admin master beta codes, and targeted beta invites are all valid.
+    // Shared admin invite_codes first, then promo / targeted / member referral.
+    let pendingInviteCode = null;
     let pendingBeta = null;
-    if (invite_code && invite_code.trim()) {
-      const promoCheck = await pool.query(
-        'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
-        [invite_code.trim()]
-      );
+    if (suppliedInvite) {
+      const {
+        findInviteCode,
+        findActiveBetaInvite,
+        findMemberReferralInvite,
+        INVALID_INVITE_ERROR
+      } = require('./lib/inviteCodes');
 
-      if (promoCheck.rows.length === 0) {
-        const { findActiveBetaInvite } = require('./lib/inviteCodes');
-        pendingBeta = await findActiveBetaInvite(pool, invite_code);
-        if (!pendingBeta) {
-          return res.status(400).json({ error: 'Invalid invite code. Please check the code and try again.' });
+      const sharedInvite = await findInviteCode(pool, suppliedInvite);
+      if (sharedInvite) {
+        if (sharedInvite.status !== 'ACTIVE') {
+          return res.status(400).json({ error: INVALID_INVITE_ERROR });
         }
-      } else if (promoCheck.rows[0].status !== 'active') {
-        return res.status(400).json({ error: 'This invite code has already been used.' });
+        pendingInviteCode = sharedInvite;
+      } else {
+        const promoCheck = await pool.query(
+          'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
+          [suppliedInvite]
+        );
+
+        if (promoCheck.rows.length === 0) {
+          pendingBeta = await findActiveBetaInvite(pool, suppliedInvite);
+          if (!pendingBeta) {
+            const referral = await findMemberReferralInvite(pool, suppliedInvite);
+            if (referral && referral.remaining <= 0) {
+              return res.status(400).json({
+                error: `This referral code has already brought in ${referral.limit} people this month. Ask them again next month, or ask for a beta code.`
+              });
+            }
+            if (referral) {
+              pendingBeta = { kind: 'referral', row: referral.user };
+              effectiveRefCode = referral.user.referral_code;
+            }
+          }
+          if (!pendingBeta) {
+            return res.status(400).json({ error: INVALID_INVITE_ERROR });
+          }
+        } else if (promoCheck.rows[0].status !== 'active') {
+          return res.status(400).json({ error: INVALID_INVITE_ERROR });
+        }
       }
     }
     // No code: allowed only when BETA_INVITE_ONLY=false, or for creator/admin emails.
@@ -1280,11 +1431,34 @@ app.post('/api/auth/signup', async (req, res) => {
       await seedUserAllocations(client, userId);
 
       // ─── Redeem invite code if provided ───────────────────────────────
-      if (invite_code && invite_code.trim()) {
+      if (suppliedInvite) {
+        if (pendingInviteCode) {
+          const { redeemInviteCode, INVALID_INVITE_ERROR } = require('./lib/inviteCodes');
+          const redeemed = await redeemInviteCode(client, suppliedInvite, userId);
+          if (!redeemed) {
+            const used = new Error(INVALID_INVITE_ERROR);
+            used.status = 400;
+            throw used;
+          }
+          await client.query('SAVEPOINT beta_claim_user');
+          try {
+            await client.query(
+              `UPDATE users SET is_beta_tester = TRUE, updated_at = NOW() WHERE id = $1`,
+              [userId]
+            );
+            await client.query('RELEASE SAVEPOINT beta_claim_user');
+          } catch (betaFlagErr) {
+            await client.query('ROLLBACK TO SAVEPOINT beta_claim_user');
+            console.warn('[Signup] is_beta_tester update skipped:', betaFlagErr.message);
+          }
+        }
+
         // Re-validate code in transaction (double-check it's still active)
-        const promoResult = await client.query(
+        const promoResult = pendingInviteCode
+          ? { rows: [] }
+          : await client.query(
           'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
-          [invite_code.trim()]
+          [suppliedInvite]
         );
 
         if (promoResult.rows.length > 0 && promoResult.rows[0].status === 'active') {
@@ -1303,7 +1477,7 @@ app.post('/api/auth/signup', async (req, res) => {
             `UPDATE users
              SET promo_code_used = $1, updated_at = NOW()
              WHERE id = $2`,
-            [invite_code.trim().toUpperCase(), userId]
+            [suppliedInvite.toUpperCase(), userId]
           );
         } else if (pendingBeta) {
         if (pendingBeta.kind === 'invite') {
@@ -1321,6 +1495,11 @@ app.post('/api/auth/signup', async (req, res) => {
             used.status = 400;
             throw used;
           }
+        } else if (pendingBeta.kind === 'referral') {
+          await client.query(
+            'INSERT INTO beta_referral_signups (referrer_user_id, user_id) VALUES ($1, $2)',
+            [pendingBeta.row.id, userId]
+          );
         } else {
           const claimed = await client.query(
             `UPDATE beta_codes
@@ -1364,11 +1543,11 @@ app.post('/api/auth/signup', async (req, res) => {
 
       // ─── Set referred_by_user_id if a valid referral code was provided ──
       let signupReferrerId = null; // hoisted so we can use it after COMMIT
-      if (ref_code && ref_code.trim() && !isCreatorEmail) {
+      if (effectiveRefCode && effectiveRefCode.trim() && !isCreatorEmail) {
         try {
           const refOwner = await client.query(
             'SELECT id FROM users WHERE referral_code = $1',
-            [ref_code.trim().toUpperCase()]
+            [effectiveRefCode.trim().toUpperCase()]
           );
           if (refOwner.rows.length > 0) {
             signupReferrerId = refOwner.rows[0].id;
@@ -1596,16 +1775,10 @@ async function send2faCode(userId) {
 
   const appName = 'FACTS';
   try {
-    await fetch('https://polsia.com/api/proxy/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
+    await sendEmail({
         to: email,
         subject: `${code} is your ${appName} verification code`,
-        body: `Your ${appName} login verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, someone may be trying to access your account. You can ignore this email.`,
+        text: `Your ${appName} login verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, someone may be trying to access your account. You can ignore this email.`,
         html: `
           <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#0a0f1a;border-radius:16px;">
             <h2 style="color:#10b981;margin:0 0 8px;font-size:1.4rem;">${appName} Verification Code</h2>
@@ -1617,11 +1790,9 @@ async function send2faCode(userId) {
               <span style="font-size:2.5rem;font-weight:700;letter-spacing:12px;color:#10b981;font-family:'Courier New',monospace;">${code}</span>
             </div>
             <p style="color:#64748b;font-size:0.85rem;line-height:1.5;">
-              If you didn't try to sign in, someone may have your password. Consider changing it immediately at <a href="${process.env.APP_URL || 'https://financial-revolution.polsia.app'}" style="color:#10b981;">financial-revolution.polsia.app</a>.
+              If you didn't try to sign in, someone may have your password. Consider changing it immediately at <a href="${process.env.APP_URL || 'https://app.factsmoney.com'}" style="color:#10b981;">app.factsmoney.com</a>.
             </p>
-          </div>`,
-        transactional: true
-      })
+          </div>`
     });
   } catch (emailErr) {
     console.error('[2FA] Email send error:', emailErr.message);
@@ -1831,8 +2002,9 @@ app.post('/api/auth/login', async (req, res) => {
 
     // ── 2FA CHECK ──────────────────────────────────────────────────────────────
     if (user.two_factor_enabled) {
-      // Admin bypass — is_creator accounts always skip 2FA for operational access
-      if (user.is_creator) {
+      // Admin / founder accounts skip 2FA so the admin panel can open even when
+      // email or SMS is not configured.
+      if (user.is_creator || userIsAdminAccount(user) || isAllowlistedAdminEmail(user.email)) {
         return await completeLogin(req, res, user);
       }
 
@@ -1897,14 +2069,23 @@ app.post('/api/auth/login', async (req, res) => {
 
 // POST /api/auth/logout
 app.post('/api/auth/logout', (req, res) => {
-  req.session.destroy(err => {
+  applyPrivateCache(res);
+  const cookieOpts = {
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  };
+  function finish(err) {
+    res.clearCookie('connect.sid', cookieOpts);
     if (err) {
-      console.error('Logout error:', err.message);
-      return res.status(500).json({ error: 'Logout failed' });
+      console.error('Logout error:', err.message || err);
+      return res.status(500).json({ success: false, error: 'Logout failed' });
     }
-    res.clearCookie('connect.sid');
     res.json({ success: true });
-  });
+  }
+  if (!req.session) return finish();
+  req.session.destroy(finish);
 });
 
 // POST /api/auth/sandbox-login — Switch into sandbox training account
@@ -2063,24 +2244,18 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     const resetUrl = `${passwordResetBaseUrl(req)}/reset-password.html?token=${token}`;
 
-    if (!process.env.POLSIA_API_KEY) {
+    if (!emailConfigured()) {
       await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
-      console.error('POST /api/auth/forgot-password: POLSIA_API_KEY is not set');
+      console.error('POST /api/auth/forgot-password: RESEND_API_KEY is not set');
       return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
     }
 
-    let emailResponse;
+    let emailResult;
     try {
-      emailResponse = await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      emailResult = await sendEmail({
           to: user.email,
           subject: 'Reset Your FACTS Password',
-          body: `You requested a password reset for your FACTS account.\n\nClick this link to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
+          text: `You requested a password reset for your FACTS account.\n\nClick this link to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <h2 style="color: #10b981; margin-bottom: 24px;">Reset Your Password</h2>
@@ -2103,9 +2278,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                 If you didn't request this, you can safely ignore this email.
               </p>
             </div>
-          `,
-          transactional: true
-        })
+          `
       });
     } catch (emailErr) {
       await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
@@ -2113,10 +2286,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
     }
 
-    if (!emailResponse.ok) {
-      const emailBody = await emailResponse.text();
+    if (!emailResult.sent) {
       await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
-      console.error('Email send failed:', emailResponse.status, emailBody);
+      console.error('Email send failed:', emailResult.error);
       return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
     }
 
@@ -3620,34 +3792,39 @@ app.get('/api/transactions', requireAuth, async (req, res) => {
 });
 
 app.post('/api/transactions', requireAuth, async (req, res) => {
+  const userId = req.userId;
+  const body = req.body || {};
+  const { type, description, category_id, subcategory, payment_method, transaction_date, bank_account_id, splits, brokerage_income } = body;
+  const amount = sanitizeNumber(body.amount);
+
+  if (!type || !['income', 'expense'].includes(type)) {
+    return res.status(400).json({ success: false, error: 'type must be "income" or "expense"' });
+  }
+  if (!(amount > 0)) {
+    return res.status(400).json({ success: false, error: 'Invalid amount' });
+  }
+
+  const isSplit = type === 'expense' && Array.isArray(splits) && splits.length > 1;
+
+  if (type === 'expense' && !isSplit && !category_id) {
+    return res.status(400).json({ success: false, error: 'category_id required for expenses' });
+  }
+  if (isSplit) {
+    if (splits.some(s => !s.category_id || !(sanitizeNumber(s.amount) > 0))) {
+      return res.status(400).json({ success: false, error: 'Each split must have a valid category_id and amount' });
+    }
+    const splitTotal = splits.reduce((sum, s) => sum + sanitizeNumber(s.amount), 0);
+    if (Math.abs(splitTotal - amount) > 0.01) {
+      return res.status(400).json({ success: false, error: `Split amounts ($${splitTotal.toFixed(2)}) must equal total ($${amount.toFixed(2)})` });
+    }
+  }
+
   const client = await pool.connect();
+  let open = false;
   try {
+    await client.query("SET statement_timeout = '8000'");
     await client.query('BEGIN');
-
-    const userId = req.userId;
-    const { type, amount, description, category_id, subcategory, payment_method, transaction_date, bank_account_id, splits, brokerage_income } = req.body;
-
-    if (!type || !['income', 'expense'].includes(type)) {
-      return res.status(400).json({ error: 'type must be "income" or "expense"' });
-    }
-    if (!amount || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: 'amount must be positive' });
-    }
-
-    const isSplit = type === 'expense' && Array.isArray(splits) && splits.length > 1;
-
-    if (type === 'expense' && !isSplit && !category_id) {
-      return res.status(400).json({ error: 'category_id required for expenses' });
-    }
-    if (isSplit) {
-      if (splits.some(s => !s.category_id || !s.amount || parseFloat(s.amount) <= 0)) {
-        return res.status(400).json({ error: 'Each split must have a valid category_id and amount' });
-      }
-      const splitTotal = splits.reduce((sum, s) => sum + parseFloat(s.amount), 0);
-      if (Math.abs(splitTotal - parseFloat(amount)) > 0.01) {
-        return res.status(400).json({ error: `Split amounts ($${splitTotal.toFixed(2)}) must equal total ($${parseFloat(amount).toFixed(2)})` });
-      }
-    }
+    open = true;
 
     // Validate bank account ownership if provided
     if (bank_account_id) {
@@ -3657,27 +3834,47 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
       );
       if (baCheck.rows.length === 0) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Bank account not found' });
+        open = false;
+        return res.status(400).json({ success: false, error: 'Bank account not found' });
       }
       if (baCheck.rows[0].is_archived) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Cannot tag to an archived bank account' });
+        open = false;
+        return res.status(400).json({ success: false, error: 'Cannot tag to an archived bank account' });
       }
     }
 
-    // Create transaction
+    // Create transaction. Older ledgers store dollars in amount; the book schema stores cents.
+    const txnCols = await loadTransactionColumns(client);
+    const fields = ['user_id', 'type'];
+    const values = [userId, type];
+    function addTxnColumn(column, value) {
+      if (!txnCols[column]) return;
+      fields.push(column);
+      values.push(value);
+    }
+    if (txnCols.amount) addTxnColumn('amount', amount);
+    if (txnCols.amount_cents) addTxnColumn('amount_cents', Math.round(amount * 100));
+    addTxnColumn('description', description || null);
+    addTxnColumn('category_id', isSplit ? null : (category_id || null));
+    addTxnColumn('subcategory', subcategory || null);
+    addTxnColumn('payment_method', payment_method || null);
+    const when = transaction_date || new Date().toISOString().split('T')[0];
+    addTxnColumn('transaction_date', when);
+    if (!txnCols.transaction_date) addTxnColumn('occurred_at', when);
+    addTxnColumn('bank_account_id', bank_account_id ? parseInt(bank_account_id, 10) : null);
+    addTxnColumn('is_split', !!isSplit);
+    const placeholders = values.map(function (_, index) { return '$' + (index + 1); }).join(', ');
     const result = await client.query(
-      `INSERT INTO transactions (user_id, type, amount, description, category_id, subcategory, payment_method, transaction_date, bank_account_id, is_split)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       RETURNING *`,
-      [userId, type, parseFloat(amount), description || null, isSplit ? null : (category_id || null), subcategory || null, payment_method || null, transaction_date || new Date().toISOString().split('T')[0], bank_account_id ? parseInt(bank_account_id) : null, isSplit || false]
+      `INSERT INTO transactions (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`,
+      values
     );
 
     const transaction = result.rows[0];
 
     // Update bank account balance if tagged
     if (bank_account_id) {
-      const balanceChange = type === 'income' ? parseFloat(amount) : -parseFloat(amount);
+      const balanceChange = type === 'income' ? amount : -amount;
       await client.query(
         'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
         [balanceChange, parseInt(bank_account_id)]
@@ -3731,10 +3928,10 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
 
     // For split expenses: record each category split with its dollar amount
     if (isSplit) {
-      const totalAmount = parseFloat(amount);
+      const totalAmount = amount;
       for (const split of splits) {
-        const splitAmount = parseFloat(split.amount);
-        const splitPercentage = (splitAmount / totalAmount * 100);
+        const splitAmount = sanitizeNumber(split.amount);
+        const splitPercentage = totalAmount > 0 ? (splitAmount / totalAmount * 100) : 0;
         await client.query(
           `INSERT INTO transaction_allocations (transaction_id, category_id, percentage, amount)
            VALUES ($1, $2, $3, $4)`,
@@ -3744,6 +3941,7 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
     }
 
     await client.query('COMMIT');
+    open = false;
 
     // ── Auto-complete transaction-based challenges (fire-and-forget) ──
     // Don't block the response — run in background
@@ -3839,13 +4037,32 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
       }
     });
 
-    res.status(201).json(transaction);
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to create transaction' });
+    if (!res.headersSent) {
+      return res.status(201).json(Object.assign({}, transaction, { success: true }));
+    }
+  } catch (error) {
+    console.error("Transaction Save Error:", error);
+    if (open) {
+      try { await client.query('ROLLBACK'); } catch (rollbackErr) {
+        console.error("Transaction Save Error:", rollbackErr);
+      }
+      open = false;
+    }
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to create transaction'
+      });
+    }
   } finally {
-    client.release();
+    if (client) {
+      try { await client.query("RESET statement_timeout"); } catch (resetErr) {
+        console.error("Transaction Save Error:", resetErr);
+      }
+      try { client.release(); } catch (releaseErr) {
+        console.error("Transaction Save Error:", releaseErr);
+      }
+    }
   }
 });
 
@@ -7176,22 +7393,33 @@ app.get('/api/households/:household_id/fi-calculator/aggregate', requireAuth, as
 });
 
 // ─── DASHBOARD STATS (per-user) ────────────────────────────
-app.get('/api/dashboard', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
+const { sanitizeNumber, loadTransactionColumns, moneyExpression } = require('./lib/transaction-columns');
 
-    const totals = await pool.query(`
+app.get('/api/dashboard', requireAuth, async (req, res) => {
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("SET statement_timeout = '8000'");
+    const userId = req.userId;
+    const txnCols = await loadTransactionColumns(client);
+    const money = moneyExpression(txnCols, '');
+
+    const totals = await client.query(`
       SELECT
-        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expenses
+        COALESCE(SUM(CASE WHEN type = 'income' THEN ${money} ELSE 0 END), 0) as total_income,
+        COALESCE(SUM(CASE WHEN type = 'expense' THEN ${money} ELSE 0 END), 0) as total_expenses
       FROM transactions
       WHERE user_id = $1
     `, [userId]);
 
-    const { total_income, total_expenses } = totals.rows[0];
-    const net_balance = parseFloat(total_income) - parseFloat(total_expenses);
+    const totalIncome = sanitizeNumber(totals.rows[0] && totals.rows[0].total_income);
+    const totalExpenses = sanitizeNumber(totals.rows[0] && totals.rows[0].total_expenses);
+    const netBalance = totalIncome - totalExpenses;
+    var savedIncome = totalIncome;
+    var savedExpenses = totalExpenses;
+    var savedNet = netBalance;
 
-    const categoryStats = await pool.query(`
+    const categoryStats = await client.query(`
       WITH expense_by_category AS (
         -- Non-split expenses (direct category_id)
         SELECT category_id, SUM(amount) as spent
@@ -7239,7 +7467,7 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
       ORDER BY c.sort_order
     `, [userId]);
 
-    const subcategoryStats = await pool.query(`
+    const subcategoryStats = await client.query(`
       SELECT
         t.category_id,
         t.subcategory,
@@ -7253,17 +7481,17 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
     `, [userId]);
 
     const categories = categoryStats.rows.map(cat => {
-      const allocated = (parseFloat(cat.target_percentage) / 100) * parseFloat(total_income);
-      const actualSetAside = parseFloat(cat.actual_set_aside) || 0;
-      const spent = parseFloat(cat.spent);
+      const allocated = (sanitizeNumber(cat.target_percentage) / 100) * totalIncome;
+      const actualSetAside = sanitizeNumber(cat.actual_set_aside);
+      const spent = sanitizeNumber(cat.spent);
 
       const catSubcategories = subcategoryStats.rows
         .filter(s => s.category_id === cat.id)
         .map(s => ({
           name: s.subcategory,
-          spent: parseFloat(s.spent).toFixed(2),
+          spent: sanitizeNumber(s.spent).toFixed(2),
           transaction_count: parseInt(s.transaction_count),
-          percentage: spent > 0 ? ((parseFloat(s.spent) / spent) * 100).toFixed(1) : '0.0'
+          percentage: spent > 0 ? ((sanitizeNumber(s.spent) / spent) * 100).toFixed(1) : '0.0'
         }));
 
       return {
@@ -7277,7 +7505,7 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
       };
     });
 
-    const recent = await pool.query(`
+    const recent = await client.query(`
       SELECT t.*, c.name as category_name, c.slug as category_slug,
              c.color as category_color, c.icon as category_icon,
              COALESCE(ba.name, bra.name) as bank_account_name
@@ -7294,7 +7522,7 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
     const recentAllocIds = recent.rows.filter(t => t.type === 'income' || t.is_split).map(t => t.id);
     let recentAllocMap = {};
     if (recentAllocIds.length > 0) {
-      const recentAllocResult = await pool.query(`
+      const recentAllocResult = await client.query(`
         SELECT ta.transaction_id, ta.percentage, ta.amount,
                c.name as category_name, c.slug as category_slug, c.color as category_color
         FROM transaction_allocations ta
@@ -7324,16 +7552,46 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
       allocations: (t.type === 'income' || t.is_split) ? (recentAllocMap[t.id] || []) : undefined
     }));
 
-    res.json({
-      total_income: parseFloat(total_income).toFixed(2),
-      total_expenses: parseFloat(total_expenses).toFixed(2),
-      net_balance: net_balance.toFixed(2),
+    return res.status(200).json({
+      success: true,
+      total_income: totalIncome.toFixed(2),
+      total_expenses: totalExpenses.toFixed(2),
+      net_balance: netBalance.toFixed(2),
       categories,
       recent_transactions: recentWithAllocs
     });
-  } catch (err) {
-    console.error('GET /api/dashboard error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  } catch (error) {
+    console.error("Dashboard Fetch Error:", error);
+    if (!res.headersSent && typeof savedIncome === 'number') {
+      return res.status(200).json({
+        success: true,
+        total_income: savedIncome.toFixed(2),
+        total_expenses: savedExpenses.toFixed(2),
+        net_balance: savedNet.toFixed(2),
+        categories: [],
+        recent_transactions: []
+      });
+    }
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        error: "Internal Server Error",
+        total_income: "0.00",
+        total_expenses: "0.00",
+        net_balance: "0.00",
+        categories: [],
+        recent_transactions: []
+      });
+    }
+  } finally {
+    if (client) {
+      try { await client.query("RESET statement_timeout"); } catch (resetErr) {
+        console.error("Dashboard Fetch Error:", resetErr);
+      }
+      try { client.release(); } catch (releaseErr) {
+        console.error("Dashboard Fetch Error:", releaseErr);
+      }
+    }
   }
 });
 
@@ -7492,16 +7750,10 @@ async function sendHouseholdInviteEmail({ toEmail, inviterName, householdName, i
     ? `<p style="font-size:14px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:12px 14px;color:#c9a84c;margin:0 0 20px;line-height:1.6">${customNote}</p>`
     : '';
   try {
-    await fetch('https://polsia.com/api/proxy/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
+    await sendEmail({
         to: toEmail,
         subject: `${inviterName} invited you to join their FACTS family`,
-        html_body: `
+        html: `
           <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;background:#0a0f1a;color:#e8e0d4;padding:32px 24px;border-radius:12px">
             <div style="margin-bottom:24px">
               <span style="font-size:22px;font-weight:700;color:#c9a84c;letter-spacing:-0.5px">FACTS</span>
@@ -7523,9 +7775,7 @@ async function sendHouseholdInviteEmail({ toEmail, inviterName, householdName, i
               If you didn't expect this invite, you can safely ignore this email.
             </p>
           </div>
-        `,
-        transactional: true
-      })
+        `
     });
   } catch (e) {
     console.error('[family Invite Email] Failed to send:', e.message);
@@ -7611,7 +7861,7 @@ app.post('/api/households/:id/invite', requireAuth, async (req, res) => {
     `, [id, crypto.randomBytes(8).toString('hex'), req.userId, req.userId, email.toLowerCase(), role, token, expires_at]);
 
     const invite = result.rows[0];
-    const APP_URL = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
     const inviteUrl = `${APP_URL}/family-invite.html?token=${token}`;
 
     // Get inviter's name
@@ -8635,7 +8885,7 @@ app.post('/api/households/:id/invite-sub-account', requireAuth, async (req, res)
       [householdId, token.substring(0, 20), req.userId, email, token, expiresAt]
     );
 
-    const APP_URL = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
     const inviteUrl = `${APP_URL}/family-invite.html?token=${token}&incubator=1`;
 
     // Send invite email
@@ -8766,18 +9016,12 @@ async function sendGracePeriodEmail({ toEmail, toName, householdName, graceExpir
       left: `You've left the <strong>${householdName}</strong> Family Plan. Your 30-day grace period ends on <strong>${graceDate}</strong>.`
     };
     const messageBody = messageMap[reason] || `Your Family Plan status has changed. Grace period ends ${graceDate}.`;
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
 
-    await fetch('https://polsia.com/api/proxy/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
+    await sendEmail({
         to: toEmail,
         subject,
-        html_body: `
+        html: `
           <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;background:#0a0f1a;color:#e8e0d4;padding:32px 24px;border-radius:12px">
             <div style="margin-bottom:20px">
               <span style="font-size:20px;font-weight:700;color:#c9a84c;letter-spacing:-0.5px">FACTS</span>
@@ -8791,7 +9035,6 @@ async function sendGracePeriodEmail({ toEmail, toName, householdName, graceExpir
             </a>
           </div>
         `
-      })
     });
   } catch (err) {
     console.error('[FamilyPlan] sendGracePeriodEmail failed:', err.message);
@@ -11820,7 +12063,7 @@ app.post('/api/subscriptions/verify', async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // Handles automatic subscription renewals, cancellations, and payment failures.
 // Requires STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET env vars.
-// Register this URL in the Stripe Dashboard: https://financial-revolution.polsia.app/api/stripe-webhook
+// Register this URL in the Stripe Dashboard: https://app.factsmoney.com/api/stripe-webhook
 // Events to enable: checkout.session.completed, invoice.payment_succeeded,
 //                   customer.subscription.deleted, invoice.payment_failed
 
@@ -13328,7 +13571,7 @@ app.get('/api/affiliate/dashboard', async (req, res) => {
       affiliate: {
         id: affiliate.id, email: affiliate.email,
         referral_code: affiliate.referral_code,
-        referral_link: `https://financial-revolution.polsia.app/pricing.html?ref=${affiliate.referral_code}`,
+        referral_link: `${process.env.APP_URL || 'https://app.factsmoney.com'}/pricing.html?ref=${affiliate.referral_code}`,
         status: affiliate.status,
         pending_balance_cents: affiliate.pending_balance_cents,
         approved_balance_cents: affiliate.approved_balance_cents,
@@ -13722,7 +13965,7 @@ app.post('/api/affiliate/enter-orphan-queue', async (req, res) => {
 app.post('/api/admin/trigger-orphan-placement', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin only' });
     }
 
@@ -13747,7 +13990,7 @@ app.post('/api/admin/trigger-orphan-placement', async (req, res) => {
 app.post('/api/admin/trigger-depth-gates', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin only' });
     }
     console.log('[API] Manual 4x5 depth gate check triggered by admin');
@@ -13807,7 +14050,7 @@ app.post('/api/affiliate/stripe-connect/onboard', async (req, res) => {
     }
 
     // Create onboarding link
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const accountLink = await stripeClient.accountLinks.create({
       account: stripeAccountId,
       refresh_url: `${appUrl}/affiliate-dashboard.html?connect=retry`,
@@ -14347,14 +14590,19 @@ app.post('/api/admin/legacy-placement', requireAuth, async (req, res) => {
 
 // Admin: Affiliate seed-phase status — X/100 first-line slots filled
 app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
+  let client;
   try {
-    if (!(await requireCreator(req, res))) return;
+    if (!(await requireAdminOrCreator(req, res))) return;
+    if (!pool) return res.status(500).json({ success: false, error: 'Database unavailable' });
+    client = await pool.connect();
+    await client.query("SET statement_timeout = '5000'");
 
-    const firstLineCount = await getFirstLineAffiliateCount();
+    const firstLine = await client.query("SELECT COUNT(*) FROM affiliates WHERE affiliate_level = 1");
+    const firstLineCount = parseInt(firstLine.rows[0].count, 10);
     const seedComplete = firstLineCount >= 100;
 
     // Level breakdown
-    const levelBreakdown = await pool.query(`
+    const levelBreakdown = await client.query(`
       SELECT affiliate_level, placement_method, COUNT(*) as count
       FROM affiliates
       GROUP BY affiliate_level, placement_method
@@ -14362,7 +14610,7 @@ app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
     `);
 
     // Total org size
-    const totalAffiliates = await pool.query('SELECT COUNT(*) FROM affiliates');
+    const totalAffiliates = await client.query('SELECT COUNT(*) FROM affiliates');
 
     res.json({
       success: true,
@@ -14383,7 +14631,12 @@ app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error('GET /api/admin/affiliate-seed-status error:', err.message);
-    res.status(500).json({ error: 'Failed to load seed status' });
+    if (!res.headersSent) res.status(500).json({ success: false, error: 'Failed to load seed status' });
+  } finally {
+    if (client) {
+      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be dead */ }
+      client.release();
+    }
   }
 });
 
@@ -15106,7 +15359,7 @@ app.get('/api/future-generations/dashboard', requireAuth, async (req, res) => {
     res.json({
       member: true,
       referral_code: affiliate.referral_code,
-      referral_link: `https://financial-revolution.polsia.app/pricing.html?ref=${affiliate.referral_code}`,
+      referral_link: `${process.env.APP_URL || 'https://app.factsmoney.com'}/pricing.html?ref=${affiliate.referral_code}`,
       active_referrals: parseInt(referralCount.rows[0]?.active_referrals || 0),
       total_referrals: parseInt(referralCount.rows[0]?.total_referrals || 0),
       balance_cents: totalBalance,
@@ -17176,12 +17429,10 @@ app.get('/', optionalAuth, (req, res) => {
     return res.redirect('/app');
   }
 
-  const slug = process.env.POLSIA_ANALYTICS_SLUG || '';
   const htmlPath = path.join(__dirname, 'public', 'index.html');
 
   if (fs.existsSync(htmlPath)) {
-    let html = fs.readFileSync(htmlPath, 'utf8');
-    html = html.replace('__POLSIA_SLUG__', slug);
+    const html = fs.readFileSync(htmlPath, 'utf8');
     res.type('html').send(html);
   } else {
     res.json({ message: 'FACTS — Brand Hub' });
@@ -17194,12 +17445,10 @@ app.get('/', optionalAuth, (req, res) => {
 // without auth injection, and the user sees the marketing page. This was the
 // root cause of the post-login redirect bug (4 attempts to fix).
 app.get('/app', requireAuth, enforceNda, async (req, res) => {
-  const slug = process.env.POLSIA_ANALYTICS_SLUG || '';
   const htmlPath = path.join(__dirname, 'public', 'app.html');
 
   if (fs.existsSync(htmlPath)) {
     let html = fs.readFileSync(htmlPath, 'utf8');
-    html = html.replace('__POLSIA_SLUG__', slug);
 
     let isAdminSession = false;
     try {
@@ -17216,7 +17465,7 @@ app.get('/app', requireAuth, enforceNda, async (req, res) => {
     // The upper-left Admin button is painted here too. Client auth can fail to
     // send the session cookie in privacy browsers, which used to leave the
     // button at display:none for the rest of the session.
-    const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};window.__SERVER_IS_ADMIN=${isAdminSession ? 'true' : 'false'};</script>`;
+    const authScript = `<script>window.__SERVER_AUTHENTICATED=true;window.__SERVER_USER_ID=${JSON.stringify(req.session.userId)};window.__SERVER_IS_ADMIN=${isAdminSession ? 'true' : 'false'};window.__SAFE_MODE=${SAFE_MODE ? 'true' : 'false'};</script>`;
     html = html.replace('</head>', authScript + '</head>');
     if (isAdminSession) {
       html = html.replace(
@@ -17235,6 +17484,10 @@ app.get('/app', requireAuth, enforceNda, async (req, res) => {
     if (html.includes('</body>') && !html.includes('report-issue.js')) {
       html = html.replace(/<\/body>/i, '\n<script src="/report-issue.js" defer></script>\n</body>');
     }
+    if (html.includes('</body>') && !html.includes('facts-logout.js')) {
+      html = html.replace(/<\/body>/i, '\n<script src="/js/facts-logout.js"></script>\n</body>');
+    }
+    applyPrivateCache(res);
 
     res.type('html').send(html);
   } else {
@@ -17289,14 +17542,14 @@ function initializeInactivityScheduler() {
 
 // Initialize scheduler on startup — skip if in-process crons are disabled
 let scheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     scheduler = initializeInactivityScheduler();
   } catch (err) {
     console.error('[Scheduler] Failed to initialize:', err.message);
   }
 } else {
-  console.log('[Scheduler] Inactivity scheduler skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[Scheduler] Inactivity scheduler skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // Initialize price change notifier scheduler (runs daily at 9 AM UTC)
@@ -17335,14 +17588,14 @@ function initializePriceChangeNotifierScheduler() {
 }
 
 let priceScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     priceScheduler = initializePriceChangeNotifierScheduler();
   } catch (err) {
     console.error('[PriceScheduler] Failed to initialize:', err.message);
   }
 } else {
-  console.log('[PriceScheduler] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[PriceScheduler] Skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // Initialize promo grace period scheduler (runs daily at 3 AM UTC)
@@ -17382,14 +17635,14 @@ function initializePromoGraceScheduler() {
 }
 
 let promoGraceScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     promoGraceScheduler = initializePromoGraceScheduler();
   } catch (err) {
     console.error('[PromoGrace] Failed to initialize scheduler:', err.message);
   }
 } else {
-  console.log('[PromoGrace] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[PromoGrace] Skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // Initialize trial expiry scheduler (runs daily at 4 AM UTC)
@@ -17431,14 +17684,14 @@ function initializeTrialExpiryScheduler() {
 }
 
 let trialExpiryScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     trialExpiryScheduler = initializeTrialExpiryScheduler();
   } catch (err) {
     console.error('[TrialExpiry] Failed to initialize scheduler:', err.message);
   }
 } else {
-  console.log('[TrialExpiry] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[TrialExpiry] Skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // POST /api/admin/trigger-trial-expiry — Manual trigger for trial expiry job (admin only)
@@ -17495,14 +17748,14 @@ function initializeAffiliateJobsScheduler() {
 }
 
 let affiliateJobsScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     affiliateJobsScheduler = initializeAffiliateJobsScheduler();
   } catch (err) {
     console.error('[AffiliateJobs] Failed to initialize scheduler:', err.message);
   }
 } else {
-  console.log('[AffiliateJobs] Skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[AffiliateJobs] Skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // Initialize heartbeat compliance schedulers (Monthly Heartbeat v2)
@@ -17581,14 +17834,14 @@ function initializeHeartbeatComplianceScheduler() {
 }
 
 let heartbeatComplianceScheduler = null;
-if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED === 'true') {
+if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
   try {
     heartbeatComplianceScheduler = initializeHeartbeatComplianceScheduler();
   } catch (err) {
     console.error('[HeartbeatV2] Failed to initialize schedulers:', err.message);
   }
 } else {
-  console.log('[HeartbeatV2] Schedulers skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  console.log('[HeartbeatV2] Schedulers skipped: IN_PROCESS_CRONS_ENABLED != true');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -17794,7 +18047,7 @@ app.post('/api/admin/trigger-inactivity-job', async (req, res) => {
     // Verify creator email (uses centralized CREATOR_EMAIL constant)
     const { adminEmail } = req.body;
 
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -17819,7 +18072,7 @@ app.post('/api/admin/trigger-inactivity-job', async (req, res) => {
 app.post('/api/admin/trigger-price-notifier', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!priceScheduler) {
@@ -17840,7 +18093,7 @@ app.post('/api/admin/trigger-price-notifier', async (req, res) => {
 app.post('/api/admin/trigger-promo-grace-job', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!promoGraceScheduler) {
@@ -17862,7 +18115,7 @@ app.post('/api/admin/trigger-promo-grace-job', async (req, res) => {
 app.post('/api/admin/trigger-affiliate-jobs', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!affiliateJobsScheduler) {
@@ -17883,7 +18136,7 @@ app.post('/api/admin/trigger-affiliate-jobs', async (req, res) => {
 app.post('/api/admin/trigger-heartbeat-compliance', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!heartbeatComplianceScheduler) {
@@ -17905,7 +18158,7 @@ app.post('/api/admin/trigger-heartbeat-compliance', async (req, res) => {
 app.post('/api/admin/trigger-heartbeat-day1', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!heartbeatComplianceScheduler) {
@@ -17926,7 +18179,7 @@ app.post('/api/admin/trigger-heartbeat-day1', async (req, res) => {
 app.post('/api/admin/trigger-heartbeat-cliff-warnings', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!heartbeatComplianceScheduler) {
@@ -17946,7 +18199,7 @@ app.post('/api/admin/trigger-heartbeat-cliff-warnings', async (req, res) => {
 app.post('/api/admin/trigger-heartbeat-day5', async (req, res) => {
   try {
     const { adminEmail } = req.body;
-    if (!adminEmail || adminEmail.toLowerCase() !== CREATOR_EMAIL) {
+    if (!requestIsAdmin(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     if (!heartbeatComplianceScheduler) {
@@ -17971,19 +18224,33 @@ app.post('/api/admin/trigger-heartbeat-day5', async (req, res) => {
 async function requireCreator(req, res) {
   const creatorCheck = await isCreator(req.userId);
   if (!creatorCheck) {
-    res.status(403).json({ error: 'Admin access required' });
+    res.status(403).json({ error: 'Admin access required', users: [], success: false });
     return false;
   }
   return true;
 }
 
+async function requireAdminOrCreator(req, res) {
+  try {
+    const { userCanOpenAdmin } = require('./config/adminAccess');
+    if (await userCanOpenAdmin(pool, req.userId)) return true;
+  } catch (err) {
+    console.warn('admin check failed:', err.message);
+  }
+  return requireCreator(req, res);
+}
+
 // GET /api/admin/affiliate-tree — Full affiliate referral tree
 app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
+  let client;
   try {
-    if (!(await requireCreator(req, res))) return;
+    if (!(await requireAdminOrCreator(req, res))) return;
+    if (!pool) return res.status(500).json({ success: false, users: [], error: 'Database unavailable' });
+    client = await pool.connect();
+    await client.query("SET statement_timeout = '5000'");
 
     // Get all users with affiliate info (including new tree placement fields)
-    const usersResult = await pool.query(`
+    const usersResult = await client.query(`
       SELECT u.id, u.name, u.email, u.referred_by_user_id, u.plan, u.paid_until,
              u.is_creator, u.promo_code_used, u.created_at,
              a.id as affiliate_id, a.referral_code, a.status as affiliate_status,
@@ -17996,7 +18263,7 @@ app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
     `);
 
     // Get referral counts per user (how many direct referrals)
-    const referralCounts = await pool.query(`
+    const referralCounts = await client.query(`
       SELECT referred_by_user_id, COUNT(*) as referral_count
       FROM users
       WHERE referred_by_user_id IS NOT NULL
@@ -18009,10 +18276,10 @@ app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
     });
 
     // Build user list with referral counts
-    const users = usersResult.rows.map(u => ({
+    const users = (usersResult.rows || []).map(u => ({
       id: u.id,
-      name: u.name || u.email.split('@')[0],
-      email: u.email,
+      name: u.name || (u.email ? String(u.email).split('@')[0] : 'User'),
+      email: u.email || '',
       referred_by_user_id: u.referred_by_user_id,
       plan: u.plan,
       is_creator: u.is_creator,
@@ -18034,7 +18301,14 @@ app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
     res.json({ success: true, users });
   } catch (err) {
     console.error('GET /api/admin/affiliate-tree error:', err.message);
-    res.status(500).json({ error: 'Failed to load affiliate tree' });
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, users: [], error: 'Failed to load affiliate tree' });
+    }
+  } finally {
+    if (client) {
+      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be dead */ }
+      client.release();
+    }
   }
 });
 
@@ -18775,7 +19049,7 @@ app.get('/api/news', async (req, res) => {
       try {
         const response = await fetch(feed.url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; FinancialRevolution/1.0; +https://financial-revolution.polsia.app/news)',
+            'User-Agent': 'Mozilla/5.0 (compatible; FinancialRevolution/1.0; +https://app.factsmoney.com/news)',
             'Accept': 'application/rss+xml, application/xml, text/xml, */*'
           },
           signal: AbortSignal.timeout(8000)
@@ -20942,7 +21216,7 @@ app.post('/api/junior/profiles', requireAuth, async (req, res) => {
       'INSERT INTO junior_profiles (parent_user_id, name, avatar_emoji, access_code) VALUES ($1,$2,$3,$4) RETURNING *',
       [req.userId, name.trim(), avatar_emoji, code]
     );
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     res.json({ profile: r.rows[0], share_url: `${appUrl}/junior-command?kid=${r.rows[0].id}&code=${code}` });
   } catch (err) {
     console.error('[Junior] POST profiles:', err.message);
@@ -20983,7 +21257,7 @@ app.delete('/api/junior/profiles/:id', requireAuth, async (req, res) => {
 app.get('/api/junior/family-progress', requireAuth, async (req, res) => {
   try {
     const kids = (await pool.query('SELECT * FROM junior_profiles WHERE parent_user_id = $1 ORDER BY created_at ASC', [req.userId])).rows;
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const result = [];
     for (const k of kids) {
       const missions  = (await pool.query("SELECT * FROM apprentice_missions WHERE kid_id = $1 ORDER BY created_at DESC LIMIT 20", [k.id])).rows;
@@ -22939,7 +23213,7 @@ app.get('/api/user/referral-code', requireAuth, async (req, res) => {
       );
     }
 
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const referralLink = `${appUrl}/signup.html?ref=${referralCode}`;
 
     // Count referrals made by this user
@@ -24450,18 +24724,12 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
       [userId, normalizedEmail, token, expiresAt]
     );
 
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const confirmUrl = `${appUrl}/settings?action=confirm-email&token=${token}`;
 
     // Send confirmation email
     try {
-      await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      await sendEmail({
           to: normalizedEmail,
           subject: 'Confirm your new FACTS email address',
           html: `
@@ -24478,9 +24746,7 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
               <p style="color:#666;font-size:0.875rem;">This link expires in 24 hours. If you didn't request this change, you can safely ignore this email.</p>
             </div>
           `,
-          body: `Confirm your FACTS email change: ${confirmUrl}\n\nThis link expires in 24 hours.`,
-          transactional: true
-        })
+          text: `Confirm your FACTS email change: ${confirmUrl}\n\nThis link expires in 24 hours.`
       });
     } catch (emailErr) {
       console.error('[Settings] Email change confirmation email failed:', emailErr.message);
@@ -24488,13 +24754,7 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
 
     // Also notify old email
     try {
-      await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      await sendEmail({
           to: user.email,
           subject: 'FACTS: Email change requested',
           html: `
@@ -24506,9 +24766,7 @@ app.post('/api/settings/change-email/request', requireAuth, async (req, res) => 
               </p>
             </div>
           `,
-          body: `A request was made to change your FACTS account email to ${normalizedEmail}. If this wasn't you, please change your password.`,
-          transactional: true
-        })
+          text: `A request was made to change your FACTS account email to ${normalizedEmail}. If this wasn't you, please change your password.`
       });
     } catch (notifyErr) {
       console.error('[Settings] Old email notification failed:', notifyErr.message);
@@ -24689,13 +24947,7 @@ app.post('/api/settings/delete-account', requireAuth, async (req, res) => {
 
     // Send farewell email before deletion
     try {
-      await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      await sendEmail({
           to: user.email,
           subject: 'Your FACTS account has been deleted',
           html: `
@@ -24706,14 +24958,12 @@ app.post('/api/settings/delete-account', requireAuth, async (req, res) => {
               </p>
               <p style="color:#333;line-height:1.6;">
                 If you ever want to start fresh, you're always welcome back at
-                <a href="https://financial-revolution.polsia.app" style="color:#10b981;">financial-revolution.polsia.app</a>.
+                <a href="https://app.factsmoney.com" style="color:#10b981;">app.factsmoney.com</a>.
               </p>
               <p style="color:#666;font-size:0.875rem;margin-top:24px;">If you did not request this deletion, please contact us immediately.</p>
             </div>
           `,
-          body: `Your FACTS account has been deleted. All data has been permanently erased.`,
-          transactional: true
-        })
+          text: `Your FACTS account has been deleted. All data has been permanently erased.`
       });
     } catch (emailErr) {
       console.error('[Settings] Account deletion email failed:', emailErr.message);
@@ -25187,8 +25437,8 @@ app.get('/api/affiliate/sovereign-dashboard', requireAuth, async (req, res) => {
       affiliate: {
         id: aff.id,
         referral_code: aff.referral_code,
-        referral_link: `https://financial-revolution.polsia.app/pricing.html?ref=${aff.referral_code}`,
-        family_referral_link: `https://financial-revolution.polsia.app/pricing.html?ref=${aff.referral_code}&legacy=1`,
+        referral_link: `${process.env.APP_URL || 'https://app.factsmoney.com'}/pricing.html?ref=${aff.referral_code}`,
+        family_referral_link: `${process.env.APP_URL || 'https://app.factsmoney.com'}/pricing.html?ref=${aff.referral_code}&legacy=1`,
         referral_link_mode: aff.referral_link_mode || 'general',
         status: aff.status,
         pending_balance_cents: aff.pending_balance_cents || 0,
@@ -25487,7 +25737,7 @@ app.post('/api/affiliate/succession/initiate-transfer', requireAuth, async (req,
     const transferId = insertResult.rows[0].id;
 
     // Generate the sign URL for the successor
-    const baseUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const baseUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const signUrl = `${baseUrl}/succession-sign?token=${signToken}`;
 
     console.log(`[Succession] Transfer #${transferId} initiated by user ${userId}. Successor sign URL: ${signUrl}`);
@@ -26198,7 +26448,7 @@ app.post('/api/affiliate/graduate', requireAuth, async (req, res) => {
     );
     if (existingAffiliate.rows.length > 0) {
       const aff = existingAffiliate.rows[0];
-      const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+      const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
       return res.json({
         success: true,
         already_affiliate: true,
@@ -26258,7 +26508,7 @@ app.post('/api/affiliate/graduate', requireAuth, async (req, res) => {
     }
 
     const aff = result.rows[0];
-    const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     const referralLink = `${appUrl}/signup?ref=${referralCode}`;
 
     console.log(`[Graduation] User ${userId} graduated to affiliate. Code: ${referralCode}, Level: ${placement.affiliateLevel}`);
@@ -29826,7 +30076,7 @@ app.post('/api/receipts/scan', requireAuth, receiptScanUpload.single('file'), as
     const isBusinessPro = pricing_tier === 'business_bundle';
 
     // Call AI vision to extract receipt data
-    const aiClient = new OpenAI();
+    const aiClient = getOpenAI();
     const mimeType = ['image/heic', 'image/heif'].includes(req.file.mimetype) ? 'image/jpeg' : req.file.mimetype;
     const b64 = req.file.buffer.toString('base64');
     const today = new Date().toISOString().split('T')[0];
@@ -33136,7 +33386,7 @@ app.post('/api/phase-zero/ai-suggest', requireAuth, async (req, res) => {
     // Try AI first, fall back to rule-based
     var suggestion = null;
     try {
-      var aiClient = new OpenAI();
+      var aiClient = getOpenAI();
       var prompt = `You are a FACTS Protocol financial architect. Based on the user's answers, suggest optimal allocation percentages across 6 buckets that sum to exactly 100.
 
 User answers:
@@ -33268,20 +33518,14 @@ app.post('/api/email-verify/send', requireAuth, async (req, res) => {
       [userId, otp, expiresAt, attempts, !!(windowOpen)]
     );
 
-    // Send OTP via Polsia email proxy
+    // Send OTP via Resend
     var appName = 'FACTS';
-    var appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+    var appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
     try {
-      await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-        },
-        body: JSON.stringify({
+      await sendEmail({
           to: user.email,
           subject: `${otp} is your ${appName} verification code`,
-          body: `Your ${appName} Phase Zero verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`,
+          text: `Your ${appName} Phase Zero verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`,
           html: `
             <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#0a0f1a;border-radius:16px;">
               <h2 style="color:#10b981;margin:0 0 8px;font-size:1.4rem;">${appName} Verification Code</h2>
@@ -33296,9 +33540,7 @@ app.post('/api/email-verify/send', requireAuth, async (req, res) => {
                 If you didn't request this, you can safely ignore this email.<br>
                 <a href="${appUrl}" style="color:#10b981;">${appUrl}</a>
               </p>
-            </div>`,
-          transactional: true
-        })
+            </div>`
       });
     } catch (emailErr) {
       console.error('[PhaseZero] email-verify send error:', emailErr.message);
@@ -33761,12 +34003,11 @@ async function requireAdminAllowlist(req, res) {
     res.status(401).json({ error: 'Authentication required' });
     return false;
   }
-  const result = await pool.query('SELECT email, is_admin, is_creator FROM users WHERE id = $1', [req.session.userId]);
-  if (!result.rows.length) {
+  const row = await loadAdminFlags(pool, req.session.userId);
+  if (!row) {
     res.status(403).json({ error: 'Admin access required' });
     return false;
   }
-  const row = result.rows[0];
   const userEmail = (row.email || '').toLowerCase();
 
   // Personal owner accounts stay out of admin tools. Allowlisted admin emails
@@ -33785,116 +34026,32 @@ async function requireAdminAllowlist(req, res) {
   return true;
 }
 
+const { collectAggregateMetrics, emptyAggregate } = require('./modules/admin/aggregate-metrics');
+
 // GET /api/admin/aggregate-metrics — Aggregate user & engagement metrics (no individual data)
 app.get('/api/admin/aggregate-metrics', requireAuth, async (req, res) => {
   try {
     if (!(await requireAdminAllowlist(req, res))) return;
+  } catch (err) {
+    console.error('[AdminDashboard] admin check error:', err.message);
+    if (!res.headersSent) res.status(403).json({ success: false, error: 'Admin access required' });
+    return;
+  }
 
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-
-    // User counts
-    const [totalUsers, activeUsers7d, activeUsers30d] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM users WHERE is_creator = false'),
-      pool.query(`SELECT COUNT(DISTINCT user_id) FROM user_activity_events WHERE event_date >= $1`, [sevenDaysAgo.toISOString().split('T')[0]]),
-      pool.query(`SELECT COUNT(DISTINCT user_id) FROM user_activity_events WHERE event_date >= $1`, [thirtyDaysAgo.toISOString().split('T')[0]])
-    ]);
-
-    // Tier distribution — uses plan + subscription_tier columns
-    const tierDist = await pool.query(`
-      SELECT
-        CASE
-          WHEN is_creator THEN 'Admin'
-          WHEN plan = 'paid' AND paid_until > NOW() THEN
-            COALESCE(NULLIF(TRIM(pricing_tier), ''), NULLIF(TRIM(subscription_tier), ''), 'Paid')
-          WHEN trial_expires_at IS NOT NULL AND trial_expires_at > NOW() THEN 'Trial'
-          WHEN promo_code_used IS NOT NULL AND (promo_grace_expired IS NULL OR promo_grace_expired = false) THEN 'Promo'
-          ELSE 'Free'
-        END AS tier_label,
-        COUNT(*) AS user_count
-      FROM users
-      GROUP BY 1
-      ORDER BY user_count DESC
-    `);
-
-    // New registrations trend (last 30 days, by day)
-    const regTrend = await pool.query(`
-      SELECT DATE(created_at) AS day, COUNT(*) AS new_users
-      FROM users
-      WHERE created_at >= $1
-      GROUP BY 1
-      ORDER BY 1
-    `, [thirtyDaysAgo]);
-
-    // Feature usage (top events from user_activity_events)
-    const featureUsage = await pool.query(`
-      SELECT event_type, COUNT(*) AS usage_count, COUNT(DISTINCT user_id) AS unique_users
-      FROM user_activity_events
-      WHERE event_date >= $1
-      GROUP BY event_type
-      ORDER BY usage_count DESC
-      LIMIT 20
-    `, [thirtyDaysAgo.toISOString().split('T')[0]]);
-
-    // Module adoption (add-on attachment rates)
-    const moduleAdoption = await pool.query(`
-      SELECT module_key, COUNT(DISTINCT user_id) AS users_with_module
-      FROM user_module_overrides
-      WHERE enabled = true
-      GROUP BY module_key
-      ORDER BY users_with_module DESC
-    `).catch(() => ({ rows: [] })); // table may not exist yet
-
-    // Daily active users (last 30 days)
-    const dauTrend = await pool.query(`
-      SELECT event_date::date AS day, COUNT(DISTINCT user_id) AS active_users
-      FROM user_activity_events
-      WHERE event_date >= $1
-      GROUP BY 1
-      ORDER BY 1
-    `, [thirtyDaysAgo.toISOString().split('T')[0]]);
-
-    // Revenue metrics (from subscriptions table)
-    const revenueMetrics = await pool.query(`
-      SELECT
-        COALESCE(plan, 'unknown') AS plan_type,
-        COUNT(*) AS count,
-        SUM(amount_cents) / 100.0 AS total_revenue,
-        AVG(amount_cents) / 100.0 AS avg_amount
-      FROM subscriptions
-      WHERE status IN ('completed', 'active')
-        AND created_at >= $1
-      GROUP BY plan_type
-      ORDER BY total_revenue DESC
-    `, [thirtyDaysAgo]).catch(() => ({ rows: [] }));
-
-    // MRR estimate (active paid users × avg price per tier)
-    const mrrData = await pool.query(`
-      SELECT COUNT(*) AS paid_count, SUM(amount_cents) / 100.0 AS mrr
-      FROM subscriptions
-      WHERE status IN ('completed', 'active')
-        AND (expires_at IS NULL OR expires_at > NOW())
-    `).catch(() => ({ rows: [{ paid_count: 0, mrr: 0 }] }));
-
-    res.json({
-      success: true,
-      user_counts: {
-        total: parseInt(totalUsers.rows[0].count),
-        active_7d: parseInt(activeUsers7d.rows[0].count),
-        active_30d: parseInt(activeUsers30d.rows[0].count)
-      },
-      tier_distribution: tierDist.rows,
-      registration_trend: regTrend.rows,
-      feature_usage: featureUsage.rows,
-      module_adoption: moduleAdoption.rows,
-      dau_trend: dauTrend.rows,
-      revenue_metrics: revenueMetrics.rows,
-      mrr: mrrData.rows[0]
-    });
+  let client;
+  try {
+    client = await pool.connect();
+    try { await client.query("SET statement_timeout = '8000'"); } catch (timeoutErr) { /* keep going */ }
+    const payload = await collectAggregateMetrics(client);
+    res.json(payload);
   } catch (err) {
     console.error('[AdminDashboard] aggregate-metrics error:', err.message);
-    res.status(500).json({ error: 'Failed to load aggregate metrics' });
+    if (!res.headersSent) res.json(emptyAggregate(['aggregate']));
+  } finally {
+    if (client) {
+      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be closed */ }
+      client.release();
+    }
   }
 });
 
@@ -33929,27 +34086,10 @@ app.post('/api/support/tickets', optionalAuth, supportUpload.single('screenshot'
     // Upload screenshot to R2 if provided
     if (req.file) {
       try {
-        const POLSIA_API_KEY = process.env.POLSIA_API_KEY;
-        if (POLSIA_API_KEY) {
-          const filename = `support-${Date.now()}-${req.file.originalname}`;
-          const formData = new FormData();
-          formData.append('file', req.file.buffer, {
-            filename,
-            contentType: req.file.mimetype,
-          });
-
-          const r2Res = await nodeFetch('https://polsia.com/api/proxy/r2/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${POLSIA_API_KEY}`,
-              ...formData.getHeaders(), // CRITICAL: includes Content-Type with boundary
-            },
-            body: formData,
-          });
-          const r2Data = await r2Res.json().catch(() => ({}));
-          if (r2Data.success && r2Data.file && r2Data.file.url) {
-            screenshot_url = r2Data.file.url;
-          }
+        const filename = `support-${Date.now()}-${req.file.originalname}`;
+        const uploadedUrl = await uploadFile(req.file.buffer, filename, req.file.mimetype, { folder: 'support-screenshots' });
+        if (uploadedUrl) {
+          screenshot_url = uploadedUrl;
         }
       } catch (uploadErr) {
         console.error('[SupportTickets] screenshot upload failed:', uploadErr.message);
@@ -34094,7 +34234,7 @@ app.post('/api/advisory/invite', requireAuth, async (req, res) => {
     );
 
     const session = result.rows[0];
-    const shareLink = `${process.env.APP_URL || 'https://financial-revolution.polsia.app'}/advisory-join?token=${token}`;
+    const shareLink = `${process.env.APP_URL || 'https://app.factsmoney.com'}/advisory-join?token=${token}`;
 
     res.json({
       success: true,
@@ -34299,8 +34439,8 @@ app.get('/api/advisory/active', requireAuth, async (req, res) => {
 // ─── Cron: expire stale advisory sessions every 5 minutes ───────────────────
 (function initAdvisoryCron() {
   // Guard: only start in-process schedulers when Blaxel shadow is not active
-  if (process.env.POLSIA_IN_PROCESS_CRONS_ENABLED !== 'true') {
-    console.log('[Advisory] Cleanup cron skipped: POLSIA_IN_PROCESS_CRONS_ENABLED != true');
+  if (process.env.IN_PROCESS_CRONS_ENABLED !== 'true') {
+    console.log('[Advisory] Cleanup cron skipped: IN_PROCESS_CRONS_ENABLED != true');
     return;
   }
   try {

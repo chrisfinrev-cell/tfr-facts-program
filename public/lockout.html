@@ -370,14 +370,20 @@
     }
 
     window.handleLogout = function(e) {
-      e.preventDefault();
-      fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
-        .then(function() { window.location.href = '/login'; })
-        .catch(function() { window.location.href = '/login'; });
+      if (e) e.preventDefault();
+      if (typeof factsLogout === 'function') {
+        factsLogout('/login');
+        return;
+      }
+      try { localStorage.clear(); } catch (err) { /* ignore */ }
+      try { sessionStorage.clear(); } catch (err) { /* ignore */ }
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+        .finally(function () { window.location.replace('/login'); });
     };
   })();
   </script>
 <script defer src="/legal-disclaimer.js"></script>
+<script src="/js/facts-logout.js"></script>
 <script src="/js/global-footer.js"></script>
 </body>
 </html>

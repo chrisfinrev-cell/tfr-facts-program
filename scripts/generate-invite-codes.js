@@ -5,8 +5,10 @@
  * Usage:
  *   node scripts/generate-invite-codes.js --count=1 --name="Jane Doe" --email="jane@example.com" --meta='{"cohort":"investors"}'
  *   node scripts/generate-invite-codes.js --count=5 --parent=FACTS-ABCD-1234 --csv=./invites.csv
+ *   node scripts/generate-invite-codes.js --shared --count=100 --email=admin@factsmoney.com
  *
  * Flags:
+ *   --shared           Top up the shared 100-code admin list (FIN-REV-XXXX-XXXX)
  *   --count=N          Number of codes (default 1, max 500)
  *   --name="..."       Recipient full name / organization
  *   --email="..."      Recipient email
@@ -22,7 +24,13 @@
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
-const { createTargetedInvites, invitesToCsv, parseMeta } = require('../lib/inviteCodes');
+const {
+  createTargetedInvites,
+  invitesToCsv,
+  parseMeta,
+  ensureSharedInvitePool,
+  INVITE_CODE_PREFIX
+} = require('../lib/inviteCodes');
 
 function getFlag(name, fallback = null) {
   const argv = process.argv.slice(2);
@@ -37,8 +45,11 @@ function getFlag(name, fallback = null) {
 
 async function ensureSchema(pool) {
   const sqlPath = path.join(__dirname, '..', 'db', 'beta_invites_migration.sql');
-  const sql = fs.readFileSync(sqlPath, 'utf8');
-  await pool.query(sql);
+  await pool.query(fs.readFileSync(sqlPath, 'utf8'));
+  const inviteSqlPath = path.join(__dirname, '..', 'db', 'invite_codes_migration.sql');
+  if (fs.existsSync(inviteSqlPath)) {
+    await pool.query(fs.readFileSync(inviteSqlPath, 'utf8'));
+  }
 }
 
 async function main() {
@@ -55,8 +66,9 @@ async function main() {
   const maxUses = getFlag('max-uses', '1');
   const csvPath = getFlag('csv');
   const stdoutCsv = getFlag('stdout-csv') === true;
+  const shared = getFlag('shared') === true;
 
-  parseMeta(meta); // validate early
+  if (!shared) parseMeta(meta);
 
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -67,14 +79,29 @@ async function main() {
 
   try {
     await ensureSchema(pool);
-    const created = await createTargetedInvites(pool, {
-      count,
-      name,
-      email,
-      meta,
-      parentCode,
-      maxUses
-    });
+    let created;
+    if (shared) {
+      const result = await ensureSharedInvitePool(
+        pool,
+        email || 'cli',
+        parseInt(count, 10) || 100
+      );
+      created = result.created.length ? result.created : result.codes.filter((row) => row.status === 'ACTIVE');
+      console.log(
+        result.created.length
+          ? `Added ${result.created.length} shared ${INVITE_CODE_PREFIX} codes.`
+          : `Shared list already has ${created.length} active ${INVITE_CODE_PREFIX} codes.`
+      );
+    } else {
+      created = await createTargetedInvites(pool, {
+        count,
+        name,
+        email,
+        meta,
+        parentCode,
+        maxUses
+      });
+    }
 
     const csv = invitesToCsv(created);
     if (csvPath) {
@@ -85,10 +112,10 @@ async function main() {
     if (stdoutCsv) {
       process.stdout.write(csv);
     } else {
-      console.log(`Generated ${created.length} invite code(s):`);
+      console.log(`${shared ? 'Shared' : 'Generated'} ${created.length} invite code(s):`);
       for (const row of created) {
         console.log(
-          `  ${row.code}  →  ${row.sent_to_name || '(no name)'} <${row.sent_to_email || 'n/a'}>`
+          `  ${row.code}  →  ${row.sent_to_name || row.createdBy || '(shared)'} <${row.sent_to_email || row.status || 'n/a'}>`
         );
       }
     }

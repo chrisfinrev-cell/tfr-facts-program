@@ -180,7 +180,7 @@ async function testAuthFlow(testJar, inviteCode) {
   section('1. Auth Flow');
 
   const ts = Date.now();
-  const testEmail    = `smoke-test-${ts}@polsia-test.invalid`;
+  const testEmail    = `smoke-test-${ts}@facts-test.invalid`;
   const testPassword = `SmokeTest!${ts}`;
   const testName     = `Smoke Test ${ts}`;
 

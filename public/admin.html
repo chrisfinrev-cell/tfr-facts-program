@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel — Financial Revolution</title>
+  <link rel="icon" href="data:,">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0f1117; color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
@@ -229,7 +230,6 @@
       .node-card { min-width: 200px; }
     }
   </style>
-  <script defer src="/nav-bar.js"></script>
 </head>
 <body>
   <div class="admin-header">
@@ -257,9 +257,9 @@
   </div>
 
   <div class="tabs">
-    <div class="tab" data-tab="agg-dashboard">📊 Dashboard</div>
+    <div class="tab active" data-tab="agg-dashboard">📊 Dashboard</div>
     <div class="tab" data-tab="support-tickets">🎫 Support Tickets</div>
-    <div class="tab active" data-tab="tree">Future Generations Tree</div>
+    <div class="tab" data-tab="tree">Future Generations Tree</div>
     <div class="tab" data-tab="commissions">Commission Verify</div>
     <div class="tab" data-tab="accounts">👥 Accounts</div>
     <div class="tab" data-tab="test">Test Mode</div>
@@ -287,6 +287,12 @@
   <div id="loading" class="loading-center" style="padding-top: 80px;">
     <div class="loader"></div>
   </div>
+  <script>
+    setTimeout(function () {
+      var el = document.getElementById('loading');
+      if (el) el.style.display = 'none';
+    }, 1500);
+  </script>
 
   <!-- Password confirmation stays on /admin. It does not send you back to the app or login. -->
   <div id="admin-password-gate" style="display:none; max-width:420px; margin:48px auto; background:#111827; border:1px solid rgba(16,185,129,0.35); border-radius:14px; padding:22px;">
@@ -316,7 +322,7 @@
     <div class="main">
 
       <!-- ═══════ AGGREGATE DASHBOARD ═══════ -->
-      <div class="panel" id="panel-agg-dashboard">
+      <div class="panel active" id="panel-agg-dashboard">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
           <h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">Platform Aggregate Dashboard</h2>
           <button class="btn btn-secondary btn-sm" onclick="loadAggDashboard()">↻ Refresh</button>
@@ -324,6 +330,7 @@
         <p style="color:#52525b;font-size:12px;margin-bottom:20px;">
           ⚠️ Aggregate data only — no individual user information is ever shown here.
         </p>
+        <div id="agg-dashboard-error" role="status" style="display:none;margin-bottom:16px;padding:10px 12px;border-radius:8px;background:#3f1d1d;color:#fca5a5;font-size:13px;"></div>
 
         <!-- Key Metrics Cards -->
         <div class="stats-row" id="agg-metrics-cards" style="margin-bottom:24px;">
@@ -417,7 +424,7 @@
       </div>
 
       <!-- ═══════ ORGANIZATION TAB ═══════ -->
-      <div class="panel active" id="panel-tree">
+      <div class="panel" id="panel-tree">
         <div class="stats-row" id="tree-stats"></div>
 
         <!-- Seed Phase Status Widget -->
@@ -466,7 +473,7 @@
             </div>
           </div>
           <div id="tree-view" class="tree-container">
-            <div class="loading-center"><div class="loader"></div></div>
+            <div class="empty-state"><p>The organization chart loads when you open this tab. Codes are created under Beta Invites. Transactions are entered in the app.</p></div>
           </div>
         </div>
       </div>
@@ -888,6 +895,53 @@
       <!-- ═══════ BETA INVITES / FOUNDER TRACKER ═══════ -->
       <div class="panel" id="panel-beta-invites">
         <div class="section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+            <div>
+              <h2>Shared Beta Invite Codes</h2>
+              <p style="font-size:13px;color:#a1a1aa;margin:6px 0 0;">One list of 100 <code>FIN-REV</code> codes. Every administrator can copy and share these.</p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="generateSharedInviteCodes()">Generate 100 Codes</button>
+              <button class="btn btn-secondary btn-sm" onclick="copyAllActiveInviteCodes()">Copy All Active</button>
+              <button class="btn btn-secondary btn-sm" onclick="loadBetaPool()">↻ Refresh</button>
+            </div>
+          </div>
+          <div class="stats-row" style="margin-bottom:16px;">
+            <div class="stat-card"><div class="label">Active</div><div class="value green" id="pool-available">—</div></div>
+            <div class="stat-card"><div class="label">Used</div><div class="value blue" id="pool-signed-up">—</div></div>
+            <div class="stat-card"><div class="label">Revoked</div><div class="value yellow" id="pool-assigned">—</div></div>
+          </div>
+          <form class="form-row" onsubmit="assignPoolCode(event)">
+            <div class="form-group">
+              <label>Name (optional)</label>
+              <input type="text" id="poolName" placeholder="Jane Doe">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="poolEmail" placeholder="jane@example.com" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="poolSendBtn">Email a Code</button>
+          </form>
+          <p id="poolResult" style="margin-top:12px;font-size:0.9rem;color:#a1a1aa;"></p>
+          <div class="table-wrap" style="margin-top:12px;max-height:420px;overflow-y:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Status</th>
+                  <th>Created By</th>
+                  <th>Used By</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="poolCodesBody"><tr><td colspan="5">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;color:#71717a;text-transform:uppercase;letter-spacing:1px;margin:28px 0 12px;">Other ways to invite</h3>
+
+        <div class="section">
           <h2>Issue Master Admin Invite Code</h2>
           <div class="form-row">
             <div class="form-group">
@@ -923,7 +977,7 @@
             </div>
             <button class="btn btn-primary" onclick="createTargetedInviteCodes()">Create &amp; Send Codes</button>
           </div>
-          <p style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary);">The code is emailed to the recipient. They sign up with the link in that email.</p>
+          <p style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary);">The code is saved even if email is not configured. Copy it from the result if the message does not go out.</p>
           <p id="targetedInviteResult" style="margin-top:12px;font-size:0.85rem;color:var(--text-secondary);"></p>
         </div>
 
@@ -1686,6 +1740,41 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // Every admin tab uses fetch. Give each one the same deadline so a stuck
+    // database call cannot leave a spinner on the screen.
+    (function () {
+      var nativeFetch = window.fetch.bind(window);
+      window.fetch = function (input, init) {
+        var opts = init || {};
+        if (opts.signal) return nativeFetch(input, opts);
+        var controller = new AbortController();
+        var next = Object.assign({}, opts, { signal: controller.signal });
+        if (!next.credentials) next.credentials = 'same-origin';
+        return new Promise(function (resolve, reject) {
+          var settled = false;
+          var timer = setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            controller.abort();
+            var err = new Error('This admin request timed out.');
+            err.name = 'AbortError';
+            reject(err);
+          }, 8000);
+          nativeFetch(input, next).then(function (res) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resolve(res);
+          }, function (err) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            reject(err);
+          });
+        });
+      };
+    })();
+
     // ══════════════════════════════════════════
     // WAITLIST
     // ══════════════════════════════════════════
@@ -2135,6 +2224,33 @@
     let allUsers = [];
     let selectedUserId = null;
     let isCreatorUser = false;
+    const DEFAULT_ADMIN_TAB = 'agg-dashboard';
+    const ADMIN_FETCH_MS = 15000;
+
+    function fetchWithTimeout(url, options, ms) {
+      const timeoutMs = ms || ADMIN_FETCH_MS;
+      const controller = new AbortController();
+      const opts = Object.assign({ credentials: 'same-origin' }, options || {});
+      opts.signal = controller.signal;
+      let timer;
+      const timeout = new Promise(function (_, reject) {
+        timer = setTimeout(function () {
+          controller.abort();
+          const err = new Error('Request timed out');
+          err.name = 'AbortError';
+          reject(err);
+        }, timeoutMs);
+      });
+      return Promise.race([
+        fetch(url, opts).finally(function () { clearTimeout(timer); }),
+        timeout
+      ]);
+    }
+
+    function hidePageLoader() {
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+    }
 
     // ═══════════════════════════════════════
     // AUTH & INIT
@@ -2221,72 +2337,211 @@
       });
     }
 
+    function startAdminPanel(user) {
+      openAdminWorkspace(user);
+      hidePageLoader();
+      try {
+        switchTab(DEFAULT_ADMIN_TAB);
+      } catch (err) {
+        console.error('Admin tab load failed:', err);
+      }
+    }
+
     async function init() {
+      hidePageLoader();
+      try {
+      const injected = window.__ADMIN_SESSION || null;
+      const serverConfirmed = !!(injected && injected.isAdmin);
+
+      if (serverConfirmed) {
+        startAdminPanel({ email: injected.email || '', is_admin: true });
+        return;
+      }
+
       if (window.__ADMIN_LOCKED === true) {
         showAdminPasswordGate();
         return;
       }
 
-      const injected = window.__ADMIN_SESSION || null;
       let authUser = null;
       try {
-        const authRes = await fetch('/api/auth/me', { credentials: 'same-origin' });
-        const authData = await authRes.json();
+        const authRes = await fetchWithTimeout('/api/auth/me', { credentials: 'same-origin' }, 4000);
+        const authData = await authRes.json().catch(function () { return {}; });
         if (authData && authData.authenticated && authData.user) authUser = authData.user;
       } catch (authErr) {
         authUser = null;
       }
-
-      const serverConfirmed = !!(injected && injected.isAdmin);
-      if (!authUser && !serverConfirmed) {
+      if (!authUser) {
         showAdminStay('This admin page could not confirm the signed-in account. Refresh this page. You are not being sent back to login.');
         return;
       }
 
-      const user = authUser || { email: injected.email || '', is_admin: true };
+      const user = authUser;
       window.__ADMIN_USER__ = user;
 
       const userEmail = String(user.email || '').toLowerCase().trim();
       const emailIsAdmin = ADMIN_PANEL_EMAILS.indexOf(userEmail) !== -1;
-      const flagIsAdmin = !!user.is_admin || serverConfirmed;
-
-      try {
-        const proRes = await fetch('/api/pro-status');
-        const proData = await proRes.json();
-        isCreatorUser = !!proData.is_creator;
-      } catch (proErr) {
-        isCreatorUser = false;
-      }
+      const flagIsAdmin = !!user.is_admin;
 
       if (FUTURE_GEN_EMAILS.includes(userEmail) && !emailIsAdmin && !flagIsAdmin) {
-        document.getElementById('loading').style.display = 'none';
         document.getElementById('access-denied').style.display = 'block';
         return;
       }
 
-      if (!isCreatorUser && !emailIsAdmin && !flagIsAdmin) {
-        document.getElementById('loading').style.display = 'none';
+      if (!emailIsAdmin && !flagIsAdmin) {
         document.getElementById('access-denied').style.display = 'block';
         return;
       }
 
-      openAdminWorkspace(user);
-
-      try {
-        await loadTree();
-        loadPromoCodes();
+      startAdminPanel(user);
       } catch (err) {
-        console.error('Admin data load failed:', err);
+        console.error('Admin init failed:', err);
+        showAdminStay('The admin page could not finish loading. Refresh this page. You are not being sent back to login.');
+      } finally {
+        hidePageLoader();
+      }
+    }
+
+    const POOL_STATUS_LABELS = { ACTIVE: 'Active', USED: 'Used', REVOKED: 'Revoked', available: 'Active', assigned: 'Sent', signed_up: 'Used' };
+    window.__ACTIVE_INVITE_CODES__ = [];
+
+    async function loadBetaPool() {
+      const body = document.getElementById('poolCodesBody');
+      if (body) body.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+      try {
+        const data = await adminJson('/api/admin/invite-codes');
+        if (!data) {
+          if (body) body.innerHTML = '<tr><td colspan="5">Unlock admin tools to view invite codes.</td></tr>';
+          return;
+        }
+        if (!data.success) {
+          if (body) body.innerHTML = '<tr><td colspan="5" style="color:#fca5a5;">' + escHtml(data.error || 'Could not load beta codes.') + '</td></tr>';
+          window.__ACTIVE_INVITE_CODES__ = [];
+          return;
+        }
+        const codes = Array.isArray(data.codes) ? data.codes.filter(Boolean) : [];
+        const activeCodes = Array.isArray(data.activeCodes)
+          ? data.activeCodes.filter(Boolean)
+          : codes.filter(function (c) { return c && (c.status === 'ACTIVE' || c.status === 'available'); });
+        const activeEl = document.getElementById('pool-available');
+        const revokedEl = document.getElementById('pool-assigned');
+        const usedEl = document.getElementById('pool-signed-up');
+        if (activeEl) activeEl.textContent = data.active != null ? data.active : activeCodes.length;
+        if (revokedEl) revokedEl.textContent = data.revoked != null ? data.revoked : 0;
+        if (usedEl) usedEl.textContent = data.used != null ? data.used : 0;
+        window.__ACTIVE_INVITE_CODES__ = activeCodes;
+        if (!body) return;
+        if (!codes.length) {
+          body.innerHTML = '<tr><td colspan="5">No codes yet. Generate the shared list of 100.</td></tr>';
+          return;
+        }
+        body.innerHTML = codes.map(function (c) {
+          if (!c || !c.code) return '';
+          const status = c.status || c.inviteStatus || 'ACTIVE';
+          const copy = status === 'USED' || status === 'REVOKED' || status === 'signed_up'
+            ? ''
+            : '<button class="btn btn-secondary btn-sm" onclick="copyToClipboard(decodeURIComponent(\'' + encodeURIComponent(c.code) + '\'))">Copy Code</button> ' +
+              '<button class="btn btn-secondary btn-sm" onclick="copyToClipboard(decodeURIComponent(\'' + encodeURIComponent(c.signup_url || ('/signup.html?code=' + encodeURIComponent(c.code))) + '\'))">Copy Link</button>';
+          return '<tr><td><code>' + escHtml(c.code) + '</code></td><td>' + escHtml(POOL_STATUS_LABELS[status] || status) +
+            '</td><td>' + escHtml(c.createdBy || '—') + '</td><td>' + escHtml(c.usedBy || '—') +
+            '</td><td style="white-space:nowrap;">' + copy + '</td></tr>';
+        }).join('') || '<tr><td colspan="5">No codes yet. Generate the shared list of 100.</td></tr>';
+      } catch (err) {
+        window.__ACTIVE_INVITE_CODES__ = [];
+        if (body) body.innerHTML = '<tr><td colspan="5" style="color:#fca5a5;">Could not load beta codes. ' + escHtml(err.message || '') + '</td></tr>';
+      }
+    }
+
+    async function generateSharedInviteCodes() {
+      const resultEl = document.getElementById('poolResult');
+      if (resultEl) {
+        resultEl.style.color = '#a1a1aa';
+        resultEl.textContent = 'Generating shared FIN-REV codes…';
+      }
+      try {
+        const data = await adminJson('/api/admin/invite-codes/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count: 100, prefix: 'FIN-REV' })
+        });
+        if (!data) {
+          if (resultEl) {
+            resultEl.style.color = '#fca5a5';
+            resultEl.textContent = 'Unlock admin tools to generate codes.';
+          }
+          return;
+        }
+        if (resultEl) {
+          resultEl.style.color = data.success ? '#6ee7b7' : '#fca5a5';
+          resultEl.textContent = data.message || data.error || 'Could not generate codes.';
+        }
+      } catch (err) {
+        if (resultEl) {
+          resultEl.style.color = '#fca5a5';
+          resultEl.textContent = err.message || 'Could not generate codes.';
+        }
+      }
+      loadBetaPool();
+    }
+
+    function copyAllActiveInviteCodes() {
+      const codes = (window.__ACTIVE_INVITE_CODES__ || []).map(function (c) { return c.code; }).filter(Boolean);
+      if (!codes.length) {
+        const resultEl = document.getElementById('poolResult');
+        if (resultEl) {
+          resultEl.style.color = '#fbbf24';
+          resultEl.textContent = 'No active codes to copy. Generate the shared list first.';
+        }
+        return;
+      }
+      copyToClipboard(codes.join('\n'));
+    }
+
+    async function assignPoolCode(event) {
+      event.preventDefault();
+      const nameEl = document.getElementById('poolName');
+      const emailEl = document.getElementById('poolEmail');
+      const resultEl = document.getElementById('poolResult');
+      const btn = document.getElementById('poolSendBtn');
+      const email = emailEl.value.trim();
+      if (!email) return;
+      btn.disabled = true;
+      try {
+        const data = await adminJson('/api/admin/beta-pool/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: nameEl.value.trim(), email: email })
+        });
+        if (!data) return;
+        if (data.success) {
+          resultEl.style.color = data.emailSent ? '#6ee7b7' : '#fbbf24';
+          resultEl.innerHTML = escHtml(data.message) + ' <strong><code>' + escHtml(data.code) + '</code></strong>';
+          nameEl.value = '';
+          emailEl.value = '';
+        } else {
+          resultEl.style.color = '#fca5a5';
+          resultEl.textContent = data.error || 'Could not send a code.';
+        }
+        loadBetaPool();
+      } finally {
+        btn.disabled = false;
       }
     }
 
     async function loadBetaInviteTracking() {
+      const masterBody = document.getElementById('masterCodesBody');
+      const targetedBody = document.getElementById('targetedInvitesBody');
+      const lineageBody = document.getElementById('lineageBody');
+      try {
       const data = await adminJson('/api/admin/tracking');
       if (!data) return;
-      if (!data.success) return alert(data.error || 'Failed to load data.');
+      if (!data.success) {
+        if (masterBody) masterBody.innerHTML = '<tr><td colspan="5" style="color:#fca5a5;">' + escHtml(data.error || 'Failed to load data.') + '</td></tr>';
+        return;
+      }
 
-      const masterBody = document.getElementById('masterCodesBody');
-      masterBody.innerHTML = (data.masterCodes || []).map(c => `
+      if (masterBody) {
+        masterBody.innerHTML = (data.masterCodes || []).map(c => `
         <tr>
           <td><strong>${escHtml(c.code)}</strong></td>
           <td>${c.uses_count} / ${c.max_uses}</td>
@@ -2295,8 +2550,8 @@
           <td><button class="btn btn-secondary btn-sm" onclick="sendMasterBetaCode(decodeURIComponent('${encodeURIComponent(c.code || '')}'))">Email</button></td>
         </tr>
       `).join('') || '<tr><td colspan="5">No master codes yet.</td></tr>';
+      }
 
-      const targetedBody = document.getElementById('targetedInvitesBody');
       if (targetedBody) {
         targetedBody.innerHTML = (data.targetedInvites || []).map(i => `
           <tr>
@@ -2315,8 +2570,8 @@
         `).join('') || '<tr><td colspan="7">No targeted invites yet.</td></tr>';
       }
 
-      const lineageBody = document.getElementById('lineageBody');
-      lineageBody.innerHTML = (data.userLineage || []).map(u => `
+      if (lineageBody) {
+        lineageBody.innerHTML = (data.userLineage || []).map(u => `
         <tr>
           <td>${u.email}${u.affiliate_tier ? `<br><small>${u.affiliate_tier}</small>` : ''}</td>
           <td><code>${u.referral_code || 'N/A'}</code></td>
@@ -2332,6 +2587,12 @@
             : `<button class="btn btn-sm ${u.income_programs_blocked ? 'btn-primary' : 'btn-secondary'}" onclick="setIncomeEligibility(${u.user_id}, ${u.income_programs_blocked ? 'false' : 'true'})">${u.income_programs_blocked ? 'Blocked — Allow' : 'Eligible — Block'}</button>`}</td>
         </tr>
       `).join('') || '<tr><td colspan="8">No beta testers yet.</td></tr>';
+      }
+      } catch (err) {
+        if (masterBody) masterBody.innerHTML = '<tr><td colspan="5" style="color:#fca5a5;">Could not load invite tracking.</td></tr>';
+        if (targetedBody) targetedBody.innerHTML = '<tr><td colspan="7" style="color:#fca5a5;">Could not load targeted invites.</td></tr>';
+        if (lineageBody) lineageBody.innerHTML = '<tr><td colspan="8" style="color:#fca5a5;">Could not load lineage.</td></tr>';
+      }
     }
 
     async function setIncomeEligibility(userId, blocked) {
@@ -2346,52 +2607,96 @@
     }
 
     async function createBetaInviteCode() {
-      const code = document.getElementById('newCode').value;
-      const maxUses = document.getElementById('maxUses').value;
-
-      const data = await adminJson('/api/admin/generate-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, maxUses })
-      });
-      if (!data) return;
-      alert(data.message || data.error);
-      loadBetaInviteTracking();
+      try {
+        const code = (document.getElementById('newCode').value || '').trim();
+        const maxUses = document.getElementById('maxUses').value;
+        if (!code) {
+          alert('Enter a code name (e.g. VIP-FOUNDER-2026).');
+          return;
+        }
+        const data = await adminJson('/api/admin/generate-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code, codeName: code, maxUses: maxUses })
+        });
+        if (!data) return;
+        if (!data.success) {
+          alert(data.error || 'Could not create the master invite code.');
+          return;
+        }
+        alert(data.message || ('Master code ' + (data.code || code) + ' is ready.'));
+        loadBetaInviteTracking();
+      } catch (err) {
+        alert(err.message || 'Could not create the master invite code.');
+      }
     }
 
     async function adminJson(url, options) {
-      const res = await fetch(url, Object.assign({ credentials: 'same-origin' }, options || {}));
-      const data = await res.json().catch(function () { return {}; });
-      if (data && data.code === 'admin_locked') {
-        showAdminPasswordGate();
-        return null;
+      try {
+        const res = await fetchWithTimeout(url, options, ADMIN_FETCH_MS);
+        const data = await res.json().catch(function () { return {}; });
+        if (data && data.code === 'admin_locked') {
+          showAdminPasswordGate();
+          return null;
+        }
+        if (!res.ok && data && !data.error && !data.success) {
+          data.success = false;
+          data.error = data.error || ('Request failed (' + res.status + ')');
+        }
+        return data || { success: false, error: 'Empty response.' };
+      } catch (err) {
+        const timedOut = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
+        return {
+          success: false,
+          error: timedOut ? 'Request timed out. Try again.' : (err.message || 'Request failed.')
+        };
       }
-      return data;
     }
 
     async function createTargetedInviteCodes() {
-      const name = document.getElementById('inviteSentToName').value;
-      const email = document.getElementById('inviteSentToEmail').value.trim();
-      const count = document.getElementById('inviteCount').value || 1;
-      const metaRaw = document.getElementById('inviteMeta').value || '{}';
-      let meta = {};
-      try { meta = JSON.parse(metaRaw); } catch (e) { return alert('Metadata must be valid JSON'); }
-      if (!email || email.indexOf('@') === -1) {
-        return alert('Enter the recipient email. The beta code is sent to that address.');
-      }
-
-      const data = await adminJson('/api/admin/generate-invites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, count, meta, maxUses: 1 })
-      });
-      if (!data) return;
       const resultEl = document.getElementById('targetedInviteResult');
-      const codes = (data.invites || []).map(i => i.code).join(', ');
-      const summary = data.message || data.error || (data.success ? 'Invite sent.' : 'Failed to send invite.');
-      if (resultEl) resultEl.textContent = summary + (codes ? ' ' + codes : '');
-      alert(summary);
-      loadBetaInviteTracking();
+      try {
+        const name = document.getElementById('inviteSentToName').value;
+        const email = document.getElementById('inviteSentToEmail').value.trim();
+        const count = document.getElementById('inviteCount').value || 1;
+        const metaRaw = document.getElementById('inviteMeta').value || '{}';
+        let meta = {};
+        try { meta = JSON.parse(metaRaw); } catch (e) { return alert('Metadata must be valid JSON. Example: {"cohort":"investors"}'); }
+        if (!email || email.indexOf('@') === -1) {
+          return alert('Enter the recipient email so the code can be stored on that invite.');
+        }
+
+        const data = await adminJson('/api/admin/generate-invites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            recipientName: name,
+            email: email,
+            recipientEmail: email,
+            count: count,
+            meta: meta,
+            metadata: meta,
+            maxUses: 1
+          })
+        });
+        if (!data) return;
+        const codes = (data.codes || (data.invites || []).map(function (invite) { return invite.code; })).filter(Boolean).join(', ');
+        const created = !!(data.success || data.created || codes);
+        const summary = data.message || data.error || (created ? 'Invite code created.' : 'Failed to create invite code.');
+        if (resultEl) {
+          resultEl.style.color = created ? (data.emailSent ? '#6ee7b7' : '#fbbf24') : '#fca5a5';
+          resultEl.textContent = summary + (codes ? ' Code: ' + codes : '');
+        }
+        alert(summary + (codes ? '\n\nCode: ' + codes : ''));
+        loadBetaInviteTracking();
+      } catch (err) {
+        if (resultEl) {
+          resultEl.style.color = '#fca5a5';
+          resultEl.textContent = err.message || 'Failed to create invite code.';
+        }
+        alert(err.message || 'Failed to create invite code.');
+      }
     }
 
     async function sendTargetedInvite(id, existingEmail) {
@@ -2422,24 +2727,50 @@
       alert(data.message || data.error || 'Could not send that code.');
     }
 
+    let panelWatchToken = 0;
+    function armPanelWatch() {
+      const token = ++panelWatchToken;
+      setTimeout(function () {
+        if (token !== panelWatchToken) return;
+        const panel = document.querySelector('.panel.active');
+        if (!panel) return;
+        panel.querySelectorAll('.loader').forEach(function (loader) {
+          const host = loader.closest('.loading-center') || loader.parentElement;
+          if (!host) return;
+          host.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">This section did not finish loading. Refresh the tab.</p></div>';
+        });
+      }, 8000);
+    }
+
     function switchTab(tabName) {
+      armPanelWatch();
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
       document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tabName}`));
-      if (tabName === 'commissions') loadCommissions();
-      if (tabName === 'accounts') { loadAffiliates(); loadFoundingMembers(); }
-      if (tabName === 'education') loadEducationAdmin();
-      if (tabName === 'shop-save') loadShopAdmin();
-      if (tabName === 'nda') loadNdaStatus();
-      if (tabName === 'beta-invites') loadBetaInviteTracking();
-      if (tabName === 'resources') loadResourcesAdmin();
-      if (tabName === 'feed') loadFeedAdmin();
-      if (tabName === 'waitlist') loadWaitlist();
-      if (tabName === 'users') { loadUserSearch(); loadDeletionLog(); }
-      if (tabName === 'succession') loadSuccessionAdmin();
-      if (tabName === 'trials') loadTrialStats();
-      if (tabName === 'launch-waitlist') loadLaunchWaitlist();
-      if (tabName === 'phase-zero') loadPhaseZero();
-      if (tabName === 'gamification') loadGamificationPreview();
+      try {
+        if (tabName === 'agg-dashboard') loadAggDashboard();
+        if (tabName === 'promo') loadPromoCodes();
+        if (tabName === 'tree') loadTree();
+        if (tabName === 'support-tickets') loadTickets();
+        if (tabName === 'vault-cycles') loadVaultCycles();
+        if (tabName === 'commissions') loadCommissions();
+        if (tabName === 'accounts') { loadAffiliates(); loadFoundingMembers(); }
+        if (tabName === 'education') loadEducationAdmin();
+        if (tabName === 'shop-save') loadShopAdmin();
+        if (tabName === 'nda') loadNdaStatus();
+        if (tabName === 'beta-invites') { loadBetaPool(); loadBetaInviteTracking(); }
+        if (tabName === 'resources') loadResourcesAdmin();
+        if (tabName === 'feed') loadFeedAdmin();
+        if (tabName === 'waitlist') loadWaitlist();
+        if (tabName === 'users') { loadUserSearch(); loadDeletionLog(); }
+        if (tabName === 'succession') loadSuccessionAdmin();
+        if (tabName === 'trials') loadTrialStats();
+        if (tabName === 'launch-waitlist') loadLaunchWaitlist();
+        if (tabName === 'phase-zero') loadPhaseZero();
+        if (tabName === 'gamification') loadGamificationPreview();
+      } catch (err) {
+        console.error('Admin tab load failed:', tabName, err);
+        toast('This tab could not finish loading.', true);
+      }
     }
 
     // ═══════════════════════════════════════
@@ -2549,10 +2880,15 @@
         // Highlight active button
         const activeBtn = buttons.querySelector('[data-tier="' + currentTier + '"]');
         if (activeBtn) activeBtn.classList.add('active');
+      } else if (window.__SAFE_MODE !== false) {
+        banner.style.display = 'flex';
+        badge.textContent = 'Current: ' + currentTier;
+        badge.style.display = 'inline-block';
       } else {
-        // Show banner with current tier anyway (admin may want to switch)
-        // Fetch fresh user data to check testing_override status
-        fetch('/api/auth/me').then(r => r.json()).then(data => {
+        banner.style.display = 'flex';
+        badge.textContent = 'Current: ' + currentTier;
+        badge.style.display = 'inline-block';
+        fetchWithTimeout('/api/auth/me', { credentials: 'same-origin' }, 5000).then(r => r.json()).then(data => {
           const u = data.user || {};
           const testing = u.testing_override;
           const tier = normalizeTierName(u.pricing_tier || 'free');
@@ -2585,32 +2921,86 @@
     // ═══════════════════════════════════════
     // ORGANIZATION
     // ═══════════════════════════════════════
+    function showTreeMessage(title, detail, isError) {
+      allUsers = Array.isArray(allUsers) ? allUsers : [];
+      const container = document.getElementById('tree-view');
+      if (!container) return;
+      const retry = '<div style="margin-top:12px;"><button class="btn btn-secondary btn-sm" type="button" onclick="loadTree()">Try again</button></div>';
+      container.innerHTML = '<div class="empty-state"><div class="icon">' + (isError ? '⚠️' : '🌳') + '</div><p>' +
+        escHtml(title || 'No organization data.') + '</p>' +
+        (detail ? '<p style="color:#71717a;font-size:13px;margin-top:6px;">' + escHtml(detail) + '</p>' : '') +
+        retry + '</div>';
+    }
+
+    let treeLoadToken = 0;
+
     async function loadTree() {
+      const container = document.getElementById('tree-view');
+      const token = ++treeLoadToken;
+      if (container) container.innerHTML = '<div class="loading-center"><div class="loader"></div></div>';
+      const watchdog = setTimeout(function () {
+        if (token !== treeLoadToken) return;
+        treeLoadToken += 1;
+        showTreeMessage(
+          'The organization chart took too long.',
+          'This tab is only the referral chart. Create codes under Beta Invites. Enter income and expenses in the app.',
+          true
+        );
+      }, 6000);
       try {
-        const [treeRes] = await Promise.all([
-          fetch('/api/admin/affiliate-tree'),
-          loadSeedStatus()
-        ]);
-        if (!treeRes.ok) throw new Error('Failed to load');
-        const data = await treeRes.json();
-        allUsers = data.users;
+        const treeRes = await fetchWithTimeout('/api/admin/affiliate-tree', { credentials: 'same-origin' }, 5000);
+        const raw = await treeRes.text();
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch (parseErr) {
+          throw new Error('Referral tree returned a non-JSON response (HTTP ' + treeRes.status + ').');
+        }
+        if (token !== treeLoadToken) return;
+        if (!treeRes.ok || data.success === false) {
+          allUsers = [];
+          showTreeMessage(
+            'Could not load the Future Generations tree.',
+            data.error || ('Request failed (' + treeRes.status + ').'),
+            true
+          );
+          renderTreeStats();
+          return;
+        }
+        if (token !== treeLoadToken) return;
+        allUsers = Array.isArray(data.users) ? data.users : [];
         renderTree();
         renderTreeStats();
         populateSelects();
+        loadSeedStatus().catch(function (seedErr) {
+          console.error('Seed status failed:', seedErr);
+        });
       } catch (err) {
+        if (token !== treeLoadToken) return;
         console.error(err);
+        const timedOut = err && (err.name === 'AbortError' || /aborted|timed out/i.test(err.message || ''));
+        allUsers = [];
+        showTreeMessage(
+          timedOut ? 'The organization chart took too long.' : 'Could not load the Future Generations tree.',
+          timedOut ? 'This tab is only the referral chart. Create codes under Beta Invites. Enter income and expenses in the app.' : (err.message || 'Unknown error'),
+          true
+        );
+        renderTreeStats();
         toast('Failed to load organization', true);
+      } finally {
+        clearTimeout(watchdog);
       }
     }
 
     async function loadSeedStatus() {
       try {
-        const res = await fetch('/api/admin/affiliate-seed-status');
+        const res = await fetchWithTimeout('/api/admin/affiliate-seed-status', { credentials: 'same-origin' }, ADMIN_FETCH_MS);
         if (!res.ok) return;
         const data = await res.json();
         if (!data.success) return;
 
         const widget = document.getElementById('seed-status-widget');
+        if (!widget) return;
         widget.style.display = 'block';
 
         const { seed_phase, placement_mode, total_affiliates, level_breakdown } = data;
@@ -2636,7 +3026,8 @@
         const levelColors = ['#f59e0b','#8b5cf6','#10b981','#3b82f6','#ec4899'];
         const byLevelEl = document.getElementById('seed-level-breakdown');
         const grouped = {};
-        level_breakdown.forEach(r => {
+        (level_breakdown || []).forEach(r => {
+          if (!r) return;
           if (!grouped[r.level]) grouped[r.level] = 0;
           grouped[r.level] += r.count;
         });
@@ -2651,13 +3042,16 @@
     }
 
     function renderTreeStats() {
+      if (!Array.isArray(allUsers)) allUsers = [];
+      const statsEl = document.getElementById('tree-stats');
+      if (!statsEl) return;
       const total = allUsers.length;
       const affiliates = allUsers.filter(u => u.affiliate_id).length;
       const withReferrer = allUsers.filter(u => u.referred_by_user_id).length;
       const testUsers = allUsers.filter(u => u.is_test_user).length;
       const totalEarnings = allUsers.reduce((s, u) => s + (u.lifetime_earnings_cents || 0), 0);
 
-      document.getElementById('tree-stats').innerHTML = `
+      statsEl.innerHTML = `
         <div class="stat-card">
           <div class="label">Total Users</div>
           <div class="value">${total}</div>
@@ -2683,13 +3077,19 @@
 
     function renderTree() {
       const container = document.getElementById('tree-view');
+      if (!container) return;
+      if (!Array.isArray(allUsers)) allUsers = [];
 
       // Build tree structure
       const userMap = {};
-      allUsers.forEach(u => userMap[u.id] = { ...u, children: [] });
+      allUsers.forEach(u => {
+        if (!u || u.id == null) return;
+        userMap[u.id] = { ...u, children: [] };
+      });
 
       const roots = [];
       allUsers.forEach(u => {
+        if (!u || u.id == null || !userMap[u.id]) return;
         if (u.referred_by_user_id && userMap[u.referred_by_user_id]) {
           userMap[u.referred_by_user_id].children.push(userMap[u.id]);
         } else {
@@ -2706,6 +3106,7 @@
     }
 
     function renderNode(node, isRoot = false) {
+      if (!node) return '';
       const hasChildren = node.children && node.children.length > 0;
       const isSelected = node.id === selectedUserId;
       const isTest = node.is_test_user;
@@ -2731,7 +3132,8 @@
       if (node.lifetime_earnings_cents > 0) badges += `<span class="badge badge-green">$${(node.lifetime_earnings_cents / 100).toFixed(2)}</span>`;
 
       const avatarClass = isTest ? 'test' : (node.affiliate_id ? '' : 'no-affiliate');
-      const initial = (node.name || node.email)[0].toUpperCase();
+      const label = node.name || (node.email ? String(node.email).split('@')[0] : 'User');
+      const initial = (label[0] || '?').toUpperCase();
 
       const childrenHtml = hasChildren
         ? `<div class="children" id="children-${node.id}">${node.children.map(c => renderNode(c)).join('')}</div>`
@@ -2746,8 +3148,8 @@
           <div class="node-card ${isSelected ? 'selected' : ''} ${isTest ? 'test-user' : ''}" onclick="selectUser(${node.id})" id="node-${node.id}">
             <div class="avatar ${avatarClass}">${initial}</div>
             <div class="info">
-              <div class="name">${escHtml(node.name || node.email.split('@')[0])}</div>
-              <div class="email">${escHtml(node.email)}</div>
+              <div class="name">${escHtml(label)}</div>
+              <div class="email">${escHtml(node.email || '')}</div>
               <div class="badges">${badges}</div>
             </div>
             ${toggleBtn}
@@ -3070,6 +3472,8 @@
         html += '</tbody></table>';
         document.getElementById('commission-table-wrap').innerHTML = html;
       } catch (err) {
+        const wrap = document.getElementById('commission-table-wrap');
+        if (wrap) wrap.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">' + escHtml(err.message || 'Could not load commissions.') + '</p></div>';
         toast('Failed to load commissions', true);
       }
     }
@@ -3108,6 +3512,8 @@
         html += '</tbody></table>';
         document.getElementById('promo-table-wrap').innerHTML = html;
       } catch (err) {
+        const wrap = document.getElementById('promo-table-wrap');
+        if (wrap) wrap.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">' + escHtml(err.message || 'Could not load promo codes.') + '</p></div>';
         toast('Failed to load promo codes', true);
       }
     }
@@ -3168,6 +3574,8 @@
         renderAffiliatesTable(allAffiliates);
       } catch (err) {
         console.error(err);
+        const wrap = document.getElementById('affiliates-table-wrap');
+        if (wrap) wrap.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">' + escHtml(err.message || 'Could not load accounts.') + '</p></div>';
         toast('Failed to load affiliates', true);
       }
     }
@@ -3359,6 +3767,8 @@
         document.getElementById('founding-members-table-wrap').innerHTML = html;
       } catch (err) {
         console.error(err);
+        const wrap = document.getElementById('founding-members-table-wrap');
+        if (wrap) wrap.innerHTML = '<div class="empty-state"><p style="color:#fca5a5;">' + escHtml(err.message || 'Could not load founding members.') + '</p></div>';
         toast('Failed to load founding members', true);
       }
     }
@@ -4908,23 +5318,68 @@
     // ═══════════════════════════════════════
     // AGGREGATE DASHBOARD
     // ═══════════════════════════════════════
-    async function loadAggDashboard() {
-      try {
-        const res = await fetch('/api/admin/aggregate-metrics');
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Failed');
+    let aggLoadToken = 0;
 
-        // Key metrics
-        document.getElementById('agg-total').textContent = (data.user_counts.total || 0).toLocaleString();
-        document.getElementById('agg-7d').textContent = (data.user_counts.active_7d || 0).toLocaleString();
-        document.getElementById('agg-30d').textContent = (data.user_counts.active_30d || 0).toLocaleString();
-        const mrr = data.mrr && data.mrr.mrr ? parseFloat(data.mrr.mrr) : 0;
-        document.getElementById('agg-mrr').textContent = '$' + mrr.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        document.getElementById('agg-paid').textContent = (data.mrr && data.mrr.paid_count ? data.mrr.paid_count : 0).toLocaleString();
+    function setAggStat(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
 
-        // Tier distribution
-        const tierEl = document.getElementById('agg-tier-table');
-        if (data.tier_distribution && data.tier_distribution.length) {
+    function setAggSection(id, html) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
+
+    function showAggBanner(message) {
+      const banner = document.getElementById('agg-dashboard-error');
+      if (!banner) return;
+      if (!message) {
+        banner.style.display = 'none';
+        banner.textContent = '';
+        return;
+      }
+      banner.style.display = 'block';
+      banner.textContent = message;
+    }
+
+    function showAggDashboardError(message) {
+      showAggBanner(message || 'Could not load dashboard metrics. Showing 0.');
+      setAggStat('agg-total', '0');
+      setAggStat('agg-7d', '0');
+      setAggStat('agg-30d', '0');
+      setAggStat('agg-mrr', '$0');
+      setAggStat('agg-paid', '0');
+      const note = '<p style="color:#fca5a5;font-size:13px;">' + escHtml(message || 'Could not load this section. Showing 0.') + '</p>';
+      ['agg-tier-table', 'agg-module-table', 'agg-feature-table', 'agg-dau-chart', 'agg-revenue-table'].forEach(function (id) {
+        setAggSection(id, note);
+      });
+    }
+
+    function aggSectionNote(data, key, emptyText) {
+      const failed = data.warnings && data.warnings.indexOf(key) !== -1;
+      return '<p style="color:' + (failed ? '#fca5a5' : '#52525b') + ';font-size:13px;">' +
+        escHtml(failed ? 'Could not load this section. Showing 0.' : emptyText) + '</p>';
+    }
+
+    function renderAggDashboard(data) {
+      const counts = data.user_counts || {};
+      setAggStat('agg-total', Number(counts.total || 0).toLocaleString());
+      setAggStat('agg-7d', Number(counts.active_7d || 0).toLocaleString());
+      setAggStat('agg-30d', Number(counts.active_30d || 0).toLocaleString());
+      const mrrRaw = data.mrr && data.mrr.mrr != null ? parseFloat(data.mrr.mrr) : 0;
+      const mrr = Number.isFinite(mrrRaw) ? mrrRaw : 0;
+      setAggStat('agg-mrr', '$' + mrr.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+      const paid = data.mrr && data.mrr.paid_count != null ? Number(data.mrr.paid_count) : 0;
+      setAggStat('agg-paid', (Number.isFinite(paid) ? paid : 0).toLocaleString());
+
+      if (data.warnings && data.warnings.length) {
+        showAggBanner('Some metrics could not be read and were set to 0.');
+      } else {
+        showAggBanner('');
+      }
+
+      const tierEl = document.getElementById('agg-tier-table');
+      if (tierEl && data.tier_distribution && data.tier_distribution.length) {
           const total = data.tier_distribution.reduce((s, r) => s + parseInt(r.user_count), 0);
           tierEl.innerHTML = `<div class="table-wrap"><table>
             <tr><th>Tier</th><th>Users</th><th>Share</th></tr>
@@ -4939,26 +5394,24 @@
                 </div></td></tr>`;
             }).join('')}
           </table></div>`;
-        } else {
-          tierEl.innerHTML = '<p style="color:#52525b;font-size:13px;">No data yet</p>';
-        }
+      } else if (tierEl) {
+        tierEl.innerHTML = aggSectionNote(data, 'tiers', 'No tier data yet. 0 users in each tier.');
+      }
 
-        // Module adoption
-        const modEl = document.getElementById('agg-module-table');
-        if (data.module_adoption && data.module_adoption.length) {
+      const modEl = document.getElementById('agg-module-table');
+      if (modEl && data.module_adoption && data.module_adoption.length) {
           modEl.innerHTML = `<div class="table-wrap"><table>
             <tr><th>Module</th><th>Users</th></tr>
             ${data.module_adoption.map(r =>
               `<tr><td><span class="badge badge-blue">${escA(r.module_key)}</span></td><td>${parseInt(r.users_with_module).toLocaleString()}</td></tr>`
             ).join('')}
           </table></div>`;
-        } else {
-          modEl.innerHTML = '<p style="color:#52525b;font-size:13px;">No module data yet</p>';
-        }
+      } else if (modEl) {
+        modEl.innerHTML = aggSectionNote(data, 'modules', 'No add-on modules adopted yet. 0 users.');
+      }
 
-        // Feature usage
-        const featEl = document.getElementById('agg-feature-table');
-        if (data.feature_usage && data.feature_usage.length) {
+      const featEl = document.getElementById('agg-feature-table');
+      if (featEl && data.feature_usage && data.feature_usage.length) {
           const maxUsage = Math.max(...data.feature_usage.map(r => parseInt(r.usage_count)));
           featEl.innerHTML = `<div class="table-wrap"><table>
             <tr><th>#</th><th>Feature / Event</th><th>Events (30d)</th><th>Unique Users</th></tr>
@@ -4979,26 +5432,24 @@
               </tr>`;
             }).join('')}
           </table></div>`;
-        } else {
-          featEl.innerHTML = '<p style="color:#52525b;font-size:13px;">No feature usage data yet (activity events not tracked)</p>';
-        }
+      } else if (featEl) {
+        featEl.innerHTML = aggSectionNote(data, 'features', 'No feature usage in the last 30 days. 0 events.');
+      }
 
-        // DAU Bar Chart
-        const dauEl = document.getElementById('agg-dau-chart');
-        if (data.dau_trend && data.dau_trend.length) {
+      const dauEl = document.getElementById('agg-dau-chart');
+      if (dauEl && data.dau_trend && data.dau_trend.length) {
           const maxDau = Math.max(...data.dau_trend.map(r => parseInt(r.active_users || 0)), 1);
           dauEl.innerHTML = data.dau_trend.map(r => {
             const h = Math.max(4, Math.round((parseInt(r.active_users)/maxDau) * 100));
             const d = new Date(r.day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             return `<div title="${d}: ${r.active_users} active" style="flex:1;background:#10b981;border-radius:3px 3px 0 0;height:${h}px;min-height:4px;opacity:0.8;"></div>`;
           }).join('');
-        } else {
-          dauEl.innerHTML = '<p style="color:#52525b;font-size:13px;flex:1;text-align:center;">No DAU data yet</p>';
-        }
+      } else if (dauEl) {
+        dauEl.innerHTML = aggSectionNote(data, 'dau', 'No daily active users in the last 30 days. 0.');
+      }
 
-        // Revenue breakdown
-        const revEl = document.getElementById('agg-revenue-table');
-        if (data.revenue_metrics && data.revenue_metrics.length) {
+      const revEl = document.getElementById('agg-revenue-table');
+      if (revEl && data.revenue_metrics && data.revenue_metrics.length) {
           revEl.innerHTML = `<div class="table-wrap"><table>
             <tr><th>Plan</th><th>Subscriptions</th><th>Revenue (30d)</th><th>Avg Price</th></tr>
             ${data.revenue_metrics.map(r =>
@@ -5007,13 +5458,55 @@
                <td>$${parseFloat(r.avg_amount||0).toFixed(2)}</td></tr>`
             ).join('')}
           </table></div>`;
-        } else {
-          revEl.innerHTML = '<p style="color:#52525b;font-size:13px;">No revenue data in the last 30 days</p>';
-        }
+      } else if (revEl) {
+        revEl.innerHTML = aggSectionNote(data, 'revenue', 'No revenue in the last 30 days. $0.');
+      }
+    }
 
+    function clearAggPlaceholders() {
+      ['agg-total', 'agg-7d', 'agg-30d', 'agg-paid'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const text = (el.textContent || '').trim();
+        if (!text || text === '—' || text === '---' || text === '-') el.textContent = '0';
+      });
+      const mrrEl = document.getElementById('agg-mrr');
+      if (mrrEl) {
+        const text = (mrrEl.textContent || '').trim();
+        if (!text || text === '—' || text === '---' || text === '-') mrrEl.textContent = '$0';
+      }
+      ['agg-tier-table', 'agg-module-table', 'agg-feature-table', 'agg-dau-chart', 'agg-revenue-table'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el && el.querySelector('.loader')) {
+          el.innerHTML = '<p style="color:#71717a;font-size:13px;">Loading…</p>';
+        }
+      });
+    }
+
+    async function loadAggDashboard() {
+      const token = ++aggLoadToken;
+      clearAggPlaceholders();
+      showAggBanner('');
+      const watchdog = setTimeout(function () {
+        if (token !== aggLoadToken) return;
+        showAggDashboardError('Dashboard timed out. Showing 0.');
+      }, ADMIN_FETCH_MS + 500);
+      try {
+        const res = await fetchWithTimeout('/api/admin/aggregate-metrics', { credentials: 'same-origin' }, ADMIN_FETCH_MS);
+        const data = await res.json().catch(function () { return {}; });
+        if (token !== aggLoadToken) return;
+        clearTimeout(watchdog);
+        if (!res.ok || !data || data.success === false) {
+          showAggDashboardError((data && data.error) || 'Could not load metrics. Showing 0.');
+          return;
+        }
+        renderAggDashboard(data);
       } catch (err) {
-        console.error('[AggDashboard]', err.message);
-        toast('Failed to load aggregate metrics: ' + err.message, true);
+        if (token !== aggLoadToken) return;
+        clearTimeout(watchdog);
+        console.error('[AggDashboard]', err && err.message);
+        const timedOut = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
+        showAggDashboardError(timedOut ? 'Dashboard timed out. Showing 0.' : 'Could not load metrics. Showing 0.');
       }
     }
 
@@ -5138,16 +5631,7 @@
       }
     }
 
-    // Load panels when tab is clicked
-    const origTabClick = document.querySelectorAll('.tab');
-    origTabClick.forEach(tab => {
-      tab.addEventListener('click', function() {
-        const tabId = this.dataset.tab;
-        if (tabId === 'agg-dashboard') loadAggDashboard();
-        if (tabId === 'support-tickets') loadTickets();
-        if (tabId === 'vault-cycles') loadVaultCycles();
-      });
-    });
+    // Tab clicks are handled by switchTab (bound in openAdminWorkspace).
 
     // ═══════════════════════════════════════
     // VAULT CYCLES
@@ -5232,10 +5716,21 @@
     // ═══════════════════════════════════════
     // INIT
     // ═══════════════════════════════════════
-    init();
+    init().catch(function (err) {
+      console.error('Admin init failed:', err);
+      hidePageLoader();
+      showAdminStay('The admin page could not finish loading. Refresh this page. You are not being sent back to login.');
+    });
+    setTimeout(hidePageLoader, 2000);
+
+    window.addEventListener('load', function () {
+      ['/js/facts-logout.js', '/js/global-footer.js'].forEach(function (src) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        document.body.appendChild(s);
+      });
+    });
   </script>
-<script defer src="/legal-disclaimer.js"></script>
-<script src="/analytics-tracker.js" defer></script>
-<script src="/js/global-footer.js"></script>
 </body>
 </html>

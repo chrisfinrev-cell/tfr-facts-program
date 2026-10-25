@@ -443,7 +443,7 @@
                 </button>
                 <div id="invite-code-fields" style="display:block;margin-top:10px;">
                     <label for="invite-code" style="font-size:0.78rem;">Beta invite code</label>
-                    <input type="text" class="form-input" id="invite-code" name="invite-code" placeholder="Enter your beta code" autocomplete="off" style="margin-top:6px;">
+                    <input type="text" class="form-input" id="invite-code" name="invite-code" placeholder="FIN-REV-XXXX-XXXX" autocomplete="off" style="margin-top:6px;">
                     <div style="margin-top: 6px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
                         A beta code is required while we are in testing. Without one, you can join the launch list.
                     </div>
@@ -553,6 +553,8 @@
         if (refCode) {
             // Show beta invite disclosure
             document.getElementById('beta-invite-notice').style.display = 'block';
+            var refInviteInput = document.getElementById('invite-code');
+            if (refInviteInput && !refInviteInput.value) refInviteInput.value = refCode;
             showInviteFields();
         }
 
@@ -744,6 +746,7 @@
             }
             if (inviteCode) {
                 payload.invite_code = inviteCode;
+                payload.inviteCode = inviteCode;
             }
             if (refCode) {
                 payload.ref_code = refCode;
@@ -811,22 +814,6 @@
     })();
     </script>
 
-    <!-- Polsia Analytics -->
-    <script>
-    (function() {
-        var slug = 'financial-revolution';
-        if (!slug || slug === '__POLSIA_' + 'SLUG__') return;
-        var vid = localStorage.getItem('polsia_vid');
-        if (!vid) {
-            vid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0;
-                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-            });
-            localStorage.setItem('polsia_vid', vid);
-        }
-        new Image().src = 'https://polsia.com/api/beacon/pixel?s=' + encodeURIComponent(slug) + '&v=' + encodeURIComponent(vid);
-    })();
-    </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/analytics-tracker.js" defer></script>
 <script src="/js/global-footer.js"></script>

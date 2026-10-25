@@ -1,33 +1,16 @@
 /**
  * Process delayed onboarding recovery emails.
- * Called every 5 minutes by polsia.toml cron.
+ * Run every 5 minutes by a scheduler (e.g. `node modules/mod_onboarding/cron-delayed-emails.js`).
  * Sends Emails 2 & 3 from the 3-part exit capture sequence.
  */
 'use strict';
 
 const { Pool } = require('pg');
-
-if (process.env.DATABASE_URL) {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false },
-  });
-
-  processEmails(pool)
-    .then(() => pool.end())
-    .catch(err => {
-      console.error('[cron-delayed-emails] error:', err.message);
-      pool.end();
-      process.exit(1);
-    });
-} else {
-  console.log('[cron-delayed-emails] DATABASE_URL not set, skipping');
-}
+const { sendEmail, emailConfigured } = require('../../lib/mailer');
 
 async function processEmails(pool) {
-  const apiKey = process.env.POLSIA_API_KEY;
-  if (!apiKey) {
-    console.log('[cron-delayed-emails] POLSIA_API_KEY not set, skipping');
+  if (!emailConfigured()) {
+    console.log('[cron-delayed-emails] RESEND_API_KEY not set, skipping');
     return;
   }
 
@@ -49,28 +32,37 @@ async function processEmails(pool) {
 
   for (const row of rows.rows) {
     try {
-      const res = await fetch('https://polsia.com/api/proxy/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          to: row.recipient,
-          subject: row.subject,
-          body: row.body_plain,
-        }),
-      });
+      const result = await sendEmail({ to: row.recipient, subject: row.subject, text: row.body_plain });
 
-      if (res.ok) {
+      if (result.sent) {
         await pool.query(`UPDATE mod_onboarding.delayed_emails SET sent=true WHERE id=$1`, [row.id]);
         console.log(`[cron-delayed-emails] sent to ${row.recipient}: "${row.subject}"`);
       } else {
-        const errBody = await res.text();
-        console.error(`[cron-delayed-emails] failed for ${row.recipient}: ${res.status} ${errBody}`);
+        console.error(`[cron-delayed-emails] failed for ${row.recipient}: ${result.error}`);
       }
     } catch (err) {
       console.error(`[cron-delayed-emails] send error for ${row.recipient}:`, err.message);
     }
+  }
+}
+
+module.exports = { processEmails };
+
+if (require.main === module) {
+  if (process.env.DATABASE_URL) {
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false },
+    });
+
+    processEmails(pool)
+      .then(() => pool.end())
+      .catch(err => {
+        console.error('[cron-delayed-emails] error:', err.message);
+        pool.end();
+        process.exit(1);
+      });
+  } else {
+    console.log('[cron-delayed-emails] DATABASE_URL not set, skipping');
   }
 }

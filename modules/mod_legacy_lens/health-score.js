@@ -3,7 +3,7 @@
  *
  * Three structural pillars:
  *   1. Necessities Index (The Floor) — operational efficiency vs 50% target
- *   2. Reserve Index   (The Shield) — liquid capital depth vs 6-month burn
+ *   2. Reserve Index   (The Shield) — liquid capital depth vs 12-month burn
  *   3. Growth Index    (The Engine) — wealth velocity MoM + accumulated
  *
  * Composite = weighted_average × streak_multiplier
@@ -157,7 +157,7 @@ async function computeNecessitiesIndex(userId, pool) {
 }
 
 // ─── Pillar 2: Reserve Index (The Shield) ─────────────────────────────────────
-// Measures liquid capital depth: reserve balance vs 6-month burn rate
+// Measures liquid capital depth: reserve balance vs 12-month burn rate
 async function computeReserveIndex(userId, pool) {
   try {
     // Sum of reserve/save bucket balances
@@ -172,31 +172,31 @@ async function computeReserveIndex(userId, pool) {
       [userId]
     );
 
-    // 6-month burn rate from expense transactions
+    // 12-month burn rate from expense transactions
     const { rows: burn } = await pool.query(
       `SELECT COALESCE(SUM(amount), 0) AS total
        FROM expense_transactions
        WHERE user_id = $1
-         AND transaction_date >= NOW() - INTERVAL '6 months'`,
+         AND transaction_date >= NOW() - INTERVAL '12 months'`,
       [userId]
     );
 
     const reserveBalance = parseFloat(reserve[0].balance) || 0;
-    const sixMonthBurn = parseFloat(burn[0].total) || 1; // avoid divide by zero
-    const monthlyBurn = sixMonthBurn / 6;
+    const yearBurn = parseFloat(burn[0].total) || 1;
+    const monthlyBurn = yearBurn / 12;
     const monthsCovered = reserveBalance / (monthlyBurn || 1);
 
-    // Full score at 6+ months coverage; partial below
-    const score = Math.max(0, Math.min(100, Math.round((monthsCovered / 6) * 100)));
+    // Full score at 12 months of Necessity. Partial below that.
+    const score = Math.max(0, Math.min(100, Math.round((monthsCovered / 12) * 100)));
 
     return {
       score,
       reserve_balance: reserveBalance,
       monthly_burn: Math.round(monthlyBurn * 100) / 100,
       months_covered: Math.round(monthsCovered * 10) / 10,
-      target_months: 6,
+      target_months: 12,
       label: 'The Shield',
-      status: monthsCovered >= 6 ? 'optimal' : monthsCovered >= 3 ? 'building' : 'critical'
+      status: monthsCovered >= 12 ? 'optimal' : monthsCovered >= 3 ? 'building' : 'critical'
     };
   } catch {
     return { score: 50, label: 'The Shield', status: 'no_data' };

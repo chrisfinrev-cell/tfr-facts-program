@@ -15,6 +15,8 @@
  * Runs daily at 3 AM UTC.
  */
 
+const { sendEmail } = require('../lib/mailer');
+
 const GRACE_PERIOD_DAYS = 14;
 const MIN_SIGNUP_DAYS = 30;
 
@@ -22,7 +24,7 @@ const MIN_SIGNUP_DAYS = 30;
  * Send a grace expiry warning email (optional — fires when grace period expires).
  */
 async function sendGraceExpiredEmail(email, userName) {
-  const appUrl = process.env.APP_URL || 'https://financial-revolution.polsia.app';
+  const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -61,22 +63,14 @@ async function sendGraceExpiredEmail(email, userName) {
   `;
 
   try {
-    const response = await fetch('https://api.polsia.app/v1/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.POLSIA_API_KEY}`
-      },
-      body: JSON.stringify({
-        to: email,
-        subject: 'Your FACTS free trial has ended — upgrade to keep access',
-        html,
-        from: 'noreply@facts-finance.polsia.app'
-      })
+    const result = await sendEmail({
+      to: email,
+      subject: 'Your FACTS free trial has ended — upgrade to keep access',
+      html
     });
 
-    if (!response.ok) {
-      console.error(`[PromoGrace] Email send failed for ${email}:`, response.status);
+    if (!result.sent) {
+      console.error(`[PromoGrace] Email send failed for ${email}:`, result.error);
       return false;
     }
     console.log(`[PromoGrace] Grace-expired email sent to ${email}`);

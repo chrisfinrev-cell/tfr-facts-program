@@ -2,7 +2,6 @@
 
 const assert = require('assert');
 const {
-  EMAIL_ENDPOINT,
   signupUrlForCode,
   buildBetaInviteEmail,
   sendBetaInviteEmail
@@ -34,38 +33,38 @@ async function main() {
   });
   assert.strictEqual(payload.to, 'jane@example.com');
   assert.strictEqual(payload.subject, 'Your FACTS beta invite code');
-  assert.ok(payload.body.includes('FACTS-7K9P-2M4X'));
-  assert.ok(payload.body.includes(signupUrl));
+  assert.ok(payload.text.includes('FACTS-7K9P-2M4X'));
+  assert.ok(payload.text.includes(signupUrl));
   assert.ok(payload.html.includes('Jane &lt;Doe&gt;'));
   assert.ok(!payload.html.includes('Jane <Doe>'));
-  assert.strictEqual(payload.transactional, true);
 
-  const previousKey = process.env.POLSIA_API_KEY;
-  delete process.env.POLSIA_API_KEY;
+  const previousKey = process.env.RESEND_API_KEY;
+  delete process.env.RESEND_API_KEY;
   const missing = await sendBetaInviteEmail({
     to: 'jane@example.com',
     code: 'FACTS-7K9P-2M4X',
     signupUrl
   });
   assert.strictEqual(missing.sent, false);
-  assert.ok(/POLSIA_API_KEY/.test(missing.error));
+  assert.ok(/RESEND_API_KEY/.test(missing.error));
 
-  process.env.POLSIA_API_KEY = 'test-key';
+  process.env.RESEND_API_KEY = 'test-key';
   let captured = null;
   const sent = await sendBetaInviteEmail(
     { to: 'jane@example.com', name: 'Jane', code: 'FACTS-7K9P-2M4X', signupUrl },
     {
       async fetch(url, options) {
         captured = { url, options };
-        return { ok: true, async text() { return ''; } };
+        return { ok: true, status: 200, async json() { return { id: 'email_123' }; } };
       }
     }
   );
   assert.strictEqual(sent.sent, true);
-  assert.strictEqual(captured.url, EMAIL_ENDPOINT);
+  assert.strictEqual(captured.url, 'https://api.resend.com/emails');
   assert.strictEqual(captured.options.headers.Authorization, 'Bearer test-key');
   const body = JSON.parse(captured.options.body);
-  assert.strictEqual(body.to, 'jane@example.com');
+  assert.deepStrictEqual(body.to, ['jane@example.com']);
+  assert.ok(body.from);
   assert.ok(body.html.includes('FACTS-7K9P-2M4X'));
   assert.ok(body.html.includes(signupUrl));
 
@@ -73,11 +72,12 @@ async function main() {
     { to: 'jane@example.com', code: 'FACTS-7K9P-2M4X', signupUrl },
     {
       async fetch() {
-        return { ok: false, status: 502, async text() { return 'nope'; } };
+        return { ok: false, status: 422, async json() { return { message: 'domain not verified' }; } };
       }
     }
   );
   assert.strictEqual(rejected.sent, false);
+  assert.ok(/domain not verified/.test(rejected.error));
 
   const invite = await findActiveBetaInvite(fakeDb({
     beta_invites: async () => ({ rows: [{ id: 4, code: 'FACTS-AAAA-BBBB', uses_count: 0, max_uses: 1 }] })
@@ -102,8 +102,8 @@ async function main() {
   }), 'NOPE');
   assert.strictEqual(none, null);
 
-  if (previousKey == null) delete process.env.POLSIA_API_KEY;
-  else process.env.POLSIA_API_KEY = previousKey;
+  if (previousKey == null) delete process.env.RESEND_API_KEY;
+  else process.env.RESEND_API_KEY = previousKey;
 
   console.log('beta invite send checks passed');
 }

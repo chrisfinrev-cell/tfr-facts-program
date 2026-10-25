@@ -10,7 +10,7 @@
  *   POST /api/mod_onboarding/calculator-submit   — Save step 1 inputs, returns sessionId + bleed
  *   POST /api/mod_onboarding/forensic-answer     — Record forensic question answer (Q0–Q4)
  *   POST /api/mod_onboarding/vault/create       — Create user + vault record (bcrypt, session set)
- *   POST /api/mod_onboarding/vault/upload       — PDF credit report upload → R2, marks pdf_uploaded=true
+ *   POST /api/mod_onboarding/vault/upload       — PDF credit report upload → file storage, marks pdf_uploaded=true
  *   POST /api/mod_onboarding/vault/salary-submit — Save salary, activates Phase Zero
  *   GET  /api/mod_onboarding/dashboard/:userId  — Get Phase Zero dashboard data (buckets, bleed, salary)
  *   POST /api/mod_onboarding/exit-capture/save  — Save exit email, trigger recovery email sequence
@@ -25,6 +25,10 @@ const crypto  = require('crypto');
 const { pool } = require('../../db/pool');
 const { asyncRoute } = require('../../module-error-boundary');
 const multer = require('multer');
+const { sendEmail, emailConfigured } = require('../../lib/mailer');
+const { uploadFile } = require('../../lib/fileStorage');
+
+const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
 const creditUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: (req, file, cb) => { cb(null, true); } });
 
 const ANALYTICS_ENABLED = process.env.ANALYTICS_ENABLED !== 'false';
@@ -185,33 +189,10 @@ router.post('/vault/upload', creditUpload.single('credit_report'), asyncRoute(as
   const valid = file.mimetype === 'application/pdf';
   if (!valid) return res.status(400).json({ error: 'Only PDF files are accepted.', fileTypeValidated: false });
 
-  // Upload to R2
-  let r2Url = null;
-  if (process.env.POLSIA_API_KEY) {
-    try {
-      const nodeFetch = require('node-fetch');
-      const FormData = require('form-data');
-      const fd = new FormData();
-      fd.append('file', file.buffer, {
-        filename: `credit-report-${Date.now()}.pdf`,
-        contentType: 'application/pdf',
-      });
-      const r2Res = await nodeFetch('https://polsia.com/api/proxy/r2/upload', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.POLSIA_API_KEY}`,
-          ...fd.getHeaders(),
-        },
-        body: fd,
-      });
-      const r2Data = await r2Res.json();
-      if (r2Data.success) r2Url = r2Data.file.url;
-    } catch (err) {
-      console.error('[mod_onboarding] R2 upload:', err.message);
-    }
-  }
+  // Upload to file storage (null when storage is not configured or the upload fails)
+  const r2Url = await uploadFile(file.buffer, `credit-report-${Date.now()}.pdf`, 'application/pdf', { folder: 'credit-reports' });
 
-  // Mark pdf_uploaded = true on vault record (regardless of R2 outcome)
+  // Mark pdf_uploaded = true on vault record (regardless of upload outcome)
   if (req.body.sessionId) {
     await pool.query(
       `UPDATE mod_onboarding.vault_users SET pdf_uploaded=true WHERE session_id=$1`,
@@ -263,9 +244,6 @@ router.post('/exit-capture/save', asyncRoute(async (req, res) => {
     // Duplicate email hash — already captured
     if (err.code !== '23505') console.error('[mod_onboarding] exit_capture:', err.message);
   }
-
-  // Register as known contact so recovery emails aren't rate-limited
-  await registerContact(email).catch(() => {});
 
   // Send Email 1: "Your Bleed Calculation is Ready" — immediate
   sendRecoveryEmail1(email, bleedSnapshot, sessionId).catch(err => console.error('[mod_onboarding] email1:', err.message));
@@ -324,37 +302,22 @@ router.get('/dashboard/:userId', asyncRoute(async (req, res) => {
 }));
 
 // ─── Email helpers ─────────────────────────────────────────────────────────────
-async function registerContact(email) {
-  const apiKey = process.env.POLSIA_API_KEY;
-  if (!apiKey) return;
-  await fetch('https://polsia.com/api/proxy/email/contacts', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ email, source: 'onboarding_exit_capture' }),
-  }).catch(() => {});
-}
-
 async function sendRecoveryEmail1(email, lifetimeBleed, sessionId) {
-  const apiKey = process.env.POLSIA_API_KEY;
-  if (!apiKey) return;
+  if (!emailConfigured()) return;
   const bleedStr = lifetimeBleed > 0 ? `$${Math.round(lifetimeBleed).toLocaleString()}` : 'calculated';
-  const resumeUrl = sessionId ? `https://financial-revolution.polsia.app/facts-funnel?session=${sessionId}` : null;
-  const body = `Your Bleed Calculation is Ready\n\nYour estimated lifetime interest leak: ${bleedStr}\n\n` + (resumeUrl ? `Pick up where you left off: ${resumeUrl}\n\n` : '') + `Don't let those numbers fade. Complete your Forensic Scan and lock in your baseline.\n\n— FACTS`;
-  await fetch('https://polsia.com/api/proxy/email/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      to: email,
-      subject: 'Your Bleed Calculation is Ready — FACTS',
-      body,
-    }),
-  }).catch(err => console.error('[mod_onboarding] sendRecoveryEmail1:', err.message));
+  const resumeUrl = sessionId ? `${APP_URL}/facts-funnel?session=${sessionId}` : null;
+  const text = `Your Bleed Calculation is Ready\n\nYour estimated lifetime interest leak: ${bleedStr}\n\n` + (resumeUrl ? `Pick up where you left off: ${resumeUrl}\n\n` : '') + `Don't let those numbers fade. Complete your Forensic Scan and lock in your baseline.\n\n— FACTS`;
+  const result = await sendEmail({
+    to: email,
+    subject: 'Your Bleed Calculation is Ready — FACTS',
+    text,
+  });
+  if (!result.sent) console.error('[mod_onboarding] sendRecoveryEmail1:', result.error);
 }
 
-// Schedule follow-up emails 2 and 3 via database flags (Polsia cron reads these)
+// Schedule follow-up emails 2 and 3 via database rows (sent by cron-delayed-emails.js)
 async function scheduleFollowUpEmails(email, lifetimeBleed) {
-  const apiKey = process.env.POLSIA_API_KEY;
-  if (!apiKey) return;
+  if (!emailConfigured()) return;
   // Schedule Email 2 for +24h, Email 3 for +72h via delay-send table
   try {
     await pool.query(
@@ -366,7 +329,7 @@ async function scheduleFollowUpEmails(email, lifetimeBleed) {
        `Most people have no idea they're hemorrhaging wealth through back door interest.\n\n` +
        `Your calculation shows a significant bleed. Here's what it means: every dollar sitting in low-yield accounts is slowly losing purchasing power.\n\n` +
        `The good news: it can be stopped. Complete the Forensic Scan to see exactly where the leaks are.\n\n` +
-       `→ Start now: https://financial-revolution.polsia.app/facts-funnel\n\n— FACTS`
+       `→ Start now: ${APP_URL}/facts-funnel\n\n— FACTS`
       ]
     );
     await pool.query(
@@ -377,7 +340,7 @@ async function scheduleFollowUpEmails(email, lifetimeBleed) {
        `Ready to Lock In Your Baseline?\n\n` +
        `Your calculation resets in 48 hours.\n\n` +
        `Complete the Forensic Scan now and we\\'ll hold your baseline for 30 days.\n\n` +
-       `→ Lock in your baseline: https://financial-revolution.polsia.app/facts-funnel\n\n` +
+       `→ Lock in your baseline: ${APP_URL}/facts-funnel\n\n` +
        `— FACTS`
       ]
     );

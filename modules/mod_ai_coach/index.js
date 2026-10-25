@@ -7,8 +7,8 @@
  * Does NOT own: OpenAI billing, Stripe payment processing, user auth sessions,
  *               Phase Zero flow, gamification XP awards.
  *
- * AI MANDATORY: All AI calls use Polsia proxy (POLSIA_API_URL + POLSIA_API_KEY).
- * Never call OpenAI/Anthropic directly for product AI features.
+ * AI MANDATORY: All AI calls go to OpenAI via lib/aiClient (OPENAI_API_KEY).
+ * Never instantiate AI SDK clients directly for product AI features.
  *
  * Routes (auto-mounted at /api/mod_ai_coach):
  *   GET  /health                    — module health check
@@ -25,6 +25,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const { asyncRoute } = require('../../module-error-boundary');
+const { chat } = require('../../lib/aiClient');
 
 // ─── Tier-based rate limits (messages per day) ────────────────────────────────
 const TIER_DAILY_LIMITS = {
@@ -90,7 +91,7 @@ COACHING PRINCIPLES:
 - Celebrate wins without being sycophantic
 - When data is limited, ask targeted questions
 - Never give investment, tax, legal, lending, insurance, or credit-repair advice — guide allocation thinking only
-- NEVER mention Polsia, Claude, or that you're an AI system
+- NEVER mention the underlying AI provider or model, or that you're an AI system
 
 ${AI_SYSTEM_GUARDRAILS}`;
 
@@ -258,40 +259,10 @@ async function checkRateLimit(userId, tier) {
   };
 }
 
-// ─── Call Polsia AI proxy ─────────────────────────────────────────────────────
-async function callPolsiaAI(messages, systemPrompt) {
-  const POLSIA_API_URL = process.env.POLSIA_API_URL || 'https://polsia.com/api/proxy/ai';
-  const POLSIA_API_KEY = process.env.POLSIA_API_KEY;
-
-  if (!POLSIA_API_KEY) {
-    throw new Error('POLSIA_API_KEY not configured');
-  }
-
-  const response = await fetch(`${POLSIA_API_URL}/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${POLSIA_API_KEY}`,
-      'x-polsia-task': 'ai-coach-chat',
-    },
-    body: JSON.stringify({
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text().catch(() => 'unknown error');
-    throw new Error(`AI proxy error ${response.status}: ${err}`);
-  }
-
-  const data = await response.json();
-  // Handle both Anthropic-style and OpenAI-style responses
-  return data?.content?.[0]?.text
-    || data?.choices?.[0]?.message?.content
-    || data?.output
-    || 'I encountered an error generating a response. Please try again.';
+// ─── Call AI (OpenAI via lib/aiClient) ────────────────────────────────────────
+async function callAI(messages, systemPrompt) {
+  const text = await chat(messages, systemPrompt, { maxTokens: 1024 });
+  return text || 'I encountered an error generating a response. Please try again.';
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -333,7 +304,7 @@ router.get('/nudge', requireAuth, asyncRoute(async (req, res) => {
 
   let nudgeText;
   try {
-    nudgeText = await callPolsiaAI([
+    nudgeText = await callAI([
       {
         role: 'user',
         content: `Generate a single, actionable financial nudge for me based on my FACTS allocations and spending patterns. Keep it to 2-3 sentences. Focus on the most impactful thing I could do right now.${userData.archetype ? ` Remember my archetype is ${userData.archetype}.` : ''}`,
@@ -424,7 +395,7 @@ router.post('/chat', requireAuth, asyncRoute(async (req, res) => {
   // Call AI
   let reply;
   try {
-    reply = await callPolsiaAI(messages, systemPrompt);
+    reply = await callAI(messages, systemPrompt);
   } catch (e) {
     console.error('[mod_ai_coach] AI call failed:', e.message);
     return res.status(503).json({ error: 'AI service temporarily unavailable. Please try again.' });

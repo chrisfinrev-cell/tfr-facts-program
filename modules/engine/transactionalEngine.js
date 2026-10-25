@@ -8,9 +8,11 @@
 
 const { pool } = require('../../db/pool');
 const { DEFAULT_BUCKET_TARGETS, BUCKET_SLUGS } = require('../shared/constants');
+const { sharesForNecessity } = require('./necessity-pull');
+const { applyReserveVelocityProtocol, protocolEngaged } = require('./reserve-velocity-protocol');
+const { lockReserveProtocol, persistReserveProtocol, optionsForUser } = require('./reserve-protocol-store');
 const { withManualExecutionNotice } = require('../shared/edu-compliance');
-
-const HIGH_INTEREST_APR = 8;
+const { loadTransactionColumns } = require('../../lib/transaction-columns');
 
 function toCents(amount) {
   const n = Number(amount);
@@ -82,34 +84,58 @@ async function ensureBucketRows(client, userId) {
   return seeded.rows;
 }
 
-async function loadHighInterestDebts(client, userId) {
+async function loadDebtsForStrategy(client, userId, strategy) {
+  if (strategy === 'minimum') return [];
   try {
     const result = await client.query(
-      `SELECT id, name, balance, interest_rate, minimum_payment
+      `SELECT id, name, balance, interest_rate, minimum_payment, current_payment
          FROM debts
         WHERE user_id = $1
           AND COALESCE(balance, 0) > 0
-          AND COALESCE(interest_rate, 0) >= $2
-        ORDER BY interest_rate DESC, balance DESC
+          AND COALESCE(interest_rate, 0) > 4
         FOR UPDATE`,
-      [userId, HIGH_INTEREST_APR]
+      [userId]
     );
-    return result.rows;
+    const rows = result.rows;
+    if (strategy === 'snowball') {
+      rows.sort((a, b) => Number(a.balance) - Number(b.balance) || Number(b.interest_rate) - Number(a.interest_rate));
+    } else if (strategy === 'current') {
+      const extra = (row) => Number(row.current_payment || row.minimum_payment) - Number(row.minimum_payment);
+      rows.sort((a, b) => extra(b) - extra(a) || Number(a.balance) - Number(b.balance));
+    } else {
+      rows.sort((a, b) => Number(b.interest_rate) - Number(a.interest_rate) || Number(b.balance) - Number(a.balance));
+    }
+    return rows;
   } catch (err) {
     if (err.code === '42P01') return [];
     throw err;
   }
 }
 
+function debtStrategyOf(options) {
+  const raw = options && (options.debtStrategy || options.debt_strategy || options.payoffStrategy || options.payoff_strategy);
+  const name = String(raw || '').toLowerCase();
+  if (name === 'minimum' || name === 'current' || name === 'snowball' || name === 'avalanche') return name;
+  return 'avalanche';
+}
+
 /**
  * Atomically record income, allocate to dynamic buckets, and sweep
- * surplus toward the user's highest-interest liabilities.
+ * surplus toward debts above 4% in the order the household chose: minimum,
+ * current, snowball, or avalanche. Velocity raises income as fast and as
+ * simply as possible. The first raise is every debt above 4%. Education for
+ * higher pay, and education that teaches how to invest, can run in the same
+ * month if the household manages all three. A debt at 4% or below is not a
+ * sweep target. Minimum adds no extra. Current keeps the payment the
+ * household is already making. Snowball sends the extra to the smallest
+ * balance first. Avalanche sends the extra to the highest interest rate
+ * first. Avalanche is the best of the four.
  *
  * @param {number} userId
  * @param {number} incomeAmount dollars
  * @param {string} incomeSource
  */
-async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource) {
+async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource, necessityPercent, reserveOptions) {
   const uid = Number(userId);
   if (!Number.isInteger(uid) || uid <= 0) {
     const err = new Error('A valid userId is required');
@@ -130,14 +156,61 @@ async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource) 
   try {
     await client.query('BEGIN');
 
+    const storedProtocol = await lockReserveProtocol(client, uid);
+    const protocolInput = optionsForUser(storedProtocol, reserveOptions);
     const buckets = await ensureBucketRows(client, uid);
+    const necessityProvided = necessityPercent !== undefined && necessityPercent !== null && necessityPercent !== '';
+    let reserveProtocol = null;
+    if (necessityProvided || protocolEngaged(protocolInput)) {
+      const storedNecessity = buckets.find((row) => row.bucket_slug === 'necessities');
+      const necessity = necessityProvided
+        ? necessityPercent
+        : (storedNecessity ? storedNecessity.target_pct : 50);
+      const base = sharesForNecessity(necessity, protocolInput).percents;
+      const engaged = protocolEngaged(protocolInput);
+      if (engaged) reserveProtocol = applyReserveVelocityProtocol(base, protocolInput);
+      const percents = reserveProtocol ? reserveProtocol.percents : base;
+      for (const row of buckets) {
+        const key = String(row.bucket_slug).toUpperCase();
+        const next = percents[key];
+        if (next === undefined) continue;
+        row.target_pct = next;
+        await client.query(
+          `UPDATE user_bucket_state
+              SET target_pct = $3, updated_at = NOW()
+            WHERE user_id = $1 AND bucket_slug = $2`,
+          [uid, row.bucket_slug, next]
+        );
+      }
+    }
     const shares = allocateByPercent(incomeCents, buckets);
 
+    const txnCols = await loadTransactionColumns(client);
+    const txnFields = ['user_id', 'type'];
+    const txnValues = [uid, 'income'];
+    if (txnCols.amount_cents) {
+      txnFields.push('amount_cents');
+      txnValues.push(incomeCents);
+    }
+    if (txnCols.amount) {
+      txnFields.push('amount');
+      txnValues.push(incomeCents / 100);
+    }
+    if (txnCols.description) {
+      txnFields.push('description');
+      txnValues.push(source);
+    }
+    if (txnCols.occurred_at) {
+      txnFields.push('occurred_at');
+      txnValues.push(new Date());
+    } else if (txnCols.transaction_date) {
+      txnFields.push('transaction_date');
+      txnValues.push(new Date().toISOString().split('T')[0]);
+    }
+    const txnPlaceholders = txnValues.map(function (_, index) { return '$' + (index + 1); }).join(', ');
     const txn = await client.query(
-      `INSERT INTO transactions (user_id, amount_cents, type, description, occurred_at)
-       VALUES ($1, $2, 'income', $3, NOW())
-       RETURNING id`,
-      [uid, incomeCents, source]
+      `INSERT INTO transactions (${txnFields.join(', ')}) VALUES (${txnPlaceholders}) RETURNING id`,
+      txnValues
     );
     const transactionId = txn.rows[0].id;
 
@@ -171,11 +244,18 @@ async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource) 
         [uid, share.slug, deposited, remaining]
       );
 
+      let memo = `Allocated from ${source}`;
+      if (reserveProtocol && share.slug === 'lifestyle' && reserveProtocol.celebrations.length) {
+        memo += '; ' + reserveProtocol.celebrations
+          .map((item) => item.flag + ' ' + item.applied_percent + '%')
+          .join(', ');
+      }
+
       await client.query(
         `INSERT INTO ledgers
            (user_id, bucket_slug, entry_type, amount_cents, balance_after_cents, transaction_id, memo)
          VALUES ($1, $2, 'allocation', $3, $4, $5, $6)`,
-        [uid, share.slug, share.cents, remaining, transactionId, `Allocated from ${source}`]
+        [uid, share.slug, share.cents, remaining, transactionId, memo]
       );
 
       allocations.push({
@@ -196,13 +276,21 @@ async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource) 
     const velocity = allocations.find((a) => a.bucket_slug === 'velocity');
     let surplusCents = velocity ? velocity.amount_cents : 0;
     const sweep = [];
+    const debtStrategy = debtStrategyOf(reserveOptions);
 
-    const debts = surplusCents > 0 ? await loadHighInterestDebts(client, uid) : [];
+    const debts = surplusCents > 0 ? await loadDebtsForStrategy(client, uid, debtStrategy) : [];
     for (const debt of debts) {
       if (surplusCents <= 0) break;
       const balanceCents = toCents(debt.balance);
       if (balanceCents <= 0) continue;
-      const applied = Math.min(surplusCents, balanceCents);
+      let room = balanceCents;
+      if (debtStrategy === 'current') {
+        const current = toCents(debt.current_payment != null ? debt.current_payment : debt.minimum_payment);
+        const minimum = toCents(debt.minimum_payment);
+        room = Math.min(balanceCents, Math.max(0, current - minimum));
+        if (room <= 0) continue;
+      }
+      const applied = Math.min(surplusCents, room);
       const newBalanceCents = balanceCents - applied;
       surplusCents -= applied;
 
@@ -250,10 +338,14 @@ async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource) 
       });
     }
 
+    if (reserveProtocol) {
+      await persistReserveProtocol(client, uid, reserveProtocol.state);
+    }
+
     await client.query('COMMIT');
 
     const sweptCents = sweep.reduce((sum, row) => sum + row.applied_cents, 0);
-    return withManualExecutionNotice({
+    const summary = {
       status: 'recorded',
       transaction_id: transactionId,
       income: {
@@ -263,6 +355,7 @@ async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource) 
       },
       allocations,
       sweep: {
+        strategy: debtStrategy,
         surplus_cents: velocity ? velocity.amount_cents : 0,
         surplus: fromCents(velocity ? velocity.amount_cents : 0),
         applied_cents: sweptCents,
@@ -272,7 +365,9 @@ async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource) 
         targets: sweep
       },
       buckets: bucketState
-    });
+    };
+    if (reserveProtocol) summary.reserve_protocol = reserveProtocol;
+    return withManualExecutionNotice(summary);
   } catch (err) {
     try { await client.query('ROLLBACK'); } catch (_) { /* ignore */ }
     throw err;
@@ -283,5 +378,5 @@ async function processIncomeAllocationSweep(userId, incomeAmount, incomeSource) 
 
 module.exports = {
   processIncomeAllocationSweep,
-  HIGH_INTEREST_APR
+  sharesForNecessity
 };

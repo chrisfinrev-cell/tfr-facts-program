@@ -372,8 +372,10 @@
           window.location.href = '/login.html?next=/paycheck-entry.html';
           return;
         }
-        if (!out.res.ok) {
-          setStatus(out.data.error || 'Save failed.', 'error');
+        if (!out.res.ok || (out.data && out.data.success === false)) {
+          const data = out.data || {};
+          const message = data.error || data.message || 'Could not save this paycheck. Try again.';
+          setStatus(message, 'error');
           return;
         }
         setStatus('Paycheck entry processed and recorded successfully.', 'ok');

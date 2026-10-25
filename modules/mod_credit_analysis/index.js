@@ -33,7 +33,7 @@ const crypto   = require('crypto');
 const express  = require('express');
 const { pool } = require('../../db/pool');
 const multer   = require('multer');
-const OpenAI   = require('openai');
+const { getOpenAI } = require('../../lib/aiClient');
 const { asyncRoute } = require('../../module-error-boundary');
 const { withManualExecutionNotice } = require('../shared/edu-compliance');
 
@@ -148,7 +148,7 @@ async function analyzeReport(pdfBuffer) {
     throw new Error('The PDF appears to be empty or image-only. Export a text-based credit report PDF and try again.');
   }
 
-  const aiClient = new OpenAI();
+  const aiClient = getOpenAI();
 
   const { AI_SYSTEM_GUARDRAILS } = require('../shared/edu-compliance');
 
