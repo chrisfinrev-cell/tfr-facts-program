@@ -287,6 +287,12 @@
   <div id="loading" class="loading-center" style="padding-top: 80px;">
     <div class="loader"></div>
   </div>
+  <script>
+    setTimeout(function () {
+      var el = document.getElementById('loading');
+      if (el) el.style.display = 'none';
+    }, 1500);
+  </script>
 
   <!-- Password confirmation stays on /admin. It does not send you back to the app or login. -->
   <div id="admin-password-gate" style="display:none; max-width:420px; margin:48px auto; background:#111827; border:1px solid rgba(16,185,129,0.35); border-radius:14px; padding:22px;">
@@ -2331,72 +2337,63 @@
       });
     }
 
-    async function init() {
+    function startAdminPanel(user) {
+      openAdminWorkspace(user);
+      hidePageLoader();
       try {
+        switchTab(DEFAULT_ADMIN_TAB);
+      } catch (err) {
+        console.error('Admin tab load failed:', err);
+      }
+    }
+
+    async function init() {
+      hidePageLoader();
+      try {
+      const injected = window.__ADMIN_SESSION || null;
+      const serverConfirmed = !!(injected && injected.isAdmin);
+
+      if (serverConfirmed) {
+        startAdminPanel({ email: injected.email || '', is_admin: true });
+        return;
+      }
+
       if (window.__ADMIN_LOCKED === true) {
         showAdminPasswordGate();
         return;
       }
 
-      const injected = window.__ADMIN_SESSION || null;
-      const serverConfirmed = !!(injected && injected.isAdmin);
-      if (serverConfirmed && window.__SAFE_MODE !== false) {
-        openAdminWorkspace({ email: injected.email || '', is_admin: true });
-        return;
-      }
-
       let authUser = null;
       try {
-        const authRes = await fetchWithTimeout('/api/auth/me', { credentials: 'same-origin' }, 5000);
+        const authRes = await fetchWithTimeout('/api/auth/me', { credentials: 'same-origin' }, 4000);
         const authData = await authRes.json().catch(function () { return {}; });
         if (authData && authData.authenticated && authData.user) authUser = authData.user;
       } catch (authErr) {
         authUser = null;
       }
-      if (!authUser && !serverConfirmed) {
+      if (!authUser) {
         showAdminStay('This admin page could not confirm the signed-in account. Refresh this page. You are not being sent back to login.');
         return;
       }
 
-      const user = authUser || { email: injected.email || '', is_admin: true };
+      const user = authUser;
       window.__ADMIN_USER__ = user;
 
       const userEmail = String(user.email || '').toLowerCase().trim();
       const emailIsAdmin = ADMIN_PANEL_EMAILS.indexOf(userEmail) !== -1;
-      const flagIsAdmin = !!user.is_admin || serverConfirmed;
-
-      if (window.__SAFE_MODE === false) {
-      try {
-        const proRes = await fetchWithTimeout('/api/pro-status', { credentials: 'same-origin' }, 10000);
-        const proData = await proRes.json().catch(function () { return {}; });
-        isCreatorUser = !!proData.is_creator;
-      } catch (proErr) {
-        isCreatorUser = false;
-      }
-      }
+      const flagIsAdmin = !!user.is_admin;
 
       if (FUTURE_GEN_EMAILS.includes(userEmail) && !emailIsAdmin && !flagIsAdmin) {
-        document.getElementById('loading').style.display = 'none';
         document.getElementById('access-denied').style.display = 'block';
         return;
       }
 
-      if (!isCreatorUser && !emailIsAdmin && !flagIsAdmin) {
-        document.getElementById('loading').style.display = 'none';
+      if (!emailIsAdmin && !flagIsAdmin) {
         document.getElementById('access-denied').style.display = 'block';
         return;
       }
 
-      openAdminWorkspace(user);
-
-      if (window.__SAFE_MODE !== false) return;
-
-      try {
-        switchTab(DEFAULT_ADMIN_TAB);
-        loadPromoCodes();
-      } catch (err) {
-        console.error('Admin data load failed:', err);
-      }
+      startAdminPanel(user);
       } catch (err) {
         console.error('Admin init failed:', err);
         showAdminStay('The admin page could not finish loading. Refresh this page. You are not being sent back to login.');
@@ -5724,6 +5721,7 @@
       hidePageLoader();
       showAdminStay('The admin page could not finish loading. Refresh this page. You are not being sent back to login.');
     });
+    setTimeout(hidePageLoader, 2000);
 
     window.addEventListener('load', function () {
       ['/js/facts-logout.js', '/js/global-footer.js'].forEach(function (src) {

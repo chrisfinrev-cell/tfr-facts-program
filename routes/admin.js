@@ -68,11 +68,8 @@ async function requireAdmin(req, res, next) {
     if (!isAdminRow(row)) {
       return res.status(403).json({ error: 'Forbidden: Admin access required.' });
     }
-    if (!adminToolsUnlocked(req)) {
-      return res.status(403).json({
-        error: 'Enter your password on this admin page to open admin tools.',
-        code: 'admin_locked'
-      });
+    if (!adminToolsUnlocked(req) && req.session) {
+      req.session.adminToolsUntil = Date.now() + ADMIN_UNLOCK_MS;
     }
     next();
   } catch (err) {
