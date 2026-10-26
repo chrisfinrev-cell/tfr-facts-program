@@ -29,6 +29,8 @@ const {
   sendVerification: twilioSendVerification,
   checkVerification: twilioCheckVerification
 } = require('../services/twilio');
+// Note: ensureDefaultFactsSetup is lazy-required inside signup to avoid a
+// circular dependency (allocations.js requires requireAuth from this file).
 
 const router = express.Router();
 const pageRouter = express.Router();
@@ -735,8 +737,9 @@ router.post('/signup', async (req, res) => {
         userId = result.rows[0].id;
       }
 
-      // Seed default allocation percentages for this user
-      await seedUserAllocations(client, userId);
+      // Seed default six-bucket categories + allocations for this user
+      const { ensureDefaultFactsSetup } = require('./allocations');
+      await ensureDefaultFactsSetup(userId, { dbClient: client });
 
       // ─── Redeem invite code if provided ───────────────────────────────
       if (suppliedInvite) {

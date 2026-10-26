@@ -21,6 +21,7 @@ const {
   checkVerification
 } = require('../services/twilio');
 const pzDeadlineModule = require('../modules/mod_pz_deadline');
+const { ensureDefaultFactsSetup } = require('./allocations');
 
 const router = express.Router();
 const emailRouter = express.Router();
@@ -157,7 +158,6 @@ function applyPhaseZeroNavigationGate(app, db) {
     if (PZ_EXT_RE.test(req.path)) return next();
     if (PZ_BYPASS_PATHS.indexOf(req.path) !== -1) return next();
     if (!req.session || !req.session.userId) return next();
-    if (req.session.pzComplete === true) return next();
     var email = (req.session.email || '').toLowerCase();
     var creator = (process.env.CREATOR_EMAIL || '').toLowerCase();
     var adminEmails = (process.env.ADMIN_EMAILS || 'chris.finrev@gmail.com')
@@ -169,10 +169,15 @@ function applyPhaseZeroNavigationGate(app, db) {
       adminEmails.indexOf(email) !== -1 ||
       ownerEmails.indexOf(email) !== -1
     )) return next();
+    // Always re-check DB so admin reset-data clears a stale session.pzComplete cache
     db.query('SELECT phase_zero_completed_at FROM users WHERE id = $1', [req.session.userId])
       .then(function(r) {
         var u = r.rows[0];
-        if (u && u.phase_zero_completed_at) { req.session.pzComplete = true; return next(); }
+        if (u && u.phase_zero_completed_at) {
+          req.session.pzComplete = true;
+          return next();
+        }
+        req.session.pzComplete = false;
         return res.redirect('/phase-zero');
       })
       .catch(function() { next(); });
@@ -663,7 +668,9 @@ router.post('/complete', requireAuth, async (req, res) => {
   try {
     var userId = req.userId;
     var user = (await pool.query(
-      'SELECT declaration_accepted_at, phone_verified_at, ai_guided_setup, phase_zero_completed_at FROM users WHERE id = $1',
+      `SELECT declaration_accepted_at, phone_verified_at, ai_guided_setup, phase_zero_completed_at,
+              ai_setup_answers
+       FROM users WHERE id = $1`,
       [userId]
     )).rows[0];
 
@@ -676,6 +683,28 @@ router.post('/complete', requireAuth, async (req, res) => {
     }
     if (!user.phone_verified_at) {
       return res.status(400).json({ error: 'Phone not yet verified.' });
+    }
+
+    // Ensure six FACTS categories + permanent/user allocations exist before audit starts.
+    var percentages = null;
+    try {
+      var answers = user.ai_setup_answers;
+      if (typeof answers === 'string') {
+        try { answers = JSON.parse(answers); } catch (e) { answers = null; }
+      }
+      if (answers && answers.allocations && typeof answers.allocations === 'object') {
+        percentages = answers.allocations;
+      }
+    } catch (e) { /* use defaults */ }
+
+    try {
+      await ensureDefaultFactsSetup(userId, {
+        percentages: percentages || undefined,
+        forceUserColumns: true
+      });
+    } catch (seedErr) {
+      console.error('[PhaseZero] ensureDefaultFactsSetup failed:', seedErr.message);
+      return res.status(500).json({ error: 'Failed to initialize default allocations.' });
     }
 
     // Mark complete, start audit

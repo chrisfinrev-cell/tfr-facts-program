@@ -44,6 +44,7 @@ const { runTrialExpiryJob } = require('../jobs/trial-expiry-manager');
 const { runInactivityJob } = require('../jobs/inactivity-manager');
 const { runPriceChangeNotifierJob } = require('../jobs/price-change-notifier');
 const { runPromoGraceJob } = require('../jobs/promo-grace-manager');
+const { ensureDefaultFactsSetup } = require('./allocations');
 const {
   runDay1Reminders,
   runDay5Jobs,
@@ -2666,6 +2667,185 @@ router.delete('/users/:id', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('DELETE /api/admin/users/:id error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to delete account: ' + err.message });
+  }
+});
+
+/**
+ * Soft-reset a test user's financial + Phase Zero progress data.
+ * Keeps the users row (email/password/profile/subscription/login) intact.
+ * POST /api/admin/users/:userId/reset-data
+ * Body (optional): { resetPhaseZero: true|false } — default true
+ */
+router.post('/users/:userId/reset-data', requireAuth, async (req, res) => {
+  try {
+    if (!(await requireCreator(req, res))) return;
+
+    const targetUserId = parseInt(req.params.userId, 10);
+    if (isNaN(targetUserId)) {
+      return res.status(400).json({ success: false, error: 'Invalid user ID' });
+    }
+
+    const userRes = await pool.query(
+      'SELECT id, email, name, is_creator FROM users WHERE id = $1',
+      [targetUserId]
+    );
+    if (!userRes.rows.length) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    const target = userRes.rows[0];
+
+    const creatorEmail = (process.env.CREATOR_EMAIL || '').toLowerCase().trim();
+    if (target.is_creator || (creatorEmail && target.email.toLowerCase() === creatorEmail)) {
+      return res.status(403).json({ success: false, error: 'Cannot reset the creator account' });
+    }
+
+    const resetPhaseZero = req.body && req.body.resetPhaseZero === false ? false : true;
+    const deleted = {};
+    const skipped = [];
+
+    async function safeDelete(label, sql, params) {
+      try {
+        const result = await pool.query(sql, params);
+        deleted[label] = result.rowCount || 0;
+      } catch (err) {
+        // Missing table/column is fine — schema varies across environments
+        if (err.code === '42P01' || err.code === '42703') {
+          skipped.push(label);
+          return;
+        }
+        throw err;
+      }
+    }
+
+    // Child rows that reference transactions first
+    await safeDelete(
+      'transaction_allocations',
+      `DELETE FROM transaction_allocations
+       WHERE transaction_id IN (SELECT id FROM transactions WHERE user_id = $1)`,
+      [targetUserId]
+    );
+    await safeDelete('ledgers', 'DELETE FROM ledgers WHERE user_id = $1', [targetUserId]);
+    await safeDelete('transactions', 'DELETE FROM transactions WHERE user_id = $1', [targetUserId]);
+
+    // Bills (legacy recurring + Rate Radar)
+    await safeDelete(
+      'rate_radar_dismissals',
+      `DELETE FROM rate_radar_dismissals
+       WHERE bill_id IN (SELECT id FROM rate_radar_bills WHERE user_id = $1)`,
+      [targetUserId]
+    );
+    await safeDelete(
+      'rate_radar_comparisons',
+      `DELETE FROM rate_radar_comparisons
+       WHERE bill_id IN (SELECT id FROM rate_radar_bills WHERE user_id = $1)`,
+      [targetUserId]
+    );
+    await safeDelete('rate_radar_bills', 'DELETE FROM rate_radar_bills WHERE user_id = $1', [targetUserId]);
+    await safeDelete('recurring_bills', 'DELETE FROM recurring_bills WHERE user_id = $1', [targetUserId]);
+
+    // Allocation histories / bucket state (will re-seed defaults below)
+    await safeDelete('user_allocations', 'DELETE FROM user_allocations WHERE user_id = $1', [targetUserId]);
+    await safeDelete('permanent_allocations', 'DELETE FROM permanent_allocations WHERE user_id = $1', [targetUserId]);
+    await safeDelete('user_bucket_state', 'DELETE FROM user_bucket_state WHERE user_id = $1', [targetUserId]);
+    await safeDelete('user_reserve_protocol', 'DELETE FROM user_reserve_protocol WHERE user_id = $1', [targetUserId]);
+    await safeDelete('subcategories', 'DELETE FROM subcategories WHERE user_id = $1', [targetUserId]);
+    await safeDelete('debts', 'DELETE FROM debts WHERE user_id = $1', [targetUserId]);
+    await safeDelete(
+      'paycheck_entries',
+      'DELETE FROM mod_income.paycheck_entries WHERE user_id = $1',
+      [targetUserId]
+    );
+    await safeDelete('ai_coach_messages', 'DELETE FROM ai_coach_messages WHERE user_id = $1', [targetUserId]);
+
+    // Clear day-zero snapshot on profile if present (keep profile row)
+    try {
+      await pool.query(
+        `UPDATE user_profiles SET day_zero_snapshot = NULL, updated_at = NOW() WHERE user_id = $1`,
+        [targetUserId]
+      );
+    } catch (e) {
+      if (e.code !== '42P01' && e.code !== '42703') throw e;
+    }
+
+    if (resetPhaseZero) {
+      try {
+        await pool.query(
+          `UPDATE users SET
+             phase_zero_completed_at = NULL,
+             phase_zero_started_at = NULL,
+             declaration_accepted_at = NULL,
+             ai_guided_setup = NULL,
+             ai_setup_answers = NULL,
+             audit_status = NULL,
+             audit_start_date = NULL,
+             audit_day_count = 0,
+             audit_last_activity_date = NULL,
+             audit_completed_at = NULL,
+             audit_lockout_until = NULL,
+             alloc_necessities = NULL,
+             alloc_velocity = NULL,
+             alloc_reserve = NULL,
+             alloc_lifestyle = NULL,
+             alloc_growth = NULL,
+             alloc_legacy = NULL,
+             updated_at = NOW()
+           WHERE id = $1`,
+          [targetUserId]
+        );
+        deleted.phase_zero_fields = 1;
+      } catch (pzErr) {
+        // Some columns may not exist — try a minimal set
+        try {
+          await pool.query(
+            `UPDATE users SET
+               phase_zero_completed_at = NULL,
+               declaration_accepted_at = NULL,
+               ai_setup_answers = NULL,
+               audit_status = NULL,
+               updated_at = NOW()
+             WHERE id = $1`,
+            [targetUserId]
+          );
+          deleted.phase_zero_fields = 1;
+        } catch (e2) {
+          console.warn('[Admin reset-data] Phase Zero field clear skipped:', e2.message);
+          skipped.push('phase_zero_fields');
+        }
+      }
+    }
+
+    // Re-seed six FACTS categories + default allocation rows for a clean slate
+    let seed = { categories: 0, allocations: 0 };
+    try {
+      seed = await ensureDefaultFactsSetup(targetUserId, { forceUserColumns: true });
+    } catch (seedErr) {
+      console.error('[Admin reset-data] ensureDefaultFactsSetup failed:', seedErr.message);
+      return res.status(500).json({
+        success: false,
+        error: 'Data wiped but failed to re-seed default allocations: ' + seedErr.message,
+        deleted,
+        skipped
+      });
+    }
+
+    console.log(
+      `[Admin reset-data] user ${target.email} (id=${target.id}) wiped by admin ${req.userId};` +
+      ` reseeded cats=${seed.categories} allocs=${seed.allocations}`
+    );
+
+    res.json({
+      success: true,
+      message: `Reset financial data for ${target.email}`,
+      userId: target.id,
+      email: target.email,
+      resetPhaseZero,
+      deleted,
+      skipped,
+      reseeded: seed
+    });
+  } catch (err) {
+    console.error('POST /api/admin/users/:userId/reset-data error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to reset user data: ' + err.message });
   }
 });
 
