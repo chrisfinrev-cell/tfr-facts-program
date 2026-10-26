@@ -45,6 +45,7 @@ const { runInactivityJob } = require('../jobs/inactivity-manager');
 const { runPriceChangeNotifierJob } = require('../jobs/price-change-notifier');
 const { runPromoGraceJob } = require('../jobs/promo-grace-manager');
 const { ensureDefaultFactsSetup } = require('./allocations');
+const { listFeedback } = require('./betaFeedback');
 const {
   runDay1Reminders,
   runDay5Jobs,
@@ -2667,6 +2668,23 @@ router.delete('/users/:id', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('DELETE /api/admin/users/:id error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to delete account: ' + err.message });
+  }
+});
+
+/**
+ * Review beta tester feedback / bug reports.
+ * GET /api/admin/feedback?status=open|all&limit=100
+ */
+router.get('/feedback', requireAdmin, async (req, res) => {
+  try {
+    const feedback = await listFeedback(pool, {
+      limit: req.query.limit,
+      status: req.query.status || 'all'
+    });
+    return res.json({ success: true, count: feedback.length, feedback });
+  } catch (err) {
+    console.error('GET /api/admin/feedback error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to load feedback.' });
   }
 });
 

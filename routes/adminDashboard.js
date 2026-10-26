@@ -11,27 +11,13 @@ const {
   normalizeRelationshipTag,
   isAffiliateExcluded
 } = require('../lib/relationshipTags');
+const {
+  ensureFeedbackTable,
+  listFeedback
+} = require('./betaFeedback');
 
 function getDb(req) {
   return req.app.get('db') || pool;
-}
-
-async function ensureFeedbackTable(db) {
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS beta_feedback (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-      category VARCHAR(64) NOT NULL DEFAULT 'bug',
-      message TEXT NOT NULL,
-      page_url TEXT,
-      user_agent TEXT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await db.query(`
-    ALTER TABLE beta_feedback
-    ADD COLUMN IF NOT EXISTS status VARCHAR(32) NOT NULL DEFAULT 'open'
-  `);
 }
 
 // Apply admin guard across all dashboard routes
@@ -224,25 +210,11 @@ router.get('/lineage/:code', async (req, res) => {
 router.get('/feedback', async (req, res) => {
   const db = getDb(req);
   try {
-    await ensureFeedbackTable(db);
-    const feedback = await db.query(`
-      SELECT
-        bf.id,
-        bf.user_id,
-        bf.category,
-        bf.message,
-        bf.page_url,
-        bf.user_agent,
-        bf.status,
-        bf.created_at,
-        u.email AS user_email,
-        u.name AS user_name
-      FROM beta_feedback bf
-      LEFT JOIN users u ON bf.user_id = u.id
-      ORDER BY bf.created_at DESC
-      LIMIT 500
-    `);
-    return res.json({ success: true, feedback: feedback.rows });
+    const feedback = await listFeedback(db, {
+      limit: req.query.limit,
+      status: req.query.status
+    });
+    return res.json({ success: true, feedback });
   } catch (error) {
     console.error('[adminDashboard/feedback]', error.message);
     return res.status(500).json({ error: 'Failed to load feedback.' });

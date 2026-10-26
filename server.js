@@ -434,7 +434,8 @@ app.use('/api/vault/admin', adminVaultRouter);
 app.use('/api/vault', vaultRouter);
 app.get('/admin.html', (req, res) => res.redirect(302, '/admin'));
 const betaFeedbackRouter = require('./routes/betaFeedback');
-app.use('/api/beta', betaFeedbackRouter);
+app.use('/api/feedback', betaFeedbackRouter); // POST /api/feedback
+app.use('/api/beta', betaFeedbackRouter);     // POST /api/beta/feedback (legacy)
 
 // NDA Gate Page Route
 app.get('/nda', (req, res) => {
