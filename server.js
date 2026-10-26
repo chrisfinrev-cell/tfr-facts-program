@@ -388,6 +388,33 @@ app.use('/api/stock-quotes', stockQuotesRouter);
 app.use('/api/all-accounts', allAccountsRouter);
 app.use('/api/crypto', cryptoRouter);
 app.use('/api/brokerage', brokerageTrackerRouter);
+const { router: businessRouter } = require('./routes/business');
+const {
+  householdsRouter,
+  familyInviteRouter,
+  goalsRouter,
+  sharedBudgetExpensesRouter,
+  bindFamilyRuntime
+} = require('./routes/family');
+const {
+  tfrRouter,
+  engagementRouter,
+  rewardsRouter,
+  futureGenerationsRouter,
+  pageRouter: gamificationPageRouter,
+  bindGamificationRuntime,
+  tryAutoCompleteChallenge
+} = require('./routes/gamification');
+app.use('/api/business-pro', businessRouter);
+app.use('/api/households', householdsRouter);
+app.use('/api/family-invite', familyInviteRouter);
+app.use('/api/goals', goalsRouter);
+app.use('/api/shared-budget-expenses', sharedBudgetExpensesRouter);
+app.use('/api/tfr', tfrRouter);
+app.use('/api/engagement', engagementRouter);
+app.use('/api/rewards', rewardsRouter);
+app.use('/api/future-generations', futureGenerationsRouter);
+app.use(gamificationPageRouter);
 app.set('db', pool);
 const { router: betaNdaRouter, enforceNda } = require('./routes/betaNda');
 app.use(betaNdaRouter);
@@ -1320,416 +1347,416 @@ app.get('/api/trial/status', requireAuth, async (req, res) => {
   }
 });
 
-// ─── Business Pro Onboarding Endpoints ───────────────────────────────────────
-//
-// Path Selection (mandatory for business_core / business_bundle users on first login):
-//   PATH_TYPE: A (Side-Hustle), B (Full-Timer), C (Funded Baby), D (Legacy Pivot)
-//   SURVIVAL_BURN: business fixed costs + personal necessities (B) OR + debt service (A/C/D)
-//   SOVEREIGNTY_FLOOR: SURVIVAL_BURN × 6
-//
-// 5-Bucket Protocol (bank confirmation gate):
-//   Bucket 1: Clearing (Checking) — all revenue intake
-//   Bucket 2: Tax Shield (HYSA/MM) — 25% allocation
-//   Bucket 3: Operating Reserve (HYSA/MM) — safety until SOVEREIGNTY_FLOOR met
-//   Bucket 4: Growth & Innovation (HYSA/MM) — 15% marketing / 10% R&D
-//   Bucket 5: Wealth Bridge (Checking) — sweep point for brokerage transfers
-// ─────────────────────────────────────────────────────────────────────────────
+// [Phase5] business-pro → routes/business.js
 
-// GET /api/business-pro/onboarding — Return current onboarding status
-app.get('/api/business-pro/onboarding', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT pricing_tier, business_path_type, survival_burn_cents, bucket_cert_completed, bucket_cert_confirmed_at FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    const user = result.rows[0];
 
-    // Only business tier users need this onboarding
-    const isBusiness = user.pricing_tier === 'business_core' || user.pricing_tier === 'business_bundle';
-    const sovereigntyFloor = user.survival_burn_cents
-      ? user.survival_burn_cents * 6
-      : null;
 
-    res.json({
-      success: true,
-      is_business_tier: isBusiness,
-      onboarding_required: isBusiness && (!user.business_path_type || !user.bucket_cert_completed),
-      path_selection_done: !!user.business_path_type,
-      bucket_cert_done: user.bucket_cert_completed || false,
-      business_path_type: user.business_path_type || null,
-      survival_burn_cents: user.survival_burn_cents || null,
-      sovereignty_floor_cents: sovereigntyFloor,
-      bucket_cert_confirmed_at: user.bucket_cert_confirmed_at || null
-    });
-  } catch (err) {
-    console.error('[BusinessPro] GET onboarding error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to fetch onboarding status.' });
-  }
-});
 
-// POST /api/business-pro/onboarding — Save path type + survival burn
-// Body: { path_type: 'A'|'B'|'C'|'D', survival_burn_cents: number }
-app.post('/api/business-pro/onboarding', requireAuth, async (req, res) => {
-  try {
-    const { path_type, survival_burn_cents } = req.body;
 
-    // Validate
-    if (!['A','B','C','D'].includes(path_type)) {
-      return res.status(400).json({ success: false, message: 'Invalid path_type. Must be A, B, C, or D.' });
-    }
-    if (!Number.isInteger(survival_burn_cents) || survival_burn_cents < 0) {
-      return res.status(400).json({ success: false, message: 'survival_burn_cents must be a non-negative integer.' });
-    }
 
-    // Verify user is on Business tier
-    const check = await pool.query('SELECT pricing_tier FROM users WHERE id = $1', [req.userId]);
-    if (check.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-    // Allow access for creators and business tier
-    const pt = check.rows[0].pricing_tier;
-    if (!['business_core', 'business_bundle'].includes(pt) && !check.rows[0].is_creator) {
-      return res.status(403).json({ success: false, message: 'Business onboarding is only available on the Business Core or Full Business Bundle plan.' });
-    }
 
-    await pool.query(
-      'UPDATE users SET business_path_type = $1, survival_burn_cents = $2 WHERE id = $3',
-      [path_type, survival_burn_cents, req.userId]
-    );
 
-    const sovereigntyFloor = survival_burn_cents * 6;
 
-    res.json({
-      success: true,
-      message: 'Path selection saved.',
-      business_path_type: path_type,
-      survival_burn_cents,
-      sovereignty_floor_cents: sovereigntyFloor
-    });
-  } catch (err) {
-    console.error('[BusinessPro] POST onboarding error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to save onboarding data.' });
-  }
-});
 
-// POST /api/business-pro/bucket-cert — Mark bucket certification complete
-// Body: { confirmed: true }
-app.post('/api/business-pro/bucket-cert', requireAuth, async (req, res) => {
-  try {
-    const { confirmed } = req.body;
-    if (!confirmed) {
-      return res.status(400).json({ success: false, message: 'confirmed must be true.' });
-    }
 
-    // Must have completed path selection first
-    const check = await pool.query(
-      'SELECT pricing_tier, business_path_type FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (check.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-    if (!check.rows[0].business_path_type) {
-      return res.status(400).json({ success: false, message: 'Complete path selection before bucket certification.' });
-    }
 
-    await pool.query(
-      'UPDATE users SET bucket_cert_completed = TRUE, bucket_cert_confirmed_at = NOW() WHERE id = $1',
-      [req.userId]
-    );
 
-    res.json({
-      success: true,
-      message: '5-Bucket Protocol certified. Welcome, Financial Architect.',
-      bucket_cert_completed: true,
-      bucket_cert_confirmed_at: new Date().toISOString()
-    });
-  } catch (err) {
-    console.error('[BusinessPro] POST bucket-cert error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to confirm bucket certification.' });
-  }
-});
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ─── BUSINESS PRO LOGIC ENGINE ────────────────────────────────────────────
-//   Friday Sweep, Heartbeat Audit, Wealth Bridge
-// ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/business-pro/dashboard — summary data for Business Pro command center
-app.get('/api/business-pro/dashboard', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT pricing_tier, business_path_type, survival_burn_cents, bucket_cert_completed,
-              bucket3_balance_cents, bucket3_updated_at,
-              heartbeat_in_truth, heartbeat_consecutive_passes
-       FROM users WHERE id = $1`,
-      [req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ success: false, message: 'User not found.' });
-    const u = result.rows[0];
-    const sovereigntyFloor = u.survival_burn_cents ? u.survival_burn_cents * 6 : 0;
-    const bucket3          = u.bucket3_balance_cents || 0;
-    const floorMet         = bucket3 >= sovereigntyFloor && sovereigntyFloor > 0;
 
-    res.json({
-      success: true,
-      business_path_type:          u.business_path_type || null,
-      survival_burn_cents:         u.survival_burn_cents || 0,
-      sovereignty_floor_cents:     sovereigntyFloor,
-      bucket3_balance_cents:       bucket3,
-      bucket3_updated_at:          u.bucket3_updated_at || null,
-      bucket_cert_completed:       u.bucket_cert_completed || false,
-      heartbeat_in_truth:          u.heartbeat_in_truth !== false,
-      heartbeat_consecutive_passes: u.heartbeat_consecutive_passes || 0,
-      wealth_bridge_unlocked:      floorMet,
-      vesting_complete:            (u.heartbeat_consecutive_passes || 0) >= 3
-    });
-  } catch (err) {
-    console.error('[BusinessPro] dashboard error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to load dashboard.' });
-  }
-});
 
-// POST /api/business-pro/sweep — Record a Friday Sweep allocation
-// Body: { gross_revenue_cents: number, bucket3_balance_cents: number, notes?: string }
-app.post('/api/business-pro/sweep', requireAuth, async (req, res) => {
-  try {
-    const { gross_revenue_cents, bucket3_balance_cents, notes } = req.body;
 
-    if (!Number.isInteger(gross_revenue_cents) || gross_revenue_cents <= 0) {
-      return res.status(400).json({ success: false, message: 'gross_revenue_cents must be a positive integer.' });
-    }
-    if (!Number.isInteger(bucket3_balance_cents) || bucket3_balance_cents < 0) {
-      return res.status(400).json({ success: false, message: 'bucket3_balance_cents must be a non-negative integer.' });
-    }
 
-    // Verify user is on business tier and has completed onboarding
-    const uRes = await pool.query(
-      'SELECT pricing_tier, survival_burn_cents, bucket_cert_completed FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (!uRes.rows.length) return res.status(404).json({ success: false, message: 'User not found.' });
-    const user = uRes.rows[0];
-    if (!['business_core', 'business_bundle'].includes(user.pricing_tier)) {
-      return res.status(403).json({ success: false, message: 'Business plan required.' });
-    }
 
-    const sovereigntyFloor = (user.survival_burn_cents || 0) * 6;
 
-    // ── Friday Sweep Allocation Math ────────────────────────────────────────
-    const gross          = gross_revenue_cents;
-    const taxShield      = Math.round(gross * 0.25);   // 25% → Bucket 2
-    const growth         = Math.round(gross * 0.15);   // 15% → Bucket 4 (marketing)
-    const innovation     = Math.round(gross * 0.10);   // 10% → Bucket 4 (R&D)
-    const reserveFill    = gross - taxShield - growth - innovation; // Remaining 50%
 
-    // Route Reserve Fill based on Bucket 3 vs SOVEREIGNTY_FLOOR
-    const destination = (bucket3_balance_cents < sovereigntyFloor || sovereigntyFloor === 0)
-      ? 'operating_reserve'
-      : 'wealth_bridge';
 
-    // Save the sweep
-    const sweepRes = await pool.query(
-      `INSERT INTO business_pro_sweeps
-         (user_id, sweep_date, gross_revenue_cents, bucket3_balance_cents,
-          tax_shield_cents, growth_cents, innovation_cents, reserve_fill_cents,
-          reserve_destination, notes)
-       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [req.userId, gross, bucket3_balance_cents,
-       taxShield, growth, innovation, reserveFill, destination, notes || null]
-    );
 
-    // Update user's bucket3 balance snapshot
-    const newBucket3 = destination === 'operating_reserve'
-      ? bucket3_balance_cents + reserveFill
-      : bucket3_balance_cents;
 
-    await pool.query(
-      'UPDATE users SET bucket3_balance_cents = $1, bucket3_updated_at = NOW() WHERE id = $2',
-      [newBucket3, req.userId]
-    );
 
-    const floorMet = newBucket3 >= sovereigntyFloor && sovereigntyFloor > 0;
 
-    res.json({
-      success: true,
-      sweep: sweepRes.rows[0],
-      allocation: {
-        gross_revenue_cents: gross,
-        tax_shield_cents:    taxShield,
-        growth_cents:        growth,
-        innovation_cents:    innovation,
-        reserve_fill_cents:  reserveFill,
-        reserve_destination: destination
-      },
-      sovereignty_floor_cents:  sovereigntyFloor,
-      bucket3_balance_cents:    newBucket3,
-      wealth_bridge_unlocked:   floorMet
-    });
-  } catch (err) {
-    console.error('[BusinessPro] sweep error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to record sweep.' });
-  }
-});
 
-// GET /api/business-pro/sweeps — List recent Friday Sweeps
-app.get('/api/business-pro/sweeps', requireAuth, async (req, res) => {
-  try {
-    const { limit = 10 } = req.query;
-    const rows = await pool.query(
-      `SELECT * FROM business_pro_sweeps
-       WHERE user_id = $1
-       ORDER BY sweep_date DESC, created_at DESC
-       LIMIT $2`,
-      [req.userId, Math.min(parseInt(limit) || 10, 50)]
-    );
-    res.json({ success: true, sweeps: rows.rows });
-  } catch (err) {
-    console.error('[BusinessPro] sweeps list error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to load sweeps.' });
-  }
-});
 
-// GET /api/business-pro/heartbeat/status — Get current Business Pro heartbeat status
-app.get('/api/business-pro/heartbeat/status', requireAuth, async (req, res) => {
-  try {
-    const uRes = await pool.query(
-      `SELECT heartbeat_in_truth, heartbeat_consecutive_passes FROM users WHERE id = $1`,
-      [req.userId]
-    );
-    if (!uRes.rows.length) return res.status(404).json({ success: false, message: 'User not found.' });
-    const u = uRes.rows[0];
 
-    // Determine audit window (1st-7th of current month)
-    const now      = new Date();
-    const dayOfMonth = now.getDate();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const withinWindow = dayOfMonth >= 1 && dayOfMonth <= 7;
-    const daysLeft = Math.max(0, 7 - dayOfMonth + 1);
 
-    // Month label for this audit
-    const monthLabel = monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-    // Check if already completed this month
-    const existingCheck = await pool.query(
-      `SELECT id, in_truth, bank_balance_cents, ledger_balance_cents, variance_cents, created_at
-       FROM business_pro_heartbeats
-       WHERE user_id = $1 AND audit_month = $2`,
-      [req.userId, monthStart.toISOString().split('T')[0]]
-    );
-    const completed = existingCheck.rows.length > 0;
-    const thisMonthAudit = completed ? existingCheck.rows[0] : null;
 
-    res.json({
-      success: true,
-      monthLabel,
-      withinWindow,
-      daysLeft,
-      completed,
-      audit: thisMonthAudit,
-      heartbeat_in_truth:           u.heartbeat_in_truth !== false,
-      heartbeat_consecutive_passes: u.heartbeat_consecutive_passes || 0,
-      vesting_complete:             (u.heartbeat_consecutive_passes || 0) >= 3,
-      commissionsOnHold:            u.heartbeat_in_truth === false
-    });
-  } catch (err) {
-    console.error('[BusinessPro] heartbeat status error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to load heartbeat status.' });
-  }
-});
 
-// POST /api/business-pro/heartbeat — Submit Business Pro monthly heartbeat audit
-// Body: { bank_balance_cents: number, ledger_balance_cents: number, signer_name: string }
-app.post('/api/business-pro/heartbeat', requireAuth, async (req, res) => {
-  try {
-    const { bank_balance_cents, ledger_balance_cents, signer_name } = req.body;
 
-    if (!Number.isInteger(bank_balance_cents)) {
-      return res.status(400).json({ success: false, message: 'bank_balance_cents must be an integer.' });
-    }
-    if (!Number.isInteger(ledger_balance_cents)) {
-      return res.status(400).json({ success: false, message: 'ledger_balance_cents must be an integer.' });
-    }
-    if (!signer_name || signer_name.trim().length < 2) {
-      return res.status(400).json({ success: false, message: 'signer_name required.' });
-    }
 
-    // Verify Business Pro tier
-    const uRes = await pool.query(
-      'SELECT pricing_tier, heartbeat_consecutive_passes FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (!uRes.rows.length) return res.status(404).json({ success: false, message: 'User not found.' });
-    if (!['business_core', 'business_bundle'].includes(uRes.rows[0].pricing_tier)) {
-      return res.status(403).json({ success: false, message: 'Business plan required.' });
-    }
 
-    // Determine audit month
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const dayOfMonth = now.getDate();
 
-    // Enforce window: 1st-7th only
-    if (dayOfMonth < 1 || dayOfMonth > 7) {
-      return res.status(400).json({ success: false, message: 'Heartbeat Audit window is the 1st–7th of each month.' });
-    }
 
-    // Check if already completed this month
-    const existing = await pool.query(
-      'SELECT id FROM business_pro_heartbeats WHERE user_id = $1 AND audit_month = $2',
-      [req.userId, monthStart.toISOString().split('T')[0]]
-    );
-    if (existing.rows.length > 0) {
-      return res.status(409).json({ success: false, message: 'Heartbeat already completed for this month.' });
-    }
 
-    // Determine "In Truth" status
-    // Tolerance: within 1% or $50 (500 cents), whichever is greater
-    const variance = Math.abs(bank_balance_cents - ledger_balance_cents);
-    const tolerance = Math.max(500, Math.round(Math.abs(ledger_balance_cents) * 0.01));
-    const inTruth = variance <= tolerance;
 
-    // Insert heartbeat record
-    const hbRes = await pool.query(
-      `INSERT INTO business_pro_heartbeats
-         (user_id, audit_month, bank_balance_cents, ledger_balance_cents,
-          variance_cents, in_truth, signer_name)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [req.userId, monthStart.toISOString().split('T')[0],
-       bank_balance_cents, ledger_balance_cents, variance, inTruth,
-       signer_name.trim()]
-    );
 
-    // Update user's consecutive passes and in_truth status
-    const prevPasses = uRes.rows[0].heartbeat_consecutive_passes || 0;
-    const newPasses  = inTruth ? prevPasses + 1 : 0;
-    await pool.query(
-      `UPDATE users
-       SET heartbeat_in_truth = $1, heartbeat_consecutive_passes = $2
-       WHERE id = $3`,
-      [inTruth, newPasses, req.userId]
-    );
 
-    res.json({
-      success: true,
-      audit: hbRes.rows[0],
-      in_truth: inTruth,
-      heartbeat_consecutive_passes: newPasses,
-      vesting_complete: newPasses >= 3,
-      message: inTruth
-        ? `In Truth ✓ — ${newPasses} of 3 consecutive pass${newPasses !== 1 ? 'es' : ''} recorded.`
-        : 'Out of Truth — commissions frozen until 3 consecutive passes achieved.'
-    });
-  } catch (err) {
-    console.error('[BusinessPro] heartbeat submit error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to submit heartbeat.' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -5769,254 +5796,254 @@ function calculateFIProjections(params) {
   };
 }
 
-// ─── family FINANCIAL FREEDOM CALCULATOR ────────────────────────────
+// [Phase5] family FI calc → routes/family.js
 
-// Helper: check if user is member of a family
-async function isHouseholdMember(userId, householdId) {
-  const r = await pool.query(
-    'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-    [householdId, userId]
-  );
-  return r.rows.length > 0;
-}
 
-// GET /api/households/:household_id/fi-calculator
-app.get('/api/households/:household_id/fi-calculator', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', code: 'PRO_REQUIRED' });
 
-    const householdId = parseInt(req.params.household_id);
-    if (!(await isHouseholdMember(req.userId, householdId))) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    const result = await pool.query(
-      'SELECT * FROM household_fi_calculator WHERE household_id = $1',
-      [householdId]
-    );
-    res.json({ data: result.rows[0] || null });
-  } catch (err) {
-    console.error('GET family fi-calculator error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch family FI data' });
-  }
-});
 
-// POST /api/households/:household_id/fi-calculator  (save/upsert)
-app.post('/api/households/:household_id/fi-calculator', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', code: 'PRO_REQUIRED' });
 
-    const householdId = parseInt(req.params.household_id);
-    if (!(await isHouseholdMember(req.userId, householdId))) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    const {
-      total_monthly_expenses,
-      total_current_savings,
-      total_monthly_savings,
-      safe_withdrawal_rate = 4.0,
-      expected_return_rate = 7.0,
-      member_count = 1
-    } = req.body;
 
-    if (total_monthly_expenses == null || total_current_savings == null || total_monthly_savings == null) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
 
-    const result = await pool.query(`
-      INSERT INTO household_fi_calculator
-        (household_id, total_monthly_expenses, total_current_savings, total_monthly_savings,
-         safe_withdrawal_rate, expected_return_rate, member_count)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (household_id) DO UPDATE SET
-        total_monthly_expenses = EXCLUDED.total_monthly_expenses,
-        total_current_savings = EXCLUDED.total_current_savings,
-        total_monthly_savings = EXCLUDED.total_monthly_savings,
-        safe_withdrawal_rate = EXCLUDED.safe_withdrawal_rate,
-        expected_return_rate = EXCLUDED.expected_return_rate,
-        member_count = EXCLUDED.member_count,
-        updated_at = NOW()
-      RETURNING *
-    `, [householdId, total_monthly_expenses, total_current_savings,
-        total_monthly_savings, safe_withdrawal_rate, expected_return_rate, member_count]);
 
-    res.json({ data: result.rows[0] });
-  } catch (err) {
-    console.error('POST family fi-calculator error:', err.message);
-    res.status(500).json({ error: 'Failed to save family FI data' });
-  }
-});
 
-// POST /api/households/:household_id/fi-calculator/calculate  (calculate, no save)
-app.post('/api/households/:household_id/fi-calculator/calculate', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', code: 'PRO_REQUIRED' });
 
-    const householdId = parseInt(req.params.household_id);
-    if (!(await isHouseholdMember(req.userId, householdId))) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    const {
-      total_monthly_expenses,
-      total_current_savings,
-      total_monthly_savings,
-      safe_withdrawal_rate = 4.0,
-      expected_return_rate = 7.0,
-      extra_monthly_savings = 0
-    } = req.body;
 
-    if (total_monthly_expenses == null || total_current_savings == null || total_monthly_savings == null) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
 
-    const swr = parseFloat(safe_withdrawal_rate) / 100;
-    const annualExpenses = parseFloat(total_monthly_expenses) * 12;
-    const ffNumber = annualExpenses / swr;
-    const currentSavings = parseFloat(total_current_savings);
-    const monthlySavings = parseFloat(total_monthly_savings) + parseFloat(extra_monthly_savings);
-    const returnRate = parseFloat(expected_return_rate) / 100;
-    const monthlyReturn = returnRate / 12;
 
-    const currentProgress = Math.min((currentSavings / ffNumber) * 100, 100);
 
-    // Project months until FF#
-    let savings = currentSavings;
-    let month = 0;
-    const MAX_MONTHS = 600;
-    const projectionSchedule = [];
 
-    while (savings < ffNumber && month < MAX_MONTHS) {
-      month++;
-      savings = savings * (1 + monthlyReturn) + monthlySavings;
-      if (month % 12 === 0 || savings >= ffNumber) {
-        projectionSchedule.push({
-          month,
-          year: Math.floor(month / 12),
-          savings: Math.round(savings * 100) / 100,
-          ffNumber: Math.round(ffNumber * 100) / 100,
-          progress: Math.min((savings / ffNumber) * 100, 100)
-        });
-      }
-      if (savings >= ffNumber) break;
-    }
 
-    const monthsUntilFF = month < MAX_MONTHS ? month : null;
-    const yearsUntilFF = monthsUntilFF ? Math.round((monthsUntilFF / 12) * 10) / 10 : null;
-    const daysUntilFF = monthsUntilFF ? Math.ceil(monthsUntilFF * 30.44) : null;
-    const projectedYear = monthsUntilFF ? new Date().getFullYear() + Math.floor(monthsUntilFF / 12) : null;
 
-    res.json({
-      ffNumber: Math.round(ffNumber * 100) / 100,
-      currentSavings: Math.round(currentSavings * 100) / 100,
-      currentProgress: Math.round(currentProgress * 100) / 100,
-      monthsUntilFF,
-      yearsUntilFF,
-      daysUntilFF,
-      projectedYear,
-      projectionSchedule,
-      status: monthsUntilFF === null ? 'unreachable' : (yearsUntilFF <= 15 ? 'on_track' : 'in_progress')
-    });
-  } catch (err) {
-    console.error('POST family fi-calculator/calculate error:', err.message);
-    res.status(500).json({ error: 'Failed to calculate family FI projections' });
-  }
-});
 
-// GET /api/households/:household_id/fi-calculator/aggregate  (auto-aggregate from members)
-app.get('/api/households/:household_id/fi-calculator/aggregate', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', code: 'PRO_REQUIRED' });
 
-    const householdId = parseInt(req.params.household_id);
-    if (!(await isHouseholdMember(req.userId, householdId))) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get all family members
-    const membersResult = await pool.query(
-      'SELECT user_id FROM household_members WHERE household_id = $1',
-      [householdId]
-    );
-    const memberIds = membersResult.rows.map(r => r.user_id);
 
-    // Aggregate from individual fi calculators (only members who have data)
-    let totalExpenses = 0, totalSavings = 0, totalMonthlySavings = 0;
-    let memberCount = 0;
-    const memberFIDates = [];
 
-    for (const memberId of memberIds) {
-      const fiData = await pool.query(
-        'SELECT * FROM financial_freedom WHERE user_id = $1',
-        [memberId]
-      );
-      if (fiData.rows.length > 0) {
-        const fi = fiData.rows[0];
-        totalExpenses += parseFloat(fi.monthly_expenses);
-        totalSavings += parseFloat(fi.current_savings);
-        totalMonthlySavings += parseFloat(fi.monthly_savings_rate);
-        memberCount++;
 
-        // Calculate individual projected FI date for comparison
-        const returnRate = parseFloat(fi.expected_return_rate) / 100 / 12;
-        const annualExp = parseFloat(fi.monthly_expenses) * 12;
-        const fiNum = annualExp * 25;
-        let s = parseFloat(fi.current_savings);
-        let m = 0;
-        while (s < fiNum && m < 600) {
-          m++;
-          s = s * (1 + returnRate) + parseFloat(fi.monthly_savings_rate);
-          if (s >= fiNum) break;
-        }
-        const yearsUntil = m < 600 ? Math.round((m / 12) * 10) / 10 : null;
-        const projYear = yearsUntil ? new Date().getFullYear() + Math.floor(m / 12) : null;
 
-        // Get user display name
-        const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [memberId]);
-        const email = userResult.rows[0]?.email || 'Member';
-        const displayName = email.split('@')[0];
 
-        memberFIDates.push({
-          userId: memberId,
-          displayName,
-          yearsUntilFI: yearsUntil,
-          projectedYear: projYear,
-          isSelf: memberId === req.userId
-        });
-      }
-    }
 
-    // Also aggregate from transactions for members without manual FI data
-    const dashResult = await pool.query(`
-      SELECT
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expenses
-      FROM transactions
-      WHERE user_id = ANY($1)
-    `, [memberIds]);
 
-    if (memberCount === 0) {
-      // Fall back to transaction-based aggregate
-      totalExpenses = parseFloat(dashResult.rows[0].total_expenses);
-    }
 
-    res.json({
-      total_monthly_expenses: Math.round(totalExpenses * 100) / 100,
-      total_current_savings: Math.round(totalSavings * 100) / 100,
-      total_monthly_savings: Math.round(totalMonthlySavings * 100) / 100,
-      member_count: memberCount || memberIds.length,
-      total_members: memberIds.length,
-      memberFIDates
-    });
-  } catch (err) {
-    console.error('GET family fi-calculator/aggregate error:', err.message);
-    res.status(500).json({ error: 'Failed to aggregate family data' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─── DASHBOARD STATS (per-user) ────────────────────────────
 const { sanitizeNumber, loadTransactionColumns, moneyExpression } = require('./lib/transaction-columns');
@@ -6221,1855 +6248,1855 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════
-// ─── family SYSTEM ────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// Create a new family
-app.post('/api/households/create', requireAuth, async (req, res) => {
-  try {
-    const { name } = req.body;
-
-    if (!name || name.trim().length === 0) {
-      return res.status(400).json({ error: 'family name is required' });
-    }
-
-    // Individual Plan users cannot create or join households (single-user plan)
-    const indivCheck = await pool.query('SELECT pricing_tier FROM users WHERE id = $1', [req.userId]);
-    if (indivCheck.rows.length > 0 && indivCheck.rows[0].pricing_tier === 'individual_pro') {
-      return res.status(403).json({ error: 'family features are not available on the Individual Plan. Upgrade to the Family Plan ($25/mo) to add family members.' });
-    }
-
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Create family
-      const householdResult = await client.query(
-        'INSERT INTO households (name, owner_id) VALUES ($1, $2) RETURNING *',
-        [name.trim(), req.userId]
-      );
-      const family = householdResult.rows[0];
-
-      // Add owner as first member
-      await client.query(
-        `INSERT INTO household_members (household_id, user_id, role, status) VALUES ($1, $2, $3, 'active')`,
-        [family.id, req.userId, 'owner']
-      );
-
-      // Clear any lingering offboarding records — user is back in a family
-      await client.query(
-        `UPDATE household_offboarding_records SET reintegrated_at = NOW() WHERE user_id = $1 AND reintegrated_at IS NULL`,
-        [req.userId]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        family
-      });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('POST /api/households/create error:', err.message);
-    res.status(500).json({ error: 'Failed to create family' });
-  }
-});
-
-// Get user's households
-app.get('/api/households', requireAuth, async (req, res) => {
-  try {
-    // Get all households where user is a member
-    const result = await pool.query(`
-      SELECT
-        h.*,
-        hm.role,
-        hm.joined_at,
-        u.email as owner_email,
-        u.name as owner_name
-      FROM households h
-      INNER JOIN household_members hm ON h.id = hm.household_id
-      LEFT JOIN users u ON h.owner_id = u.id
-      WHERE hm.user_id = $1
-      ORDER BY h.created_at DESC
-    `, [req.userId]);
-
-    res.json({ households: result.rows });
-  } catch (err) {
-    console.error('GET /api/households error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch households' });
-  }
-});
-
-// Get family members (with family meta for UI)
-app.get('/api/households/:id/members', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Load family (verify exists)
-    const householdResult = await pool.query(
-      'SELECT id, name, owner_id, co_admin_id, cancellation_grace_ends_at, cancelled_at FROM households WHERE id = $1', [id]
-    );
-    if (householdResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const family = householdResult.rows[0];
-
-    // Verify user is a member
-    const memberCheck = await pool.query(
-      `SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2 AND status = 'active'`,
-      [id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
-
-    // Get all active members
-    const result = await pool.query(`
-      SELECT
-        hm.id, hm.user_id, hm.role, hm.status, hm.joined_at,
-        u.email, u.name,
-        u.id = $2 as is_you
-      FROM household_members hm
-      INNER JOIN users u ON hm.user_id = u.id
-      WHERE hm.household_id = $1 AND hm.status = 'active'
-      ORDER BY
-        CASE WHEN hm.role = 'owner' THEN 0
-             WHEN hm.role = 'co_admin' THEN 1
-             ELSE 2 END,
-        hm.joined_at ASC
-    `, [id, req.userId]);
-
-    res.json({
-      success: true,
-      family: {
-        id: family.id,
-        name: family.name,
-        owner_id: family.owner_id,
-        co_admin_id: family.co_admin_id,
-        is_owner: family.owner_id === req.userId,
-        is_co_admin: family.co_admin_id === req.userId,
-        cancellation_grace_ends_at: family.cancellation_grace_ends_at || null,
-        cancelled_at: family.cancelled_at || null
-      },
-      members: result.rows,
-      max_members: 6
-    });
-  } catch (err) {
-    console.error('GET /api/households/:id/members error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch family members' });
-  }
-});
-
-// ─── family INVITE HELPERS ──────────────────────────────────────────────────
-
-const HOUSEHOLD_MAX_MEMBERS = 6;
-// Family Incubator: 1 head + up to 5 sub-accounts = 6 total (matches HOUSEHOLD_MAX_MEMBERS)
-const INCUBATOR_MAX_SUB_ACCOUNTS = 5;
-
-async function sendHouseholdInviteEmail({ toEmail, inviterName, householdName, inviteUrl, role, customNote }) {
-  const roleLabel = { co_admin: 'Co-Admin', adult: 'Adult Member', minor: 'Junior Member' }[role] || (role || 'Member');
-  const noteHtml = customNote
-    ? `<p style="font-size:14px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:12px 14px;color:#c9a84c;margin:0 0 20px;line-height:1.6">${customNote}</p>`
-    : '';
-  try {
-    await sendEmail({
-        to: toEmail,
-        subject: `${inviterName} invited you to join their FACTS family`,
-        html: `
-          <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;background:#0a0f1a;color:#e8e0d4;padding:32px 24px;border-radius:12px">
-            <div style="margin-bottom:24px">
-              <span style="font-size:22px;font-weight:700;color:#c9a84c;letter-spacing:-0.5px">FACTS</span>
-            </div>
-            <h1 style="font-size:22px;font-weight:700;margin:0 0 12px;color:#e8e0d4">You've been invited!</h1>
-            <p style="font-size:15px;color:#a89a7e;margin:0 0 16px;line-height:1.6">
-              <strong style="color:#e8e0d4">${inviterName}</strong> has invited you to join
-              <strong style="color:#c9a84c">${householdName}</strong> on FACTS as a <strong style="color:#e8e0d4">${roleLabel}</strong>.
-            </p>
-            ${noteHtml}
-            <p style="font-size:14px;color:#a89a7e;margin:0 0 28px;line-height:1.6">
-              FACTS is the financial system built for families — track budgets, share insights, and build wealth together.
-              This invite expires in 7 days.
-            </p>
-            <a href="${inviteUrl}" style="display:inline-block;background:#c9a84c;color:#0a0f1a;font-weight:700;font-size:15px;padding:14px 28px;border-radius:8px;text-decoration:none">
-              Accept Invite →
-            </a>
-            <p style="font-size:12px;color:#6b5c44;margin-top:28px">
-              If you didn't expect this invite, you can safely ignore this email.
-            </p>
-          </div>
-        `
-    });
-  } catch (e) {
-    console.error('[family Invite Email] Failed to send:', e.message);
-  }
-}
-
-// Create family invite (email-based, with secure token)
-// Owner OR co-admin can invite
-app.post('/api/households/:id/invite', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { email, role = 'adult' } = req.body;
-
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Valid email address is required' });
-    }
-    if (!['co_admin', 'adult', 'minor'].includes(role)) {
-      return res.status(400).json({ error: 'Role must be co_admin, adult, or minor' });
-    }
-
-    // Individual Plan users cannot invite family members
-    const indivInvCheck = await pool.query('SELECT pricing_tier FROM users WHERE id = $1', [req.userId]);
-    if (indivInvCheck.rows.length > 0 && indivInvCheck.rows[0].pricing_tier === 'individual_pro') {
-      return res.status(403).json({ error: 'family invites are not available on the Individual Plan. Upgrade to the Family Plan ($25/mo) to add family members.' });
-    }
-
-    // Verify requester is owner OR co_admin
-    const householdResult = await pool.query(
-      'SELECT id, name, owner_id, co_admin_id FROM households WHERE id = $1',
-      [id]
-    );
-    if (householdResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const family = householdResult.rows[0];
-    const canInvite = family.owner_id === req.userId || family.co_admin_id === req.userId;
-    if (!canInvite) {
-      return res.status(403).json({ error: 'Only the owner or co-admin can send invites' });
-    }
-
-    // Only owner can invite a co_admin
-    if (role === 'co_admin' && family.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Only the owner can invite a co-admin' });
-    }
-
-    // Check active member count (max 6, including any accepted-but-not-yet-removed)
-    const memberCount = await pool.query(
-      `SELECT COUNT(*) as count FROM household_members
-       WHERE household_id = $1 AND status = 'active'`,
-      [id]
-    );
-    if (parseInt(memberCount.rows[0].count) >= HOUSEHOLD_MAX_MEMBERS) {
-      return res.status(400).json({ error: `family is full (max ${HOUSEHOLD_MAX_MEMBERS} members)` });
-    }
-
-    // Check if invited email already a member
-    const alreadyMember = await pool.query(
-      `SELECT hm.id FROM household_members hm
-       JOIN users u ON u.id = hm.user_id
-       WHERE hm.household_id = $1 AND LOWER(u.email) = LOWER($2) AND hm.status = 'active'`,
-      [id, email]
-    );
-    if (alreadyMember.rows.length > 0) {
-      return res.status(400).json({ error: 'This person is already a member' });
-    }
-
-    // Cancel any existing pending invite for this email in this family
-    await pool.query(
-      `UPDATE household_invites SET status = 'cancelled'
-       WHERE household_id = $1 AND LOWER(email) = LOWER($2) AND status = 'pending'`,
-      [id, email]
-    );
-
-    // Generate secure token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-    const result = await pool.query(`
-      INSERT INTO household_invites
-        (household_id, invite_code, created_by_user_id, invited_by, email, role, token, expires_at, status, max_uses, uses_count)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', 1, 0)
-      RETURNING *
-    `, [id, crypto.randomBytes(8).toString('hex'), req.userId, req.userId, email.toLowerCase(), role, token, expires_at]);
-
-    const invite = result.rows[0];
-    const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
-    const inviteUrl = `${APP_URL}/family-invite.html?token=${token}`;
-
-    // Get inviter's name
-    const inviterResult = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const inviter = inviterResult.rows[0];
-    const inviterName = inviter.name || inviter.email.split('@')[0];
-
-    // Send email (non-blocking)
-    sendHouseholdInviteEmail({
-      toEmail: email,
-      inviterName,
-      householdName: family.name,
-      inviteUrl,
-      role
-    });
-
-    res.json({
-      success: true,
-      invite: { id: invite.id, email, role, expires_at, status: 'pending' },
-      invite_url: inviteUrl
-    });
-  } catch (err) {
-    console.error('POST /api/households/:id/invite error:', err.message);
-    res.status(500).json({ error: 'Failed to send invite' });
-  }
-});
-
-// List pending invites for a family (owner or co-admin only)
-app.get('/api/households/:id/invites', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const householdResult = await pool.query(
-      'SELECT owner_id, co_admin_id FROM households WHERE id = $1',
-      [id]
-    );
-    if (householdResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const h = householdResult.rows[0];
-    if (h.owner_id !== req.userId && h.co_admin_id !== req.userId) {
-      return res.status(403).json({ error: 'Only owner or co-admin can view invites' });
-    }
-
-    const result = await pool.query(`
-      SELECT hi.id, hi.email, hi.role, hi.status, hi.expires_at, hi.accepted_at,
-             u.name as invited_by_name
-      FROM household_invites hi
-      LEFT JOIN users u ON u.id = hi.invited_by
-      WHERE hi.household_id = $1 AND hi.status IN ('pending', 'accepted', 'declined')
-      ORDER BY hi.id DESC
-    `, [id]);
-
-    res.json({ success: true, invites: result.rows });
-  } catch (err) {
-    console.error('GET /api/households/:id/invites error:', err.message);
-    res.status(500).json({ error: 'Failed to load invites' });
-  }
-});
-
-// Cancel a pending invite (owner or co-admin only)
-app.delete('/api/households/:id/invites/:invite_id', requireAuth, async (req, res) => {
-  try {
-    const { id, invite_id } = req.params;
-
-    const householdResult = await pool.query(
-      'SELECT owner_id, co_admin_id FROM households WHERE id = $1', [id]
-    );
-    if (householdResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const h = householdResult.rows[0];
-    if (h.owner_id !== req.userId && h.co_admin_id !== req.userId) {
-      return res.status(403).json({ error: 'Only owner or co-admin can cancel invites' });
-    }
-
-    await pool.query(
-      `UPDATE household_invites SET status = 'cancelled'
-       WHERE id = $1 AND household_id = $2 AND status = 'pending'`,
-      [invite_id, id]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/households/:id/invites/:invite_id error:', err.message);
-    res.status(500).json({ error: 'Failed to cancel invite' });
-  }
-});
-
-// ─── PUBLIC: Get invite details by token (no auth needed — shows join page) ─────
-app.get('/api/family-invite/:token', async (req, res) => {
-  try {
-    const { token } = req.params;
-
-    const result = await pool.query(`
-      SELECT hi.id, hi.email, hi.role, hi.status, hi.expires_at,
-             h.name as household_name, h.id as household_id,
-             u.name as invited_by_name
-      FROM household_invites hi
-      JOIN households h ON h.id = hi.household_id
-      LEFT JOIN users u ON u.id = hi.invited_by
-      WHERE hi.token = $1
-    `, [token]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Invite not found' });
-    }
-
-    const invite = result.rows[0];
-
-    if (invite.status !== 'pending') {
-      return res.json({ valid: false, status: invite.status, reason: `This invite has already been ${invite.status}` });
-    }
-    if (new Date(invite.expires_at) < new Date()) {
-      await pool.query(`UPDATE household_invites SET status = 'expired' WHERE id = $1`, [invite.id]);
-      return res.json({ valid: false, status: 'expired', reason: 'This invite has expired' });
-    }
-
-    res.json({
-      valid: true,
-      household_name: invite.household_name,
-      household_id: invite.household_id,
-      invited_email: invite.email,
-      role: invite.role,
-      invited_by_name: invite.invited_by_name,
-      expires_at: invite.expires_at,
-      status: invite.status
-    });
-  } catch (err) {
-    console.error('GET /api/family-invite/:token error:', err.message);
-    res.status(500).json({ error: 'Failed to load invite' });
-  }
-});
-
-// Accept invite by token (requires auth — user must be logged in or just signed up)
-app.post('/api/family-invite/:token/accept', requireAuth, async (req, res) => {
-  const { token } = req.params;
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const inviteResult = await client.query(`
-      SELECT hi.*, h.name as household_name, h.owner_id, h.co_admin_id, h.is_incubator
-      FROM household_invites hi
-      JOIN households h ON h.id = hi.household_id
-      WHERE hi.token = $1 AND hi.status = 'pending'
-      FOR UPDATE
-    `, [token]);
-
-    if (inviteResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Invite not found or already used' });
-    }
-
-    const invite = inviteResult.rows[0];
-
-    if (new Date(invite.expires_at) < new Date()) {
-      await client.query(`UPDATE household_invites SET status = 'expired' WHERE id = $1`, [invite.id]);
-      await client.query('ROLLBACK');
-      return res.status(410).json({ error: 'This invite has expired' });
-    }
-
-    // Verify the logged-in user's email matches the invite email
-    const userResult = await client.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    const userEmail = userResult.rows[0]?.email;
-    if (!userEmail || userEmail.toLowerCase() !== invite.email.toLowerCase()) {
-      await client.query('ROLLBACK');
-      return res.status(403).json({
-        error: `This invite was sent to ${invite.email}. Please log in with that account to accept.`
-      });
-    }
-
-    // Check if already a member
-    const existingMember = await client.query(
-      `SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2`,
-      [invite.household_id, req.userId]
-    );
-    if (existingMember.rows.length > 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'You are already a member of this family' });
-    }
-
-    // Check max members
-    const countResult = await client.query(
-      `SELECT COUNT(*) as count FROM household_members WHERE household_id = $1 AND status = 'active'`,
-      [invite.household_id]
-    );
-    if (parseInt(countResult.rows[0].count) >= HOUSEHOLD_MAX_MEMBERS) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'This family is full' });
-    }
-
-    // Map invite role to member role; owner/co_admin stay as-is
-    const memberRole = invite.role === 'co_admin' ? 'co_admin' :
-                       invite.role === 'minor' ? 'minor' : 'adult';
-
-    // For incubator households, enforce sub-account cap (active non-owner members)
-    if (invite.is_incubator) {
-      const subCountResult = await client.query(
-        `SELECT COUNT(*) as count FROM household_members
-         WHERE household_id = $1 AND user_id != $2
-           AND status = 'active' AND broke_away_at IS NULL`,
-        [invite.household_id, invite.owner_id]
-      );
-      if (parseInt(subCountResult.rows[0].count) >= INCUBATOR_MAX_SUB_ACCOUNTS) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({
-          error: `This Family Incubator is full (max ${INCUBATOR_MAX_SUB_ACCOUNTS} sub-accounts)`
-        });
-      }
-    }
-
-    // Add member — mark as sub-account if this is an incubator family
-    const isSubAccount = invite.is_incubator && invite.role !== 'co_admin';
-    await client.query(
-      `INSERT INTO household_members (household_id, user_id, role, status, joined_at, is_sub_account)
-       VALUES ($1, $2, $3, 'active', NOW(), $4)`,
-      [invite.household_id, req.userId, memberRole, isSubAccount]
-    );
-
-    // If invited as co_admin, promote on households table too
-    if (invite.role === 'co_admin') {
-      await client.query(
-        `UPDATE households SET co_admin_id = $1 WHERE id = $2`,
-        [req.userId, invite.household_id]
-      );
-    }
-
-    // Mark invite accepted
-    await client.query(
-      `UPDATE household_invites SET status = 'accepted', accepted_at = NOW(), uses_count = uses_count + 1 WHERE id = $1`,
-      [invite.id]
-    );
-
-    // ── Family Affiliate Setup ────────────────────────────────────────────────
-    // When member joins family plan:
-    // 1. Set referred_by_user_id to the family owner (makes them a direct leg)
-    // 2. Create/update their affiliate record with family_household_id (if 18+)
-    // 3. Under-18 members get is_minor=true, no affiliate code yet
-    try {
-      const memberUser = await client.query(
-        'SELECT id, email, date_of_birth, referred_by_user_id FROM users WHERE id = $1',
-        [req.userId]
-      );
-      const memberData = memberUser.rows[0];
-
-      // Set referred_by_user_id to owner if not already set
-      // This makes them a permanent leg under the owner's affiliate tree
-      if (memberData && !memberData.referred_by_user_id) {
-        await client.query(
-          'UPDATE users SET referred_by_user_id = $1 WHERE id = $2',
-          [invite.owner_id, req.userId]
-        );
-      }
-
-      // Age check
-      let isMinor = true;
-      if (memberData?.date_of_birth) {
-        const dob = new Date(memberData.date_of_birth);
-        const eighteenth = new Date(dob);
-        eighteenth.setFullYear(eighteenth.getFullYear() + 18);
-        isMinor = new Date() < eighteenth;
-      }
-
-      if (!isMinor && invite.role !== 'minor') {
-        // Adult member (18+): create/update affiliate with family_household_id
-        const existingCode = await client.query(
-          'SELECT referral_code FROM affiliates WHERE user_id = $1', [req.userId]
-        );
-        let referralCode = existingCode.rows[0]?.referral_code;
-        if (!referralCode) {
-          referralCode = await generateUniqueReferralCode();
-        }
-        await client.query(
-          `INSERT INTO affiliates (user_id, email, referral_code, status, is_minor, age_verified_at, family_household_id)
-           VALUES ($1, $2, $3, 'active', false, NOW(), $4)
-           ON CONFLICT (user_id) DO UPDATE SET
-             family_household_id = $4, is_minor = false, updated_at = NOW()`,
-          [req.userId, memberData.email, referralCode, invite.household_id]
-        );
-        await client.query(
-          `UPDATE household_members SET affiliate_id = (SELECT id FROM affiliates WHERE user_id = $1)
-           WHERE household_id = $2 AND user_id = $1`,
-          [req.userId, invite.household_id]
-        );
-      } else {
-        // Minor: flag as minor, no affiliate code
-        await client.query(
-          `INSERT INTO affiliates (user_id, email, referral_code, status, is_minor, family_household_id)
-           VALUES ($1, $2, 'MINOR-' || $1, 'paused', true, $3)
-           ON CONFLICT (user_id) DO UPDATE SET is_minor = true, family_household_id = $3, updated_at = NOW()`,
-          [req.userId, memberData?.email || '', invite.household_id]
-        );
-      }
-    } catch (affiliateErr) {
-      // Non-fatal: affiliate setup failure doesn't block invite acceptance
-      console.error('[FamilyPlan] Affiliate setup on invite accept failed:', affiliateErr.message);
-    }
-    // ── End Family Affiliate Setup ────────────────────────────────────────────
-
-    await client.query('COMMIT');
-
-    res.json({
-      success: true,
-      household_id: invite.household_id,
-      household_name: invite.household_name,
-      role: memberRole
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/family-invite/:token/accept error:', err.message);
-    res.status(500).json({ error: 'Failed to accept invite' });
-  } finally {
-    client.release();
-  }
-});
-
-// Decline invite by token (requires auth)
-app.post('/api/family-invite/:token/decline', requireAuth, async (req, res) => {
-  try {
-    const { token } = req.params;
-    const result = await pool.query(
-      `UPDATE household_invites SET status = 'declined', declined_at = NOW()
-       WHERE token = $1 AND status = 'pending'
-       RETURNING id`,
-      [token]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Invite not found or already handled' });
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST /api/family-invite/:token/decline error:', err.message);
-    res.status(500).json({ error: 'Failed to decline invite' });
-  }
-});
-
-// Join family via legacy invite code (backward-compat — kept for old links)
-app.post('/api/households/join', requireAuth, async (req, res) => {
-  try {
-    const { invite_code } = req.body;
-
-    if (!invite_code) {
-      return res.status(400).json({ error: 'Invite code is required' });
-    }
-
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      const inviteResult = await client.query(`
-        SELECT hi.*, h.name as household_name, h.owner_id
-        FROM household_invites hi
-        INNER JOIN households h ON hi.household_id = h.id
-        WHERE hi.invite_code = $1
-          AND (hi.expires_at IS NULL OR hi.expires_at > NOW())
-          AND hi.uses_count < hi.max_uses
-        FOR UPDATE
-      `, [invite_code]);
-
-      if (inviteResult.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Invalid or expired invite code' });
-      }
-
-      const invite = inviteResult.rows[0];
-
-      const existingMember = await client.query(
-        'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-        [invite.household_id, req.userId]
-      );
-      if (existingMember.rows.length > 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'You are already a member of this family' });
-      }
-
-      const memberCount = await client.query(
-        `SELECT COUNT(*) as count FROM household_members WHERE household_id = $1 AND status = 'active'`,
-        [invite.household_id]
-      );
-      if (parseInt(memberCount.rows[0].count) >= HOUSEHOLD_MAX_MEMBERS) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: `family is full (max ${HOUSEHOLD_MAX_MEMBERS} members)` });
-      }
-
-      await client.query(
-        `INSERT INTO household_members (household_id, user_id, role, status) VALUES ($1, $2, 'adult', 'active')`,
-        [invite.household_id, req.userId]
-      );
-
-      await client.query(
-        'UPDATE household_invites SET uses_count = uses_count + 1 WHERE id = $1',
-        [invite.id]
-      );
-
-      // Clear any lingering offboarding records — user is back in a family
-      await client.query(
-        `UPDATE household_offboarding_records SET reintegrated_at = NOW() WHERE user_id = $1 AND reintegrated_at IS NULL`,
-        [req.userId]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        household_id: invite.household_id,
-        household_name: invite.household_name
-      });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('POST /api/households/join error:', err.message);
-    res.status(500).json({ error: 'Failed to join family' });
-  }
-});
-
-// Remove member from family (owner/co-admin) — records offboarding with 30-day grace period
-app.delete('/api/households/:household_id/members/:user_id', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { household_id, user_id } = req.params;
-    const targetUserId = parseInt(user_id);
-
-    // Load family — verify existence and check requester permissions
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id, co_admin_id FROM households WHERE id = $1',
-      [household_id]
-    );
-    if (hhResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const hh = hhResult.rows[0];
-
-    const isOwner = hh.owner_id === req.userId;
-    const isCoAdmin = hh.co_admin_id === req.userId;
-
-    if (!isOwner && !isCoAdmin) {
-      return res.status(403).json({ error: 'Only the owner or co-admin can remove members' });
-    }
-    const householdName = hh.name;
-
-    // Cannot remove the owner
-    if (targetUserId === req.userId) {
-      return res.status(400).json({ error: 'Owner cannot remove themselves. Use Leave family instead.' });
-    }
-
-    // Check member exists
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, targetUserId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Member not found' });
-    }
-
-    await client.query('BEGIN');
-
-    // Remove member from family
-    await client.query(
-      'DELETE FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, targetUserId]
-    );
-
-    // Clean up permissions and sharing settings
-    await client.query(
-      'DELETE FROM household_permissions WHERE household_id = $1 AND (owner_user_id = $2 OR viewer_user_id = $2)',
-      [household_id, targetUserId]
-    );
-    await client.query(
-      'DELETE FROM household_sharing_settings WHERE household_id = $1 AND user_id = $2',
-      [household_id, targetUserId]
-    );
-
-    // Affiliate offboarding: clear family_household_id from their affiliate record
-    // Their affiliate network belongs to THEM — stays with them after removal
-    // Once they leave they remain a direct leg in the owner's affiliate tree
-    await client.query(
-      `UPDATE affiliates SET family_household_id = NULL, updated_at = NOW()
-       WHERE user_id = $1 AND family_household_id = $2`,
-      [targetUserId, household_id]
-    );
-
-    // Record offboarding with 30-day grace period
-    const graceExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await client.query(
-      `INSERT INTO household_offboarding_records
-         (household_id, household_name, user_id, removal_type, removed_by_user_id, grace_expires_at)
-       VALUES ($1, $2, $3, 'removed', $4, $5)`,
-      [household_id, householdName, targetUserId, req.userId, graceExpiry]
-    );
-
-    const removedUserInfo = await client.query('SELECT name, email FROM users WHERE id = $1', [targetUserId]);
-    const removedUser = removedUserInfo.rows[0];
-    const removedName = removedUser?.name || removedUser?.email || 'A member';
-
-    // Notify the removed member about grace period
-    await client.query(
-      `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-       VALUES ($1, $2, 'you_were_removed', $3, $4)`,
-      [
-        household_id,
-        targetUserId,
-        `You've been removed from ${householdName}. You have 30 days to join another Family Plan or upgrade to individual Pro to keep your data.`,
-        JSON.stringify({ household_name: householdName, grace_expires_at: graceExpiry })
-      ]
-    );
-
-    // Notify remaining members
-    const remainingMembers = await client.query(
-      'SELECT user_id FROM household_members WHERE household_id = $1 AND user_id != $2',
-      [household_id, targetUserId]
-    );
-
-    for (const member of remainingMembers.rows) {
-      await client.query(
-        `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-         VALUES ($1, $2, 'member_removed', $3, $4)`,
-        [
-          household_id,
-          member.user_id,
-          `${removedName} has been removed from the family`,
-          JSON.stringify({ removed_user_name: removedName, household_name: householdName })
-        ]
-      );
-    }
-
-    // Send grace period email to removed member
-    if (removedUser?.email) {
-      sendGracePeriodEmail({
-        toEmail: removedUser.email,
-        toName: removedName,
-        householdName,
-        graceExpiry,
-        reason: 'removed'
-      }).catch(err => console.error('[FamilyPlan] Grace email failed:', err.message));
-    }
-
-    await client.query('COMMIT');
-    res.json({ success: true, grace_expires_at: graceExpiry });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('DELETE /api/households/:household_id/members/:user_id error:', err.message);
-    res.status(500).json({ error: 'Failed to remove member' });
-  } finally {
-    client.release();
-  }
-});
-
-// Leave family (any member can leave, with data portability & grace period)
-// Owners MUST transfer ownership first if other members exist
-app.delete('/api/households/:household_id/leave', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { household_id } = req.params;
-
-    // Check user is a member
-    const memberCheck = await pool.query(
-      `SELECT hm.role, h.name, h.owner_id
-       FROM household_members hm
-       JOIN households h ON h.id = hm.household_id
-       WHERE hm.household_id = $1 AND hm.user_id = $2`,
-      [household_id, req.userId]
-    );
-
-    if (memberCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'You are not a member of this family' });
-    }
-
-    const { role, name: householdName } = memberCheck.rows[0];
-
-    // Count members
-    const countResult = await pool.query(
-      'SELECT COUNT(*) AS count FROM household_members WHERE household_id = $1',
-      [household_id]
-    );
-    const memberCount = parseInt(countResult.rows[0].count);
-
-    await client.query('BEGIN');
-
-    if (memberCount === 1) {
-      // Last member — dissolve the family completely
-      await client.query('DELETE FROM household_notifications WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_offboarding_records WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_permissions WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_invites WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_links WHERE household_1_id = $1 OR household_2_id = $1', [household_id]);
-      await client.query('DELETE FROM household_sharing_settings WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_members WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM households WHERE id = $1', [household_id]);
-      // Mark any lingering offboarding records for this user as reintegrated
-      await client.query(
-        `UPDATE household_offboarding_records SET reintegrated_at = NOW() WHERE user_id = $1 AND reintegrated_at IS NULL`,
-        [req.userId]
-      );
-      await client.query('COMMIT');
-      return res.json({ success: true, action: 'dissolved', household_name: householdName });
-    }
-
-    // Owner cannot leave if there are other members — must transfer ownership first
-    if (role === 'owner') {
-      await client.query('ROLLBACK');
-      return res.status(403).json({
-        error: 'You must transfer family ownership to another member before leaving.',
-        requires_transfer: true
-      });
-    }
-
-    // Remove the leaving member
-    await client.query(
-      'DELETE FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-
-    // Clean up permissions and sharing settings
-    await client.query(
-      'DELETE FROM household_permissions WHERE household_id = $1 AND (owner_user_id = $2 OR viewer_user_id = $2)',
-      [household_id, req.userId]
-    );
-    await client.query(
-      'DELETE FROM household_sharing_settings WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-
-    // Record offboarding with 30-day grace period
-    const graceExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await client.query(
-      `INSERT INTO household_offboarding_records
-         (household_id, household_name, user_id, removal_type, removed_by_user_id, grace_expires_at)
-       VALUES ($1, $2, $3, 'left', $4, $5)`,
-      [household_id, householdName, req.userId, req.userId, graceExpiry]
-    );
-
-    // Notify remaining members
-    const remainingMembers = await client.query(
-      'SELECT user_id FROM household_members WHERE household_id = $1',
-      [household_id]
-    );
-    const leavingUserInfo = await client.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const leavingName = leavingUserInfo.rows[0]?.name || leavingUserInfo.rows[0]?.email || 'A member';
-
-    for (const member of remainingMembers.rows) {
-      await client.query(
-        `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-         VALUES ($1, $2, 'member_left', $3, $4)`,
-        [
-          household_id,
-          member.user_id,
-          `${leavingName} has left the family`,
-          JSON.stringify({ left_user_name: leavingName, household_name: householdName })
-        ]
-      );
-    }
-
-    await client.query('COMMIT');
-    res.json({
-      success: true,
-      action: 'left',
-      household_name: householdName,
-      grace_expires_at: graceExpiry
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('DELETE /api/households/:household_id/leave error:', err.message);
-    res.status(500).json({ error: 'Failed to leave family' });
-  } finally {
-    client.release();
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── FAMILY INCUBATOR (1+5 MODEL) ──────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-/**
- * POST /api/households/:id/enable-incubator
- * Enable incubator mode on an existing family (owner only).
- * Only the head of family (owner) with an active Pro subscription can do this.
- * Once enabled, all non-owner members become sub-accounts with educational (L1-3) access.
- */
-app.post('/api/households/:id/enable-incubator', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-
-    // Verify ownership
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id, is_incubator FROM households WHERE id = $1',
-      [householdId]
-    );
-    if (hhResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const hh = hhResult.rows[0];
-    if (hh.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Only the family owner can enable incubator mode' });
-    }
-    if (hh.is_incubator) {
-      return res.json({ success: true, message: 'family is already in incubator mode', family: hh });
-    }
-
-    // Verify the owner has an active Pro subscription
-    const ownerProCheck = await hasProAccess(req.userId);
-    if (!ownerProCheck) {
-      return res.status(403).json({
-        error: 'A $25/mo TFR Pro subscription is required to enable the Family Incubator'
-      });
-    }
-
-    // Count current non-owner members
-    const memberCount = await client.query(
-      `SELECT COUNT(*) as count FROM household_members
-       WHERE household_id = $1 AND user_id != $2 AND status = 'active'`,
-      [householdId, req.userId]
-    );
-    if (parseInt(memberCount.rows[0].count) > INCUBATOR_MAX_SUB_ACCOUNTS) {
-      return res.status(400).json({
-        error: `Incubator supports max ${INCUBATOR_MAX_SUB_ACCOUNTS} sub-accounts. Current family has ${memberCount.rows[0].count} non-owner members. Please reduce to ${INCUBATOR_MAX_SUB_ACCOUNTS} first.`
-      });
-    }
-
-    await client.query('BEGIN');
-
-    // Mark family as incubator
-    await client.query(
-      'UPDATE households SET is_incubator = true, updated_at = NOW() WHERE id = $1',
-      [householdId]
-    );
-
-    // Mark all non-owner active members as sub-accounts
-    const subResult = await client.query(
-      `UPDATE household_members
-       SET is_sub_account = true
-       WHERE household_id = $1 AND user_id != $2 AND status = 'active'
-       RETURNING user_id`,
-      [householdId, req.userId]
-    );
-
-    await client.query('COMMIT');
-
-    console.log(`[Incubator] family ${householdId} enabled incubator mode. ${subResult.rowCount} sub-account(s) created.`);
-
-    res.json({
-      success: true,
-      message: 'Family Incubator enabled successfully',
-      sub_accounts_created: subResult.rowCount,
-      max_sub_accounts: INCUBATOR_MAX_SUB_ACCOUNTS
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/enable-incubator error:', err.message);
-    res.status(500).json({ error: 'Failed to enable incubator mode' });
-  } finally {
-    client.release();
-  }
-});
-
-/**
- * GET /api/households/:id/incubator-status
- * Get incubator status for a family.
- * Returns sub-account list, breakaway counts, and commission eligibility.
- */
-app.get('/api/households/:id/incubator-status', requireAuth, async (req, res) => {
-  try {
-    const householdId = parseInt(req.params.id);
-
-    // Verify user is a member
-    const memberCheck = await pool.query(
-      `SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2 AND status = 'active'`,
-      [householdId, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
-
-    const hhResult = await pool.query(
-      'SELECT id, name, owner_id, is_incubator FROM households WHERE id = $1',
-      [householdId]
-    );
-    if (hhResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const hh = hhResult.rows[0];
-
-    if (!hh.is_incubator) {
-      return res.json({ is_incubator: false });
-    }
-
-    // Get sub-account details
-    const subAccounts = await pool.query(`
-      SELECT hm.user_id, hm.is_sub_account, hm.broke_away_at, hm.commission_eligible,
-             hm.joined_at, u.name, u.email, u.avatar_url, u.avatar_color
-      FROM household_members hm
-      JOIN users u ON u.id = hm.user_id
-      WHERE hm.household_id = $1 AND hm.user_id != $2 AND hm.status = 'active'
-      ORDER BY hm.joined_at ASC
-    `, [householdId, hh.owner_id]);
-
-    const active = subAccounts.rows.filter(s => !s.broke_away_at);
-    const brokeAway = subAccounts.rows.filter(s => s.broke_away_at);
-
-    res.json({
-      is_incubator: true,
-      household_id: hh.id,
-      household_name: hh.name,
-      is_owner: hh.owner_id === req.userId,
-      active_sub_accounts: active.length,
-      max_sub_accounts: INCUBATOR_MAX_SUB_ACCOUNTS,
-      slots_available: INCUBATOR_MAX_SUB_ACCOUNTS - active.length,
-      sub_accounts: active.map(s => ({
-        user_id: s.user_id,
-        name: s.name,
-        email: s.email,
-        avatar_url: s.avatar_url,
-        avatar_color: s.avatar_color,
-        joined_at: s.joined_at,
-        commission_eligible: s.commission_eligible,
-        broke_away: false
-      })),
-      broke_away_members: brokeAway.map(s => ({
-        user_id: s.user_id,
-        name: s.name,
-        broke_away_at: s.broke_away_at,
-        commission_eligible: s.commission_eligible
-      }))
-    });
-  } catch (err) {
-    console.error('GET /api/households/:id/incubator-status error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch incubator status' });
-  }
-});
-
-/**
- * POST /api/households/:id/breakaway
- * A sub-account member breaks away from the Family Incubator.
- * - Marks broke_away_at timestamp
- * - Sets commission_eligible = true
- * - Marks their affiliate record as full-eligibility
- * - Head of family's sub-account count decreases by 1
- * - Permanent: cannot rejoin as sub-account
- *
- * The sub-account keeps their referral tree position.
- * They must subscribe to their own $25/mo TFR Pro to retain Pro features.
- */
-app.post('/api/households/:id/breakaway', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-
-    // Verify requester is an active sub-account of this family
-    const memberResult = await client.query(`
-      SELECT hm.id as member_id, hm.user_id, hm.is_sub_account, hm.broke_away_at,
-             hm.commission_eligible, h.owner_id, h.name as household_name, h.is_incubator
-      FROM household_members hm
-      JOIN households h ON h.id = hm.household_id
-      WHERE hm.household_id = $1 AND hm.user_id = $2 AND hm.status = 'active'
-    `, [householdId, req.userId]);
-
-    if (memberResult.rows.length === 0) {
-      return res.status(404).json({ error: 'You are not an active member of this family' });
-    }
-
-    const member = memberResult.rows[0];
-
-    if (!member.is_incubator) {
-      return res.status(400).json({ error: 'This family is not running the Family Incubator model' });
-    }
-    if (member.owner_id === req.userId) {
-      return res.status(400).json({ error: 'The head of family cannot break away. You can dissolve the family instead.' });
-    }
-    if (!member.is_sub_account) {
-      return res.status(400).json({ error: 'Only sub-accounts can use the breakaway feature' });
-    }
-    if (member.broke_away_at) {
-      return res.status(400).json({ error: 'You have already broken away from this family' });
-    }
-
-    await client.query('BEGIN');
-
-    const now = new Date();
-
-    // 1. Mark breakaway on household_members
-    await client.query(
-      `UPDATE household_members
-       SET broke_away_at = $1, commission_eligible = true
-       WHERE household_id = $2 AND user_id = $3`,
-      [now, householdId, req.userId]
-    );
-
-    // 2. Activate full commission eligibility on their affiliate record
-    //    Their referral tree position is preserved — they remain in the same leg
-    await client.query(
-      `UPDATE affiliates
-       SET family_household_id = NULL, status = 'active', updated_at = NOW()
-       WHERE user_id = $1 AND family_household_id = $2`,
-      [req.userId, householdId]
-    );
-
-    // 3. Unfreeze any frozen commissions from the family plan split
-    await client.query(
-      `UPDATE commissions
-       SET frozen_until_pro = false, unfrozen_at = $1, updated_at = NOW()
-       WHERE affiliate_id = (SELECT id FROM affiliates WHERE user_id = $2)
-         AND frozen_until_pro = true`,
-      [now, req.userId]
-    );
-
-    // 4. Notify the head of family
-    const userInfo = await client.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const memberName = userInfo.rows[0]?.name || userInfo.rows[0]?.email || 'A sub-account';
-
-    try {
-      await client.query(
-        `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-         VALUES ($1, $2, 'sub_account_breakaway', $3, $4)`,
-        [
-          householdId,
-          member.owner_id,
-          `${memberName} has broken away from the Family Incubator and is now an independent subscriber. They will need their own TFR Pro subscription to maintain full access.`,
-          JSON.stringify({ user_id: req.userId, user_name: memberName, broke_away_at: now })
-        ]
-      );
-    } catch (notifErr) {
-      // Non-fatal
-    }
-
-    await client.query('COMMIT');
-
-    console.log(`[Incubator] User ${req.userId} broke away from family ${householdId}`);
-
-    res.json({
-      success: true,
-      message: 'You have successfully broken away from the Family Incubator',
-      broke_away_at: now,
-      commission_eligible: true,
-      note: 'Your referral tree position is preserved. Subscribe to TFR Pro ($25/mo) to unlock full features.'
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/breakaway error:', err.message);
-    res.status(500).json({ error: 'Failed to process breakaway' });
-  } finally {
-    client.release();
-  }
-});
-
-/**
- * POST /api/households/:id/invite-sub-account
- * Invite a new sub-account to the Family Incubator (head of family only).
- * Enforces the 5 sub-account limit.
- */
-app.post('/api/households/:id/invite-sub-account', requireAuth, async (req, res) => {
-  try {
-    const householdId = parseInt(req.params.id);
-    const { email, name } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: 'Email address is required' });
-    }
-
-    // Verify family is incubator + requester is the head
-    const hhResult = await pool.query(
-      'SELECT id, name, owner_id, is_incubator FROM households WHERE id = $1',
-      [householdId]
-    );
-    if (hhResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const hh = hhResult.rows[0];
-    if (!hh.is_incubator) {
-      return res.status(400).json({ error: 'This family is not in incubator mode' });
-    }
-    if (hh.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Only the head of family can invite sub-accounts' });
-    }
-
-    // Verify head has active Pro
-    const headProCheck = await hasProAccess(req.userId);
-    if (!headProCheck) {
-      return res.status(403).json({
-        error: 'Your TFR Pro subscription must be active to invite sub-accounts'
-      });
-    }
-
-    // Count active sub-accounts (exclude broken-away)
-    const activeCount = await pool.query(
-      `SELECT COUNT(*) as count FROM household_members
-       WHERE household_id = $1 AND user_id != $2
-         AND status = 'active' AND broke_away_at IS NULL`,
-      [householdId, req.userId]
-    );
-    if (parseInt(activeCount.rows[0].count) >= INCUBATOR_MAX_SUB_ACCOUNTS) {
-      return res.status(400).json({
-        error: `Family Incubator is full. Max ${INCUBATOR_MAX_SUB_ACCOUNTS} sub-accounts allowed. ${activeCount.rows[0].count} currently active.`
-      });
-    }
-
-    // Check if email already a member
-    const existingMember = await pool.query(`
-      SELECT hm.id FROM household_members hm
-      JOIN users u ON u.id = hm.user_id
-      WHERE hm.household_id = $1 AND LOWER(u.email) = LOWER($2) AND hm.status = 'active'
-    `, [householdId, email]);
-    if (existingMember.rows.length > 0) {
-      return res.status(400).json({ error: 'This person is already a member of the family' });
-    }
-
-    // Cancel any pending invite for this email
-    await pool.query(
-      `UPDATE household_invites SET status = 'cancelled'
-       WHERE household_id = $1 AND LOWER(email) = LOWER($2) AND status = 'pending'`,
-      [householdId, email]
-    );
-
-    // Create invite token
-    const token = require('crypto').randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-    await pool.query(
-      `INSERT INTO household_invites
-         (household_id, invite_code, created_by_user_id, invited_by, email, role, token, expires_at, status, max_uses, uses_count)
-       VALUES ($1, $2, $3, $3, $4, 'adult', $5, $6, 'pending', 1, 0)`,
-      [householdId, token.substring(0, 20), req.userId, email, token, expiresAt]
-    );
-
-    const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
-    const inviteUrl = `${APP_URL}/family-invite.html?token=${token}&incubator=1`;
-
-    // Send invite email
-    const inviterInfo = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const inviterName = inviterInfo.rows[0]?.name || 'Your Head of family';
-
-    try {
-      await sendHouseholdInviteEmail({
-        toEmail: email,
-        inviterName,
-        householdName: hh.name,
-        inviteUrl,
-        role: 'Sub-Account (Family Incubator)',
-        customNote: 'As a Family Incubator sub-account, you\'ll get free educational access to Levels 1-3 of the FACTS system. You can upgrade to full TFR Pro at any time.'
-      });
-    } catch (emailErr) {
-      console.error('[Incubator] Invite email failed:', emailErr.message);
-      // Non-fatal: still return success, log the URL
-    }
-
-    console.log(`[Incubator] Sub-account invite sent to ${email} for family ${householdId}`);
-
-    res.json({
-      success: true,
-      message: `Invitation sent to ${email}`,
-      invite_url: inviteUrl,
-      expires_at: expiresAt,
-      slots_remaining: INCUBATOR_MAX_SUB_ACCOUNTS - parseInt(activeCount.rows[0].count) - 1
-    });
-  } catch (err) {
-    console.error('POST /api/households/:id/invite-sub-account error:', err.message);
-    res.status(500).json({ error: 'Failed to send sub-account invitation' });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── family OFFBOARDING & DATA PORTABILITY ──────────────
-// ═══════════════════════════════════════════════════════════
-
-// Transfer family ownership (owner must do this before leaving if others exist)
-app.post('/api/households/:household_id/transfer-ownership', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { household_id } = req.params;
-    const { new_owner_id } = req.body;
-
-    if (!new_owner_id) {
-      return res.status(400).json({ error: 'new_owner_id is required' });
-    }
-
-    // Verify requester is the current owner
-    const ownerCheck = await pool.query(
-      'SELECT name FROM households WHERE id = $1 AND owner_id = $2',
-      [household_id, req.userId]
-    );
-    if (ownerCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Only the current owner can transfer ownership' });
-    }
-    const householdName = ownerCheck.rows[0].name;
-
-    // Verify new owner is a member
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, new_owner_id]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'New owner must be a current family member' });
-    }
-
-    if (parseInt(new_owner_id) === req.userId) {
-      return res.status(400).json({ error: 'You are already the owner' });
-    }
-
-    await client.query('BEGIN');
-
-    // Transfer ownership
-    await client.query('UPDATE households SET owner_id = $1 WHERE id = $2', [new_owner_id, household_id]);
-    await client.query(
-      "UPDATE household_members SET role = 'owner' WHERE household_id = $1 AND user_id = $2",
-      [household_id, new_owner_id]
-    );
-    await client.query(
-      "UPDATE household_members SET role = 'member' WHERE household_id = $1 AND user_id = $2",
-      [household_id, req.userId]
-    );
-
-    // Notify new owner
-    const prevOwnerInfo = await client.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const prevOwnerName = prevOwnerInfo.rows[0]?.name || prevOwnerInfo.rows[0]?.email || 'The previous owner';
-    await client.query(
-      `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-       VALUES ($1, $2, 'ownership_transferred', $3, $4)`,
-      [
-        household_id,
-        new_owner_id,
-        `You are now the owner of "${householdName}"`,
-        JSON.stringify({ transferred_by: prevOwnerName, household_name: householdName })
-      ]
-    );
-
-    await client.query('COMMIT');
-    res.json({ success: true, message: `Ownership of "${householdName}" transferred successfully` });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:household_id/transfer-ownership error:', err.message);
-    res.status(500).json({ error: 'Failed to transfer ownership' });
-  } finally {
-    client.release();
-  }
-});
-
-// ─── Family Plan Affiliate System ────────────────────────────────────────────
-
-// Helper: send grace period email when member is released or owner cancels
-async function sendGracePeriodEmail({ toEmail, toName, householdName, graceExpiry, reason }) {
-  try {
-    const graceDate = new Date(graceExpiry).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const subjectMap = {
-      removed: `You've been removed from ${householdName} — 30-day grace period`,
-      owner_cancelled: `Your Family Plan is ending — 30-day grace period`,
-      left: `You've left ${householdName} — 30-day grace period`
-    };
-    const subject = subjectMap[reason] || `Family Plan change — 30-day grace period`;
-
-    const messageMap = {
-      removed: `You've been removed from the <strong>${householdName}</strong> Family Plan. You have a 30-day grace period (until <strong>${graceDate}</strong>) to either join another Family Plan or upgrade to individual Pro to keep full access to your account.`,
-      owner_cancelled: `The <strong>${householdName}</strong> Family Plan has been cancelled. You have a 30-day grace period (until <strong>${graceDate}</strong>) to upgrade to individual Pro or join another Family Plan. After that, your account will revert to Free.`,
-      left: `You've left the <strong>${householdName}</strong> Family Plan. Your 30-day grace period ends on <strong>${graceDate}</strong>.`
-    };
-    const messageBody = messageMap[reason] || `Your Family Plan status has changed. Grace period ends ${graceDate}.`;
-    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
-
-    await sendEmail({
-        to: toEmail,
-        subject,
-        html: `
-          <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;background:#0a0f1a;color:#e8e0d4;padding:32px 24px;border-radius:12px">
-            <div style="margin-bottom:20px">
-              <span style="font-size:20px;font-weight:700;color:#c9a84c;letter-spacing:-0.5px">FACTS</span>
-              <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#c9a84c;margin-left:10px;background:rgba(201,162,39,0.12);padding:3px 8px;border-radius:4px">Family Plan</span>
-            </div>
-            <h2 style="font-size:20px;font-weight:700;margin:0 0 14px;color:#e8e0d4">${subject}</h2>
-            <p style="font-size:14px;line-height:1.6;color:#a89a7e;margin:0 0 24px">${messageBody}</p>
-            <a href="${appUrl}/pricing.html"
-               style="display:inline-block;background:#c9a84c;color:#0a0f1a;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none">
-              View Plans →
-            </a>
-          </div>
-        `
-    });
-  } catch (err) {
-    console.error('[FamilyPlan] sendGracePeriodEmail failed:', err.message);
-  }
-}
-
-// Helper: get the family owner's affiliate record
-async function getHouseholdOwnerAffiliate(client, householdId) {
-  const result = await client.query(
-    `SELECT a.id, a.user_id, a.referral_code FROM affiliates a
-     JOIN households h ON h.owner_id = a.user_id
-     WHERE h.id = $1 AND a.status IN ('active','at_risk') LIMIT 1`,
-    [householdId]
-  );
-  return result.rows[0] || null;
-}
-
-// GET /api/households/:id/family-commissions
-// Owner views the 50/50 commission split per family member
-app.get('/api/households/:id/family-commissions', requireAuth, async (req, res) => {
-  try {
-    const householdId = parseInt(req.params.id);
-
-    // Verify requester is owner
-    const hhResult = await pool.query(
-      'SELECT id, name, owner_id FROM households WHERE id = $1', [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    if (hhResult.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Only the owner can view family commissions' });
-
-    // Get all family members with their affiliate data + commission totals
-    const membersResult = await pool.query(
-      `SELECT
-         hm.user_id,
-         u.name,
-         u.email,
-         hm.role,
-         a.id AS affiliate_id,
-         a.referral_code,
-         a.status AS affiliate_status,
-         -- Owner's earned share (owner_share type)
-         COALESCE(owner_commissions.total_owner_cents, 0) AS owner_earned_cents,
-         -- Member's frozen share (member_frozen type, still frozen)
-         COALESCE(frozen_commissions.total_frozen_cents, 0) AS member_frozen_cents,
-         -- Member's frozen that has been unfrozen (Pro upgrade)
-         COALESCE(unfrozen_commissions.total_unfrozen_cents, 0) AS member_unfrozen_cents,
-         -- Gifts sent by owner to this member
-         COALESCE(gifts.total_gifted_cents, 0) AS owner_gifted_cents
-       FROM household_members hm
-       JOIN users u ON u.id = hm.user_id
-       LEFT JOIN affiliates a ON a.user_id = hm.user_id AND a.family_household_id = $1
-       LEFT JOIN (
-         SELECT affiliate_id, SUM(amount_cents) AS total_owner_cents
-         FROM commissions
-         WHERE family_household_id = $1 AND family_split_type = 'owner_share' AND status != 'forfeited'
-         GROUP BY affiliate_id
-       ) owner_commissions ON owner_commissions.affiliate_id = a.id
-       LEFT JOIN (
-         SELECT affiliate_id, SUM(amount_cents) AS total_frozen_cents
-         FROM commissions
-         WHERE family_household_id = $1 AND family_split_type = 'member_frozen'
-           AND frozen_until_pro = true AND unfrozen_at IS NULL AND status != 'forfeited'
-         GROUP BY affiliate_id
-       ) frozen_commissions ON frozen_commissions.affiliate_id = a.id
-       LEFT JOIN (
-         SELECT affiliate_id, SUM(amount_cents) AS total_unfrozen_cents
-         FROM commissions
-         WHERE family_household_id = $1 AND family_split_type = 'member_frozen' AND unfrozen_at IS NOT NULL
-         GROUP BY affiliate_id
-       ) unfrozen_commissions ON unfrozen_commissions.affiliate_id = a.id
-       LEFT JOIN (
-         SELECT to_affiliate_id, SUM(amount_cents) AS total_gifted_cents
-         FROM family_commission_gifts
-         WHERE household_id = $1
-         GROUP BY to_affiliate_id
-       ) gifts ON gifts.to_affiliate_id = a.id
-       WHERE hm.household_id = $1 AND hm.user_id != $2
-       ORDER BY hm.joined_at ASC`,
-      [householdId, req.userId]
-    );
-
-    // Get owner's own affiliate total from family plan
-    const ownerAffResult = await pool.query(
-      `SELECT
-         a.id, a.referral_code, a.status,
-         COALESCE(SUM(c.amount_cents) FILTER (WHERE c.family_split_type = 'owner_share' AND c.status != 'forfeited'), 0) AS total_owner_earned_cents
-       FROM affiliates a
-       LEFT JOIN commissions c ON c.affiliate_id = a.id AND c.family_household_id = $1
-       WHERE a.user_id = $2
-       GROUP BY a.id, a.referral_code, a.status
-       LIMIT 1`,
-      [householdId, req.userId]
-    );
-
-    res.json({
-      success: true,
-      household_id: householdId,
-      owner_affiliate: ownerAffResult.rows[0] || null,
-      members: membersResult.rows.map(m => ({
-        user_id: m.user_id,
-        name: m.name,
-        email: m.email,
-        role: m.role,
-        affiliate_id: m.affiliate_id,
-        referral_code: m.referral_code,
-        affiliate_status: m.affiliate_status,
-        owner_earned_cents: parseInt(m.owner_earned_cents),
-        member_frozen_cents: parseInt(m.member_frozen_cents),
-        member_unfrozen_cents: parseInt(m.member_unfrozen_cents),
-        owner_gifted_cents: parseInt(m.owner_gifted_cents),
-        net_owner_available_cents: Math.max(0, parseInt(m.owner_earned_cents) - parseInt(m.owner_gifted_cents))
-      }))
-    });
-  } catch (err) {
-    console.error('GET /api/households/:id/family-commissions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch family commissions' });
-  }
-});
-
-// POST /api/households/:id/gift-commission
-// Owner gifts some or all of their earned 50% to a family member,
-// OR releases the member's frozen 50% to them
-app.post('/api/households/:id/gift-commission', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-    const { to_user_id, amount_cents, gift_type = 'owner_to_member', note } = req.body;
-
-    if (!to_user_id || !amount_cents || amount_cents <= 0) {
-      return res.status(400).json({ error: 'to_user_id and amount_cents (positive) are required' });
-    }
-    if (!['owner_to_member', 'unfreeze_member'].includes(gift_type)) {
-      return res.status(400).json({ error: 'gift_type must be owner_to_member or unfreeze_member' });
-    }
-
-    // Verify requester is owner
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id FROM households WHERE id = $1', [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    if (hhResult.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Only the owner can gift commissions' });
-
-    // Get owner affiliate
-    const ownerAff = await client.query(
-      'SELECT id FROM affiliates WHERE user_id = $1 AND status IN (\'active\',\'at_risk\') LIMIT 1',
-      [req.userId]
-    );
-    if (ownerAff.rows.length === 0) return res.status(400).json({ error: 'Owner must be an active affiliate to gift commissions' });
-    const ownerAffiliateId = ownerAff.rows[0].id;
-
-    // Get member affiliate
-    const memberAff = await client.query(
-      'SELECT id, user_id FROM affiliates WHERE user_id = $1 AND family_household_id = $2 LIMIT 1',
-      [to_user_id, householdId]
-    );
-    if (memberAff.rows.length === 0) return res.status(404).json({ error: 'Member affiliate not found in this family' });
-    const memberAffiliateId = memberAff.rows[0].id;
-
-    await client.query('BEGIN');
-
-    if (gift_type === 'owner_to_member') {
-      // Owner gifts their 50% share to the member
-      // Deduct from owner's pending_balance_cents, add to member's
-      const gifted = parseInt(amount_cents);
-      await client.query(
-        `UPDATE affiliates SET pending_balance_cents = pending_balance_cents - $1, updated_at = NOW() WHERE id = $2`,
-        [gifted, ownerAffiliateId]
-      );
-      await client.query(
-        `UPDATE affiliates SET pending_balance_cents = pending_balance_cents + $1, updated_at = NOW() WHERE id = $2`,
-        [gifted, memberAffiliateId]
-      );
-    } else if (gift_type === 'unfreeze_member') {
-      // Owner releases member's frozen commissions
-      // Mark frozen commissions as unfrozen (member can now withdraw)
-      const gifted = parseInt(amount_cents);
-      await client.query(
-        `UPDATE commissions SET frozen_until_pro = false, unfrozen_at = NOW(), updated_at = NOW()
-         WHERE affiliate_id = $1 AND family_household_id = $2 AND family_split_type = 'member_frozen'
-           AND frozen_until_pro = true AND unfrozen_at IS NULL
-         LIMIT CEIL($3::float / NULLIF((
-           SELECT AVG(amount_cents) FROM commissions
-           WHERE affiliate_id = $1 AND family_split_type = 'member_frozen' AND frozen_until_pro = true
-         ), 1))`,
-        [memberAffiliateId, householdId, amount_cents]
-      );
-      // Move from frozen to accessible in affiliate balance
-      await client.query(
-        `UPDATE affiliates SET pending_balance_cents = pending_balance_cents + $1, updated_at = NOW() WHERE id = $2`,
-        [gifted, memberAffiliateId]
-      );
-    }
-
-    // Record the gift
-    await client.query(
-      `INSERT INTO family_commission_gifts
-         (household_id, from_affiliate_id, to_affiliate_id, from_user_id, to_user_id, amount_cents, gift_type, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [householdId, ownerAffiliateId, memberAffiliateId, req.userId, to_user_id, amount_cents, gift_type, note || null]
-    );
-
-    // Notify the member
-    await client.query(
-      `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-       VALUES ($1, $2, 'commission_gift', $3, $4)`,
-      [
-        householdId,
-        to_user_id,
-        gift_type === 'unfreeze_member'
-          ? `$${(amount_cents / 100).toFixed(2)} of your frozen commissions have been released by the family owner!`
-          : `The family owner gifted you $${(amount_cents / 100).toFixed(2)} from their commission earnings!`,
-        JSON.stringify({ amount_cents, gift_type })
-      ]
-    );
-
-    await client.query('COMMIT');
-    res.json({ success: true, amount_gifted_cents: amount_cents, gift_type });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/gift-commission error:', err.message);
-    res.status(500).json({ error: 'Failed to process gift' });
-  } finally {
-    client.release();
-  }
-});
-
-// POST /api/households/:id/cascade-cancellation-grace
-// Called when billing owner cancels their subscription — all members get 30-day grace
-app.post('/api/households/:id/cascade-cancellation-grace', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id FROM households WHERE id = $1', [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    if (hhResult.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Owner only' });
-
-    const householdName = hhResult.rows[0].name;
-    const graceExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-    await client.query('BEGIN');
-
-    // Mark family as cancelled with grace period
-    await client.query(
-      `UPDATE households SET cancelled_at = NOW(), cancellation_grace_ends_at = $1 WHERE id = $2`,
-      [graceExpiry, householdId]
-    );
-
-    // Get all non-owner members
-    const membersResult = await client.query(
-      `SELECT hm.user_id, u.name, u.email
-       FROM household_members hm
-       JOIN users u ON u.id = hm.user_id
-       WHERE hm.household_id = $1 AND hm.user_id != $2`,
-      [householdId, req.userId]
-    );
-
-    for (const member of membersResult.rows) {
-      // Record offboarding with grace for each member
-      await client.query(
-        `INSERT INTO household_offboarding_records
-           (household_id, household_name, user_id, removal_type, removed_by_user_id, grace_expires_at)
-         VALUES ($1, $2, $3, 'dissolved', $4, $5)
-         ON CONFLICT DO NOTHING`,
-        [householdId, householdName, member.user_id, req.userId, graceExpiry]
-      );
-
-      // In-app notification
-      await client.query(
-        `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-         VALUES ($1, $2, 'plan_cancelled', $3, $4)`,
-        [
-          householdId,
-          member.user_id,
-          `The ${householdName} Family Plan has been cancelled. You have 30 days to upgrade to individual Pro or elect a new billing owner.`,
-          JSON.stringify({ household_name: householdName, grace_expires_at: graceExpiry })
-        ]
-      );
-
-      // Email
-      if (member.email) {
-        sendGracePeriodEmail({
-          toEmail: member.email,
-          toName: member.name || member.email,
-          householdName,
-          graceExpiry,
-          reason: 'owner_cancelled'
-        }).catch(() => {});
-      }
-    }
-
-    await client.query('COMMIT');
-    res.json({ success: true, grace_expires_at: graceExpiry, members_notified: membersResult.rows.length });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/cascade-cancellation-grace error:', err.message);
-    res.status(500).json({ error: 'Failed to cascade cancellation grace' });
-  } finally {
-    client.release();
-  }
-});
-
-// POST /api/households/:id/reactivate
-// Owner can undo a cancellation during the grace period to re-activate their family
-app.post('/api/households/:id/reactivate', requireAuth, async (req, res) => {
-  try {
-    const householdId = parseInt(req.params.id);
-
-    const hhResult = await pool.query(
-      'SELECT id, name, owner_id, cancelled_at, cancellation_grace_ends_at FROM households WHERE id = $1',
-      [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const hh = hhResult.rows[0];
-
-    if (hh.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Only the family owner can reactivate' });
-    }
-    if (!hh.cancelled_at) {
-      return res.json({ success: true, message: 'family is already active' });
-    }
-
-    await pool.query(
-      'UPDATE households SET cancelled_at = NULL, cancellation_grace_ends_at = NULL WHERE id = $1',
-      [householdId]
-    );
-
-    // Clear offboarding records for members of this family
-    await pool.query(
-      `UPDATE household_offboarding_records SET reintegrated_at = NOW()
-       WHERE household_id = $1 AND reintegrated_at IS NULL`,
-      [householdId]
-    );
-
-    res.json({ success: true, message: 'family reactivated successfully' });
-  } catch (err) {
-    console.error('POST /api/households/:id/reactivate error:', err.message);
-    res.status(500).json({ error: 'Failed to reactivate family' });
-  }
-});
-
-// POST /api/households/:id/elect-owner
-// During grace period after owner cancellation, a member nominates themselves as new billing owner
-app.post('/api/households/:id/elect-owner', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id, cancellation_grace_ends_at FROM households WHERE id = $1', [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const hh = hhResult.rows[0];
-
-    // Grace period must be active
-    if (!hh.cancellation_grace_ends_at || new Date(hh.cancellation_grace_ends_at) < new Date()) {
-      return res.status(400).json({ error: 'Grace period has expired' });
-    }
-
-    // Must be an active member
-    const memberCheck = await client.query(
-      `SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2`,
-      [householdId, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'You must be a family member to become the billing owner' });
-    }
-
-    await client.query('BEGIN');
-
-    // Transfer ownership
-    await client.query('UPDATE households SET owner_id = $1, cancelled_at = NULL, cancellation_grace_ends_at = NULL WHERE id = $2',
-      [req.userId, householdId]);
-    await client.query(
-      `UPDATE household_members SET role = 'owner' WHERE household_id = $1 AND user_id = $2`,
-      [householdId, req.userId]
-    );
-    await client.query(
-      `UPDATE household_members SET role = 'member' WHERE household_id = $1 AND user_id = $2`,
-      [householdId, hh.owner_id]
-    );
-
-    // Record election
-    await client.query(
-      `INSERT INTO household_owner_elections (household_id, nominee_user_id, nominated_by_user_id, status, resolved_at)
-       VALUES ($1, $2, $2, 'accepted', NOW())`,
-      [householdId, req.userId]
-    );
-
-    // Notify family
-    await client.query(
-      `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-       VALUES ($1, $2, 'new_owner_elected', $3, $4)`,
-      [householdId, req.userId, `You are now the billing owner of ${hh.name}. Upgrade to Family Plan to restore full access for all members.`,
-       JSON.stringify({ household_name: hh.name })]
-    );
-
-    await client.query('COMMIT');
-    res.json({ success: true, new_owner_id: req.userId, household_id: householdId });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/elect-owner error:', err.message);
-    res.status(500).json({ error: 'Failed to elect new owner' });
-  } finally {
-    client.release();
-  }
-});
+// [Phase5] family core/incubator → routes/family.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // POST /api/user/date-of-birth
 // Set user's date of birth (required for affiliate age gate)
@@ -8480,587 +8507,587 @@ app.get('/api/user/personal-data-export', requireAuth, async (req, res) => {
   }
 });
 
-// Get family notifications for current user
-app.get('/api/households/notifications', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, household_id, type, message, metadata, read_at, created_at
-       FROM household_notifications
-       WHERE for_user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 20`,
-      [req.userId]
-    );
-    res.json({ notifications: result.rows, unread_count: result.rows.filter(n => !n.read_at).length });
-  } catch (err) {
-    console.error('GET /api/households/notifications error:', err.message);
-    res.status(500).json({ error: 'Failed to load notifications' });
-  }
-});
+// [Phase5] family dashboards → routes/family.js
 
-// Mark family notification as read
-app.post('/api/households/notifications/:id/read', requireAuth, async (req, res) => {
-  try {
-    await pool.query(
-      'UPDATE household_notifications SET read_at = NOW() WHERE id = $1 AND for_user_id = $2',
-      [req.params.id, req.userId]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST notification read error:', err.message);
-    res.status(500).json({ error: 'Failed to mark notification' });
-  }
-});
 
-// Mark all family notifications as read
-app.post('/api/households/notifications/read-all', requireAuth, async (req, res) => {
-  try {
-    await pool.query(
-      'UPDATE household_notifications SET read_at = NOW() WHERE for_user_id = $1 AND read_at IS NULL',
-      [req.userId]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST notifications read-all error:', err.message);
-    res.status(500).json({ error: 'Failed to mark notifications' });
-  }
-});
 
-// ═══════════════════════════════════════════════════════════
-// ─── family LINKING ─────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
 
-// Link two households together (owner only)
-// Allows viewing data across linked households (max 3 households total)
-app.post('/api/households/:household_id/link', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
-    const { target_household_id } = req.body;
 
-    if (!target_household_id) {
-      return res.status(400).json({ error: 'target_household_id is required' });
-    }
 
-    // Verify requester is owner of source family
-    const ownerCheck = await pool.query(
-      'SELECT 1 FROM households WHERE id = $1 AND owner_id = $2',
-      [household_id, req.userId]
-    );
-    if (ownerCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Only family owner can create links' });
-    }
 
-    // Verify user is also a member (not necessarily owner) of target family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [target_household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'You must be a member of the target family to link it' });
-    }
 
-    // Check if already linked
-    const existingLink = await pool.query(
-      `SELECT 1 FROM household_links
-       WHERE (household_1_id = $1 AND household_2_id = $2)
-          OR (household_1_id = $2 AND household_2_id = $1)`,
-      [household_id, target_household_id]
-    );
-    if (existingLink.rows.length > 0) {
-      return res.status(400).json({ error: 'Households are already linked' });
-    }
 
-    // Count current links for source family (including transitive links)
-    const sourceLinks = await pool.query(
-      `SELECT household_1_id, household_2_id FROM household_links
-       WHERE household_1_id = $1 OR household_2_id = $1`,
-      [household_id]
-    );
 
-    // Build set of all connected households
-    const connectedHouseholds = new Set([parseInt(household_id)]);
-    sourceLinks.rows.forEach(link => {
-      connectedHouseholds.add(link.household_1_id);
-      connectedHouseholds.add(link.household_2_id);
-    });
 
-    // Check target family's links too
-    const targetLinks = await pool.query(
-      `SELECT household_1_id, household_2_id FROM household_links
-       WHERE household_1_id = $1 OR household_2_id = $1`,
-      [target_household_id]
-    );
-    targetLinks.rows.forEach(link => {
-      connectedHouseholds.add(link.household_1_id);
-      connectedHouseholds.add(link.household_2_id);
-    });
 
-    // Verify we won't exceed 3 total households in the group
-    if (connectedHouseholds.size >= 3) {
-      return res.status(400).json({ error: 'Cannot link more than 3 households together' });
-    }
 
-    // Create link (always store with lower ID first)
-    const [h1, h2] = [household_id, target_household_id].sort((a, b) => a - b);
-    await pool.query(
-      'INSERT INTO household_links (household_1_id, household_2_id) VALUES ($1, $2)',
-      [h1, h2]
-    );
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST /api/households/:household_id/link error:', err.message);
-    res.status(500).json({ error: 'Failed to link households' });
-  }
-});
 
-// Get all linked households for a family
-app.get('/api/households/:household_id/links', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
 
-    // Verify user is a member of this family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get all linked households
-    const result = await pool.query(
-      `SELECT
-        h.id, h.name, h.owner_id, h.created_at,
-        (SELECT COUNT(*) FROM household_members WHERE household_id = h.id) as member_count
-      FROM household_links hl
-      INNER JOIN households h ON (
-        CASE
-          WHEN hl.household_1_id = $1 THEN h.id = hl.household_2_id
-          ELSE h.id = hl.household_1_id
-        END
-      )
-      WHERE hl.household_1_id = $1 OR hl.household_2_id = $1
-      ORDER BY h.name`,
-      [household_id]
-    );
 
-    res.json({ links: result.rows });
-  } catch (err) {
-    console.error('GET /api/households/:household_id/links error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch linked households' });
-  }
-});
 
-// Remove family link (owner of either family)
-app.delete('/api/households/:household_id/link/:target_household_id', requireAuth, async (req, res) => {
-  try {
-    const { household_id, target_household_id } = req.params;
 
-    // Verify user is owner of either family
-    const ownerCheck = await pool.query(
-      'SELECT 1 FROM households WHERE (id = $1 OR id = $2) AND owner_id = $3',
-      [household_id, target_household_id, req.userId]
-    );
-    if (ownerCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Only family owners can remove links' });
-    }
 
-    // Delete link (check both orderings)
-    const [h1, h2] = [household_id, target_household_id].sort((a, b) => a - b);
-    const result = await pool.query(
-      'DELETE FROM household_links WHERE household_1_id = $1 AND household_2_id = $2 RETURNING *',
-      [h1, h2]
-    );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Link not found' });
-    }
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/households/:household_id/link/:target_household_id error:', err.message);
-    res.status(500).json({ error: 'Failed to remove link' });
-  }
-});
 
-// ═══════════════════════════════════════════════════════════
-// ─── family DASHBOARD ──────────────────────────────────
-// ═══════════════════════════════════════════════════════════
 
-// Get combined family dashboard (all members' financial data aggregated)
-app.get('/api/households/:household_id/dashboard', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
 
-    // Verify user is a member of this family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get family name + all member IDs
-    const householdInfoResult = await pool.query(
-      'SELECT name FROM households WHERE id = $1',
-      [household_id]
-    );
-    const householdName = householdInfoResult.rows.length > 0 ? householdInfoResult.rows[0].name : null;
 
-    const membersResult = await pool.query(
-      'SELECT user_id FROM household_members WHERE household_id = $1 AND status = $2',
-      [household_id, 'active']
-    );
-    const memberIds = membersResult.rows.map(m => m.user_id);
 
-    if (memberIds.length === 0) {
-      return res.json({
-        household_name: householdName,
-        total_income: '0.00',
-        total_expenses: '0.00',
-        net_balance: '0.00',
-        categories: [],
-        member_count: 0
-      });
-    }
 
-    // Calculate family totals
-    const totals = await pool.query(`
-      SELECT
-        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expenses
-      FROM transactions
-      WHERE user_id = ANY($1)
-    `, [memberIds]);
 
-    const { total_income, total_expenses } = totals.rows[0];
-    const net_balance = parseFloat(total_income) - parseFloat(total_expenses);
 
-    // Get category breakdown across all family members (includes split expenses + actual set-aside)
-    const categoryStats = await pool.query(`
-      WITH expense_by_category AS (
-        SELECT category_id, SUM(amount) as spent
-        FROM transactions
-        WHERE user_id = ANY($1) AND type = 'expense' AND (is_split = FALSE OR is_split IS NULL)
-        GROUP BY category_id
-        UNION ALL
-        SELECT ta.category_id, SUM(ta.amount) as spent
-        FROM transaction_allocations ta
-        JOIN transactions t ON t.id = ta.transaction_id
-        WHERE t.user_id = ANY($1) AND t.type = 'expense' AND t.is_split = TRUE
-        GROUP BY ta.category_id
-      ),
-      income_alloc_by_cat AS (
-        SELECT ta.category_id, SUM(t.amount * ta.percentage / 100.0) as set_aside
-        FROM transaction_allocations ta
-        JOIN transactions t ON t.id = ta.transaction_id
-        WHERE t.user_id = ANY($1) AND t.type = 'income'
-        GROUP BY ta.category_id
-      ),
-      unallocated_income_total AS (
-        SELECT COALESCE(SUM(t.amount), 0) as total
-        FROM transactions t
-        WHERE t.user_id = ANY($1) AND t.type = 'income'
-          AND NOT EXISTS (
-            SELECT 1 FROM transaction_allocations ta WHERE ta.transaction_id = t.id
-          )
-      )
-      SELECT
-        c.id, c.name, c.slug, c.color, c.icon,
-        COALESCE(SUM(ebc.spent), 0) as spent,
-        COALESCE(iac.set_aside, 0) as snapshot_set_aside
-      FROM categories c
-      LEFT JOIN expense_by_category ebc ON ebc.category_id = c.id
-      LEFT JOIN income_alloc_by_cat iac ON iac.category_id = c.id
-      GROUP BY c.id, c.name, c.slug, c.color, c.icon, iac.set_aside
-      ORDER BY c.sort_order
-    `, [memberIds]);
 
-    // Get unallocated income total for fallback
-    const unallocResult = await pool.query(`
-      SELECT COALESCE(SUM(t.amount), 0) as total
-      FROM transactions t
-      WHERE t.user_id = ANY($1) AND t.type = 'income'
-        AND NOT EXISTS (
-          SELECT 1 FROM transaction_allocations ta WHERE ta.transaction_id = t.id
-        )
-    `, [memberIds]);
-    const unallocatedIncome = parseFloat(unallocResult.rows[0].total) || 0;
 
-    // Get average allocation percentages across family
-    const allocationStats = await pool.query(`
-      SELECT
-        c.id,
-        COALESCE(AVG(COALESCE(ua.percentage, ac.percentage)), 0) as avg_percentage
-      FROM categories c
-      JOIN allocation_config ac ON ac.category_id = c.id
-      LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = ANY($1)
-      GROUP BY c.id
-    `, [memberIds]);
 
-    const allocMap = {};
-    allocationStats.rows.forEach(row => {
-      allocMap[row.id] = parseFloat(row.avg_percentage);
-    });
 
-    const categories = categoryStats.rows.map(cat => {
-      const targetPct = allocMap[cat.id] || 0;
-      const allocated = (targetPct / 100) * parseFloat(total_income);
-      const actualSetAside = parseFloat(cat.snapshot_set_aside) + (unallocatedIncome * targetPct / 100);
-      const spent = parseFloat(cat.spent);
 
-      return {
-        ...cat,
-        allocated: allocated.toFixed(2),
-        actual_set_aside: actualSetAside.toFixed(2),
-        spent: spent.toFixed(2),
-        remaining: (actualSetAside - spent).toFixed(2),
-        usage_percent: actualSetAside > 0 ? Math.min(100, (spent / actualSetAside * 100)).toFixed(1) : '0.0',
-        target_percentage: targetPct.toFixed(1)
-      };
-    });
 
-    res.json({
-      household_name: householdName,
-      total_income: parseFloat(total_income).toFixed(2),
-      total_expenses: parseFloat(total_expenses).toFixed(2),
-      net_balance: net_balance.toFixed(2),
-      categories,
-      member_count: memberIds.length
-    });
-  } catch (err) {
-    console.error('GET /api/households/:household_id/dashboard error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch family dashboard' });
-  }
-});
 
-// Get individual member summaries for a family
-app.get('/api/households/:household_id/members-summary', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
 
-    // Verify user is a member of this family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get all members with their financial summaries
-    const members = await pool.query(`
-      SELECT
-        u.id,
-        u.name,
-        u.email,
-        hm.role,
-        COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as total_expenses
-      FROM household_members hm
-      INNER JOIN users u ON hm.user_id = u.id
-      LEFT JOIN transactions t ON t.user_id = u.id
-      WHERE hm.household_id = $1 AND hm.status = 'active'
-      GROUP BY u.id, u.name, u.email, hm.role
-      ORDER BY
-        CASE WHEN hm.role = 'owner' THEN 0 ELSE 1 END,
-        u.name
-    `, [household_id]);
 
-    const memberSummaries = members.rows.map(member => ({
-      id: member.id,
-      name: member.name,
-      email: member.email,
-      role: member.role,
-      total_income: parseFloat(member.total_income).toFixed(2),
-      total_expenses: parseFloat(member.total_expenses).toFixed(2),
-      net_balance: (parseFloat(member.total_income) - parseFloat(member.total_expenses)).toFixed(2)
-    }));
 
-    res.json({ members: memberSummaries });
-  } catch (err) {
-    console.error('GET /api/households/:household_id/members-summary error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch member summaries' });
-  }
-});
 
-// Get combined dashboard across all linked households
-app.get('/api/households/:household_id/linked-dashboard', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
 
-    // Verify user is a member of this family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get all linked family IDs (including current family)
-    const linkedResult = await pool.query(`
-      SELECT DISTINCT
-        CASE
-          WHEN household_1_id = $1 THEN household_2_id
-          ELSE household_1_id
-        END as linked_household_id
-      FROM household_links
-      WHERE household_1_id = $1 OR household_2_id = $1
-    `, [household_id]);
 
-    const linkedHouseholdIds = [
-      parseInt(household_id),
-      ...linkedResult.rows.map(r => r.linked_household_id)
-    ];
 
-    // Get all member IDs across all linked households
-    const allMembersResult = await pool.query(
-      'SELECT user_id FROM household_members WHERE household_id = ANY($1)',
-      [linkedHouseholdIds]
-    );
-    const allMemberIds = allMembersResult.rows.map(m => m.user_id);
 
-    if (allMemberIds.length === 0) {
-      return res.json({
-        total_income: '0.00',
-        total_expenses: '0.00',
-        net_balance: '0.00',
-        categories: [],
-        linked_household_count: linkedHouseholdIds.length,
-        total_member_count: 0
-      });
-    }
 
-    // Calculate combined totals
-    const totals = await pool.query(`
-      SELECT
-        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expenses
-      FROM transactions
-      WHERE user_id = ANY($1)
-    `, [allMemberIds]);
 
-    const { total_income, total_expenses } = totals.rows[0];
-    const net_balance = parseFloat(total_income) - parseFloat(total_expenses);
 
-    // Get category breakdown (includes split expenses + actual set-aside)
-    const categoryStats = await pool.query(`
-      WITH expense_by_category AS (
-        SELECT category_id, SUM(amount) as spent
-        FROM transactions
-        WHERE user_id = ANY($1) AND type = 'expense' AND (is_split = FALSE OR is_split IS NULL)
-        GROUP BY category_id
-        UNION ALL
-        SELECT ta.category_id, SUM(ta.amount) as spent
-        FROM transaction_allocations ta
-        JOIN transactions t ON t.id = ta.transaction_id
-        WHERE t.user_id = ANY($1) AND t.type = 'expense' AND t.is_split = TRUE
-        GROUP BY ta.category_id
-      ),
-      income_alloc_by_cat AS (
-        SELECT ta.category_id, SUM(t.amount * ta.percentage / 100.0) as set_aside
-        FROM transaction_allocations ta
-        JOIN transactions t ON t.id = ta.transaction_id
-        WHERE t.user_id = ANY($1) AND t.type = 'income'
-        GROUP BY ta.category_id
-      )
-      SELECT
-        c.id, c.name, c.slug, c.color, c.icon,
-        COALESCE(SUM(ebc.spent), 0) as spent,
-        COALESCE(iac.set_aside, 0) as snapshot_set_aside
-      FROM categories c
-      LEFT JOIN expense_by_category ebc ON ebc.category_id = c.id
-      LEFT JOIN income_alloc_by_cat iac ON iac.category_id = c.id
-      GROUP BY c.id, c.name, c.slug, c.color, c.icon, iac.set_aside
-      ORDER BY c.sort_order
-    `, [allMemberIds]);
 
-    // Get unallocated income total for fallback
-    const linkedUnallocResult = await pool.query(`
-      SELECT COALESCE(SUM(t.amount), 0) as total
-      FROM transactions t
-      WHERE t.user_id = ANY($1) AND t.type = 'income'
-        AND NOT EXISTS (
-          SELECT 1 FROM transaction_allocations ta WHERE ta.transaction_id = t.id
-        )
-    `, [allMemberIds]);
-    const linkedUnallocatedIncome = parseFloat(linkedUnallocResult.rows[0].total) || 0;
 
-    // Get average allocation percentages
-    const allocationStats = await pool.query(`
-      SELECT
-        c.id,
-        COALESCE(AVG(COALESCE(ua.percentage, ac.percentage)), 0) as avg_percentage
-      FROM categories c
-      JOIN allocation_config ac ON ac.category_id = c.id
-      LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = ANY($1)
-      GROUP BY c.id
-    `, [allMemberIds]);
 
-    const allocMap = {};
-    allocationStats.rows.forEach(row => {
-      allocMap[row.id] = parseFloat(row.avg_percentage);
-    });
 
-    const categories = categoryStats.rows.map(cat => {
-      const targetPct = allocMap[cat.id] || 0;
-      const allocated = (targetPct / 100) * parseFloat(total_income);
-      const actualSetAside = parseFloat(cat.snapshot_set_aside) + (linkedUnallocatedIncome * targetPct / 100);
-      const spent = parseFloat(cat.spent);
 
-      return {
-        ...cat,
-        allocated: allocated.toFixed(2),
-        actual_set_aside: actualSetAside.toFixed(2),
-        spent: spent.toFixed(2),
-        remaining: (actualSetAside - spent).toFixed(2),
-        usage_percent: actualSetAside > 0 ? Math.min(100, (spent / actualSetAside * 100)).toFixed(1) : '0.0',
-        target_percentage: targetPct.toFixed(1)
-      };
-    });
 
-    // Get per-family summaries
-    const householdSummaries = await pool.query(`
-      SELECT
-        h.id,
-        h.name,
-        COUNT(DISTINCT hm.user_id) as member_count,
-        COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as total_expenses
-      FROM households h
-      INNER JOIN household_members hm ON h.id = hm.household_id
-      LEFT JOIN transactions t ON t.user_id = hm.user_id
-      WHERE h.id = ANY($1)
-      GROUP BY h.id, h.name
-      ORDER BY h.id
-    `, [linkedHouseholdIds]);
 
-    const householdBreakdown = householdSummaries.rows.map(h => ({
-      id: h.id,
-      name: h.name,
-      member_count: parseInt(h.member_count),
-      total_income: parseFloat(h.total_income).toFixed(2),
-      total_expenses: parseFloat(h.total_expenses).toFixed(2),
-      net_balance: (parseFloat(h.total_income) - parseFloat(h.total_expenses)).toFixed(2)
-    }));
 
-    res.json({
-      total_income: parseFloat(total_income).toFixed(2),
-      total_expenses: parseFloat(total_expenses).toFixed(2),
-      net_balance: net_balance.toFixed(2),
-      categories,
-      linked_household_count: linkedHouseholdIds.length,
-      total_member_count: allMemberIds.length,
-      household_breakdown: householdBreakdown
-    });
-  } catch (err) {
-    console.error('GET /api/households/:household_id/linked-dashboard error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch linked family dashboard' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── family PERMISSIONS ──────────────────────────────
@@ -9255,191 +9282,191 @@ app.delete('/api/permissions/revoke', requireAuth, async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════
-// ─── family SHARING SETTINGS (Broadcast privacy) ─────
-// ═══════════════════════════════════════════════════════════
+// [Phase5] family sharing → routes/family.js
 
-// GET /api/households/:id/sharing-settings — my broadcast sharing preferences
-app.get('/api/households/:household_id/sharing-settings', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
 
-    const result = await pool.query(`
-      SELECT hss.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon, c.color as category_color
-      FROM household_sharing_settings hss
-      LEFT JOIN categories c ON c.id = hss.category_id
-      WHERE hss.household_id = $1 AND hss.user_id = $2
-      ORDER BY c.sort_order NULLS FIRST
-    `, [household_id, req.userId]);
-    res.json({ settings: result.rows });
-  } catch (err) {
-    console.error('GET family sharing-settings error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch sharing settings' });
-  }
-});
 
-// POST /api/households/:id/sharing-settings — upsert sharing settings
-app.post('/api/households/:household_id/sharing-settings', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
-    const { category_id, share_allocations = false, share_transactions = false } = req.body;
 
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
 
-    const result = await pool.query(`
-      INSERT INTO household_sharing_settings
-        (household_id, user_id, category_id, share_allocations, share_transactions)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (household_id, user_id, category_id)
-      DO UPDATE SET
-        share_allocations = EXCLUDED.share_allocations,
-        share_transactions = EXCLUDED.share_transactions,
-        updated_at = NOW()
-      RETURNING *
-    `, [household_id, req.userId, category_id || null, share_allocations, share_transactions]);
 
-    res.json({ success: true, setting: result.rows[0] });
-  } catch (err) {
-    console.error('POST family sharing-settings error:', err.message);
-    res.status(500).json({ error: 'Failed to update sharing settings' });
-  }
-});
 
-// GET /api/households/:id/members-sharing — all members' sharing settings (what they've unlocked)
-app.get('/api/households/:household_id/members-sharing', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
 
-    // Get all members' sharing settings
-    const result = await pool.query(`
-      SELECT
-        hss.*,
-        u.name as user_name, u.email as user_email,
-        c.id as cat_id, c.name as category_name, c.slug as category_slug,
-        c.icon as category_icon, c.color as category_color
-      FROM household_sharing_settings hss
-      JOIN users u ON u.id = hss.user_id
-      LEFT JOIN categories c ON c.id = hss.category_id
-      WHERE hss.household_id = $1
-      ORDER BY hss.user_id, c.sort_order NULLS FIRST
-    `, [household_id]);
-    res.json({ settings: result.rows });
-  } catch (err) {
-    console.error('GET members-sharing error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch members sharing' });
-  }
-});
 
-// GET /api/households/:id/unlocked-data/:member_user_id — fetch a member's unlocked category data
-app.get('/api/households/:household_id/unlocked-data/:member_user_id', requireAuth, async (req, res) => {
-  try {
-    const { household_id, member_user_id } = req.params;
 
-    // Verify current user is a family member
-    const myMemberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (myMemberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
 
-    // Verify target member is also in family
-    const theirMemberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, member_user_id]
-    );
-    if (theirMemberCheck.rows.length === 0) return res.status(403).json({ error: 'Target user not in family' });
 
-    // Cannot view own data via this endpoint
-    if (parseInt(member_user_id) === req.userId) return res.status(400).json({ error: 'Use personal dashboard for own data' });
 
-    // Get what they've unlocked
-    const settings = await pool.query(`
-      SELECT hss.category_id, hss.share_allocations, hss.share_transactions
-      FROM household_sharing_settings hss
-      WHERE hss.household_id = $1 AND hss.user_id = $2
-        AND (hss.share_allocations = TRUE OR hss.share_transactions = TRUE)
-    `, [household_id, member_user_id]);
 
-    if (settings.rows.length === 0) return res.json({ categories: [], transactions: [] });
 
-    const unlockedCategoryIds = settings.rows.filter(s => s.category_id !== null).map(s => s.category_id);
-    const allUnlocked = settings.rows.some(s => s.category_id === null);
-    const allocUnlocked = settings.rows.some(s => s.category_id === null && s.share_allocations);
-    const txnsUnlocked = settings.rows.some(s => s.category_id === null && s.share_transactions);
 
-    // Build category data
-    let categoriesResult = { rows: [] };
-    if (allUnlocked || unlockedCategoryIds.length > 0) {
-      const catFilter = allUnlocked ? `TRUE` : `c.id = ANY($2)`;
-      const catParams = allUnlocked ? [member_user_id] : [member_user_id, unlockedCategoryIds];
-      categoriesResult = await pool.query(`
-        WITH expense_by_category AS (
-          SELECT category_id, SUM(amount) as spent
-          FROM transactions
-          WHERE user_id = $1 AND type = 'expense' AND (is_split = FALSE OR is_split IS NULL)
-          GROUP BY category_id
-          UNION ALL
-          SELECT ta.category_id, SUM(ta.amount) as spent
-          FROM transaction_allocations ta
-          JOIN transactions t ON t.id = ta.transaction_id
-          WHERE t.user_id = $1 AND t.type = 'expense' AND t.is_split = TRUE
-          GROUP BY ta.category_id
-        )
-        SELECT
-          c.id, c.name, c.slug, c.color, c.icon,
-          COALESCE(SUM(ebc.spent), 0) as spent,
-          COALESCE(ua.percentage, ac.percentage) as target_percentage
-        FROM categories c
-        JOIN allocation_config ac ON ac.category_id = c.id
-        LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = $1
-        LEFT JOIN expense_by_category ebc ON ebc.category_id = c.id
-        WHERE ${catFilter}
-        GROUP BY c.id, c.name, c.slug, c.color, c.icon, ua.percentage, ac.percentage
-        ORDER BY c.sort_order
-      `, catParams);
-    }
 
-    // Build transactions if unlocked
-    let transactionRows = [];
-    if (txnsUnlocked || settings.rows.some(s => s.share_transactions && s.category_id !== null)) {
-      const txnFilter = txnsUnlocked
-        ? `t.user_id = $1`
-        : `t.user_id = $1 AND t.category_id = ANY($2)`;
-      const txnParams = txnsUnlocked ? [member_user_id] : [member_user_id, unlockedCategoryIds.filter(id => settings.rows.find(s => s.category_id === id && s.share_transactions))];
-      const txnResult = await pool.query(`
-        SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color
-        FROM transactions t
-        LEFT JOIN categories c ON c.id = t.category_id
-        WHERE ${txnFilter}
-        ORDER BY t.transaction_date DESC, t.created_at DESC
-        LIMIT 20
-      `, txnParams);
-      transactionRows = txnResult.rows;
-    }
 
-    res.json({
-      categories: categoriesResult.rows,
-      transactions: transactionRows
-    });
-  } catch (err) {
-    console.error('GET unlocked-data error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch unlocked data' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── TRANSACTION TAGGING (Mine / Theirs / Ours) ──────────
@@ -9474,660 +9501,660 @@ app.get('/api/households/:household_id/unlocked-data/:member_user_id', requireAu
 
 
 
-// ═══════════════════════════════════════════════════════════
-// ─── SHARED family GOALS ──────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// Helper: verify user is a family member, return role
-async function getHouseholdMembership(householdId, userId) {
-  const r = await pool.query(
-    `SELECT hm.role, h.owner_id FROM household_members hm
-     JOIN households h ON h.id = hm.household_id
-     WHERE hm.household_id = $1 AND hm.user_id = $2`,
-    [householdId, userId]
-  );
-  return r.rows[0] || null;
-}
-
-// Helper: calculate contribution total for a goal, returns { total_contributed, contributor_breakdown }
-async function getGoalProgress(goalId) {
-  const r = await pool.query(
-    `SELECT gc.user_id, u.name as member_name, SUM(gc.amount) as contributed
-     FROM goal_contributions gc
-     JOIN users u ON u.id = gc.user_id
-     WHERE gc.goal_id = $1
-     GROUP BY gc.user_id, u.name
-     ORDER BY contributed DESC`,
-    [goalId]
-  );
-  const total = r.rows.reduce((s, row) => s + parseFloat(row.contributed), 0);
-  return { total_contributed: total, contributors: r.rows };
-}
-
-// GET /api/households/:id/goals — list active + paused goals with progress
-app.get('/api/households/:id/goals', requireAuth, async (req, res) => {
-  try {
-    const { id: householdId } = req.params;
-    const membership = await getHouseholdMembership(householdId, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const goalsResult = await pool.query(
-      `SELECT sg.*, u.name as created_by_name,
-              COALESCE(SUM(gc.amount), 0) as total_contributed
-       FROM shared_goals sg
-       LEFT JOIN users u ON u.id = sg.created_by
-       LEFT JOIN goal_contributions gc ON gc.goal_id = sg.id
-       WHERE sg.household_id = $1 AND sg.status IN ('active', 'paused')
-       GROUP BY sg.id, u.name
-       ORDER BY sg.created_at ASC`,
-      [householdId]
-    );
-
-    // For each goal, get contributor breakdown
-    const goals = await Promise.all(goalsResult.rows.map(async (goal) => {
-      const { contributors } = await getGoalProgress(goal.id);
-      return { ...goal, contributors };
-    }));
-
-    res.json({ goals });
-  } catch (err) {
-    console.error('GET /api/households/:id/goals error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch goals' });
-  }
-});
-
-// GET /api/households/:id/goals/achieved — list completed/archived goals
-app.get('/api/households/:id/goals/achieved', requireAuth, async (req, res) => {
-  try {
-    const { id: householdId } = req.params;
-    const membership = await getHouseholdMembership(householdId, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const goalsResult = await pool.query(
-      `SELECT sg.*, u.name as created_by_name,
-              COALESCE(SUM(gc.amount), 0) as total_contributed
-       FROM shared_goals sg
-       LEFT JOIN users u ON u.id = sg.created_by
-       LEFT JOIN goal_contributions gc ON gc.goal_id = sg.id
-       WHERE sg.household_id = $1 AND sg.status IN ('completed', 'archived')
-       GROUP BY sg.id, u.name
-       ORDER BY sg.completed_at DESC NULLS LAST`,
-      [householdId]
-    );
-
-    res.json({ goals: goalsResult.rows });
-  } catch (err) {
-    console.error('GET /api/households/:id/goals/achieved error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch achieved goals' });
-  }
-});
-
-// POST /api/households/:id/goals — create a new goal (any member can propose)
-app.post('/api/households/:id/goals', requireAuth, async (req, res) => {
-  try {
-    const { id: householdId } = req.params;
-    const membership = await getHouseholdMembership(householdId, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const { name, target_amount, target_date, category, emoji, description } = req.body;
-    if (!name || !target_amount) return res.status(400).json({ error: 'name and target_amount are required' });
-    if (parseFloat(target_amount) <= 0) return res.status(400).json({ error: 'target_amount must be positive' });
-
-    const validCategories = ['vacation','emergency','car','home','education','wedding','baby','retirement','custom'];
-    const cat = validCategories.includes(category) ? category : 'custom';
-    const emojiVal = emoji || '🎯';
-
-    const result = await pool.query(
-      `INSERT INTO shared_goals (household_id, created_by, name, target_amount, target_date, category, emoji, description)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [householdId, req.userId, name, target_amount, target_date || null, cat, emojiVal, description || null]
-    );
-
-    res.json({ success: true, goal: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/households/:id/goals error:', err.message);
-    res.status(500).json({ error: 'Failed to create goal' });
-  }
-});
-
-// PUT /api/goals/:id — edit goal (owner only)
-app.put('/api/goals/:id', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found' });
-    const goal = goalCheck.rows[0];
-
-    // Verify user is family owner or goal creator
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-    if (goal.owner_id !== req.userId && goal.created_by !== req.userId) {
-      return res.status(403).json({ error: 'Only family owner or goal creator can edit goals' });
-    }
-
-    const { name, target_amount, target_date, category, emoji, description } = req.body;
-    const validCategories = ['vacation','emergency','car','home','education','wedding','baby','retirement','custom'];
-    const updates = [];
-    const params = [];
-    let pIdx = 1;
-    if (name !== undefined) { updates.push(`name = $${pIdx++}`); params.push(name); }
-    if (target_amount !== undefined) { updates.push(`target_amount = $${pIdx++}`); params.push(target_amount); }
-    if (target_date !== undefined) { updates.push(`target_date = $${pIdx++}`); params.push(target_date || null); }
-    if (category !== undefined && validCategories.includes(category)) { updates.push(`category = $${pIdx++}`); params.push(category); }
-    if (emoji !== undefined) { updates.push(`emoji = $${pIdx++}`); params.push(emoji); }
-    if (description !== undefined) { updates.push(`description = $${pIdx++}`); params.push(description); }
-    updates.push(`updated_at = NOW()`);
-    params.push(id);
-
-    const result = await pool.query(
-      `UPDATE shared_goals SET ${updates.join(', ')} WHERE id = $${pIdx} RETURNING *`,
-      params
-    );
-    res.json({ success: true, goal: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/goals/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update goal' });
-  }
-});
-
-// POST /api/goals/:id/pause — toggle pause/resume (owner only)
-app.post('/api/goals/:id/pause', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1 AND sg.status IN ('active', 'paused')`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found or not active/paused' });
-    const goal = goalCheck.rows[0];
-
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-    if (goal.owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can pause/resume goals' });
-
-    const newStatus = goal.status === 'active' ? 'paused' : 'active';
-    const result = await pool.query(
-      'UPDATE shared_goals SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-      [newStatus, id]
-    );
-    res.json({ success: true, goal: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/goals/:id/pause error:', err.message);
-    res.status(500).json({ error: 'Failed to toggle goal status' });
-  }
-});
-
-// POST /api/goals/:id/complete — mark goal as completed/archived (owner only)
-app.post('/api/goals/:id/complete', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1 AND sg.status NOT IN ('completed', 'archived')`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found or already completed' });
-    const goal = goalCheck.rows[0];
-
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-    if (goal.owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can complete goals' });
-
-    const result = await pool.query(
-      `UPDATE shared_goals SET status = 'completed', completed_at = NOW(), updated_at = NOW()
-       WHERE id = $1 RETURNING *`,
-      [id]
-    );
-    res.json({ success: true, goal: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/goals/:id/complete error:', err.message);
-    res.status(500).json({ error: 'Failed to complete goal' });
-  }
-});
-
-// DELETE /api/goals/:id — delete goal (owner only)
-app.delete('/api/goals/:id', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found' });
-    const goal = goalCheck.rows[0];
-
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-    if (goal.owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can delete goals' });
-
-    await pool.query('DELETE FROM shared_goals WHERE id = $1', [id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/goals/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete goal' });
-  }
-});
-
-// POST /api/goals/:id/contribute — add a contribution (any member)
-app.post('/api/goals/:id/contribute', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { amount, note } = req.body;
-    if (!amount || parseFloat(amount) <= 0) return res.status(400).json({ error: 'amount must be positive' });
-
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1 AND sg.status = 'active'`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found or not active' });
-    const goal = goalCheck.rows[0];
-
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    await pool.query(
-      'INSERT INTO goal_contributions (goal_id, user_id, amount, note) VALUES ($1, $2, $3, $4)',
-      [id, req.userId, amount, note || null]
-    );
-
-    // Check progress and milestone notifications
-    const { total_contributed, contributors } = await getGoalProgress(id);
-    const target = parseFloat(goal.target_amount);
-    const pct = target > 0 ? (total_contributed / target) * 100 : 0;
-
-    const milestones = [];
-    if (pct >= 25 && !goal.milestone_25_notified) {
-      await pool.query('UPDATE shared_goals SET milestone_25_notified = TRUE WHERE id = $1', [id]);
-      milestones.push(25);
-    }
-    if (pct >= 50 && !goal.milestone_50_notified) {
-      await pool.query('UPDATE shared_goals SET milestone_50_notified = TRUE WHERE id = $1', [id]);
-      milestones.push(50);
-    }
-    if (pct >= 75 && !goal.milestone_75_notified) {
-      await pool.query('UPDATE shared_goals SET milestone_75_notified = TRUE WHERE id = $1', [id]);
-      milestones.push(75);
-    }
-    if (pct >= 100 && !goal.milestone_100_notified) {
-      await pool.query('UPDATE shared_goals SET milestone_100_notified = TRUE WHERE id = $1', [id]);
-      milestones.push(100);
-    }
-
-    res.json({
-      success: true,
-      total_contributed,
-      percent: Math.min(pct, 100),
-      contributors,
-      milestones_reached: milestones
-    });
-  } catch (err) {
-    console.error('POST /api/goals/:id/contribute error:', err.message);
-    res.status(500).json({ error: 'Failed to add contribution' });
-  }
-});
-
-// GET /api/goals/:id/contributions — contribution history with member info
-app.get('/api/goals/:id/contributions', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      'SELECT sg.household_id FROM shared_goals sg WHERE sg.id = $1',
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found' });
-
-    const membership = await getHouseholdMembership(goalCheck.rows[0].household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const result = await pool.query(
-      `SELECT gc.*, u.name as member_name
-       FROM goal_contributions gc
-       JOIN users u ON u.id = gc.user_id
-       WHERE gc.goal_id = $1
-       ORDER BY gc.created_at DESC`,
-      [id]
-    );
-    res.json({ contributions: result.rows });
-  } catch (err) {
-    console.error('GET /api/goals/:id/contributions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch contributions' });
-  }
-});
-
-// PUT /api/goals/:id/member-target — set per-member monthly target (owner only)
-app.put('/api/goals/:id/member-target', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { user_id, monthly_target } = req.body;
-
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found' });
-    const goal = goalCheck.rows[0];
-
-    if (goal.owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can set member targets' });
-
-    await pool.query(
-      `INSERT INTO goal_member_targets (goal_id, user_id, monthly_target)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (goal_id, user_id) DO UPDATE SET monthly_target = $3, updated_at = NOW()`,
-      [id, user_id, monthly_target]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('PUT /api/goals/:id/member-target error:', err.message);
-    res.status(500).json({ error: 'Failed to set member target' });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── SHARED BUDGETS ─────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// GET all shared budget categories with monthly spend + member breakdown
-app.get('/api/households/:id/shared-budgets', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { month, year } = req.query;
-    const memberCheck = await pool.query(
-      `SELECT hm.role FROM household_members hm WHERE hm.household_id = $1 AND hm.user_id = $2`,
-      [id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const targetMonth = parseInt(month) || new Date().getMonth() + 1;
-    const targetYear = parseInt(year) || new Date().getFullYear();
-
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const ownerId = householdRow.rows[0].owner_id;
-
-    const result = await pool.query(`
-      SELECT
-        sbc.id,
-        sbc.name,
-        sbc.emoji,
-        sbc.monthly_target,
-        sbc.sort_order,
-        sbc.created_by,
-        COALESCE(
-          (SELECT SUM(amount) FROM shared_budget_expenses
-           WHERE budget_category_id = sbc.id
-           AND EXTRACT(MONTH FROM expense_date) = $2
-           AND EXTRACT(YEAR FROM expense_date) = $3), 0
-        )::NUMERIC(12,2) as total_spent,
-        (
-          SELECT json_agg(member_data ORDER BY (member_data->>'name'))
-          FROM (
-            SELECT jsonb_build_object(
-              'user_id', u.id,
-              'name', u.name,
-              'amount', COALESCE(
-                (SELECT SUM(sbe.amount) FROM shared_budget_expenses sbe
-                 WHERE sbe.budget_category_id = sbc.id
-                 AND sbe.logged_by = u.id
-                 AND EXTRACT(MONTH FROM sbe.expense_date) = $2
-                 AND EXTRACT(YEAR FROM sbe.expense_date) = $3), 0
-              ),
-              'expected', COALESCE(
-                (SELECT sbmt.expected_amount FROM shared_budget_member_targets sbmt
-                 WHERE sbmt.budget_category_id = sbc.id AND sbmt.user_id = u.id), 0
-              )
-            ) as member_data
-            FROM household_members hm2
-            JOIN users u ON u.id = hm2.user_id
-            WHERE hm2.household_id = sbc.household_id
-          ) t
-        ) as member_breakdown
-      FROM shared_budget_categories sbc
-      WHERE sbc.household_id = $1
-      ORDER BY sbc.sort_order, sbc.created_at
-    `, [id, targetMonth, targetYear]);
-
-    res.json({ success: true, budgets: result.rows, month: targetMonth, year: targetYear, owner_id: ownerId });
-  } catch (err) {
-    console.error('GET /api/households/:id/shared-budgets error:', err.message);
-    res.status(500).json({ error: 'Failed to load shared budgets' });
-  }
-});
-
-// POST create a shared budget category (owner/co-admin only)
-app.post('/api/households/:id/shared-budgets', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, emoji, monthly_target } = req.body;
-    if (!name || monthly_target == null) return res.status(400).json({ error: 'Name and monthly_target are required' });
-
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const memberRow = await pool.query(`SELECT role FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-    const isOwner = householdRow.rows[0].owner_id === req.userId;
-    const isCoAdmin = memberRow.rows[0].role === 'co_admin';
-    if (!isOwner && !isCoAdmin) return res.status(403).json({ error: 'Only owner or co-admin can create budget categories' });
-
-    const sortRow = await pool.query(`SELECT COALESCE(MAX(sort_order), -1) + 1 as next_order FROM shared_budget_categories WHERE household_id = $1`, [id]);
-    const sortOrder = sortRow.rows[0].next_order;
-
-    const result = await pool.query(
-      `INSERT INTO shared_budget_categories (household_id, name, emoji, monthly_target, sort_order, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [id, name.trim(), emoji || '💰', parseFloat(monthly_target), sortOrder, req.userId]
-    );
-    res.json({ success: true, budget: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/households/:id/shared-budgets error:', err.message);
-    res.status(500).json({ error: 'Failed to create shared budget category' });
-  }
-});
-
-// POST seed default budget categories (owner only)
-app.post('/api/households/:id/shared-budgets/seed-defaults', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    if (householdRow.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can seed defaults' });
-
-    const defaults = [
-      { name: 'Rent/Mortgage', emoji: '🏠', monthly_target: 0 },
-      { name: 'Utilities', emoji: '⚡', monthly_target: 0 },
-      { name: 'Groceries', emoji: '🛒', monthly_target: 0 },
-      { name: 'Insurance', emoji: '🛡️', monthly_target: 0 },
-      { name: 'family Supplies', emoji: '🧹', monthly_target: 0 },
-      { name: 'Shared Savings', emoji: '💎', monthly_target: 0 },
-    ];
-
-    for (let i = 0; i < defaults.length; i++) {
-      const d = defaults[i];
-      await pool.query(
-        `INSERT INTO shared_budget_categories (household_id, name, emoji, monthly_target, sort_order, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [id, d.name, d.emoji, d.monthly_target, i, req.userId]
-      );
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST /api/households/:id/shared-budgets/seed-defaults error:', err.message);
-    res.status(500).json({ error: 'Failed to seed defaults' });
-  }
-});
-
-// PUT edit a shared budget category (owner/co-admin only)
-app.put('/api/households/:id/shared-budgets/:budgetId', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const { name, emoji, monthly_target } = req.body;
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const memberRow = await pool.query(`SELECT role FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-    const isOwner = householdRow.rows[0].owner_id === req.userId;
-    const isCoAdmin = memberRow.rows[0].role === 'co_admin';
-    if (!isOwner && !isCoAdmin) return res.status(403).json({ error: 'Only owner or co-admin can edit budget categories' });
-
-    const result = await pool.query(
-      `UPDATE shared_budget_categories
-       SET name = COALESCE($1, name), emoji = COALESCE($2, emoji),
-           monthly_target = COALESCE($3, monthly_target), updated_at = NOW()
-       WHERE id = $4 AND household_id = $5 RETURNING *`,
-      [name?.trim() || null, emoji || null, monthly_target != null ? parseFloat(monthly_target) : null, budgetId, id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Budget category not found' });
-    res.json({ success: true, budget: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/households/:id/shared-budgets/:budgetId error:', err.message);
-    res.status(500).json({ error: 'Failed to update budget category' });
-  }
-});
-
-// DELETE a shared budget category (owner/co-admin only)
-app.delete('/api/households/:id/shared-budgets/:budgetId', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const memberRow = await pool.query(`SELECT role FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-    const isOwner = householdRow.rows[0].owner_id === req.userId;
-    const isCoAdmin = memberRow.rows[0].role === 'co_admin';
-    if (!isOwner && !isCoAdmin) return res.status(403).json({ error: 'Only owner or co-admin can delete budget categories' });
-    await pool.query(`DELETE FROM shared_budget_categories WHERE id = $1 AND household_id = $2`, [budgetId, id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/households/:id/shared-budgets/:budgetId error:', err.message);
-    res.status(500).json({ error: 'Failed to delete budget category' });
-  }
-});
-
-// POST log an expense against a shared budget category (any member)
-app.post('/api/households/:id/shared-budgets/:budgetId/expenses', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const { amount, description, expense_date } = req.body;
-    if (!amount || parseFloat(amount) <= 0) return res.status(400).json({ error: 'Amount must be greater than 0' });
-
-    const memberRow = await pool.query(`SELECT id FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const budgetRow = await pool.query(`SELECT id FROM shared_budget_categories WHERE id = $1 AND household_id = $2`, [budgetId, id]);
-    if (budgetRow.rows.length === 0) return res.status(404).json({ error: 'Budget category not found' });
-
-    const dateStr = expense_date || new Date().toISOString().split('T')[0];
-    const result = await pool.query(
-      `INSERT INTO shared_budget_expenses (budget_category_id, household_id, logged_by, amount, description, expense_date)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [budgetId, id, req.userId, parseFloat(amount), description?.trim() || null, dateStr]
-    );
-    res.json({ success: true, expense: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/households/:id/shared-budgets/:budgetId/expenses error:', err.message);
-    res.status(500).json({ error: 'Failed to log shared expense' });
-  }
-});
-
-// GET expense history for a shared budget category (any member)
-app.get('/api/households/:id/shared-budgets/:budgetId/expenses', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const { month, year } = req.query;
-    const memberRow = await pool.query(`SELECT id FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-
-    const targetMonth = parseInt(month) || new Date().getMonth() + 1;
-    const targetYear = parseInt(year) || new Date().getFullYear();
-
-    const result = await pool.query(`
-      SELECT sbe.id, sbe.amount, sbe.description, sbe.expense_date, sbe.created_at,
-             sbe.logged_by, u.name as member_name
-      FROM shared_budget_expenses sbe
-      JOIN users u ON u.id = sbe.logged_by
-      WHERE sbe.budget_category_id = $1 AND sbe.household_id = $2
-        AND EXTRACT(MONTH FROM sbe.expense_date) = $3
-        AND EXTRACT(YEAR FROM sbe.expense_date) = $4
-      ORDER BY sbe.expense_date DESC, sbe.created_at DESC
-      LIMIT 100
-    `, [budgetId, id, targetMonth, targetYear]);
-
-    res.json({ success: true, expenses: result.rows });
-  } catch (err) {
-    console.error('GET /api/households/:id/shared-budgets/:budgetId/expenses error:', err.message);
-    res.status(500).json({ error: 'Failed to load expenses' });
-  }
-});
-
-// DELETE a shared budget expense (logged_by or family owner)
-app.delete('/api/shared-budget-expenses/:expenseId', requireAuth, async (req, res) => {
-  try {
-    const { expenseId } = req.params;
-    const expRow = await pool.query(
-      `SELECT sbe.*, h.owner_id FROM shared_budget_expenses sbe
-       JOIN households h ON h.id = sbe.household_id
-       WHERE sbe.id = $1`,
-      [expenseId]
-    );
-    if (expRow.rows.length === 0) return res.status(404).json({ error: 'Expense not found' });
-    const exp = expRow.rows[0];
-    if (exp.logged_by !== req.userId && exp.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Can only delete your own expenses (or be the family owner)' });
-    }
-    await pool.query(`DELETE FROM shared_budget_expenses WHERE id = $1`, [expenseId]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/shared-budget-expenses/:expenseId error:', err.message);
-    res.status(500).json({ error: 'Failed to delete expense' });
-  }
-});
-
-// PUT set per-member contribution targets for a budget category (owner/co-admin)
-app.put('/api/households/:id/shared-budgets/:budgetId/member-targets', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const { targets } = req.body; // Array of { user_id, expected_amount }
-    if (!Array.isArray(targets)) return res.status(400).json({ error: 'targets must be an array' });
-
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const memberRow = await pool.query(`SELECT role FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-    const isOwner = householdRow.rows[0].owner_id === req.userId;
-    const isCoAdmin = memberRow.rows[0].role === 'co_admin';
-    if (!isOwner && !isCoAdmin) return res.status(403).json({ error: 'Only owner or co-admin can set member targets' });
-
-    for (const t of targets) {
-      if (parseFloat(t.expected_amount) > 0) {
-        await pool.query(
-          `INSERT INTO shared_budget_member_targets (budget_category_id, user_id, expected_amount)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (budget_category_id, user_id) DO UPDATE SET expected_amount = $3, updated_at = NOW()`,
-          [budgetId, t.user_id, parseFloat(t.expected_amount)]
-        );
-      } else {
-        await pool.query(`DELETE FROM shared_budget_member_targets WHERE budget_category_id = $1 AND user_id = $2`, [budgetId, t.user_id]);
-      }
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error('PUT /api/households/:id/shared-budgets/:budgetId/member-targets error:', err.message);
-    res.status(500).json({ error: 'Failed to set member targets' });
-  }
-});
+// [Phase5] family goals/budgets → routes/family.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── SUBSCRIPTIONS ──────────────────────────────────────
@@ -16567,217 +16594,217 @@ async function ensureFgBalance(userId) {
   );
 }
 
-// GET /future-generations — Info landing page
-app.get('/future-generations', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'future-generations.html'));
-});
+// [Phase5] FG points routes → routes/gamification.js
 
-// GET /future-generations/dashboard — Points dashboard
-app.get('/future-generations/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'future-generations-dashboard.html'));
-});
 
-// GET /sovereign-dashboard — Sovereign Command Center (affiliate 4x5 map, wallets, compliance)
-app.get('/sovereign-dashboard', optionalAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sovereign-dashboard.html'));
-});
 
-// GET /future-generations/sovereign — alias
-app.get('/future-generations/sovereign', optionalAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sovereign-dashboard.html'));
-});
 
-// GET /api/future-generations/status — Auth + Pro status for the current user
-app.get('/api/future-generations/status', optionalAuth, async (req, res) => {
-  try {
-    if (!req.userId) {
-      return res.json({ authenticated: false, has_access: false, is_affiliate: false });
-    }
-    const hasPro = await hasProAccess(req.userId);
-    // Check affiliate enrollment
-    let isAffiliate = false;
-    try {
-      const affRes = await pool.query(
-        "SELECT id FROM affiliates WHERE user_id = $1 AND status != 'revoked'",
-        [req.userId]
-      );
-      isAffiliate = affRes.rows.length > 0;
-    } catch (e) { /* non-fatal */ }
-    return res.json({ authenticated: true, has_access: hasPro, is_affiliate: isAffiliate });
-  } catch (err) {
-    console.error('[FutureGen] /status error:', err.message);
-    res.status(500).json({ success: false, error: 'Server error' });
-  }
-});
 
-// GET /api/future-generations/points — Points summary (all authenticated users; cashout requires Pro)
-app.get('/api/future-generations/points', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    await ensureFgBalance(req.userId);
-    const result = await pool.query(
-      'SELECT balance, total_earned, total_redeemed, last_daily_points_date, updated_at FROM fg_points_balances WHERE user_id = $1',
-      [req.userId]
-    );
-    const row = result.rows[0] || { balance: 0, total_earned: 0, total_redeemed: 0 };
-    const today = new Date().toISOString().split('T')[0];
-    const earnedTodayAlready = row.last_daily_points_date
-      ? row.last_daily_points_date.toISOString().split('T')[0] === today
-      : false;
-    res.json({
-      success: true,
-      balance: parseInt(row.balance),
-      total_earned: parseInt(row.total_earned),
-      total_redeemed: parseInt(row.total_redeemed),
-      can_cashout: hasPro,           // Free users can earn but not cash out
-      earned_today: earnedTodayAlready
-    });
-  } catch (err) {
-    console.error('[FutureGen] /points error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch points' });
-  }
-});
 
-// GET /api/future-generations/earnings — Earning history (all authenticated users)
-app.get('/api/future-generations/earnings', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, activity_type, description, points, created_at
-       FROM fg_earning_events
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 100`,
-      [req.userId]
-    );
-    res.json({ success: true, events: result.rows });
-  } catch (err) {
-    console.error('[FutureGen] /earnings error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch earning history' });
-  }
-});
 
-// GET /api/future-generations/redemptions — Redemption history (all authenticated users)
-app.get('/api/future-generations/redemptions', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, item_name, points_spent, external_ref, status, created_at
-       FROM fg_redemption_events
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 100`,
-      [req.userId]
-    );
-    res.json({ success: true, events: result.rows });
-  } catch (err) {
-    console.error('[FutureGen] /redemptions error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch redemption history' });
-  }
-});
 
-// POST /api/future-generations/cashout — Pro users cash out points to bank ($1/point)
-const FG_CASHOUT_MINIMUM_POINTS = 10; // minimum 10 points ($10) per cashout
 
-app.post('/api/future-generations/cashout', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
 
-    // Must be Pro to cash out
-    const hasPro = await hasProAccess(userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        success: false,
-        error: 'Cashout requires a Pro subscription. Free accounts can earn and view points but cannot cash out.',
-        code: 'PRO_REQUIRED'
-      });
-    }
 
-    await ensureFgBalance(userId);
-    const balanceResult = await pool.query(
-      'SELECT balance FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    );
-    const balance = balanceResult.rows[0] ? parseInt(balanceResult.rows[0].balance) : 0;
 
-    if (balance < FG_CASHOUT_MINIMUM_POINTS) {
-      return res.status(400).json({
-        success: false,
-        error: `Minimum cashout is ${FG_CASHOUT_MINIMUM_POINTS} points ($${FG_CASHOUT_MINIMUM_POINTS}). You have ${balance} point${balance === 1 ? '' : 's'}.`
-      });
-    }
 
-    const { points } = req.body;
-    const pointsToCash = points ? Math.min(parseInt(points), balance) : balance;
 
-    if (!pointsToCash || pointsToCash < FG_CASHOUT_MINIMUM_POINTS) {
-      return res.status(400).json({
-        success: false,
-        error: `Must cash out at least ${FG_CASHOUT_MINIMUM_POINTS} points.`
-      });
-    }
 
-    const amountCents = pointsToCash * 100; // 1 point = $1 = 100 cents
 
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
 
-      // Deduct points
-      await client.query(
-        `UPDATE fg_points_balances
-         SET balance = balance - $2, total_redeemed = total_redeemed + $2, updated_at = NOW()
-         WHERE user_id = $1`,
-        [userId, pointsToCash]
-      );
 
-      // Record redemption event
-      await client.query(
-        `INSERT INTO fg_redemption_events (user_id, item_name, points_spent, status)
-         VALUES ($1, 'Bank Cashout', $2, 'pending')`,
-        [userId, pointsToCash]
-      );
 
-      // Create cashout request
-      const cashoutResult = await client.query(
-        `INSERT INTO fg_cashouts (user_id, points_cashed_out, amount_cents, status)
-         VALUES ($1, $2, $3, 'pending')
-         RETURNING *`,
-        [userId, pointsToCash, amountCents]
-      );
 
-      await client.query('COMMIT');
 
-      res.json({
-        success: true,
-        message: `Cashout of ${pointsToCash} point${pointsToCash === 1 ? '' : 's'} ($${(amountCents / 100).toFixed(2)}) requested. Processing typically takes 3–5 business days.`,
-        cashout: cashoutResult.rows[0]
-      });
-    } catch (txErr) {
-      await client.query('ROLLBACK');
-      throw txErr;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('[FutureGen] /cashout error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to process cashout' });
-  }
-});
 
-// GET /api/future-generations/cashouts — Cashout history for current user
-app.get('/api/future-generations/cashouts', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, points_cashed_out, amount_cents, status, requested_at, processed_at
-       FROM fg_cashouts WHERE user_id = $1
-       ORDER BY requested_at DESC LIMIT 50`,
-      [req.userId]
-    );
-    res.json({ success: true, cashouts: result.rows });
-  } catch (err) {
-    console.error('[FutureGen] /cashouts error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch cashout history' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DUPLICATE DETECTION
@@ -18840,504 +18867,504 @@ async function tfrAwardXp(userId, source, description, baseXp, client) {
   return { xp: newXp, level: newLevel, xp_earned: earned, multiplier, leveled_up: leveledUp, phase_up: phaseUp, new_rank: TFR_RANKS.find(r => r.level === newLevel) };
 }
 
-// GET /sovereign - Sovereign: The TFR Protocol (primary route)
-app.get('/sovereign', optionalAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'command-console.html'));
-});
+// [Phase5] TFR routes → routes/gamification.js
 
-// GET /command-console → redirect to /sovereign (backward compat)
-app.get('/command-console', (req, res) => {
-  res.redirect(301, '/sovereign');
-});
 
-// GET /api/tfr/status
-app.get('/api/tfr/status', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const stats = await tfrEnsureStats(userId, pool);
-    const level = tfrCalcLevel(stats.xp);
-    const rank = TFR_RANKS.find(r => r.level === level) || TFR_RANKS[0];
-    const nextRank = TFR_RANKS.find(r => r.level === level + 1);
-    const phase = rank.phase;
-    const theme = TFR_PHASE_THEMES[phase];
-    const xpToNext = tfrXpToNext(stats.xp, level);
-    const xpProgress = nextRank
-      ? Math.round(((stats.xp - rank.xp_required) / (nextRank.xp_required - rank.xp_required)) * 100)
-      : 100;
-    const streakMultiplier = (stats.streak_days || 0) >= 3 ? 1.5 : 1.0;
-    const firstBloodDeadline = stats.first_blood_deadline;
-    const hoursLeft = firstBloodDeadline && !stats.first_blood_done
-      ? Math.max(0, Math.round((new Date(firstBloodDeadline) - Date.now()) / (1000 * 60 * 60)))
-      : null;
-    const xpEvents = (await pool.query(
-      'SELECT * FROM tfr_xp_events WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10', [userId]
-    )).rows;
-    const achievements = (await pool.query(
-      'SELECT achievement_key, earned_at FROM tfr_achievements WHERE user_id = $1', [userId]
-    )).rows;
-    const isPro = await hasProAccess(userId);
-    const productTier = await getUserProductTier(userId);
-    const isElite = await hasEliteAccess(userId);
-    const isBusiness = await hasBusinessAccess(userId);
-    const isSovereign = await hasSovereignAccess(userId);
-    const creditGate = await checkCreditGate(userId);
 
-    // Fetch TFR Reward Points (Aura Restored loyalty points)
-    await ensureFgBalance(userId);
-    const fgRow = (await pool.query(
-      'SELECT balance, total_earned, total_redeemed FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0] || { balance: 0, total_earned: 0, total_redeemed: 0 };
 
-    // Determine which tier band the current level belongs to
-    const tierBands = {
-      free:     [1,2,3],
-      pro:      [4,5,6],
-      business: [7,8,9],
-      elite:    [10,11,12],
-      sovereign: [],
-    };
-    const currentLevelTierBand = level <= 3 ? 'free' : level <= 6 ? 'pro' : level <= 9 ? 'business' : 'elite';
-    const isLevelAccessible = (
-      (level <= 3) ||
-      (level <= 6 && isPro) ||
-      (level <= 9 && isBusiness) ||
-      (level <= 12 && isElite)
-    );
 
-    res.json({
-      success: true,
-      is_pro: isPro,
-      product_tier: productTier,
-      tier_access: {
-        free:     true,
-        pro:      isPro,
-        business: isBusiness,
-        elite:    isElite,
-        sovereign: isSovereign,
-        current_tier: productTier,
-        current_level_band: currentLevelTierBand,
-        level_accessible: isLevelAccessible,
-      },
-      credit_gate: creditGate,
-      stats: {
-        xp: stats.xp, level, streak_days: stats.streak_days || 0,
-        longest_streak: stats.longest_streak || 0, prestige: stats.prestige || false,
-        first_blood_done: stats.first_blood_done || false,
-        first_blood_deadline: firstBloodDeadline, first_blood_hours_left: hoursLeft,
-      },
-      rank: {
-        level, name: rank.name, phase, phase_name: TFR_PHASE_NAMES[phase], theme,
-        xp_progress: xpProgress, xp_to_next: xpToNext,
-        current_xp_threshold: rank.xp_required,
-        next_xp_threshold: nextRank ? nextRank.xp_required : null,
-        next_rank_name: nextRank ? nextRank.name : 'MAX RANK',
-      },
-      streak: { days: stats.streak_days || 0, multiplier: streakMultiplier, multiplier_active: streakMultiplier > 1 },
-      xp_events: xpEvents,
-      achievements,
-      reward_points: {
-        balance: parseInt(fgRow.balance) || 0,
-        total_earned: parseInt(fgRow.total_earned) || 0,
-        total_redeemed: parseInt(fgRow.total_redeemed) || 0,
-      },
-    });
-  } catch (err) {
-    console.error('[TFR] GET /api/tfr/status error:', err.message);
-    res.status(500).json({ error: 'Failed to load TFR status' });
-  }
-});
 
-// POST /api/tfr/checkin — open to all users (free=5 XP, pro=25 XP)
-app.post('/api/tfr/checkin', requireAuth, async (req, res) => {
-  const isPro = await hasProAccess(req.userId);
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const stats = await tfrEnsureStats(userId, client);
 
-    // Use user's local timezone for day boundaries (falls back to UTC)
-    const userTz = (req.body && req.body.timezone && isValidTimezone(req.body.timezone))
-      ? req.body.timezone : (stats.checkin_timezone || null);
-    const today = getUserLocalDate(userTz);
-    const lastDate = stats.last_activity_date
-      ? new Date(stats.last_activity_date).toISOString().split('T')[0] : null;
-    if (lastDate === today) {
-      await client.query('COMMIT');
-      return res.json({ success: false, message: 'Already checked in today', already_done: true });
-    }
-    const yesterday = getUserLocalYesterday(userTz);
-    let newStreak = lastDate === yesterday ? (stats.streak_days || 0) + 1 : 1;
 
-    // Persist user's timezone for future reference
-    if (req.body && req.body.timezone && isValidTimezone(req.body.timezone)) {
-      await client.query(
-        'UPDATE tfr_user_stats SET checkin_timezone = $1 WHERE user_id = $2',
-        [req.body.timezone, userId]
-      );
-    }
-    const newLongest = Math.max(newStreak, stats.longest_streak || 0);
-    await client.query(`
-      UPDATE tfr_user_stats
-      SET streak_days = $1, longest_streak = $2, last_activity_date = $3, updated_at = NOW()
-      WHERE user_id = $4
-    `, [newStreak, newLongest, today, userId]);
 
-    // Pro gets 25 XP; free gets 5 XP — both track streaks
-    const baseXp = isPro ? 25 : 5;
-    const result = await tfrAwardXp(userId, 'daily_checkin', 'Daily check-in', baseXp, client);
 
-    // Complete the "daily_checkin" challenge
-    const checkinChal = (await client.query(
-      "SELECT id, xp_reward FROM engagement_challenges WHERE criteria_key = 'daily_checkin' AND active = TRUE LIMIT 1"
-    )).rows[0];
-    if (checkinChal) {
-      const periodKey = today;
-      const alreadyDone = (await client.query(
-        'SELECT id FROM user_challenges WHERE user_id=$1 AND challenge_id=$2 AND period_key=$3 AND status=$4',
-        [userId, checkinChal.id, periodKey, 'completed']
-      )).rows[0];
-      if (!alreadyDone) {
-        const chalXp = isPro ? checkinChal.xp_reward * 2 : checkinChal.xp_reward;
-        await client.query(`
-          INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-          VALUES ($1, $2, $3, 'completed', NOW(), $4) ON CONFLICT DO NOTHING
-        `, [userId, checkinChal.id, periodKey, chalXp]);
-        await tfrAwardXp(userId, 'challenge_complete', 'Challenge: Complete your daily check-in', chalXp, client);
-      }
-    }
 
-    // Check streak milestones (7, 30, 90, 365) — award achievement + bonus XP
-    const STREAK_MILESTONES = { 7: 50, 30: 150, 90: 300, 365: 1000 };
-    if (STREAK_MILESTONES[newStreak]) {
-      const achKey = `streak_${newStreak}`;
-      const alreadyEarned = (await client.query(
-        'SELECT id FROM tfr_achievements WHERE user_id=$1 AND achievement_key=$2', [userId, achKey]
-      )).rows[0];
-      if (!alreadyEarned) {
-        await client.query(
-          'INSERT INTO tfr_achievements (user_id, achievement_key) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [userId, achKey]
-        );
-        const milestoneXp = isPro ? STREAK_MILESTONES[newStreak] * 2 : STREAK_MILESTONES[newStreak];
-        await tfrAwardXp(userId, 'streak_milestone', `${newStreak}-Day Streak Milestone!`, milestoneXp, client);
-        result.milestone_unlocked = { days: newStreak, xp_bonus: milestoneXp, key: achKey };
-      }
-    }
 
-    // Update total_points
-    await client.query(
-      'UPDATE tfr_user_stats SET total_points = COALESCE(total_points,0) + $1 WHERE user_id = $2',
-      [result.xp_earned || baseXp, userId]
-    );
 
-    // Award 15 TFR Reward Points for daily check-in (monthly cap enforced)
-    let checkinPointsAwarded = 0;
-    try {
-      const CHECKIN_PTS = 15;
-      const currentMonth = today.substring(0, 7);
-      await ensureFgBalance(userId);
-      const balRow2 = (await client.query(
-        'SELECT monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-        [userId]
-      )).rows[0] || {};
-      const monthEarned2 = balRow2.monthly_cap_reset_month === currentMonth
-        ? (parseInt(balRow2.monthly_points_earned) || 0) : 0;
-      const remaining2 = Math.max(0, 5000 - monthEarned2);
-      const toAward2 = Math.min(CHECKIN_PTS, remaining2);
-      if (toAward2 > 0) {
-        await client.query(
-          `UPDATE fg_points_balances
-           SET balance = balance + $2,
-               total_earned = total_earned + $2,
-               monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-               monthly_cap_reset_month = $3,
-               updated_at = NOW()
-           WHERE user_id = $1`,
-          [userId, toAward2, currentMonth]
-        );
-        await client.query(
-          `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-           VALUES ($1, 'daily_checkin', 'Daily check-in — 15 FACTS Points', $2)`,
-          [userId, toAward2]
-        );
-        checkinPointsAwarded = toAward2;
-      }
-      // First check-in achievement (one-time)
-      await client.query(
-        `INSERT INTO rewards_achievements (user_id, achievement_key, points_awarded)
-         VALUES ($1, 'first_checkin', 0) ON CONFLICT DO NOTHING`,
-        [userId]
-      );
-    } catch (rpErr) {
-      console.error('[Rewards] checkin points error:', rpErr.message);
-    }
 
-    await client.query('COMMIT');
-    res.json({
-      success: true,
-      message: newStreak >= 3 ? `Day ${newStreak} — 1.5x XP ACTIVE` : `Day ${newStreak} streak`,
-      streak: newStreak, xp_earned: result.xp_earned, multiplier: result.multiplier,
-      leveled_up: result.leveled_up, level: result.level, new_rank: result.new_rank,
-      milestone_unlocked: result.milestone_unlocked || null,
-      is_pro: isPro,
-      reward_points_earned: checkinPointsAwarded,
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[TFR] checkin error:', err.message);
-    res.status(500).json({ error: 'Check-in failed' });
-  } finally { client.release(); }
-});
 
-// GET /api/tfr/leaks
-app.get('/api/tfr/leaks', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    // Gate leaks to Pro users only
-    const isPro = await hasProAccess(userId);
-    if (!isPro) {
-      return res.status(403).json({ success: false, pro_required: true, message: 'Upgrade to access the Leak Detector' });
-    }
-    const stats = await tfrEnsureStats(userId, pool);
-    const level = tfrCalcLevel(stats.xp);
-    if (level < 2) {
-      return res.json({ success: false, locked: true, message: 'Leak Detector unlocks at Level 2', xp_needed: TFR_RANKS[1].xp_required - stats.xp });
-    }
-    const txCount = (await pool.query("SELECT COUNT(*) FROM transactions WHERE user_id = $1", [userId])).rows[0].count;
-    if (parseInt(txCount) < 5) {
-      return res.json({ success: true, leaks: [], message: 'Not enough transaction data yet. Keep logging to enable leak detection.', total_monthly_waste: 0 });
-    }
-    const recurringRaw = (await pool.query(`
-      SELECT description AS merchant, ROUND(ABS(amount)::numeric, 2) AS amount,
-        COUNT(*) AS occurrences, MIN(date) AS first_seen, MAX(date) AS last_seen
-      FROM transactions
-      WHERE user_id = $1 AND type = 'expense' AND date >= NOW() - INTERVAL '90 days' AND ABS(amount) <= 100
-      GROUP BY description, ROUND(ABS(amount)::numeric, 2)
-      HAVING COUNT(*) >= 2
-      ORDER BY occurrences DESC, amount ASC LIMIT 20
-    `, [userId])).rows;
-    const spikesRaw = (await pool.query(`
-      WITH monthly AS (
-        SELECT c.name AS category, DATE_TRUNC('month', t.date) AS month, SUM(ABS(t.amount)) AS total
-        FROM transactions t JOIN categories c ON c.id = t.category_id
-        WHERE t.user_id = $1 AND t.type = 'expense' AND t.date >= NOW() - INTERVAL '60 days'
-        GROUP BY c.name, DATE_TRUNC('month', t.date)
-      ),
-      pivoted AS (
-        SELECT category,
-          SUM(CASE WHEN month = DATE_TRUNC('month', NOW()) THEN total ELSE 0 END) AS this_month,
-          SUM(CASE WHEN month = DATE_TRUNC('month', NOW() - INTERVAL '1 month') THEN total ELSE 0 END) AS last_month
-        FROM monthly GROUP BY category
-      )
-      SELECT category, this_month, last_month,
-        ROUND(((this_month - last_month) / NULLIF(last_month, 0)) * 100) AS pct_increase
-      FROM pivoted WHERE last_month > 20 AND this_month > last_month * 1.3
-      ORDER BY pct_increase DESC LIMIT 5
-    `, [userId])).rows;
-    const existingDecisions = (await pool.query(
-      "SELECT merchant_name, amount, user_decision FROM tfr_leak_candidates WHERE user_id = $1 AND scan_date = CURRENT_DATE",
-      [userId]
-    )).rows;
-    const decisionMap = {};
-    existingDecisions.forEach(d => { decisionMap[`${d.merchant_name}_${d.amount}`] = d.user_decision; });
-    const leaks = [];
-    const seen = new Set();
-    for (const r of recurringRaw) {
-      const key = `${r.merchant}_${r.amount}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const isPhantom = parseFloat(r.amount) <= 9.99;
-      leaks.push({
-        id: key, merchant: r.merchant, amount: parseFloat(r.amount),
-        leak_type: isPhantom ? 'phantom' : 'subscription',
-        monthly_cost: parseFloat(r.amount), occurrences: parseInt(r.occurrences),
-        note: isPhantom ? 'Phantom charge — small recurring amount' : `Charged ${r.occurrences}× in 90 days`,
-        user_decision: decisionMap[key] || null,
-      });
-    }
-    for (const s of spikesRaw) {
-      const key = `spike_${s.category}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      leaks.push({
-        id: key, merchant: s.category, amount: parseFloat(s.this_month),
-        leak_type: 'spike', monthly_cost: Math.max(0, parseFloat(s.this_month) - parseFloat(s.last_month)),
-        pct_increase: parseInt(s.pct_increase),
-        note: `Up ${s.pct_increase}% vs last month ($${parseFloat(s.last_month).toFixed(0)} → $${parseFloat(s.this_month).toFixed(0)})`,
-        user_decision: decisionMap[key] || null,
-      });
-    }
-    const total_monthly_waste = leaks.filter(l => l.user_decision !== 'keep').reduce((sum, l) => sum + l.monthly_cost, 0);
-    res.json({ success: true, leaks, total_monthly_waste: Math.round(total_monthly_waste * 100) / 100, level_unlocked: true });
-  } catch (err) {
-    console.error('[TFR] leaks error:', err.message);
-    res.status(500).json({ error: 'Leak detection failed' });
-  }
-});
 
-// POST /api/tfr/leaks/decision
-app.post('/api/tfr/leaks/decision', requireAuth, async (req, res) => {
-  const isPro = await hasProAccess(req.userId);
-  if (!isPro) {
-    return res.status(403).json({ success: false, pro_required: true, message: 'Upgrade to use the Leak Detector' });
-  }
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const { merchant, amount, leak_type, decision } = req.body;
-    if (!merchant || !amount || !decision || !['keep', 'eliminate'].includes(decision)) {
-      return res.status(400).json({ error: 'merchant, amount, leak_type, decision required' });
-    }
-    await client.query(`
-      INSERT INTO tfr_leak_candidates (user_id, merchant_name, amount, leak_type, frequency, monthly_cost, user_decision, decided_at, scan_date)
-      VALUES ($1, $2, $3, $4, 'monthly', $3, $5, NOW(), CURRENT_DATE)
-      ON CONFLICT DO NOTHING
-    `, [userId, merchant, amount, leak_type || 'subscription', decision]);
-    let xp_result = null;
-    if (decision === 'eliminate') {
-      xp_result = await tfrAwardXp(userId, 'leak_eliminated', `Eliminated leak: ${merchant}`, 50, client);
-      const eliminatedSum = (await client.query(`
-        SELECT COALESCE(SUM(monthly_cost), 0) AS total FROM tfr_leak_candidates
-        WHERE user_id = $1 AND user_decision = 'eliminate' AND monthly_cost > 0
-      `, [userId])).rows[0].total;
-      if (parseFloat(eliminatedSum) >= 100) {
-        await client.query(`INSERT INTO tfr_achievements (user_id, achievement_key) VALUES ($1, 'leak_slayer') ON CONFLICT DO NOTHING`, [userId]);
-      }
-      const stats = (await client.query('SELECT * FROM tfr_user_stats WHERE user_id = $1', [userId])).rows[0];
-      if (stats && !stats.first_blood_done && stats.first_blood_deadline && new Date() <= new Date(stats.first_blood_deadline)) {
-        await client.query(`UPDATE tfr_user_stats SET first_blood_done = TRUE, updated_at = NOW() WHERE user_id = $1`, [userId]);
-        await tfrAwardXp(userId, 'first_blood', 'FIRST BLOOD — First leak eliminated within 48 hours', 150, client);
-        await client.query(`INSERT INTO tfr_micro_wins (user_id, win_type, xp_awarded) VALUES ($1, 'first_blood', 150) ON CONFLICT DO NOTHING`, [userId]);
-        await client.query(`INSERT INTO tfr_achievements (user_id, achievement_key) VALUES ($1, 'first_blood') ON CONFLICT DO NOTHING`, [userId]);
-        if (xp_result) xp_result.first_blood_achieved = true;
-      }
-    }
-    await client.query('COMMIT');
-    res.json({ success: true, decision, xp_result });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[TFR] leaks/decision error:', err.message);
-    res.status(500).json({ error: 'Failed to record decision' });
-  } finally { client.release(); }
-});
 
-// GET /api/tfr/xp-events
-app.get('/api/tfr/xp-events', requireAuth, async (req, res) => {
-  try {
-    const events = (await pool.query(
-      'SELECT * FROM tfr_xp_events WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20', [req.userId]
-    )).rows;
-    res.json({ success: true, events });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed' });
-  }
-});
 
-// POST /api/tfr/award-transaction-xp
-app.post('/api/tfr/award-transaction-xp', requireAuth, async (req, res) => {
-  // Gate XP earning to Pro users only
-  const isPro = await hasProAccess(req.userId);
-  if (!isPro) {
-    return res.status(403).json({ success: false, pro_required: true, message: 'Upgrade to earn XP' });
-  }
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    await tfrEnsureStats(userId, client);
-    const today = new Date().toISOString().split('T')[0];
-    const todayCount = (await client.query(`
-      SELECT COUNT(*) FROM tfr_xp_events
-      WHERE user_id = $1 AND source = 'transaction_log' AND created_at::date = $2
-    `, [userId, today])).rows[0].count;
-    if (parseInt(todayCount) >= 3) {
-      await client.query('COMMIT');
-      return res.json({ success: false, message: 'Daily limit reached' });
-    }
-    const stats = (await client.query('SELECT * FROM tfr_user_stats WHERE user_id = $1', [userId])).rows[0];
-    const lastDate = stats?.last_activity_date ? new Date(stats.last_activity_date).toISOString().split('T')[0] : null;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    if (lastDate !== today) {
-      const newStreak = lastDate === yesterday ? (stats?.streak_days || 0) + 1 : 1;
-      const newLongest = Math.max(newStreak, stats?.longest_streak || 0);
-      await client.query(`UPDATE tfr_user_stats SET streak_days=$1, longest_streak=$2, last_activity_date=$3, updated_at=NOW() WHERE user_id=$4`,
-        [newStreak, newLongest, today, userId]);
-    }
-    const result = await tfrAwardXp(userId, 'transaction_log', 'Transaction logged', 10, client);
-    await client.query('COMMIT');
-    res.json({ success: true, ...result });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: 'XP award failed' });
-  } finally { client.release(); }
-});
 
-// GET /api/tfr/all-ranks
-app.get('/api/tfr/all-ranks', (req, res) => {
-  res.json({ success: true, ranks: TFR_RANKS, phases: TFR_PHASE_NAMES, themes: TFR_PHASE_THEMES });
-});
 
-// GET /api/tfr/tier-map — returns the full 12-level tier mapping
-app.get('/api/tfr/tier-map', async (req, res) => {
-  try {
-    const rows = (await pool.query('SELECT * FROM level_tier_map ORDER BY level ASC')).rows;
-    res.json({ success: true, levels: rows });
-  } catch (err) {
-    // If the table doesn't exist yet (pre-migration), fall back to TFR_RANKS
-    const fallback = TFR_RANKS.map(r => ({
-      level: r.level,
-      rank_name: r.name,
-      phase: r.phase,
-      xp_required: r.xp_required,
-      tier_band: r.level <= 3 ? 'free' : r.level <= 6 ? 'pro' : r.level <= 9 ? 'business' : 'elite',
-    }));
-    res.json({ success: true, levels: fallback });
-  }
-});
 
-// GET /api/tfr/credit-gate/status — check credit gate for current user
-app.get('/api/tfr/credit-gate/status', requireAuth, async (req, res) => {
-  try {
-    const gate = await checkCreditGate(req.userId);
-    const hasCreditDoc = (await pool.query(
-      "SELECT id FROM user_documents WHERE user_id = $1 AND category = 'credit_reports' LIMIT 1",
-      [req.userId]
-    )).rows.length > 0;
 
-    // Auto-satisfy if they have a credit report uploaded
-    if (hasCreditDoc && !['uploaded','waived'].includes(gate.status)) {
-      await pool.query(
-        "UPDATE users SET credit_gate_status = 'uploaded' WHERE id = $1",
-        [req.userId]
-      );
-      gate.status = 'uploaded';
-      gate.satisfied = true;
-    }
 
-    res.json({ success: true, ...gate, has_credit_document: hasCreditDoc });
-  } catch (err) {
-    console.error('[TFR] credit-gate/status error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to check credit gate' });
-  }
-});
 
-// POST /api/tfr/credit-gate/satisfy — called when user uploads credit report
-// This is triggered from document-vault.html after a credit_report upload
-app.post('/api/tfr/credit-gate/satisfy', requireAuth, async (req, res) => {
-  try {
-    await pool.query(
-      "UPDATE users SET credit_gate_status = 'uploaded' WHERE id = $1",
-      [req.userId]
-    );
-    res.json({ success: true, message: 'Credit gate satisfied. You can now access Elite features (Levels 4-6).' });
-  } catch (err) {
-    console.error('[TFR] credit-gate/satisfy error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to update credit gate' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // GET /knowledge-vault — serve the knowledge vault page
 app.get('/knowledge-vault', optionalAuth, (req, res) => {
@@ -23773,813 +23800,813 @@ app.post('/api/feed/posts/:id/comments', requireAuth, async (req, res) => {
 // DELETE /api/admin/feed/posts/:id — delete post (creator only)
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DAILY ENGAGEMENT LOOP — Streaks, Challenges, Tips, Points
-// ─────────────────────────────────────────────────────────────────────────────
+// [Phase5] engagement → routes/gamification.js
 
-// ── Activity Event Tracking (for view-based challenge verification) ──────────
-// Lightweight table: user_activity_events (user_id, event_type, event_date)
-// Created via ensureActivityTable() on first use; no migration needed.
-let _activityTableReady = false;
-async function ensureActivityTable() {
-  if (_activityTableReady) return;
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS user_activity_events (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        event_type VARCHAR(50) NOT NULL,
-        event_date DATE NOT NULL DEFAULT CURRENT_DATE,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        UNIQUE(user_id, event_type, event_date)
-      )
-    `);
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_user_activity_events_lookup ON user_activity_events(user_id, event_type, event_date)');
-    _activityTableReady = true;
-  } catch (e) {
-    // Table might already exist from a prior run — that's fine
-    if (e.code === '42P07' || e.message?.includes('already exists')) {
-      _activityTableReady = true;
-    } else {
-      console.error('[Activity] table setup error:', e.message);
-    }
-  }
-}
 
-// Record a user activity event (idempotent per user+type+date)
-async function recordActivity(userId, eventType) {
-  await ensureActivityTable();
-  try {
-    await pool.query(`
-      INSERT INTO user_activity_events (user_id, event_type, event_date)
-      VALUES ($1, $2, CURRENT_DATE)
-      ON CONFLICT (user_id, event_type, event_date) DO NOTHING
-    `, [userId, eventType]);
-  } catch (e) { /* silent — non-critical */ }
-}
 
-// Check if user performed activity today
-async function hasActivityToday(userId, eventType) {
-  await ensureActivityTable();
-  const today = new Date().toISOString().split('T')[0];
-  const r = await pool.query(
-    'SELECT 1 FROM user_activity_events WHERE user_id=$1 AND event_type=$2 AND event_date=$3 LIMIT 1',
-    [userId, eventType, today]
-  );
-  return r.rows.length > 0;
-}
 
-// POST /api/engagement/activity — track user view/visit events (for challenge verification)
-app.post('/api/engagement/activity', requireAuth, async (req, res) => {
-  try {
-    const { event_type } = req.body;
-    const ALLOWED_EVENTS = ['view_allocations', 'view_dashboard', 'visit_sovereign', 'view_fun_allocation', 'view_education'];
-    if (!event_type || !ALLOWED_EVENTS.includes(event_type)) {
-      return res.status(400).json({ error: 'Invalid event_type' });
-    }
-    await recordActivity(req.userId, event_type);
 
-    // Auto-complete the corresponding challenge if one matches
-    const autoResult = await tryAutoCompleteChallenge(req.userId, event_type);
-    res.json({ success: true, tracked: true, auto_completed: autoResult || null });
-  } catch (e) {
-    console.error('[Activity] track error:', e.message);
-    res.status(500).json({ error: 'Failed to track activity' });
-  }
-});
 
-// ── Challenge Verification System ────────────────────────────────────────────
 
-/**
- * Verify if a user has actually completed the action required by a challenge.
- * Returns { verified: boolean, reason?: string }
- */
-async function verifyChallengeCompletion(userId, criteriaKey, client, userTimezone) {
-  const db = client || pool;
-  const today = getUserLocalDate(userTimezone || null);
-  const now = new Date();
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  // ISO week start (Monday)
-  const weekDay = now.getDay() || 7; // Convert Sunday=0 to 7
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - weekDay + 1);
-  const weekStartStr = weekStart.toISOString().split('T')[0];
 
-  switch (criteriaKey) {
-    // ── DAILY challenges ─────────────────────────────────────────────
-    case 'log_transaction': {
-      const r = await db.query(
-        'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date=$2',
-        [userId, today]
-      );
-      const count = parseInt(r.rows[0].count);
-      return count >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Log at least 1 transaction today to complete this challenge.' };
-    }
-    case 'log_3_transactions': {
-      const r = await db.query(
-        'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date=$2',
-        [userId, today]
-      );
-      const count = parseInt(r.rows[0].count);
-      return count >= 3
-        ? { verified: true }
-        : { verified: false, reason: `Log ${3 - count} more transaction${3 - count === 1 ? '' : 's'} today (${count}/3 so far).` };
-    }
-    case 'view_allocations': {
-      const has = await hasActivityToday(userId, 'view_allocations');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'Visit the Allocations tab to complete this challenge.' };
-    }
-    case 'daily_checkin': {
-      // Auto-completed by check-in endpoint — verify via tfr_user_stats
-      const statsRow = await db.query(
-        'SELECT last_activity_date, checkin_timezone FROM tfr_user_stats WHERE user_id=$1', [userId]
-      );
-      const storedTz = userTimezone || statsRow.rows[0]?.checkin_timezone || null;
-      const todayLocal = getUserLocalDate(storedTz);
-      const lastDate = statsRow.rows[0]?.last_activity_date
-        ? new Date(statsRow.rows[0].last_activity_date).toISOString().split('T')[0]
-        : null;
-      return lastDate === todayLocal
-        ? { verified: true }
-        : { verified: false, reason: 'Hit the Check-In button to complete this challenge.' };
-    }
-    case 'read_tip': {
-      // Auto-completed by tip read endpoint — check user_challenges directly
-      return { verified: true }; // If they get here, the tip endpoint already handles it
-    }
-    case 'view_dashboard': {
-      const has = await hasActivityToday(userId, 'view_dashboard');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'Visit your Dashboard to complete this challenge.' };
-    }
-    case 'visit_sovereign': {
-      const has = await hasActivityToday(userId, 'visit_sovereign');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'Visit the Command Console to complete this challenge.' };
-    }
-    case 'view_fun_allocation': {
-      const has = await hasActivityToday(userId, 'view_fun_allocation');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'View your Fun spending in the Allocations tab to complete this challenge.' };
-    }
-    case 'log_bill': {
-      // Check for any expense transaction logged today (bills are expenses)
-      const r = await db.query(
-        "SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date=$2 AND type='expense'",
-        [userId, today]
-      );
-      return parseInt(r.rows[0].count) >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Log a bill or expense payment today to complete this challenge.' };
-    }
-    case 'view_education': {
-      const has = await hasActivityToday(userId, 'view_education');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'View your Education budget in the Allocations tab to complete this challenge.' };
-    }
 
-    // ── WEEKLY challenges ────────────────────────────────────────────
-    case 'weekly_7day_streak': {
-      const stats = await db.query('SELECT streak_days FROM tfr_user_stats WHERE user_id=$1', [userId]);
-      const streak = stats.rows[0]?.streak_days || 0;
-      return streak >= 7
-        ? { verified: true }
-        : { verified: false, reason: `Maintain a 7-day streak (currently ${streak} days).` };
-    }
-    case 'review_all_allocations': {
-      // Check if user visited allocations at least once this week
-      await ensureActivityTable();
-      const r = await db.query(
-        'SELECT COUNT(DISTINCT event_date) FROM user_activity_events WHERE user_id=$1 AND event_type=$2 AND event_date >= $3',
-        [userId, 'view_allocations', weekStartStr]
-      );
-      return parseInt(r.rows[0].count) >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Review your allocations this week to complete this challenge.' };
-    }
-    case 'log_15_weekly': {
-      const r = await db.query(
-        'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date >= $2',
-        [userId, weekStartStr]
-      );
-      const count = parseInt(r.rows[0].count);
-      return count >= 15
-        ? { verified: true }
-        : { verified: false, reason: `Log ${15 - count} more transactions this week (${count}/15).` };
-    }
-    case 'check_savings_weekly': {
-      // Check if user visited allocations this week (viewing savings allocation)
-      await ensureActivityTable();
-      const r = await db.query(
-        'SELECT COUNT(*) FROM user_activity_events WHERE user_id=$1 AND event_type=$2 AND event_date >= $3',
-        [userId, 'view_allocations', weekStartStr]
-      );
-      return parseInt(r.rows[0].count) >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Check your Savings allocation this week.' };
-    }
 
-    // ── MONTHLY challenges ───────────────────────────────────────────
-    case 'monthly_30day_streak': {
-      const stats = await db.query('SELECT streak_days FROM tfr_user_stats WHERE user_id=$1', [userId]);
-      return (stats.rows[0]?.streak_days || 0) >= 30
-        ? { verified: true }
-        : { verified: false, reason: `Reach a 30-day streak (currently ${stats.rows[0]?.streak_days || 0} days).` };
-    }
-    case 'monthly_debt_review': {
-      // Check if user viewed debt-related tab or logged debt payments this month
-      await ensureActivityTable();
-      const r = await db.query(
-        "SELECT COUNT(*) FROM user_activity_events WHERE user_id=$1 AND event_type='view_allocations' AND event_date >= $2",
-        [userId, monthStart]
-      );
-      return parseInt(r.rows[0].count) >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Review your debt and allocations this month.' };
-    }
-    case 'monthly_fun_reduction': {
-      // Check if Fun spending % is at or below target allocation
-      const funCat = await db.query("SELECT id FROM categories WHERE slug IN ('lifestyle','fun') LIMIT 1");
-      if (!funCat.rows[0]) return { verified: false, reason: 'Fun category not found.' };
-      const funId = funCat.rows[0].id;
-      const target = await db.query(
-        'SELECT COALESCE(pa.percentage, ac.percentage) as pct FROM allocation_config ac LEFT JOIN permanent_allocations pa ON pa.category_id=ac.category_id AND pa.user_id=$1 WHERE ac.category_id=$2',
-        [userId, funId]
-      );
-      const targetPct = parseFloat(target.rows[0]?.pct || 10);
-      // Get this month's spending distribution
-      const spending = await db.query(`
-        SELECT COALESCE(SUM(CASE WHEN category_id=$1 THEN amount ELSE 0 END), 0) as fun_total,
-               COALESCE(SUM(amount), 0) as total
-        FROM transactions WHERE user_id=$2 AND type='expense' AND transaction_date >= $3
-      `, [funId, userId, monthStart]);
-      const funTotal = parseFloat(spending.rows[0].fun_total);
-      const total = parseFloat(spending.rows[0].total);
-      if (total === 0) return { verified: false, reason: 'Log some expenses this month first.' };
-      const actualPct = (funTotal / total) * 100;
-      return actualPct <= targetPct
-        ? { verified: true }
-        : { verified: false, reason: `Fun spending is ${actualPct.toFixed(1)}% vs ${targetPct}% target. Reduce Fun spending.` };
-    }
-    case 'monthly_50_logs': {
-      const r = await db.query(
-        'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date >= $2',
-        [userId, monthStart]
-      );
-      const count = parseInt(r.rows[0].count);
-      return count >= 50
-        ? { verified: true }
-        : { verified: false, reason: `Log ${50 - count} more transactions this month (${count}/50).` };
-    }
-    case 'monthly_20_challenges': {
-      // Auto-completed by the system when 20 daily challenges are done
-      const monthKey = getPeriodKey('monthly');
-      const r = await db.query(`
-        SELECT COUNT(*) FROM user_challenges uc
-        JOIN engagement_challenges ec ON ec.id = uc.challenge_id
-        WHERE uc.user_id=$1 AND uc.status='completed' AND ec.type='daily'
-          AND uc.period_key LIKE $2
-      `, [userId, `${monthKey.substring(0, 7)}%`]);
-      return parseInt(r.rows[0].count) >= 20
-        ? { verified: true }
-        : { verified: false, reason: `Complete ${20 - parseInt(r.rows[0].count)} more daily challenges this month.` };
-    }
-    case 'monthly_streak_record': {
-      const stats = await db.query('SELECT streak_days, longest_streak FROM tfr_user_stats WHERE user_id=$1', [userId]);
-      const current = stats.rows[0]?.streak_days || 0;
-      const longest = stats.rows[0]?.longest_streak || 0;
-      // They hit a new record if current === longest and it increased this month
-      return current >= longest && current > 0
-        ? { verified: true }
-        : { verified: false, reason: `Beat your personal best streak of ${longest} days (currently ${current}).` };
-    }
 
-    default:
-      // Unknown criteria — allow completion (backwards compatible)
-      return { verified: true };
-  }
-}
 
-/**
- * Try to auto-complete a challenge by criteria_key for a user.
- * Used after actions (transaction logged, tab visited, etc.)
- * Returns { challenge_title, xp_earned } if completed, null otherwise.
- */
-async function tryAutoCompleteChallenge(userId, criteriaKey) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
 
-    const challenge = (await client.query(
-      'SELECT * FROM engagement_challenges WHERE criteria_key=$1 AND active=TRUE LIMIT 1',
-      [criteriaKey]
-    )).rows[0];
-    if (!challenge) { await client.query('ROLLBACK'); return null; }
 
-    const periodKey = getPeriodKey(challenge.type);
-    const existing = (await client.query(
-      'SELECT * FROM user_challenges WHERE user_id=$1 AND challenge_id=$2 AND period_key=$3',
-      [userId, challenge.id, periodKey]
-    )).rows[0];
-    if (existing?.status === 'completed') { await client.query('ROLLBACK'); return null; }
 
-    // Verify the action was actually done
-    const verification = await verifyChallengeCompletion(userId, criteriaKey, client);
-    if (!verification.verified) { await client.query('ROLLBACK'); return null; }
 
-    const isPro = await hasProAccess(userId);
-    const xpEarned = isPro ? Math.round(challenge.xp_reward * 2) : challenge.xp_reward;
 
-    await client.query(`
-      INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-      VALUES ($1, $2, $3, 'completed', NOW(), $4)
-      ON CONFLICT (user_id, challenge_id, period_key) DO UPDATE
-        SET status='completed', completed_at=NOW(), xp_awarded=$4
-    `, [userId, challenge.id, periodKey, xpEarned]);
 
-    await tfrEnsureStats(userId, client);
-    await tfrAwardXp(userId, 'challenge_complete', `Challenge: ${challenge.title}`, xpEarned, client);
-    await client.query(
-      'UPDATE tfr_user_stats SET total_points = COALESCE(total_points,0) + $1 WHERE user_id=$2',
-      [xpEarned, userId]
-    );
 
-    // Award TFR Reward Points if challenge has points_reward > 0
-    let pointsAwarded = 0;
-    const challengePtsReward = parseInt(challenge.points_reward) || 0;
-    if (challengePtsReward > 0) {
-      try {
-        await ensureFgBalance(userId);
-        const rpToday = new Date().toISOString().split('T')[0];
-        const rpMonth = rpToday.substring(0, 7);
-        const rpBal = (await client.query(
-          'SELECT monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-          [userId]
-        )).rows[0] || {};
-        const rpMonthEarned = rpBal.monthly_cap_reset_month === rpMonth
-          ? (parseInt(rpBal.monthly_points_earned) || 0) : 0;
-        const rpRemaining = Math.max(0, 5000 - rpMonthEarned);
-        const rpToAward = Math.min(challengePtsReward, rpRemaining);
-        if (rpToAward > 0) {
-          await client.query(
-            `UPDATE fg_points_balances
-             SET balance = balance + $2,
-                 total_earned = total_earned + $2,
-                 monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-                 monthly_cap_reset_month = $3,
-                 updated_at = NOW()
-             WHERE user_id = $1`,
-            [userId, rpToAward, rpMonth]
-          );
-          await client.query(
-            `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-             VALUES ($1, 'challenge_complete', $2, $3)`,
-            [userId, `Challenge: ${challenge.title} — ${rpToAward} FACTS Points`, rpToAward]
-          );
-          pointsAwarded = rpToAward;
-        }
-      } catch (rpErr) {
-        console.error('[Rewards] challenge points error:', rpErr.message);
-      }
-    }
 
-    await client.query('COMMIT');
-    return { challenge_title: challenge.title, xp_earned: xpEarned, points_awarded: pointsAwarded };
-  } catch (e) {
-    await client.query('ROLLBACK');
-    console.error('[AutoComplete] error for', criteriaKey, e.message);
-    return null;
-  } finally { client.release(); }
-}
 
-// Helper: deterministic "today's" tip index (rotates daily across 30 tips)
-function getTodaysTipIndex() {
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-  return (dayOfYear % 30) + 1;
-}
 
-// Helper: period_key for challenges (daily = YYYY-MM-DD, weekly = YYYY-Www, monthly = YYYY-MM)
-function getPeriodKey(type) {
-  const now = new Date();
-  if (type === 'daily') return now.toISOString().split('T')[0];
-  if (type === 'weekly') {
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const week = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-    return `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
-  }
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
 
-// Helper: get or init TFR stats without requiring Pro
-async function engEnsureStats(userId) {
-  const existing = (await pool.query('SELECT * FROM tfr_user_stats WHERE user_id = $1', [userId])).rows[0];
-  if (existing) return existing;
-  const deadline = new Date(Date.now() + 48 * 60 * 60 * 1000);
-  const row = (await pool.query(`
-    INSERT INTO tfr_user_stats (user_id, first_blood_deadline)
-    VALUES ($1, $2)
-    ON CONFLICT (user_id) DO UPDATE SET updated_at = NOW()
-    RETURNING *
-  `, [userId, deadline])).rows[0];
-  return row;
-}
 
-// GET /api/engagement/today — fetch today's tip, challenges, streak, points
-app.get('/api/engagement/today', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const isPro = await hasProAccess(userId);
-    const stats = await engEnsureStats(userId);
 
-    // Today's tip
-    const tipIndex = getTodaysTipIndex();
-    const tip = (await pool.query(
-      'SELECT id, content, author, category FROM daily_tips WHERE tip_index = $1 AND active = TRUE', [tipIndex]
-    )).rows[0] || null;
 
-    // Today's daily challenges (rotating — pick 3 based on day of year)
-    const allDailyChallenges = (await pool.query(
-      "SELECT * FROM engagement_challenges WHERE type = 'daily' AND active = TRUE ORDER BY sort_order"
-    )).rows;
-    const dayOffset = Math.floor(Date.now() / 86400000);
-    const todayChallenges = [];
-    for (let i = 0; i < 3 && allDailyChallenges.length > 0; i++) {
-      const idx = (dayOffset + i) % allDailyChallenges.length;
-      todayChallenges.push(allDailyChallenges[idx]);
-    }
 
-    // Active weekly + monthly challenges
-    const weeklyMonthly = (await pool.query(
-      "SELECT * FROM engagement_challenges WHERE type IN ('weekly','monthly') AND active = TRUE ORDER BY type, sort_order"
-    )).rows;
 
-    const allChallenges = [...todayChallenges, ...weeklyMonthly];
-    const challengeIds = allChallenges.map(c => c.id);
 
-    // Check completion status for all challenges
-    let completionMap = {};
-    if (challengeIds.length > 0) {
-      const periodKeys = {
-        daily: getPeriodKey('daily'),
-        weekly: getPeriodKey('weekly'),
-        monthly: getPeriodKey('monthly'),
-      };
-      const completions = (await pool.query(`
-        SELECT uc.challenge_id, uc.status, uc.completed_at
-        FROM user_challenges uc
-        JOIN engagement_challenges ec ON ec.id = uc.challenge_id
-        WHERE uc.user_id = $1
-          AND uc.challenge_id = ANY($2::int[])
-          AND (
-            (ec.type = 'daily'   AND uc.period_key = $3) OR
-            (ec.type = 'weekly'  AND uc.period_key = $4) OR
-            (ec.type = 'monthly' AND uc.period_key = $5)
-          )
-      `, [userId, challengeIds, periodKeys.daily, periodKeys.weekly, periodKeys.monthly])).rows;
-      completions.forEach(c => { completionMap[c.challenge_id] = c; });
-    }
 
-    // Check verification status for incomplete challenges
-    const verificationMap = {};
-    for (const c of allChallenges) {
-      if (completionMap[c.id]?.status !== 'completed') {
-        try {
-          verificationMap[c.id] = await verifyChallengeCompletion(userId, c.criteria_key, null, userTz);
-        } catch { verificationMap[c.id] = { verified: false, reason: 'Check failed' }; }
-      }
-    }
 
-    const challengesWithStatus = allChallenges.map(c => ({
-      ...c,
-      completed: completionMap[c.id]?.status === 'completed',
-      completed_at: completionMap[c.id]?.completed_at || null,
-      xp_reward: isPro ? Math.round(c.xp_reward * 1) : c.xp_reward, // 2x shown in UI for Pro
-      verified: completionMap[c.id]?.status === 'completed' ? true : (verificationMap[c.id]?.verified || false),
-      verify_hint: verificationMap[c.id]?.reason || null,
-    }));
 
-    // Streak info
-    const streak = {
-      days: stats.streak_days || 0,
-      longest: stats.longest_streak || 0,
-      freezes_remaining: isPro ? (stats.freezes_remaining || 0) : 0,
-      multiplier: (stats.streak_days || 0) >= 3 ? 1.5 : 1.0,
-      milestones: [7, 30, 90, 365],
-      next_milestone: [7, 30, 90, 365].find(m => m > (stats.streak_days || 0)) || null,
-    };
 
-    // Milestone achievements
-    const achievements = (await pool.query(
-      "SELECT achievement_key FROM tfr_achievements WHERE user_id = $1", [userId]
-    )).rows.map(r => r.achievement_key);
 
-    // TFR Reward Points (Aura Restored loyalty balance) — separate from Financial XP
-    await ensureFgBalance(userId);
-    const fgPointsRow = (await pool.query(
-      'SELECT balance, total_earned, total_redeemed FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0] || { balance: 0, total_earned: 0, total_redeemed: 0 };
 
-    // Use user's local timezone for checked_in_today (falls back to UTC)
-    const userTz = (req.query.timezone && isValidTimezone(req.query.timezone))
-      ? req.query.timezone : (stats.checkin_timezone || null);
-    const today = getUserLocalDate(userTz);
-    const checkedInToday = stats.last_activity_date
-      ? new Date(stats.last_activity_date).toISOString().split('T')[0] === today
-      : false;
 
-    res.json({
-      success: true,
-      is_pro: isPro,
-      streak,
-      checked_in_today: checkedInToday,
-      tip,
-      challenges: {
-        daily: challengesWithStatus.filter(c => c.type === 'daily'),
-        weekly: challengesWithStatus.filter(c => c.type === 'weekly'),
-        monthly: challengesWithStatus.filter(c => c.type === 'monthly'),
-      },
-      total_points: stats.total_points || stats.xp || 0,
-      // TFR Reward Points: redeemable at Aura Restored (separate from Financial XP)
-      reward_points: {
-        balance: parseInt(fgPointsRow.balance) || 0,
-        total_earned: parseInt(fgPointsRow.total_earned) || 0,
-        total_redeemed: parseInt(fgPointsRow.total_redeemed) || 0,
-      },
-      achievements,
-      xp_multiplier_active: streak.multiplier > 1,
-      pro_multiplier: isPro ? '2× User Points bonus active for Pro' : null,
-      user_timezone: userTz || 'UTC',
-    });
-  } catch (err) {
-    console.error('[Engagement] GET /today error:', err.message);
-    res.status(500).json({ error: 'Failed to load engagement data' });
-  }
-});
 
-// POST /api/engagement/challenge/:id/complete — mark a challenge as done (with verification)
-app.post('/api/engagement/challenge/:id/complete', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const challengeId = parseInt(req.params.id);
-    const isPro = await hasProAccess(userId);
 
-    const challenge = (await client.query(
-      'SELECT * FROM engagement_challenges WHERE id = $1 AND active = TRUE', [challengeId]
-    )).rows[0];
-    if (!challenge) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Challenge not found' });
-    }
 
-    const periodKey = getPeriodKey(challenge.type);
 
-    // Check if already completed
-    const existing = (await client.query(`
-      SELECT * FROM user_challenges WHERE user_id = $1 AND challenge_id = $2 AND period_key = $3
-    `, [userId, challengeId, periodKey])).rows[0];
-    if (existing?.status === 'completed') {
-      await client.query('ROLLBACK');
-      return res.json({ success: false, already_done: true, message: 'Challenge already completed' });
-    }
 
-    // ── Automated verification: check if user actually performed the required action ──
-    const verification = await verifyChallengeCompletion(userId, challenge.criteria_key, client);
-    if (!verification.verified) {
-      await client.query('ROLLBACK');
-      return res.json({
-        success: false,
-        not_verified: true,
-        message: verification.reason || 'Complete the required action first.',
-      });
-    }
 
-    // User Points earned (challenges award TFR Reward Points, NOT Financial XP)
-    // Pro users get 2x User Points bonus
-    const basePoints = challenge.xp_reward;
-    const pointsEarned = isPro ? Math.round(basePoints * 2) : basePoints;
 
-    // Upsert challenge completion (xp_awarded column stores points for backward compat)
-    await client.query(`
-      INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-      VALUES ($1, $2, $3, 'completed', NOW(), $4)
-      ON CONFLICT (user_id, challenge_id, period_key) DO UPDATE
-        SET status = 'completed', completed_at = NOW(), xp_awarded = $4
-    `, [userId, challengeId, periodKey, pointsEarned]);
 
-    // Award TFR Reward Points (fg_points_balances) — NOT Financial XP
-    // Challenges feed the Aura Restored loyalty system, not the financial progression system.
-    await ensureFgBalance(userId);
-    await client.query(
-      `UPDATE fg_points_balances
-       SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW()
-       WHERE user_id = $2`,
-      [pointsEarned, userId]
-    );
-    await client.query(
-      `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-       VALUES ($1, 'challenge_complete', $2, $3)`,
-      [userId, `Challenge: ${challenge.title}`, pointsEarned]
-    );
 
-    // Get current XP stats (unchanged — challenges no longer affect Financial XP)
-    await tfrEnsureStats(userId, client);
-    const currentStatsRow = (await client.query(
-      'SELECT xp, level FROM tfr_user_stats WHERE user_id = $1', [userId]
-    )).rows[0] || { xp: 0, level: 1 };
 
-    // Check for monthly_20_challenges milestone (also awards User Points, not XP)
-    if (challenge.type === 'daily') {
-      const monthKey = getPeriodKey('monthly');
-      const monthCount = (await client.query(`
-        SELECT COUNT(*) FROM user_challenges uc
-        JOIN engagement_challenges ec ON ec.id = uc.challenge_id
-        WHERE uc.user_id = $1 AND uc.status = 'completed' AND ec.type = 'daily'
-          AND uc.period_key LIKE $2
-      `, [userId, `${monthKey.substring(0, 7)}%`])).rows[0].count;
 
-      if (parseInt(monthCount) >= 20) {
-        const monthlyChal = (await client.query(
-          "SELECT id FROM engagement_challenges WHERE criteria_key = 'monthly_20_challenges' LIMIT 1"
-        )).rows[0];
-        if (monthlyChal) {
-          const monthPeriod = getPeriodKey('monthly');
-          const alreadyDone = (await client.query(
-            'SELECT id FROM user_challenges WHERE user_id=$1 AND challenge_id=$2 AND period_key=$3 AND status=$4',
-            [userId, monthlyChal.id, monthPeriod, 'completed']
-          )).rows[0];
-          if (!alreadyDone) {
-            const bonusPoints = isPro ? 200 : 100;
-            await client.query(`
-              INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-              VALUES ($1, $2, $3, 'completed', NOW(), $4)
-              ON CONFLICT DO NOTHING
-            `, [userId, monthlyChal.id, monthPeriod, bonusPoints]);
-            // Award bonus User Points for 20-challenge milestone
-            await client.query(
-              `UPDATE fg_points_balances SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2`,
-              [bonusPoints, userId]
-            );
-            await client.query(
-              `INSERT INTO fg_earning_events (user_id, activity_type, description, points) VALUES ($1, 'challenge_complete', 'Monthly: 20 daily challenges', $2)`,
-              [userId, bonusPoints]
-            );
-          }
-        }
-      }
-    }
 
-    await client.query('COMMIT');
-    res.json({
-      success: true,
-      user_points_earned: pointsEarned, // TFR Reward Points (Aura Restored)
-      xp_earned: 0, // Challenges no longer award Financial XP
-      total_xp: currentStatsRow.xp,
-      level: currentStatsRow.level,
-      leveled_up: false, // Challenges don't affect Financial XP / level progression
-      new_rank: null,
-      pro_bonus: isPro,
-      message: isPro ? `+${pointsEarned} FACTS Points (2× Pro bonus!)` : `+${pointsEarned} FACTS Points`,
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Engagement] challenge complete error:', err.message);
-    res.status(500).json({ error: 'Failed to complete challenge' });
-  } finally { client.release(); }
-});
 
-// POST /api/engagement/streak/freeze — burn a streak freeze (Pro only)
-app.post('/api/engagement/streak/freeze', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const isPro = await hasProAccess(userId);
-    if (!isPro) {
-      return res.status(403).json({ success: false, pro_required: true, message: 'Streak freezes are a paid feature. Upgrade to protect your streak!' });
-    }
 
-    const stats = await engEnsureStats(userId);
-    const currentMonth = new Date().toISOString().substring(0, 7);
 
-    // Grant monthly freeze if not yet given this month
-    let freezes = stats.freezes_remaining || 0;
-    if (stats.last_freeze_month !== currentMonth) {
-      // New month: restore 1 free freeze
-      await pool.query(
-        'UPDATE tfr_user_stats SET freezes_remaining = 1, last_freeze_month = $1, updated_at = NOW() WHERE user_id = $2',
-        [currentMonth, userId]
-      );
-      freezes = 1;
-    }
 
-    if (freezes < 1) {
-      return res.json({ success: false, message: 'No streak freezes remaining this month. Freezes reset on the 1st.' });
-    }
 
-    // Apply freeze: set last_activity_date to today so streak doesn't break
-    const today = new Date().toISOString().split('T')[0];
-    await pool.query(`
-      UPDATE tfr_user_stats
-        SET freezes_remaining = freezes_remaining - 1,
-            last_activity_date = $1,
-            updated_at = NOW()
-        WHERE user_id = $2
-    `, [today, userId]);
 
-    res.json({ success: true, message: 'Streak freeze used! Your streak is protected for today.', freezes_remaining: freezes - 1 });
-  } catch (err) {
-    console.error('[Engagement] streak freeze error:', err.message);
-    res.status(500).json({ error: 'Failed to apply streak freeze' });
-  }
-});
 
-// GET /api/engagement/tips — tips archive (last 14 days rotating)
-app.get('/api/engagement/tips', requireAuth, async (req, res) => {
-  try {
-    const tips = (await pool.query(
-      'SELECT id, content, author, category, tip_index FROM daily_tips WHERE active = TRUE ORDER BY tip_index'
-    )).rows;
-    const todayIndex = getTodaysTipIndex();
-    res.json({ success: true, tips, today_index: todayIndex });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load tips' });
-  }
-});
 
-// POST /api/engagement/tip/:id/read — mark tip as read (awards XP for read_tip challenge)
-app.post('/api/engagement/tip/:id/read', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
 
-    // Try to complete the "Read today's money tip" challenge
-    const challenge = (await client.query(
-      "SELECT * FROM engagement_challenges WHERE criteria_key = 'read_tip' AND active = TRUE LIMIT 1"
-    )).rows[0];
-    if (challenge) {
-      const periodKey = getPeriodKey('daily');
-      const existing = (await client.query(
-        'SELECT id FROM user_challenges WHERE user_id=$1 AND challenge_id=$2 AND period_key=$3 AND status=$4',
-        [userId, challenge.id, periodKey, 'completed']
-      )).rows[0];
-      if (!existing) {
-        const isPro = await hasProAccess(userId);
-        const xp = isPro ? challenge.xp_reward * 2 : challenge.xp_reward;
-        await client.query(`
-          INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-          VALUES ($1, $2, $3, 'completed', NOW(), $4)
-          ON CONFLICT DO NOTHING
-        `, [userId, challenge.id, periodKey, xp]);
-        await tfrEnsureStats(userId, client);
-        await tfrAwardXp(userId, 'challenge_complete', 'Challenge: Read today\'s money tip', xp, client);
-        await client.query(
-          'UPDATE tfr_user_stats SET total_points = COALESCE(total_points,0) + $1 WHERE user_id = $2',
-          [xp, userId]
-        );
-        await client.query('COMMIT');
-        return res.json({ success: true, xp_earned: xp, challenge_completed: true });
-      }
-    }
-    await client.query('COMMIT');
-    res.json({ success: true, xp_earned: 0, challenge_completed: false });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: 'Failed to record tip read' });
-  } finally { client.release(); }
-});
 
-// GET /api/engagement/leaderboard — top 10 by XP (Pro only, anonymous)
-app.get('/api/engagement/leaderboard', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const isPro = await hasProAccess(userId);
-    if (!isPro) {
-      return res.status(403).json({ success: false, pro_required: true, message: 'Leaderboard is a paid feature' });
-    }
-    const rows = (await pool.query(`
-      SELECT
-        ROW_NUMBER() OVER (ORDER BY xp DESC) AS rank,
-        CASE WHEN user_id = $1 THEN 'You' ELSE 'Player #' || MOD(user_id * 7919, 9999)::text END AS display_name,
-        xp, level, streak_days, user_id = $1 AS is_you
-      FROM tfr_user_stats
-      ORDER BY xp DESC
-      LIMIT 10
-    `, [userId])).rows;
-    res.json({ success: true, leaderboard: rows });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load leaderboard' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -26855,520 +26882,520 @@ app.post('/api/user/restart-tour', requireAuth, async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ─────────────────────────────────────────────────────────────────────────────
-// TFR REWARDS PROGRAM — /api/rewards/*
-// Points economy separate from XP leveling system.
-// Points are a spendable currency redeemable at Aura Restored.
-// Monthly cap: 5,000 pts. Redemption: 1,000 pts = $1 store credit.
-// ─────────────────────────────────────────────────────────────────────────────
+// [Phase5] rewards → routes/gamification.js
 
-/**
- * GET /api/rewards/dashboard
- * Full rewards dashboard data for the current user.
- */
-app.get('/api/rewards/dashboard', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    await ensureFgBalance(userId);
 
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7);
 
-    // Balance + monthly tracking
-    const balRow = (await pool.query(
-      `SELECT balance, total_earned, total_redeemed,
-              login_streak_days, longest_login_streak,
-              monthly_points_earned, monthly_cap_reset_month,
-              last_login_streak_date
-       FROM fg_points_balances WHERE user_id = $1`,
-      [userId]
-    )).rows[0] || {};
 
-    const monthlyEarned = balRow.monthly_cap_reset_month === currentMonth
-      ? (parseInt(balRow.monthly_points_earned) || 0) : 0;
 
-    // Recent earning history (last 30 events)
-    const history = (await pool.query(
-      `SELECT activity_type, description, points, created_at
-       FROM fg_earning_events WHERE user_id = $1
-       ORDER BY created_at DESC LIMIT 30`,
-      [userId]
-    )).rows;
 
-    // Redemption codes
-    const codes = (await pool.query(
-      `SELECT code, points_spent, dollar_value_cents, status, generated_at, expires_at, used_at
-       FROM rewards_discount_codes WHERE user_id = $1
-       ORDER BY generated_at DESC LIMIT 20`,
-      [userId]
-    )).rows;
 
-    // Achievements
-    const earnedAchievements = (await pool.query(
-      `SELECT achievement_key, points_awarded, earned_at FROM rewards_achievements WHERE user_id = $1`,
-      [userId]
-    )).rows;
-    const earnedKeys = new Set(earnedAchievements.map(a => a.achievement_key));
 
-    // Also check tfr_achievements for checkin streaks
-    const tfrAchs = (await pool.query(
-      `SELECT achievement_key FROM tfr_achievements WHERE user_id = $1`,
-      [userId]
-    )).rows;
-    const tfrAchKeys = new Set(tfrAchs.map(a => a.achievement_key));
 
-    // Define all achievements
-    const ALL_ACHIEVEMENTS = [
-      { key: 'first_transaction',    label: 'First Transaction Logged',     points: 25, icon: '💸', description: 'Log your first transaction' },
-      { key: 'first_checkin',        label: 'First Daily Check-in',         points: 0,  icon: '✅', description: 'Complete your first daily check-in' },
-      { key: 'first_budget',         label: 'First Budget Set',             points: 50, icon: '📊', description: 'Set all 6 FACTS allocation categories' },
-      { key: 'first_debt_milestone', label: 'First Debt Payoff Milestone',  points: 100,icon: '🎯', description: 'Pay off any portion of a debt' },
-      { key: 'credit_report_uploaded', label: 'Credit Report Uploaded',    points: 50, icon: '📄', description: 'Upload your credit report' },
-      { key: 'discovery_scan',       label: 'Discovery Scan Complete',      points: 75, icon: '🔍', description: 'Complete your first Discovery Scan' },
-      { key: 'plaid_connected',      label: 'Bank Connected via Plaid',     points: 100,icon: '🏦', description: 'Connect a bank account (Pro)' },
-      { key: 'login_streak_7',       label: '7-Day Login Streak',           points: 50, icon: '🔥', description: 'Log in 7 days in a row' },
-      { key: 'login_streak_14',      label: '14-Day Login Streak',          points: 100,icon: '⚡', description: 'Log in 14 days in a row' },
-      { key: 'login_streak_30',      label: '30-Day Login Streak',          points: 250,icon: '👑', description: 'Log in 30 days in a row' },
-    ];
 
-    const achievementsWithStatus = ALL_ACHIEVEMENTS.map(a => ({
-      ...a,
-      earned: earnedKeys.has(a.key) || tfrAchKeys.has(a.key),
-      earned_at: earnedAchievements.find(e => e.achievement_key === a.key)?.earned_at || null,
-    }));
 
-    // Active challenges (weekly + monthly)
-    const activeChallenges = (await pool.query(`
-      SELECT ec.id, ec.title, ec.description, ec.type, ec.xp_reward, ec.points_reward, ec.criteria_key,
-             uc.status AS user_status, uc.completed_at, uc.period_key
-      FROM engagement_challenges ec
-      LEFT JOIN user_challenges uc
-        ON uc.challenge_id = ec.id AND uc.user_id = $1 AND uc.period_key = (
-          CASE ec.type
-            WHEN 'weekly' THEN to_char(now(), 'IYYY-IW')
-            WHEN 'monthly' THEN to_char(now(), 'YYYY-MM')
-            ELSE to_char(now(), 'YYYY-MM-DD')
-          END
-        )
-      WHERE ec.active = TRUE AND ec.type IN ('weekly','monthly') AND ec.points_reward > 0
-      ORDER BY ec.type DESC, ec.sort_order
-    `, [userId])).rows;
 
-    // Login streak info
-    const loginStreak = {
-      current: parseInt(balRow.login_streak_days) || 0,
-      longest: parseInt(balRow.longest_login_streak) || 0,
-      next_milestone: [7, 14, 30].find(m => m > (parseInt(balRow.login_streak_days) || 0)) || null,
-      next_milestone_bonus: null,
-    };
-    if (loginStreak.next_milestone) {
-      loginStreak.next_milestone_bonus = { 7: 50, 14: 100, 30: 250 }[loginStreak.next_milestone];
-    }
 
-    res.json({
-      success: true,
-      points: {
-        balance: parseInt(balRow.balance) || 0,
-        total_earned: parseInt(balRow.total_earned) || 0,
-        total_redeemed: parseInt(balRow.total_redeemed) || 0,
-        monthly_earned: monthlyEarned,
-        monthly_cap: 5000,
-        monthly_remaining: Math.max(0, 5000 - monthlyEarned),
-        monthly_cap_pct: Math.min(100, Math.round((monthlyEarned / 5000) * 100)),
-      },
-      login_streak: loginStreak,
-      history,
-      discount_codes: codes,
-      achievements: achievementsWithStatus,
-      active_challenges: activeChallenges,
-      redemption_info: {
-        min_redemption: 1000,
-        rate: '1,000 pts = $1.00 store credit',
-        store: 'Aura Restored',
-        expiration_days: 90,
-      },
-    });
-  } catch (err) {
-    console.error('[Rewards] GET /api/rewards/dashboard error:', err.message);
-    res.status(500).json({ error: 'Failed to load rewards dashboard' });
-  }
-});
 
-/**
- * POST /api/rewards/daily-interaction
- * Records that the user had a meaningful app interaction today.
- * Awards 10 FACTS Points (max once per calendar day).
- * A "meaningful interaction" means the user navigated to a core feature,
- * logged data, or completed an action — not just opened the app.
- */
-app.post('/api/rewards/daily-interaction', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { action } = req.body || {};
-    await ensureFgBalance(userId);
 
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7);
 
-    // Check if already awarded today (last_daily_points_date covers the login award;
-    // we use a separate mechanism here but login already awards 10 pts)
-    // This endpoint is for non-login interactions (e.g., viewing dashboard, transactions, etc.)
-    // We reuse last_daily_points_date since login already sets it; this is a no-op if already logged in today.
-    const balRow = (await pool.query(
-      'SELECT last_daily_points_date, monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0] || {};
 
-    const alreadyAwarded = balRow.last_daily_points_date &&
-      String(balRow.last_daily_points_date).split('T')[0] === today;
 
-    if (alreadyAwarded) {
-      return res.json({ success: true, already_done: true, message: 'Daily interaction points already awarded today' });
-    }
 
-    const monthEarned = balRow.monthly_cap_reset_month === currentMonth
-      ? (parseInt(balRow.monthly_points_earned) || 0) : 0;
-    const remaining = Math.max(0, 5000 - monthEarned);
-    const toAward = Math.min(10, remaining);
 
-    if (toAward > 0) {
-      await pool.query(
-        `UPDATE fg_points_balances
-         SET balance = balance + $2,
-             total_earned = total_earned + $2,
-             last_daily_points_date = $3,
-             monthly_points_earned = CASE WHEN monthly_cap_reset_month = $4 THEN monthly_points_earned + $2 ELSE $2 END,
-             monthly_cap_reset_month = $4,
-             updated_at = NOW()
-         WHERE user_id = $1`,
-        [userId, toAward, today, currentMonth]
-      );
-      await pool.query(
-        `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-         VALUES ($1, 'daily_interaction', $2, $3)`,
-        [userId, `Daily interaction: ${action || 'app session'} — ${toAward} FACTS Points`, toAward]
-      );
-    } else {
-      // Still record the date to suppress duplicate calls even when capped
-      await pool.query(
-        'UPDATE fg_points_balances SET last_daily_points_date = $2, updated_at = NOW() WHERE user_id = $1',
-        [userId, today]
-      );
-    }
 
-    res.json({
-      success: true,
-      points_awarded: toAward,
-      capped: toAward < 10,
-      message: toAward > 0 ? `+${toAward} FACTS Points for today's activity` : 'Monthly cap reached',
-    });
-  } catch (err) {
-    console.error('[Rewards] POST /api/rewards/daily-interaction error:', err.message);
-    res.status(500).json({ error: 'Failed to record daily interaction' });
-  }
-});
 
-/**
- * POST /api/rewards/redeem
- * Redeem FACTS Points for an Aura Restored discount code.
- * Body: { points: number }
- * Min: 1,000 pts. Rate: 1,000 pts = $1.
- * Points deducted immediately. Code expires in 90 days.
- */
-app.post('/api/rewards/redeem', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const requestedPoints = parseInt(req.body && req.body.points) || 0;
 
-    if (requestedPoints < 1000) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Minimum redemption is 1,000 points ($1.00 value)' });
-    }
-    if (requestedPoints % 1000 !== 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Points must be in multiples of 1,000' });
-    }
 
-    await ensureFgBalance(userId);
-    const balRow = (await client.query(
-      'SELECT balance FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0];
 
-    if (!balRow || parseInt(balRow.balance) < requestedPoints) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: `Insufficient points. You have ${parseInt(balRow?.balance) || 0} pts, need ${requestedPoints} pts.` });
-    }
 
-    const dollarValueCents = (requestedPoints / 1000) * 100; // 1000 pts = $1 = 100 cents
 
-    // Generate unique discount code: TFR-[USER_ID]-[RANDOM6]
-    const randomSuffix = crypto.randomBytes(3).toString('hex').toUpperCase();
-    const code = `TFR-${userId}-${randomSuffix}`;
 
-    // Deduct points
-    await client.query(
-      `UPDATE fg_points_balances
-       SET balance = balance - $2,
-           total_redeemed = total_redeemed + $2,
-           updated_at = NOW()
-       WHERE user_id = $1`,
-      [userId, requestedPoints]
-    );
 
-    // Record redemption event
-    await client.query(
-      `INSERT INTO fg_redemption_events (user_id, item_name, points_spent, external_ref, status)
-       VALUES ($1, 'Aura Restored Store Credit', $2, $3, 'completed')`,
-      [userId, requestedPoints, code]
-    );
 
-    // Create discount code record
-    const codeRow = (await client.query(
-      `INSERT INTO rewards_discount_codes (user_id, code, points_spent, dollar_value_cents, status)
-       VALUES ($1, $2, $3, $4, 'active')
-       RETURNING *`,
-      [userId, code, requestedPoints, dollarValueCents]
-    )).rows[0];
 
-    await client.query('COMMIT');
 
-    // Fetch user email for notification (fire-and-forget)
-    const userRow = (await pool.query('SELECT email, name FROM users WHERE id = $1', [userId])).rows[0];
 
-    res.json({
-      success: true,
-      code: code,
-      points_spent: requestedPoints,
-      dollar_value: (dollarValueCents / 100).toFixed(2),
-      expires_at: codeRow.expires_at,
-      message: `Your Aura Restored discount code: ${code}`,
-      instructions: 'Use this code at checkout on the Aura Restored store. Valid for 90 days.',
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Rewards] POST /api/rewards/redeem error:', err.message);
-    res.status(500).json({ error: 'Redemption failed. Please try again.' });
-  } finally {
-    client.release();
-  }
-});
 
-/**
- * GET /api/rewards/codes
- * List all discount codes for the current user.
- */
-app.get('/api/rewards/codes', requireAuth, async (req, res) => {
-  try {
-    const codes = (await pool.query(
-      `SELECT code, points_spent, dollar_value_cents, status, generated_at, expires_at, used_at
-       FROM rewards_discount_codes WHERE user_id = $1
-       ORDER BY generated_at DESC`,
-      [req.userId]
-    )).rows;
-    // Mark expired codes
-    const now = new Date();
-    await pool.query(
-      `UPDATE rewards_discount_codes SET status = 'expired'
-       WHERE user_id = $1 AND status = 'active' AND expires_at < NOW()`,
-      [req.userId]
-    );
-    res.json({ success: true, codes });
-  } catch (err) {
-    console.error('[Rewards] GET /api/rewards/codes error:', err.message);
-    res.status(500).json({ error: 'Failed to load discount codes' });
-  }
-});
 
-/**
- * POST /api/rewards/achievement
- * Award a one-time achievement to the current user.
- * Called by frontend after specific actions (budget set, Plaid connect, etc.)
- * Body: { achievement_key: string }
- */
-app.post('/api/rewards/achievement', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { achievement_key } = req.body || {};
 
-    const ACHIEVEMENT_POINTS = {
-      first_budget:          50,
-      first_debt_milestone: 100,
-      credit_report_uploaded: 50,
-      discovery_scan:        75,
-      plaid_connected:      100,
-    };
 
-    if (!achievement_key || !ACHIEVEMENT_POINTS[achievement_key]) {
-      return res.status(400).json({ error: 'Invalid or unsupported achievement key' });
-    }
 
-    // Check if already earned
-    const existing = (await pool.query(
-      'SELECT id FROM rewards_achievements WHERE user_id = $1 AND achievement_key = $2',
-      [userId, achievement_key]
-    )).rows[0];
-    if (existing) {
-      return res.json({ success: true, already_earned: true, message: 'Achievement already unlocked' });
-    }
 
-    const pts = ACHIEVEMENT_POINTS[achievement_key];
-    await ensureFgBalance(userId);
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7);
-    const balRow = (await pool.query(
-      'SELECT monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0] || {};
-    const monthEarned = balRow.monthly_cap_reset_month === currentMonth
-      ? (parseInt(balRow.monthly_points_earned) || 0) : 0;
-    const toAward = Math.min(pts, Math.max(0, 5000 - monthEarned));
 
-    if (toAward > 0) {
-      await pool.query(
-        `UPDATE fg_points_balances
-         SET balance = balance + $2,
-             total_earned = total_earned + $2,
-             monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-             monthly_cap_reset_month = $3,
-             updated_at = NOW()
-         WHERE user_id = $1`,
-        [userId, toAward, currentMonth]
-      );
-      await pool.query(
-        `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-         VALUES ($1, 'achievement', $2, $3)`,
-        [userId, `Achievement unlocked: ${achievement_key.replace(/_/g,' ')} — ${toAward} FACTS Points`, toAward]
-      );
-    }
 
-    await pool.query(
-      `INSERT INTO rewards_achievements (user_id, achievement_key, points_awarded)
-       VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-      [userId, achievement_key, toAward || 0]
-    );
 
-    res.json({
-      success: true,
-      achievement_key,
-      points_awarded: toAward,
-      message: `Achievement unlocked! +${toAward} FACTS Points`,
-    });
-  } catch (err) {
-    console.error('[Rewards] POST /api/rewards/achievement error:', err.message);
-    res.status(500).json({ error: 'Failed to record achievement' });
-  }
-});
 
-/**
- * POST /api/rewards/referral
- * Award referral points when a referred user completes signup + activation.
- * Called internally — not directly by the client.
- * Also enforces 5 referral bonuses/month cap.
- */
-async function awardReferralPoints(referrerId, referredUserId) {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7);
-    await ensureFgBalance(referrerId);
 
-    // Check monthly referral cap (5 referrals = 2,500 pts max per month)
-    const monthlyReferrals = (await pool.query(
-      `SELECT COUNT(*) AS cnt FROM fg_earning_events
-       WHERE user_id = $1 AND activity_type = 'referral'
-         AND to_char(created_at, 'YYYY-MM') = $2`,
-      [referrerId, currentMonth]
-    )).rows[0]?.cnt || 0;
 
-    if (parseInt(monthlyReferrals) >= 5) {
-      console.log(`[Rewards] Referral cap reached for user ${referrerId} this month`);
-      return { awarded: false, reason: 'monthly_referral_cap' };
-    }
 
-    const balRow = (await pool.query(
-      'SELECT monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-      [referrerId]
-    )).rows[0] || {};
-    const monthEarned = balRow.monthly_cap_reset_month === currentMonth
-      ? (parseInt(balRow.monthly_points_earned) || 0) : 0;
-    const toAward = Math.min(500, Math.max(0, 5000 - monthEarned));
 
-    if (toAward > 0) {
-      await pool.query(
-        `UPDATE fg_points_balances
-         SET balance = balance + $2,
-             total_earned = total_earned + $2,
-             monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-             monthly_cap_reset_month = $3,
-             updated_at = NOW()
-         WHERE user_id = $1`,
-        [referrerId, toAward, currentMonth]
-      );
-      await pool.query(
-        `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-         VALUES ($1, 'referral', $2, $3)`,
-        [referrerId, `Referral bonus: friend signed up and activated — ${toAward} FACTS Points`, toAward]
-      );
-    }
-    return { awarded: true, points: toAward };
-  } catch (err) {
-    console.error('[Rewards] awardReferralPoints error:', err.message);
-    return { awarded: false, error: err.message };
-  }
-}
 
-// Serve rewards dashboard page
-app.get('/rewards', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'rewards.html'));
-});
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Monthly cap reset job — runs once daily at 00:05 UTC
-// Resets monthly_points_earned for users whose cap month has rolled over
-// ─────────────────────────────────────────────────────────────────────────────
-(function scheduleRewardsJobs() {
-  const FIVE_MINUTES = 5 * 60 * 1000;
-  const ONE_DAY = 24 * 60 * 60 * 1000;
 
-  // Run daily maintenance
-  async function runDailyRewardsMaintenance() {
-    try {
-      const currentMonth = new Date().toISOString().substring(0, 7);
-      // Reset monthly_points_earned for users in a stale month
-      const resetResult = await pool.query(
-        `UPDATE fg_points_balances
-         SET monthly_points_earned = 0,
-             monthly_cap_reset_month = $1
-         WHERE monthly_cap_reset_month IS NOT NULL
-           AND monthly_cap_reset_month != $1`,
-        [currentMonth]
-      );
-      if (resetResult.rowCount > 0) {
-        console.log(`[Rewards] Monthly cap reset for ${resetResult.rowCount} users (new month: ${currentMonth})`);
-      }
 
-      // Expire discount codes past their expiry date
-      const expiredResult = await pool.query(
-        `UPDATE rewards_discount_codes SET status = 'expired'
-         WHERE status = 'active' AND expires_at < NOW()`
-      );
-      if (expiredResult.rowCount > 0) {
-        console.log(`[Rewards] Expired ${expiredResult.rowCount} discount codes`);
-      }
-    } catch (err) {
-      console.error('[Rewards] Daily maintenance error:', err.message);
-    }
-  }
 
-  // Run after a short delay on startup, then every 24 hours
-  setTimeout(() => {
-    runDailyRewardsMaintenance();
-    setInterval(runDailyRewardsMaintenance, ONE_DAY);
-  }, FIVE_MINUTES);
-})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ██████╗ ██████╗  ██████╗ ██╗  ██╗███████╗██████╗  █████╗  ██████╗ ███████╗
@@ -29636,6 +29663,28 @@ app.get('/change-plan', (req, res) => {
 
 // Ensure PWA icons exist BEFORE accepting requests (eliminates race condition)
 ensurePWAIconsSync();
+
+bindFamilyRuntime({
+  hasProAccess
+});
+
+bindGamificationRuntime({
+  hasProAccess,
+  hasBusinessAccess,
+  getUserProductTier,
+  checkCreditGate,
+  ensureFgBalance,
+  tfrEnsureStats,
+  tfrAwardXp,
+  tfrCalcLevel,
+  tfrXpToNext,
+  getUserLocalDate,
+  getUserLocalYesterday,
+  isValidTimezone,
+  TFR_RANKS,
+  TFR_PHASE_NAMES,
+  TFR_PHASE_THEMES
+});
 
 bindVaultRuntime({
   hasProAccess,
