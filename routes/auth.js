@@ -413,9 +413,25 @@ async function completeLogin(req, res, user) {
   // next request (to /app) can arrive before the session row exists,
   // causing requireAuth to see an empty session — especially on mobile
   // where round-trips are fast relative to DB write latency.
-  const landing = loginRedirectFor(user);
+  let landing = loginRedirectFor(user);
   if (landing === '/admin') {
     req.session.adminToolsUntil = Date.now() + (12 * 60 * 60 * 1000);
+  } else {
+    // Incomplete Phase Zero → resume onboarding (do not dump unfinished beta users on /app).
+    try {
+      const pz = await pool.query(
+        'SELECT phase_zero_completed_at FROM users WHERE id = $1',
+        [user.id]
+      );
+      if (pz.rows[0] && !pz.rows[0].phase_zero_completed_at) {
+        landing = '/phase-zero';
+        delete req.session.pzComplete;
+      } else {
+        req.session.pzComplete = true;
+      }
+    } catch (pzErr) {
+      console.error('[auth] phase-zero redirect check skipped:', pzErr.message);
+    }
   }
 
   await new Promise((resolve, reject) => {
@@ -423,7 +439,7 @@ async function completeLogin(req, res, user) {
   });
 
   // Return JSON so the client does a full-page navigation.
-  // Admins land on /admin and stay there. Everyone else lands on /app.
+  // Admins land on /admin. Incomplete Phase Zero → /phase-zero. Else /app.
   // A 303 redirect broke on DuckDuckGo Android because fetch's automatic
   // redirect following doesn't reliably include the Set-Cookie.
   return res.json({ success: true, redirect: landing });
@@ -943,22 +959,41 @@ router.post('/signup', async (req, res) => {
       );
       const user = userResult.rows[0];
 
-      // Set session
+      // Set session — same contract as login so Phase Zero APIs see requireAuth.
       req.session.userId = userId;
       req.session.email = normalizedEmail;
+      delete req.session.pzComplete;
 
       // Use centralized Pro access check (single source of truth)
       const hasPro = await hasProAccess(user);
       const proFields = buildProResponse(user, hasPro);
 
       // Explicitly save session before responding (prevents race condition
-      // where browser navigates to /app before session row exists in PostgreSQL)
+      // where browser navigates before session row exists in PostgreSQL)
       await new Promise((resolve, reject) => {
         req.session.save(err => err ? reject(err) : resolve());
       });
 
+      // New accounts always start Phase Zero (unless already completed — e.g. password set on existing row)
+      let redirect = '/phase-zero';
+      try {
+        const pz = await pool.query(
+          'SELECT phase_zero_completed_at FROM users WHERE id = $1',
+          [userId]
+        );
+        if (pz.rows[0] && pz.rows[0].phase_zero_completed_at) {
+          redirect = loginRedirectFor(user);
+          req.session.pzComplete = true;
+          await new Promise((resolve, reject) => {
+            req.session.save(err => err ? reject(err) : resolve());
+          });
+        }
+      } catch (pzErr) {
+        console.error('[Signup] phase-zero redirect check skipped:', pzErr.message);
+      }
+
       // Return JSON so client does a full-page navigation (not fetch-follow redirect)
-      res.json({ success: true, redirect: '/app' });
+      res.json({ success: true, redirect, userId });
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;

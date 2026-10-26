@@ -135,11 +135,12 @@ function buildAllocationSuggestion(answers) {
 // Admin/owner emails bypass the gate for testing.
 // Deadline lockout (mod_pz_deadline) must run before this gate.
 function applyPhaseZeroNavigationGate(app, db) {
+  // NOTE: /app is intentionally NOT bypassed — incomplete Phase Zero users
+  // must finish onboarding (login/signup land here via redirect).
   var PZ_BYPASS_PATHS = [
     '/', '/index.html', '/login', '/login.html', '/signup', '/signup.html',
     '/admin', '/admin.html',
     '/bleed-calculator', '/stolen-calculator', '/facts-funnel', '/forensic-scan',
-    '/app', '/app.html',
     '/phase-zero', '/phase-zero.html', '/phase-zero-widget.js',
     '/lockout', '/lockout.html',
     '/forgot-password', '/forgot-password.html',
@@ -229,13 +230,22 @@ router.get('/status', requireAuth, async (req, res) => {
     var userId = req.userId;
     var result = await pool.query(
       `SELECT email, declaration_accepted_at, phase_zero_completed_at, ai_guided_setup,
-              phone_verified_at, audit_status, audit_day_count, audit_start_date,
-              audit_last_activity_date, audit_completed_at, audit_attempts, audit_lockout_until
+              ai_setup_answers, phone_verified_at, audit_status, audit_day_count, audit_start_date,
+              audit_last_activity_date, audit_completed_at, audit_attempts, audit_lockout_until,
+              updated_at
        FROM users WHERE id = $1`, [userId]
     );
     var user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
+    // Client resumes steps using allocation_set_at (derived when skip-ai or ai-setup saved answers).
+    var answers = user.ai_setup_answers;
+    if (typeof answers === 'string') {
+      try { answers = JSON.parse(answers); } catch (e) { answers = null; }
+    }
+    var allocationSet = !!(answers && (answers.allocations || answers.method === 'manual'));
+    res.json(Object.assign({}, user, {
+      allocation_set_at: allocationSet ? (user.updated_at || true) : null
+    }));
   } catch(e) {
     console.error('[PhaseZero] status error:', e.message);
     res.status(500).json({ error: 'Server error' });
