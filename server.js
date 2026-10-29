@@ -313,98 +313,129 @@ app.use(function privateCacheHeaders(req, res, next) {
   next();
 });
 
-const { createAuthRouter } = require('./routes/auth');
-app.use('/api/auth', createAuthRouter());
+const {
+  router: authRouter,
+  pageRouter: authPageRouter,
+  requireAuth: authRequireAuth,
+  optionalAuth: authOptionalAuth,
+  bindAuthRuntime
+} = require('./routes/auth');
+const {
+  router: phaseZeroRouter,
+  emailRouter: phaseZeroEmailRouter,
+  smsRouter: phaseZeroSmsRouter,
+  pageRouter: phaseZeroPageRouter,
+  applyPhaseZeroGates,
+  bindPhaseZeroRuntime,
+  pzAwardXp,
+  pzAwardWalletPoints,
+  pzLogReward
+} = require('./routes/phaseZero');
+app.use(authPageRouter);
+app.use(phaseZeroPageRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/phase-zero', phaseZeroRouter);
+app.use('/api/email-verify', phaseZeroEmailRouter);
+app.use('/api/sms-verify', phaseZeroSmsRouter);
+const {
+  router: transactionsRouter,
+  incomeRouter,
+  bindTransactionsRuntime
+} = require('./routes/transactions');
+const {
+  router: allocationsRouter,
+  categoriesRouter: allocationsCategoriesRouter
+} = require('./routes/allocations');
+const { router: billsRouter } = require('./routes/bills');
+app.use('/api/transactions', transactionsRouter);
+app.use('/api/income', incomeRouter);
+app.use('/api/allocations', allocationsRouter);
+app.use('/api/categories', allocationsCategoriesRouter);
+app.use('/api/bills', billsRouter);
+const {
+  router: debtRouter,
+  bindDebtRuntime
+} = require('./routes/debt');
+const {
+  router: loansRouter,
+  creditCardsRouter
+} = require('./routes/loans');
+app.use('/api/debts', debtRouter);
+app.use('/api/loans', loansRouter);
+app.use('/api/credit-cards', creditCardsRouter);
+const { router: giftCardsRouter } = require('./routes/giftCards');
+const {
+  router: vaultRouter,
+  bankAccountsRouter,
+  accountsRouter: vaultAccountsRouter,
+  bindVaultRuntime
+} = require('./routes/vault');
+const {
+  brokerageAccountsRouter,
+  brokerageHoldingsRouter,
+  stockQuotesRouter,
+  allAccountsRouter,
+  cryptoRouter,
+  brokerageTrackerRouter,
+  bindInvestmentsRuntime
+} = require('./routes/investments');
+app.use('/api/gift-cards', giftCardsRouter);
+app.use('/api/bank-accounts', bankAccountsRouter);
+app.use('/api/accounts', vaultAccountsRouter);
+app.use('/api/brokerage-accounts', brokerageAccountsRouter);
+app.use('/api/brokerage-holdings', brokerageHoldingsRouter);
+app.use('/api/stock-quotes', stockQuotesRouter);
+app.use('/api/all-accounts', allAccountsRouter);
+app.use('/api/crypto', cryptoRouter);
+app.use('/api/brokerage', brokerageTrackerRouter);
+const { router: businessRouter } = require('./routes/business');
+const {
+  householdsRouter,
+  familyInviteRouter,
+  goalsRouter,
+  sharedBudgetExpensesRouter,
+  bindFamilyRuntime
+} = require('./routes/family');
+const {
+  tfrRouter,
+  engagementRouter,
+  rewardsRouter,
+  futureGenerationsRouter,
+  pageRouter: gamificationPageRouter,
+  bindGamificationRuntime,
+  tryAutoCompleteChallenge
+} = require('./routes/gamification');
+app.use('/api/business-pro', businessRouter);
+app.use('/api/households', householdsRouter);
+app.use('/api/family-invite', familyInviteRouter);
+app.use('/api/goals', goalsRouter);
+app.use('/api/shared-budget-expenses', sharedBudgetExpensesRouter);
+app.use('/api/tfr', tfrRouter);
+app.use('/api/engagement', engagementRouter);
+app.use('/api/rewards', rewardsRouter);
+app.use('/api/future-generations', futureGenerationsRouter);
+app.use(gamificationPageRouter);
 app.set('db', pool);
 const { router: betaNdaRouter, enforceNda } = require('./routes/betaNda');
 app.use(betaNdaRouter);
-const { router: adminRouter, requireAdmin } = require('./routes/admin');
+const {
+  router: adminRouter,
+  pageRouter: adminPageRouter,
+  vaultRouter: adminVaultRouter,
+  bindAdminRuntime
+} = require('./routes/admin');
 const { isAllowlistedAdminEmail, userCanOpenAdmin, userIsAdminAccount, loginRedirectFor, isFounderAdminEmail, loadAdminFlags } = require('./config/adminAccess');
 const { isAdminIncomeBlockedUser, loadIncomeBlockFlags, userBlockedFromIncomePrograms, INCOME_BLOCK_ERROR } = require('./config/adminIncomePolicy');
-app.use(adminRouter);
-const betaFeedbackRouter = require('./routes/betaFeedback');
-app.use('/api/beta', betaFeedbackRouter);
 const adminDashboardRouter = require('./routes/adminDashboard');
+app.use('/admin', adminPageRouter);
 app.use('/api/admin/dashboard', adminDashboardRouter);
-
-function escapeAdminHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function adminStayPage(title, bodyHtml) {
-  return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><title>${escapeAdminHtml(title)}</title>
-<style>
-  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#0a0f1a; color:#f1f5f9; font-family:Segoe UI,sans-serif; }
-  .card { max-width:460px; margin:24px; background:#111827; border:1px solid #334155; border-radius:14px; padding:28px; }
-  h1 { font-size:1.25rem; margin:0 0 12px; }
-  p { color:#cbd5e1; line-height:1.5; margin:0 0 16px; }
-  a { color:#34d399; }
-</style></head><body><div class="card">${bodyHtml}</div></body></html>`;
-}
-
-// Admin UI stays on /admin. Allowlisted admins are not bounced to the app or login.
-app.get('/admin', async (req, res) => {
-  if (!req.session || !req.session.userId) {
-    return res.redirect(302, '/login.html?next=/admin');
-  }
-
-  let email = req.session.email || '';
-  let allowed = isAllowlistedAdminEmail(email);
-  try {
-    if (!allowed) {
-      allowed = await Promise.race([
-        userCanOpenAdmin(pool, req.session.userId),
-        new Promise(function (_, reject) {
-          setTimeout(function () { reject(new Error('admin lookup timed out')); }, 4000);
-        })
-      ]);
-    }
-    if (!email && pool) {
-      const found = await Promise.race([
-        pool.query('SELECT email FROM users WHERE id = $1', [req.session.userId]),
-        new Promise(function (_, reject) {
-          setTimeout(function () { reject(new Error('admin email lookup timed out')); }, 4000);
-        })
-      ]);
-      email = (found.rows[0] && found.rows[0].email) || '';
-      if (!allowed) allowed = isAllowlistedAdminEmail(email);
-    }
-  } catch (err) {
-    console.error('Admin page lookup failed:', err.message);
-    if (!allowed) {
-      return res.status(500).type('html').send(adminStayPage(
-        'Admin page',
-        '<h1>Admin page could not open</h1><p>This page could not check the signed-in account. Refresh and stay here. You are not being sent back to login.</p>'
-      ));
-    }
-  }
-
-  if (!allowed) {
-    const who = email
-      ? `You are signed in as <strong>${escapeAdminHtml(email)}</strong>.`
-      : 'You are signed in.';
-    return res.status(403).type('html').send(adminStayPage(
-      'Admin access',
-      `<h1>This account cannot open admin</h1><p>${who} Admin tools are only available on an admin account. This message stays on this page.</p><p><a href="/app">Back to the app</a></p>`
-    ));
-  }
-
-  const htmlPath = path.join(__dirname, 'public', 'admin.html');
-  let html = fs.readFileSync(htmlPath, 'utf8');
-  req.session.adminToolsUntil = Date.now() + (12 * 60 * 60 * 1000);
-  const adminSession = JSON.stringify({ isAdmin: true, email: email || '' }).replace(/</g, '\\u003c');
-  html = html.replace('</head>', `<script>window.__ADMIN_LOCKED=false;window.__ADMIN_SESSION=${adminSession};window.__SAFE_MODE=${SAFE_MODE ? 'true' : 'false'};</script></head>`);
-  applyPrivateCache(res);
-  if (!html.includes('facts-logout.js')) {
-    html = html.replace(/<\/body>/i, '\n<script src="/js/facts-logout.js"></script>\n</body>');
-  }
-  res.type('html').send(html);
-});
+app.use('/api/admin', adminRouter);
+app.use('/api/vault/admin', adminVaultRouter);
+app.use('/api/vault', vaultRouter);
+app.get('/admin.html', (req, res) => res.redirect(302, '/admin'));
+const betaFeedbackRouter = require('./routes/betaFeedback');
+app.use('/api/feedback', betaFeedbackRouter); // POST /api/feedback
+app.use('/api/beta', betaFeedbackRouter);     // POST /api/beta/feedback (legacy)
 
 // NDA Gate Page Route
 app.get('/nda', (req, res) => {
@@ -425,33 +456,7 @@ function requireAuth(req, res, next) {
   next();
 }
 
-app.get('/api/admin/boot', requireAuth, async (req, res) => {
-  try {
-    const allowed = await userCanOpenAdmin(pool, req.userId);
-    if (!allowed) {
-      return res.status(403).json({ success: false, message: 'Unauthorized' });
-    }
-    let email = (req.session && req.session.email) || '';
-    if (!email && pool) {
-      try {
-        const found = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-        email = (found.rows[0] && found.rows[0].email) || '';
-      } catch (emailErr) {
-        console.error('Admin boot email lookup failed:', emailErr.message);
-      }
-    }
-    return res.status(200).json({
-      success: true,
-      safeMode: SAFE_MODE,
-      user: { email: email, role: 'admin' },
-      activeModules: SAFE_MODE ? ['auth', 'core-dashboard'] : ['auth', 'core-dashboard', 'admin'],
-      message: SAFE_MODE ? 'Safe Mode active. Sub-modules isolated.' : 'Full admin boot.'
-    });
-  } catch (error) {
-    console.error('Admin boot failed:', error);
-    return res.status(500).json({ success: false, error: 'Boot failed' });
-  }
-});
+
 
 // Optional auth — attaches req.userId if available but doesn't block
 function optionalAuth(req, res, next) {
@@ -461,87 +466,8 @@ function optionalAuth(req, res, next) {
   next();
 }
 
-// ─── Phase Zero Navigation Gate ───────────────────────────────────────────────
-// Redirects logged-in users who haven't completed Phase Zero.
-// Admin/owner emails bypass the gate for testing.
-// ─── Phase Zero Deadline Lockout Gate ────────────────────────────────────────
-// Must run BEFORE initPhaseZeroGate. Locked-out users go to /lockout, not /phase-zero.
-pzDeadlineModule.applyDeadlineLockoutMiddleware(app, pool);
-
-(function initPhaseZeroGate() {
-  var PZ_BYPASS_PATHS = [
-    '/', '/index.html', '/login', '/login.html', '/signup', '/signup.html',
-    '/admin', '/admin.html',
-    '/bleed-calculator', '/stolen-calculator', '/facts-funnel', '/forensic-scan',  // Public calculators — no auth needed
-    '/app', '/app.html',                       // App dashboard — Phase Zero check inside app
-    '/phase-zero', '/phase-zero.html', '/phase-zero-widget.js',
-    '/lockout', '/lockout.html',
-    '/forgot-password', '/forgot-password.html',
-    '/reset-password', '/reset-password.html',
-    '/health', '/compliance-disclaimer.js',
-    '/terms-of-service', '/terms-of-service.html',
-    '/nda', '/nda.html', '/dashboard',
-    '/privacy-policy', '/privacy-policy.html'
-  ];
-  var PZ_EXT_RE = /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp|map|json|txt|xml)$/i;
-
-  app.use(function phaseZeroGate(req, res, next) {
-    if (req.path.startsWith('/api/')) return next();
-    if (PZ_EXT_RE.test(req.path)) return next();
-    if (PZ_BYPASS_PATHS.indexOf(req.path) !== -1) return next();
-    if (!req.session || !req.session.userId) return next();
-    if (req.session.pzComplete === true) return next();
-    var email = (req.session.email || '').toLowerCase();
-    var creator = (process.env.CREATOR_EMAIL || '').toLowerCase();
-    // Admin and owner emails bypass Phase Zero — both get full sovereign access.
-    var adminEmails = (process.env.ADMIN_EMAILS || 'chris.finrev@gmail.com')
-      .split(',').map(function(e) { return e.trim().toLowerCase(); }).filter(Boolean);
-    var ownerEmails = (process.env.OWNER_EMAILS || process.env.FUTURE_GEN_EMAILS || 'ecci2760@gmail.com,ecci2760f@gmail.com,dianes3cps@gmail.com')
-      .split(',').map(function(e) { return e.trim().toLowerCase(); }).filter(Boolean);
-    if (email && (
-      email === creator ||
-      adminEmails.indexOf(email) !== -1 ||
-      ownerEmails.indexOf(email) !== -1
-    )) return next();
-    pool.query('SELECT phase_zero_completed_at FROM users WHERE id = $1', [req.session.userId])
-      .then(function(r) {
-        var u = r.rows[0];
-        if (u && u.phase_zero_completed_at) { req.session.pzComplete = true; return next(); }
-        return res.redirect('/phase-zero');
-      })
-      .catch(function() { next(); });
-  });
-}());
-
-// ─── Audit Lockout Middleware ──────────────────────────────────────────────────
-// Blocks POST /api/transactions for users in audit lockout (read-only mode).
-app.use(function auditLockoutGuard(req, res, next) {
-  if (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') return next();
-  var writePaths = ['/api/transactions', '/api/income', '/api/allocations'];
-  var isWrite = writePaths.some(function(p) { return req.path === p || req.path.startsWith(p + '/'); });
-  if (!isWrite) return next();
-  if (!req.session || !req.session.userId) return next();
-  pool.query('SELECT audit_status, audit_lockout_until FROM users WHERE id = $1', [req.session.userId])
-    .then(function(r) {
-      var u = r.rows[0];
-      if (!u || u.audit_status !== 'locked') return next();
-      var until = u.audit_lockout_until ? new Date(u.audit_lockout_until) : null;
-      if (!until || until <= new Date()) {
-        // Lockout expired — flip back to not_started so user can retry
-        pool.query(
-          'UPDATE users SET audit_status = $1 WHERE id = $2',
-          ['not_started', req.session.userId]
-        ).catch(function() {});
-        return next();
-      }
-      return res.status(403).json({
-        error: 'Account is in read-only mode during lockout period.',
-        lockout_until: until.toISOString(),
-        code: 'AUDIT_LOCKED'
-      });
-    })
-    .catch(function() { next(); });
-});
+// Phase Zero deadline lockout, navigation gate, and audit write lockout
+applyPhaseZeroGates(app, pool);
 
 // Link previews do not run JavaScript. On the TFR domain, "/" must be the
 // education site so the shared card uses The Financial Revolution logo,
@@ -611,20 +537,7 @@ app.use(function tfrEducationHost(req, res, next) {
 // Redirect /app.html → /app so all app access goes through requireAuth + auth injection.
 // MUST be before express.static — otherwise static middleware serves the raw file first.
 app.get('/app.html', (req, res) => res.redirect(301, '/app'));
-app.get('/admin.html', (req, res) => res.redirect(302, '/admin'));
 
-// Serve static files AFTER session middleware
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ─── Health check ───────────────────────────────────────
-app.get('/health', async (req, res) => {
-  try {
-    if (pool) { await pool.query('SELECT 1'); }
-    res.json({ status: 'healthy', db: !!pool });
-  } catch (err) {
-    res.status(503).json({ status: 'unhealthy', db: false });
-  }
-});
 
 // ═══════════════════════════════════════════════════════════
 // ─── FACTSMONEY.COM COMING SOON ───────────────────────────
@@ -1287,403 +1200,7 @@ function calculateTrialStatus(user) {
   return { active: true, expired: false, daysRemaining, planType: user.trial_plan_type || 'individual' };
 }
 
-// POST /api/auth/signup
-app.post('/api/auth/signup', async (req, res) => {
-  // Guard: database unavailable → return 503 instead of crashing
-  if (!pool) {
-    return res.status(503).json({ error: 'Service temporarily unavailable. Please try again in a moment.' });
-  }
-  try {
-    const { email, password, name, user_id, ref_code, disclaimer_accepted } = req.body;
-    const invite_code = (req.body && (req.body.invite_code || req.body.inviteCode)) || '';
 
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Valid email required' });
-    }
-
-    const { valid, errors } = validatePassword(password);
-    if (!valid) {
-      return res.status(400).json({ error: errors[0], errors });
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-    const normalizedUserId = user_id ? user_id.toLowerCase().trim() : null;
-
-    // Validate user_id format if provided
-    if (normalizedUserId) {
-      if (normalizedUserId.length < 3 || normalizedUserId.length > 30) {
-        return res.status(400).json({ error: 'User ID must be between 3 and 30 characters' });
-      }
-      if (!/^[a-z0-9_]+$/.test(normalizedUserId)) {
-        return res.status(400).json({ error: 'User ID can only contain lowercase letters, numbers, and underscores' });
-      }
-
-      // Check if user_id is already taken
-      const userIdCheck = await pool.query(
-        'SELECT id FROM users WHERE LOWER(user_id) = $1',
-        [normalizedUserId]
-      );
-      if (userIdCheck.rows.length > 0) {
-        return res.status(409).json({ error: 'This User ID is already taken. Please choose another.' });
-      }
-    }
-
-    // Determine if this is the creator email (for is_creator flag on new users)
-    const isCreatorEmail = normalizedEmail === CREATOR_EMAIL;
-
-    // During beta, a code is required. Set BETA_INVITE_ONLY=false to open public signup.
-    const betaInviteOnly = String(process.env.BETA_INVITE_ONLY || 'true').toLowerCase() !== 'false';
-    const suppliedInvite = (invite_code && String(invite_code).trim())
-      || (betaInviteOnly && ref_code && String(ref_code).trim())
-      || '';
-    let effectiveRefCode = ref_code;
-    if (betaInviteOnly && !suppliedInvite && !isCreatorEmail && !isAllowlistedAdminEmail(normalizedEmail)) {
-      return res.status(403).json({
-        code: 'BETA_INVITE_REQUIRED',
-        error: 'FACTS is in beta testing and is invite only. A beta code is required to create an account.'
-      });
-    }
-
-    // ─── INVITE CODE: Optional — validate only if provided ───────────────
-    // Shared admin invite_codes first, then promo / targeted / member referral.
-    let pendingInviteCode = null;
-    let pendingBeta = null;
-    if (suppliedInvite) {
-      const {
-        findInviteCode,
-        findActiveBetaInvite,
-        findMemberReferralInvite,
-        INVALID_INVITE_ERROR
-      } = require('./lib/inviteCodes');
-
-      const sharedInvite = await findInviteCode(pool, suppliedInvite);
-      if (sharedInvite) {
-        if (sharedInvite.status !== 'ACTIVE') {
-          return res.status(400).json({ error: INVALID_INVITE_ERROR });
-        }
-        pendingInviteCode = sharedInvite;
-      } else {
-        const promoCheck = await pool.query(
-          'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
-          [suppliedInvite]
-        );
-
-        if (promoCheck.rows.length === 0) {
-          pendingBeta = await findActiveBetaInvite(pool, suppliedInvite);
-          if (!pendingBeta) {
-            const referral = await findMemberReferralInvite(pool, suppliedInvite);
-            if (referral && referral.remaining <= 0) {
-              return res.status(400).json({
-                error: `This referral code has already brought in ${referral.limit} people this month. Ask them again next month, or ask for a beta code.`
-              });
-            }
-            if (referral) {
-              pendingBeta = { kind: 'referral', row: referral.user };
-              effectiveRefCode = referral.user.referral_code;
-            }
-          }
-          if (!pendingBeta) {
-            return res.status(400).json({ error: INVALID_INVITE_ERROR });
-          }
-        } else if (promoCheck.rows[0].status !== 'active') {
-          return res.status(400).json({ error: INVALID_INVITE_ERROR });
-        }
-      }
-    }
-    // No code: allowed only when BETA_INVITE_ONLY=false, or for creator/admin emails.
-
-    // Check if user already exists with a password (registered account)
-    const existingUser = await pool.query(
-      'SELECT id, password_hash FROM users WHERE LOWER(email) = $1',
-      [normalizedEmail]
-    );
-
-    if (existingUser.rows.length > 0 && existingUser.rows[0].password_hash) {
-      return res.status(409).json({ error: 'An account with this email already exists. Please log in.' });
-    }
-
-    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      let userId;
-      if (existingUser.rows.length > 0) {
-        // User exists (maybe from subscription) but no password — set password
-        await client.query(
-          `UPDATE users SET password_hash = $1, name = $2, user_id = $3, updated_at = NOW() WHERE id = $4`,
-          [passwordHash, name || null, normalizedUserId, existingUser.rows[0].id]
-        );
-        userId = existingUser.rows[0].id;
-      } else {
-        // Create new user (isCreatorEmail was already checked above for launch gate)
-        const result = await client.query(
-          `INSERT INTO users (email, password_hash, name, user_id, is_creator, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-           RETURNING id`,
-          [normalizedEmail, passwordHash, name || null, normalizedUserId, isCreatorEmail]
-        );
-        userId = result.rows[0].id;
-      }
-
-      // Seed default allocation percentages for this user
-      await seedUserAllocations(client, userId);
-
-      // ─── Redeem invite code if provided ───────────────────────────────
-      if (suppliedInvite) {
-        if (pendingInviteCode) {
-          const { redeemInviteCode, INVALID_INVITE_ERROR } = require('./lib/inviteCodes');
-          const redeemed = await redeemInviteCode(client, suppliedInvite, userId);
-          if (!redeemed) {
-            const used = new Error(INVALID_INVITE_ERROR);
-            used.status = 400;
-            throw used;
-          }
-          await client.query('SAVEPOINT beta_claim_user');
-          try {
-            await client.query(
-              `UPDATE users SET is_beta_tester = TRUE, updated_at = NOW() WHERE id = $1`,
-              [userId]
-            );
-            await client.query('RELEASE SAVEPOINT beta_claim_user');
-          } catch (betaFlagErr) {
-            await client.query('ROLLBACK TO SAVEPOINT beta_claim_user');
-            console.warn('[Signup] is_beta_tester update skipped:', betaFlagErr.message);
-          }
-        }
-
-        // Re-validate code in transaction (double-check it's still active)
-        const promoResult = pendingInviteCode
-          ? { rows: [] }
-          : await client.query(
-          'SELECT id, status FROM promo_codes WHERE UPPER(code) = UPPER($1)',
-          [suppliedInvite]
-        );
-
-        if (promoResult.rows.length > 0 && promoResult.rows[0].status === 'active') {
-          const promoId = promoResult.rows[0].id;
-
-          // Mark promo code as redeemed
-          await client.query(
-            `UPDATE promo_codes
-             SET status = 'redeemed', redeemed_by = $1, redeemed_at = NOW()
-             WHERE id = $2`,
-            [userId, promoId]
-          );
-
-          // Grant Pro access to user
-          await client.query(
-            `UPDATE users
-             SET promo_code_used = $1, updated_at = NOW()
-             WHERE id = $2`,
-            [suppliedInvite.toUpperCase(), userId]
-          );
-        } else if (pendingBeta) {
-        if (pendingBeta.kind === 'invite') {
-          const claimed = await client.query(
-            `UPDATE beta_invites
-             SET uses_count = uses_count + 1,
-                 claimed_by_user_id = COALESCE(claimed_by_user_id, $2),
-                 claimed_at = COALESCE(claimed_at, NOW())
-             WHERE id = $1 AND uses_count < max_uses
-             RETURNING id`,
-            [pendingBeta.row.id, userId]
-          );
-          if (claimed.rows.length === 0) {
-            const used = new Error('This invite code has already been used.');
-            used.status = 400;
-            throw used;
-          }
-        } else if (pendingBeta.kind === 'referral') {
-          await client.query(
-            'INSERT INTO beta_referral_signups (referrer_user_id, user_id) VALUES ($1, $2)',
-            [pendingBeta.row.id, userId]
-          );
-        } else {
-          const claimed = await client.query(
-            `UPDATE beta_codes
-             SET uses_count = uses_count + 1
-             WHERE id = $1 AND uses_count < max_uses
-             RETURNING id`,
-            [pendingBeta.row.id]
-          );
-          if (claimed.rows.length === 0) {
-            const used = new Error('This invite code has already been used.');
-            used.status = 400;
-            throw used;
-          }
-        }
-        await client.query('SAVEPOINT beta_claim_user');
-        try {
-          await client.query(
-            `UPDATE users SET is_beta_tester = TRUE, updated_at = NOW() WHERE id = $1`,
-            [userId]
-          );
-          await client.query('RELEASE SAVEPOINT beta_claim_user');
-        } catch (betaFlagErr) {
-          await client.query('ROLLBACK TO SAVEPOINT beta_claim_user');
-          console.warn('[Signup] is_beta_tester update skipped:', betaFlagErr.message);
-        }
-        }
-
-      }
-
-      // ─── Generate unique referral code for new user ───────────────────
-      try {
-        const refCode = await generateUniqueReferralCode();
-        await client.query(
-          'UPDATE users SET referral_code = $1 WHERE id = $2 AND referral_code IS NULL',
-          [refCode, userId]
-        );
-      } catch (refErr) {
-        console.error('[Signup] Failed to generate referral code:', refErr.message);
-        // Non-fatal — user can still sign up; code generated on next login
-      }
-
-      // ─── Set referred_by_user_id if a valid referral code was provided ──
-      let signupReferrerId = null; // hoisted so we can use it after COMMIT
-      if (effectiveRefCode && effectiveRefCode.trim() && !isCreatorEmail) {
-        try {
-          const refOwner = await client.query(
-            'SELECT id FROM users WHERE referral_code = $1',
-            [effectiveRefCode.trim().toUpperCase()]
-          );
-          if (refOwner.rows.length > 0) {
-            signupReferrerId = refOwner.rows[0].id;
-            if (signupReferrerId !== userId) {
-              // ── Beta Phase Invite Taper ──────────────────────────────────────
-              // Check the referrer's affiliate invite quota (5-4-3-2-1 by tier).
-              // If they've used all their invites (beta_invites_remaining = 0),
-              // the new user goes to the orphan pool instead of being linked.
-              // NULL = unlimited (Company / Tier 0 / master node).
-              try {
-                const refAff = await client.query(
-                  `SELECT id, beta_invites_remaining
-                   FROM affiliates
-                   WHERE user_id = $1 AND status != 'revoked'
-                   LIMIT 1`,
-                  [signupReferrerId]
-                );
-                if (refAff.rows.length > 0) {
-                  const { id: affId, beta_invites_remaining } = refAff.rows[0];
-                  if (beta_invites_remaining !== null && beta_invites_remaining <= 0) {
-                    // Quota exhausted — decouple from this referrer; user goes to orphan pool
-                    console.log(`[InviteTaper] Referrer affiliate #${affId} has no invites left — orphan-pooling new user ${userId}`);
-                    signupReferrerId = null;
-                  } else {
-                    // Quota OK — link and decrement
-                    await client.query(
-                      `UPDATE users SET referred_by_user_id = $1, updated_at = NOW()
-                       WHERE id = $2 AND referred_by_user_id IS NULL`,
-                      [signupReferrerId, userId]
-                    );
-                    if (beta_invites_remaining !== null) {
-                      // Decrement (NULL = unlimited, skip decrement)
-                      await client.query(
-                        `UPDATE affiliates
-                         SET beta_invites_remaining = GREATEST(0, beta_invites_remaining - 1),
-                             updated_at = NOW()
-                         WHERE id = $1`,
-                        [affId]
-                      );
-                    }
-                  }
-                } else {
-                  // Referrer is not an affiliate — still link the user (no quota to check)
-                  await client.query(
-                    `UPDATE users SET referred_by_user_id = $1, updated_at = NOW()
-                     WHERE id = $2 AND referred_by_user_id IS NULL`,
-                    [signupReferrerId, userId]
-                  );
-                }
-              } catch (taperErr) {
-                console.error('[InviteTaper] quota check error (non-fatal):', taperErr.message);
-                // Fall through — still link the user if quota check fails
-                await client.query(
-                  `UPDATE users SET referred_by_user_id = $1, updated_at = NOW()
-                   WHERE id = $2 AND referred_by_user_id IS NULL`,
-                  [signupReferrerId, userId]
-                );
-              }
-            }
-          }
-        } catch (refErr) {
-          console.error('[Signup] Failed to set referred_by_user_id:', refErr.message);
-          // Non-fatal
-        }
-      }
-
-      // ─── Log disclaimer acceptance if provided ────────────────────────
-      if (disclaimer_accepted) {
-        try {
-          await client.query(
-            `INSERT INTO disclaimer_acceptances (user_id, acceptance_type, page, ip_address, user_agent)
-             VALUES ($1, 'signup', '/signup', $2, $3)`,
-            [userId, req.ip || req.connection?.remoteAddress || null, (req.headers['user-agent'] || '').substring(0, 500)]
-          );
-          await client.query(
-            'UPDATE users SET disclaimer_accepted_at = NOW() WHERE id = $1',
-            [userId]
-          );
-        } catch (disclaimerErr) {
-          console.error('[Signup] Failed to log disclaimer acceptance:', disclaimerErr.message);
-          // Non-fatal — don't block signup
-        }
-      }
-
-      await client.query('COMMIT');
-
-      // ─── Ghost Slot / Orphan Pool ─────────────────────────────────────────
-      // After signup: place free users in tree or holding tank (non-fatal, async)
-      if (signupReferrerId && signupReferrerId !== userId) {
-        // User came via referral link → ghost slot in referrer's tree
-        createGhostSlotForReferral(userId, signupReferrerId).catch(() => {});
-      } else if (!isCreatorEmail) {
-        // No referral → add to Holding Tank (orphan pool)
-        addToOrphanPool(userId).catch(() => {});
-      }
-
-      // Get user details including Pro status
-      const userResult = await pool.query(
-        'SELECT id, email, name, is_creator, promo_code_used, plan, paid_until, referral_code FROM users WHERE id = $1',
-        [userId]
-      );
-      const user = userResult.rows[0];
-
-      // Set session
-      req.session.userId = userId;
-      req.session.email = normalizedEmail;
-
-      // Use centralized Pro access check (single source of truth)
-      const hasPro = await hasProAccess(user);
-      const proFields = buildProResponse(user, hasPro);
-
-      // Explicitly save session before responding (prevents race condition
-      // where browser navigates to /app before session row exists in PostgreSQL)
-      await new Promise((resolve, reject) => {
-        req.session.save(err => err ? reject(err) : resolve());
-      });
-
-      // Return JSON so client does a full-page navigation (not fetch-follow redirect)
-      res.json({ success: true, redirect: '/app' });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('POST /api/auth/signup error:', err.message);
-    if (err.code === '23505') {
-      return res.status(409).json({ error: 'An account with this email already exists.' });
-    }
-    if (err.status === 400) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.status(500).json({ error: 'Failed to create account' });
-  }
-});
 
 // POST /api/disclaimer/tool-acknowledge
 // Logs when a user acknowledges the pre-tool disclaimer on financial tool pages
@@ -1712,811 +1229,7 @@ app.post('/api/disclaimer/tool-acknowledge', async (req, res) => {
   }
 });
 
-// POST /api/auth/login
-// ── 2FA HELPER FUNCTIONS ──────────────────────────────────────────────────────
-
-// Parse a specific cookie from the Cookie header (no cookie-parser dependency)
-function getCookieValue(req, name) {
-  const cookieHeader = req.headers.cookie || '';
-  const parts = cookieHeader.split(';');
-  for (const part of parts) {
-    const trimmed = part.trim();
-    const eqIdx = trimmed.indexOf('=');
-    if (eqIdx === -1) continue;
-    const key = trimmed.substring(0, eqIdx).trim();
-    if (key === name) {
-      try { return decodeURIComponent(trimmed.substring(eqIdx + 1)); }
-      catch { return trimmed.substring(eqIdx + 1); }
-    }
-  }
-  return null;
-}
-
-// Mask email for display: f***@example.com
-function maskEmail(email) {
-  const [local, domain] = email.split('@');
-  if (!domain) return email;
-  const masked = local.length <= 2 ? local[0] + '*'.repeat(local.length - 1) : local[0] + '*'.repeat(local.length - 2) + local[local.length - 1];
-  return `${masked}@${domain}`;
-}
-
-// Generate and store a 6-digit OTP; return the plaintext code
-async function send2faCode(userId) {
-  // Rate limit: max 3 code requests per hour
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  const recent = await pool.query(
-    `SELECT COUNT(*) as count FROM two_factor_codes WHERE user_id = $1 AND created_at > $2`,
-    [userId, oneHourAgo]
-  );
-  if (parseInt(recent.rows[0].count) >= 3) {
-    const err = new Error('RATE_LIMIT');
-    err.code = 'RATE_LIMIT';
-    throw err;
-  }
-
-  // Invalidate old unused codes
-  await pool.query(
-    `UPDATE two_factor_codes SET used = TRUE WHERE user_id = $1 AND used = FALSE`,
-    [userId]
-  );
-
-  const code = String(Math.floor(100000 + Math.random() * 900000));
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-  await pool.query(
-    `INSERT INTO two_factor_codes (user_id, code, expires_at) VALUES ($1, $2, $3)`,
-    [userId, code, expiresAt]
-  );
-
-  // Fetch email
-  const userResult = await pool.query('SELECT email, name FROM users WHERE id = $1', [userId]);
-  if (!userResult.rows.length) throw new Error('User not found');
-  const { email, name } = userResult.rows[0];
-
-  const appName = 'FACTS';
-  try {
-    await sendEmail({
-        to: email,
-        subject: `${code} is your ${appName} verification code`,
-        text: `Your ${appName} login verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, someone may be trying to access your account. You can ignore this email.`,
-        html: `
-          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#0a0f1a;border-radius:16px;">
-            <h2 style="color:#10b981;margin:0 0 8px;font-size:1.4rem;">${appName} Verification Code</h2>
-            <p style="color:#94a3b8;margin:0 0 28px;font-size:0.95rem;">Hi ${name || 'there'},</p>
-            <p style="color:#e2e8f0;margin:0 0 24px;font-size:0.95rem;line-height:1.6;">
-              Use the code below to complete your sign-in. It expires in <strong style="color:#f59e0b;">10 minutes</strong>.
-            </p>
-            <div style="background:#1a2332;border:2px solid #10b981;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
-              <span style="font-size:2.5rem;font-weight:700;letter-spacing:12px;color:#10b981;font-family:'Courier New',monospace;">${code}</span>
-            </div>
-            <p style="color:#64748b;font-size:0.85rem;line-height:1.5;">
-              If you didn't try to sign in, someone may have your password. Consider changing it immediately at <a href="${process.env.APP_URL || 'https://app.factsmoney.com'}" style="color:#10b981;">app.factsmoney.com</a>.
-            </p>
-          </div>`
-    });
-  } catch (emailErr) {
-    console.error('[2FA] Email send error:', emailErr.message);
-  }
-
-  return code;
-}
-
-// Complete the login session after credentials verified (and optionally 2FA)
-async function completeLogin(req, res, user) {
-  // Clear pending 2FA state
-  delete req.session.pending2faUserId;
-  delete req.session.pending2faEmail;
-
-  req.session.userId = user.id;
-  req.session.email = user.email;
-
-  // Best-effort login metadata — never block auth if optional columns are missing.
-  try {
-    await pool.query(
-      `UPDATE users SET last_login = NOW(), scheduled_deletion_at = NULL, inactivity_warnings_sent = 0 WHERE id = $1`,
-      [user.id]
-    );
-  } catch (metaErr) {
-    console.error('[auth] last_login update skipped:', metaErr.message);
-  }
-
-  // Award 10 TFR Points on daily login (max once per calendar day) + login streak tracking
-  try {
-    await ensureFgBalance(user.id);
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    // Fetch current balance row for streak info
-    const balRow = (await pool.query(
-      'SELECT last_daily_points_date, login_streak_days, longest_login_streak, last_login_streak_date, monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-      [user.id]
-    )).rows[0] || {};
-    const alreadyAwarded = balRow.last_daily_points_date && balRow.last_daily_points_date.toISOString
-      ? balRow.last_daily_points_date.toISOString().split('T')[0] === today
-      : String(balRow.last_daily_points_date || '').split('T')[0] === today;
-
-    if (!alreadyAwarded) {
-      // Monthly cap check
-      const currentMonth = today.substring(0, 7); // YYYY-MM
-      let monthEarned = 0;
-      if (balRow.monthly_cap_reset_month === currentMonth) {
-        monthEarned = parseInt(balRow.monthly_points_earned) || 0;
-      }
-      const MONTHLY_CAP = 5000;
-      const remainingCap = MONTHLY_CAP - monthEarned;
-      const LOGIN_PTS = 10;
-      const pointsToAward = Math.min(LOGIN_PTS, Math.max(0, remainingCap));
-
-      // Calculate new login streak
-      const lastStreakDate = balRow.last_login_streak_date
-        ? String(balRow.last_login_streak_date).split('T')[0]
-        : null;
-      let newLoginStreak = lastStreakDate === yesterday
-        ? (parseInt(balRow.login_streak_days) || 0) + 1
-        : 1;
-      const newLongestLogin = Math.max(newLoginStreak, parseInt(balRow.longest_login_streak) || 0);
-
-      if (pointsToAward > 0) {
-        await pool.query(
-          `UPDATE fg_points_balances
-           SET balance = balance + $2,
-               total_earned = total_earned + $2,
-               last_daily_points_date = $3,
-               monthly_points_earned = CASE WHEN monthly_cap_reset_month = $4 THEN monthly_points_earned + $2 ELSE $2 END,
-               monthly_cap_reset_month = $4,
-               login_streak_days = $5,
-               last_login_streak_date = $3,
-               longest_login_streak = $6,
-               updated_at = NOW()
-           WHERE user_id = $1`,
-          [user.id, pointsToAward, today, currentMonth, newLoginStreak, newLongestLogin]
-        );
-        await pool.query(
-          `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-           VALUES ($1, 'daily_login', 'Daily login — 10 FACTS Points', $2)`,
-          [user.id, pointsToAward]
-        );
-      } else {
-        // Still update streak even if cap reached
-        await pool.query(
-          `UPDATE fg_points_balances
-           SET last_daily_points_date = $2,
-               login_streak_days = $3,
-               last_login_streak_date = $2,
-               longest_login_streak = $4,
-               monthly_cap_reset_month = $5,
-               updated_at = NOW()
-           WHERE user_id = $1`,
-          [user.id, today, newLoginStreak, newLongestLogin, currentMonth]
-        );
-      }
-
-      // Login streak bonuses: 7-day → 50 pts, 14-day → 100 pts, 30-day → 250 pts
-      const LOGIN_STREAK_BONUSES = { 7: 50, 14: 100, 30: 250 };
-      if (LOGIN_STREAK_BONUSES[newLoginStreak]) {
-        const bonusPts = LOGIN_STREAK_BONUSES[newLoginStreak];
-        const capAfterLogin = monthEarned + pointsToAward;
-        const bonusRemaining = Math.max(0, MONTHLY_CAP - capAfterLogin);
-        const bonusToAward = Math.min(bonusPts, bonusRemaining);
-        if (bonusToAward > 0) {
-          await pool.query(
-            `UPDATE fg_points_balances
-             SET balance = balance + $2,
-                 total_earned = total_earned + $2,
-                 monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-                 monthly_cap_reset_month = $3,
-                 updated_at = NOW()
-             WHERE user_id = $1`,
-            [user.id, bonusToAward, currentMonth]
-          );
-          await pool.query(
-            `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-             VALUES ($1, 'login_streak_bonus', $2, $3)`,
-            [user.id, `${newLoginStreak}-Day Login Streak Bonus!`, bonusToAward]
-          );
-          // Record streak achievement
-          await pool.query(
-            `INSERT INTO rewards_achievements (user_id, achievement_key, points_awarded)
-             VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-            [user.id, `login_streak_${newLoginStreak}`, bonusToAward]
-          );
-        }
-      }
-    }
-  } catch (pointsErr) {
-    // Non-fatal — don't block login if points award fails
-    console.error('[Rewards] daily login points error:', pointsErr.message);
-  }
-
-  const hasPro = await hasProAccess(user);
-  const proFields = buildProResponse(user, hasPro);
-
-  // Explicitly save session to PostgreSQL BEFORE responding.
-  // Without this, the session store write is async and the browser's
-  // next request (to /app) can arrive before the session row exists,
-  // causing requireAuth to see an empty session — especially on mobile
-  // where round-trips are fast relative to DB write latency.
-  const landing = loginRedirectFor(user);
-  if (landing === '/admin') {
-    req.session.adminToolsUntil = Date.now() + (12 * 60 * 60 * 1000);
-  }
-
-  await new Promise((resolve, reject) => {
-    req.session.save(err => err ? reject(err) : resolve());
-  });
-
-  // Return JSON so the client does a full-page navigation.
-  // Admins land on /admin and stay there. Everyone else lands on /app.
-  // A 303 redirect broke on DuckDuckGo Android because fetch's automatic
-  // redirect following doesn't reliably include the Set-Cookie.
-  return res.json({ success: true, redirect: landing });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.post('/api/auth/login', async (req, res) => {
-  // Guard: database unavailable → return 503 instead of crashing
-  if (!pool) {
-    return res.status(503).json({ error: 'Service temporarily unavailable. Please try again in a moment.' });
-  }
-  try {
-    const { email, password } = req.body || {};
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email or User ID and password are required' });
-    }
-
-    const normalizedIdentifier = email.toLowerCase().trim();
-
-    // Prefer email/user_id lookup; fall back to email-only if optional columns are missing.
-    let result;
-    try {
-      result = await pool.query(
-        `SELECT id, email, name, password_hash, plan, paid_until, is_creator, promo_code_used,
-                COALESCE(promo_grace_expired, false) AS promo_grace_expired,
-                COALESCE(two_factor_enabled, false) AS two_factor_enabled,
-                verification_method, verified_phone
-         FROM users
-         WHERE LOWER(email) = $1 OR LOWER(user_id) = $1
-         ORDER BY CASE WHEN LOWER(email) = $1 THEN 0 ELSE 1 END
-         LIMIT 1`,
-        [normalizedIdentifier]
-      );
-    } catch (selectErr) {
-      console.error('[auth] full login SELECT failed, falling back to email-only:', selectErr.message);
-      result = await pool.query(
-        `SELECT id, email, password_hash FROM users WHERE LOWER(email) = $1`,
-        [normalizedIdentifier]
-      );
-    }
-
-    if (result.rows.length === 0 || !result.rows[0].password_hash) {
-      return res.status(401).json({ error: 'Invalid email/User ID or password' });
-    }
-
-    const user = result.rows[0];
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
-
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid email/User ID or password' });
-    }
-
-    // ── 2FA CHECK ──────────────────────────────────────────────────────────────
-    if (user.two_factor_enabled) {
-      // Admin / founder accounts skip 2FA so the admin panel can open even when
-      // email or SMS is not configured.
-      if (user.is_creator || userIsAdminAccount(user) || isAllowlistedAdminEmail(user.email)) {
-        return await completeLogin(req, res, user);
-      }
-
-      // Check "remember this device" cookie — skip 2FA if trusted
-      const trustCookie = getCookieValue(req, 'facts_trust');
-      if (trustCookie) {
-        const trustResult = await pool.query(
-          `SELECT id FROM device_trust_tokens
-           WHERE user_id = $1 AND token = $2 AND expires_at > NOW()`,
-          [user.id, trustCookie]
-        );
-        if (trustResult.rows.length > 0) {
-          // Trusted device — complete login without 2FA
-          return await completeLogin(req, res, user);
-        }
-      }
-
-      // Store pending 2FA state in session (not yet authenticated)
-      req.session.pending2faUserId = user.id;
-      req.session.pending2faEmail = user.email;
-      req.session.pending2faMethod = user.verification_method || 'email';
-      req.session.pending2faPhone = user.verified_phone || null;
-
-      // Auto-send code — email or SMS based on user preference
-      const method2fa = user.verification_method || 'email';
-      if (method2fa === 'sms' && user.verified_phone) {
-        const smsResult = await sendVerification(user.verified_phone);
-        if (!smsResult.success && !smsResult.stub) {
-          // SMS failed — fall back to email and notify user
-          console.error('[2FA] SMS send failed, falling back to email for user', user.id);
-          req.session.pending2faMethod = 'email';
-          await send2faCode(user.id);
-          return res.json({
-            requires_2fa: true,
-            email: maskEmail(user.email),
-            method: 'email',
-            sms_fallback: true
-          });
-        }
-      } else {
-        await send2faCode(user.id);
-      }
-
-      return res.json({
-        requires_2fa: true,
-        email: maskEmail(user.email),
-        method: method2fa === 'sms' && user.verified_phone ? 'sms' : 'email',
-        phone_hint: method2fa === 'sms' && user.verified_phone
-          ? `***-***-${user.verified_phone.slice(-4)}`
-          : null
-      });
-    }
-    // ──────────────────────────────────────────────────────────────────────────
-
-    await completeLogin(req, res, user);
-  } catch (err) {
-    console.error('POST /api/auth/login error:', err.message);
-    const safe = String(err && err.message || 'unknown').slice(0, 180);
-    res.status(500).json({ error: 'Login failed', detail: safe });
-  }
-});
-
-// POST /api/auth/logout
-app.post('/api/auth/logout', (req, res) => {
-  applyPrivateCache(res);
-  const cookieOpts = {
-    path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
-  };
-  function finish(err) {
-    res.clearCookie('connect.sid', cookieOpts);
-    if (err) {
-      console.error('Logout error:', err.message || err);
-      return res.status(500).json({ success: false, error: 'Logout failed' });
-    }
-    res.json({ success: true });
-  }
-  if (!req.session) return finish();
-  req.session.destroy(finish);
-});
-
-// POST /api/auth/sandbox-login — Switch into sandbox training account
-// Only available to the creator account (is_creator = true).
-// Does NOT require a password — it switches the current session to the sandbox user.
-// ⚠️ ENGINEER NOTE: This endpoint is intentionally limited to creator accounts.
-//    The sandbox account is seeded by scripts/seed-sandbox.js on every deploy.
-//    See: SANDBOX_ACCOUNT.md for details.
-app.post('/api/auth/sandbox-login', requireAuth, async (req, res) => {
-  try {
-    // Only the creator can use this
-    const callerResult = await pool.query(
-      'SELECT id, email, is_creator FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (!callerResult.rows.length || !callerResult.rows[0].is_creator) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
-
-    // Find sandbox account
-    const sandboxResult = await pool.query(
-      "SELECT id, email, name, plan, paid_until, is_creator FROM users WHERE LOWER(email) = 'sandbox@financial-revolution.app' LIMIT 1"
-    );
-    if (!sandboxResult.rows.length) {
-      return res.status(404).json({ error: 'Sandbox account not found. Contact support.' });
-    }
-
-    const sandboxUser = sandboxResult.rows[0];
-
-    // Store original user ID so they can return later
-    const originalUserId = req.session.userId;
-
-    // Switch session to sandbox user
-    req.session.userId = sandboxUser.id;
-    req.session.sandboxMode = true;
-    req.session.originalUserId = originalUserId;
-
-    // Save session explicitly
-    await new Promise((resolve, reject) => {
-      req.session.save(err => err ? reject(err) : resolve());
-    });
-
-    res.json({
-      success: true,
-      sandbox: true,
-      user: {
-        id: sandboxUser.id,
-        email: sandboxUser.email,
-        name: sandboxUser.name,
-        plan: 'paid',
-        is_pro: true,
-        is_creator: true,
-      }
-    });
-  } catch (err) {
-    console.error('POST /api/auth/sandbox-login error:', err.message);
-    res.status(500).json({ error: 'Failed to switch to sandbox account' });
-  }
-});
-
-// POST /api/auth/sandbox-exit — Return to original account from sandbox mode
-app.post('/api/auth/sandbox-exit', requireAuth, async (req, res) => {
-  try {
-    if (!req.session.sandboxMode || !req.session.originalUserId) {
-      return res.status(400).json({ error: 'Not in sandbox mode' });
-    }
-
-    const originalUserId = req.session.originalUserId;
-
-    // Restore original session
-    req.session.userId = originalUserId;
-    req.session.sandboxMode = false;
-    req.session.originalUserId = null;
-
-    await new Promise((resolve, reject) => {
-      req.session.save(err => err ? reject(err) : resolve());
-    });
-
-    res.json({ success: true, restored: true });
-  } catch (err) {
-    console.error('POST /api/auth/sandbox-exit error:', err.message);
-    res.status(500).json({ error: 'Failed to exit sandbox' });
-  }
-});
-
-function passwordResetBaseUrl(req) {
-  const forwardedHost = String(req.get('x-forwarded-host') || '').split(',')[0].trim();
-  const host = forwardedHost || String(req.get('host') || '').trim();
-  const local = !host || host.startsWith('localhost') || host.startsWith('127.0.0.1');
-  if (!local) {
-    const proto = String(req.get('x-forwarded-proto') || 'https').split(',')[0].trim() || 'https';
-    return `${proto}://${host}`;
-  }
-  return String(process.env.APP_URL || 'https://factsmoney.com').replace(/\/$/, '');
-}
-
-const RESET_EMAIL_SENT = 'Check your email for a link to choose a new password. It expires in one hour.';
-
-// POST /api/auth/forgot-password — Send password reset email
-app.post('/api/auth/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body || {};
-
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Enter the email on your FACTS account.' });
-    }
-
-    if (!pool) {
-      return res.status(503).json({ error: 'Password reset is unavailable right now. Please try again.' });
-    }
-
-    const { ensurePasswordResetSchema } = require('./lib/ensureAuthSchema');
-    await ensurePasswordResetSchema(pool);
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // Check rate limit: max 3 reset requests per hour per email
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const recentRequests = await pool.query(
-      `SELECT COUNT(*) as count FROM password_reset_tokens
-       WHERE user_id IN (SELECT id FROM users WHERE LOWER(email) = $1)
-       AND created_at > $2`,
-      [normalizedEmail, oneHourAgo]
-    );
-
-    if (parseInt(recentRequests.rows[0].count, 10) >= 3) {
-      return res.json({
-        success: true,
-        message: RESET_EMAIL_SENT
-      });
-    }
-
-    const userResult = await pool.query(
-      'SELECT id, email FROM users WHERE LOWER(email) = $1',
-      [normalizedEmail]
-    );
-
-    // Same reply when no account exists, so the form does not reveal who is registered.
-    if (userResult.rows.length === 0) {
-      return res.json({
-        success: true,
-        message: RESET_EMAIL_SENT
-      });
-    }
-
-    const user = userResult.rows[0];
-
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-
-    const inserted = await pool.query(
-      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3) RETURNING id',
-      [user.id, token, expiresAt]
-    );
-    const tokenId = inserted.rows[0].id;
-
-    const resetUrl = `${passwordResetBaseUrl(req)}/reset-password.html?token=${token}`;
-
-    if (!emailConfigured()) {
-      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
-      console.error('POST /api/auth/forgot-password: RESEND_API_KEY is not set');
-      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
-    }
-
-    let emailResult;
-    try {
-      emailResult = await sendEmail({
-          to: user.email,
-          subject: 'Reset Your FACTS Password',
-          text: `You requested a password reset for your FACTS account.\n\nClick this link to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
-          html: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #10b981; margin-bottom: 24px;">Reset Your Password</h2>
-              <p style="color: #333; line-height: 1.6; margin-bottom: 20px;">
-                You requested a password reset for your FACTS account.
-              </p>
-              <p style="margin-bottom: 24px;">
-                <a href="${resetUrl}" style="display: inline-block; background: #10b981; color: #000; padding: 12px 32px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                  Reset Password
-                </a>
-              </p>
-              <p style="color: #666; font-size: 14px; line-height: 1.6;">
-                Or copy this link into your browser:<br>
-                <a href="${resetUrl}" style="color: #10b981;">${resetUrl}</a>
-              </p>
-              <p style="color: #666; font-size: 14px; line-height: 1.6;">
-                This link expires in 1 hour.
-              </p>
-              <p style="color: #666; font-size: 14px; line-height: 1.6; margin-top: 24px;">
-                If you didn't request this, you can safely ignore this email.
-              </p>
-            </div>
-          `
-      });
-    } catch (emailErr) {
-      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
-      console.error('Error sending reset email:', emailErr.message);
-      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
-    }
-
-    if (!emailResult.sent) {
-      await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenId]);
-      console.error('Email send failed:', emailResult.error);
-      return res.status(503).json({ error: 'We could not send the reset email. Please try again.' });
-    }
-
-    res.json({
-      success: true,
-      message: RESET_EMAIL_SENT
-    });
-  } catch (err) {
-    console.error('POST /api/auth/forgot-password error:', err.message);
-    res.status(500).json({ error: 'Something went wrong. Please try again.' });
-  }
-});
-
-// POST /api/auth/reset-password — Reset password with token
-app.post('/api/auth/reset-password', async (req, res) => {
-  try {
-    const { token, password } = req.body;
-
-    if (!token) {
-      return res.status(400).json({ error: 'Reset token is required' });
-    }
-
-    // Validate password
-    const { valid, errors } = validatePassword(password);
-    if (!valid) {
-      return res.status(400).json({ error: errors[0], errors });
-    }
-
-    // Find valid token
-    const tokenResult = await pool.query(
-      `SELECT prt.id, prt.user_id, prt.expires_at, prt.used, u.email
-       FROM password_reset_tokens prt
-       JOIN users u ON u.id = prt.user_id
-       WHERE prt.token = $1`,
-      [token]
-    );
-
-    if (tokenResult.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired reset link' });
-    }
-
-    const resetToken = tokenResult.rows[0];
-
-    // Check if token is expired
-    if (new Date(resetToken.expires_at) < new Date()) {
-      return res.status(400).json({ error: 'This reset link has expired. Please request a new one.' });
-    }
-
-    // Check if token was already used
-    if (resetToken.used) {
-      return res.status(400).json({ error: 'This reset link has already been used. Please request a new one.' });
-    }
-
-    // Hash new password
-    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Update password
-      await client.query(
-        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-        [passwordHash, resetToken.user_id]
-      );
-
-      // Mark token as used
-      await client.query(
-        'UPDATE password_reset_tokens SET used = TRUE WHERE id = $1',
-        [resetToken.id]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        message: 'Password reset successful. You can now log in with your new password.'
-      });
-    } catch (txErr) {
-      await client.query('ROLLBACK');
-      throw txErr;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('POST /api/auth/reset-password error:', err.message);
-    res.status(500).json({ error: 'Something went wrong. Please try again.' });
-  }
-});
-
-// GET /api/auth/me — Check current session
-app.get('/api/auth/me', async (req, res) => {
-  if (!req.session || !req.session.userId) {
-    return res.json({ authenticated: false });
-  }
-
-  try {
-    const result = await pool.query(
-      'SELECT id, email, name, display_name, avatar_url, avatar_color, plan, paid_until, is_creator, is_admin, income_programs_blocked, promo_code_used, referral_code, affiliate_code, affiliate_tier, is_affiliate_disabled, created_at, promo_grace_started_at, promo_grace_expired, trial_used, trial_started_at, trial_expires_at, trial_plan_type, pricing_tier, business_path_type, survival_burn_cents, bucket_cert_completed FROM users WHERE id = $1',
-      [req.session.userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.json({ authenticated: false });
-    }
-
-    const user = result.rows[0];
-    if (isAllowlistedAdminEmail(user.email) && !user.is_admin) {
-      user.is_admin = true;
-      pool.query('UPDATE users SET is_admin = TRUE WHERE id = $1 AND (is_admin IS NOT TRUE)', [user.id])
-        .catch(function (healErr) { console.error('Auto-heal is_admin flag failed:', healErr.message); });
-    }
-    // Use centralized Pro access check (single source of truth)
-    const hasPro = await hasProAccess(user);
-    const proFields = buildProResponse(user, hasPro);
-
-    // Calculate promo grace period status (for banner display on frontend)
-    const graceStatus = calculatePromoGraceStatus(user);
-
-    // Calculate 21-day free trial status (for trial countdown banner)
-    const trialStatus = calculateTrialStatus(user);
-
-    // Check NDA acceptance status
-    const creatorStatus = await isCreator(user);
-    const now = new Date();
-    const ndaRequired = now < NDA_LAUNCH_DATE && !creatorStatus;
-    let ndaAccepted = !ndaRequired;
-    if (ndaRequired) {
-      const ndaResult = await pool.query(
-        'SELECT id FROM nda_acceptances WHERE user_id = $1 AND nda_version = $2',
-        [user.id, NDA_VERSION]
-      );
-      ndaAccepted = ndaResult.rows.length > 0;
-    }
-
-    // Check Family Incubator sub-account status (educational access only — Levels 1-3)
-    const isIncubatorSub = !hasPro ? await hasIncubatorSubAccess(user.id) : false;
-    let incubatorSubInfo = null;
-    if (isIncubatorSub) {
-      const subRes = await pool.query(`
-        SELECT hm.id as member_id, h.id as household_id, h.name as household_name,
-               hm.commission_eligible, hm.broke_away_at,
-               head.name as head_name, head.email as head_email
-        FROM household_members hm
-        JOIN households h ON h.id = hm.household_id
-        JOIN users head ON head.id = h.owner_id
-        WHERE hm.user_id = $1 AND hm.is_sub_account = true AND hm.broke_away_at IS NULL
-        LIMIT 1
-      `, [user.id]);
-      if (subRes.rows.length > 0) {
-        const sub = subRes.rows[0];
-        incubatorSubInfo = {
-          household_id: sub.household_id,
-          household_name: sub.household_name,
-          head_name: sub.head_name,
-          commission_eligible: sub.commission_eligible
-        };
-      }
-    }
-
-    return res.json({
-      authenticated: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        display_name: user.display_name || null,
-        avatar_url: user.avatar_url || null,
-        avatar_color: user.avatar_color || '#10b981',
-        referral_code: user.referral_code || null,
-        nda_required: ndaRequired,
-        nda_accepted: ndaAccepted,
-        ...proFields,
-        // Promo grace period info (used by frontend banner)
-        promo_grace_active: graceStatus.active,
-        promo_grace_expired: graceStatus.expired,
-        promo_grace_days_remaining: graceStatus.daysRemaining,
-        // 21-day free trial info (Habitual Handshake)
-        trial_active: trialStatus.active,
-        trial_expired: trialStatus.expired,
-        trial_days_remaining: trialStatus.daysRemaining,
-        trial_plan_type: trialStatus.planType,
-        trial_used: user.trial_used || false,
-        trial_expires_at: user.trial_expires_at || null,
-        // Family Incubator sub-account status
-        is_incubator_sub: isIncubatorSub,
-        incubator_info: incubatorSubInfo,
-        // Pricing tier — used for feature gating
-        pricing_tier: user.pricing_tier || 'none',
-        // Individual plan: family features are disabled (single-user only)
-        has_household_features: user.pricing_tier !== 'individual_pro',
-        // Business Pro onboarding fields
-        business_path_type: user.business_path_type || null,
-        survival_burn_cents: user.survival_burn_cents || null,
-        bucket_cert_completed: user.bucket_cert_completed || false,
-        is_admin: !!(user.is_admin || isAllowlistedAdminEmail(user.email)),
-        affiliate_code: user.affiliate_code || null,
-        affiliate_tier: user.affiliate_tier || null,
-        is_affiliate_disabled: !!user.is_affiliate_disabled || String(user.affiliate_tier || '').toUpperCase() === 'EXCLUDED',
-        affiliate_eligible: !(!!user.is_affiliate_disabled || String(user.affiliate_tier || '').toUpperCase() === 'EXCLUDED' || isAdminIncomeBlockedUser(user)),
-        can_join_income_programs: !isAdminIncomeBlockedUser(user)
-      }
-    });
-  } catch (err) {
-    console.error('GET /api/auth/me error:', err.message);
-    try {
-      const slim = await pool.query(
-        'SELECT id, email, name, is_admin, is_creator FROM users WHERE id = $1',
-        [req.session.userId]
-      );
-      if (!slim.rows.length) return res.json({ authenticated: false });
-      const user = slim.rows[0];
-      return res.json({
-        authenticated: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          is_admin: !!(user.is_admin || isAllowlistedAdminEmail(user.email)),
-          is_creator: !!user.is_creator
-        }
-      });
-    } catch (fallbackErr) {
-      console.error('GET /api/auth/me fallback error:', fallbackErr.message);
-      return res.json({ authenticated: false });
-    }
-  }
-});
+// Auth API helpers + routes live in routes/auth.js (mounted at /api/auth)
 
 // ─── 21-Day Free Trial Endpoints ─────────────────────────────────────────────
 
@@ -2635,479 +1348,420 @@ app.get('/api/trial/status', requireAuth, async (req, res) => {
   }
 });
 
-// ─── Business Pro Onboarding Endpoints ───────────────────────────────────────
-//
-// Path Selection (mandatory for business_core / business_bundle users on first login):
-//   PATH_TYPE: A (Side-Hustle), B (Full-Timer), C (Funded Baby), D (Legacy Pivot)
-//   SURVIVAL_BURN: business fixed costs + personal necessities (B) OR + debt service (A/C/D)
-//   SOVEREIGNTY_FLOOR: SURVIVAL_BURN × 6
-//
-// 5-Bucket Protocol (bank confirmation gate):
-//   Bucket 1: Clearing (Checking) — all revenue intake
-//   Bucket 2: Tax Shield (HYSA/MM) — 25% allocation
-//   Bucket 3: Operating Reserve (HYSA/MM) — safety until SOVEREIGNTY_FLOOR met
-//   Bucket 4: Growth & Innovation (HYSA/MM) — 15% marketing / 10% R&D
-//   Bucket 5: Wealth Bridge (Checking) — sweep point for brokerage transfers
+// [Phase5] business-pro → routes/business.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/business-pro/onboarding — Return current onboarding status
-app.get('/api/business-pro/onboarding', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT pricing_tier, business_path_type, survival_burn_cents, bucket_cert_completed, bucket_cert_confirmed_at FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    const user = result.rows[0];
 
-    // Only business tier users need this onboarding
-    const isBusiness = user.pricing_tier === 'business_core' || user.pricing_tier === 'business_bundle';
-    const sovereigntyFloor = user.survival_burn_cents
-      ? user.survival_burn_cents * 6
-      : null;
-
-    res.json({
-      success: true,
-      is_business_tier: isBusiness,
-      onboarding_required: isBusiness && (!user.business_path_type || !user.bucket_cert_completed),
-      path_selection_done: !!user.business_path_type,
-      bucket_cert_done: user.bucket_cert_completed || false,
-      business_path_type: user.business_path_type || null,
-      survival_burn_cents: user.survival_burn_cents || null,
-      sovereignty_floor_cents: sovereigntyFloor,
-      bucket_cert_confirmed_at: user.bucket_cert_confirmed_at || null
-    });
-  } catch (err) {
-    console.error('[BusinessPro] GET onboarding error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to fetch onboarding status.' });
-  }
-});
-
-// POST /api/business-pro/onboarding — Save path type + survival burn
-// Body: { path_type: 'A'|'B'|'C'|'D', survival_burn_cents: number }
-app.post('/api/business-pro/onboarding', requireAuth, async (req, res) => {
-  try {
-    const { path_type, survival_burn_cents } = req.body;
-
-    // Validate
-    if (!['A','B','C','D'].includes(path_type)) {
-      return res.status(400).json({ success: false, message: 'Invalid path_type. Must be A, B, C, or D.' });
-    }
-    if (!Number.isInteger(survival_burn_cents) || survival_burn_cents < 0) {
-      return res.status(400).json({ success: false, message: 'survival_burn_cents must be a non-negative integer.' });
-    }
-
-    // Verify user is on Business tier
-    const check = await pool.query('SELECT pricing_tier FROM users WHERE id = $1', [req.userId]);
-    if (check.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-    // Allow access for creators and business tier
-    const pt = check.rows[0].pricing_tier;
-    if (!['business_core', 'business_bundle'].includes(pt) && !check.rows[0].is_creator) {
-      return res.status(403).json({ success: false, message: 'Business onboarding is only available on the Business Core or Full Business Bundle plan.' });
-    }
-
-    await pool.query(
-      'UPDATE users SET business_path_type = $1, survival_burn_cents = $2 WHERE id = $3',
-      [path_type, survival_burn_cents, req.userId]
-    );
-
-    const sovereigntyFloor = survival_burn_cents * 6;
-
-    res.json({
-      success: true,
-      message: 'Path selection saved.',
-      business_path_type: path_type,
-      survival_burn_cents,
-      sovereignty_floor_cents: sovereigntyFloor
-    });
-  } catch (err) {
-    console.error('[BusinessPro] POST onboarding error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to save onboarding data.' });
-  }
-});
-
-// POST /api/business-pro/bucket-cert — Mark bucket certification complete
-// Body: { confirmed: true }
-app.post('/api/business-pro/bucket-cert', requireAuth, async (req, res) => {
-  try {
-    const { confirmed } = req.body;
-    if (!confirmed) {
-      return res.status(400).json({ success: false, message: 'confirmed must be true.' });
-    }
-
-    // Must have completed path selection first
-    const check = await pool.query(
-      'SELECT pricing_tier, business_path_type FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (check.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-    if (!check.rows[0].business_path_type) {
-      return res.status(400).json({ success: false, message: 'Complete path selection before bucket certification.' });
-    }
-
-    await pool.query(
-      'UPDATE users SET bucket_cert_completed = TRUE, bucket_cert_confirmed_at = NOW() WHERE id = $1',
-      [req.userId]
-    );
-
-    res.json({
-      success: true,
-      message: '5-Bucket Protocol certified. Welcome, Financial Architect.',
-      bucket_cert_completed: true,
-      bucket_cert_confirmed_at: new Date().toISOString()
-    });
-  } catch (err) {
-    console.error('[BusinessPro] POST bucket-cert error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to confirm bucket certification.' });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ─── BUSINESS PRO LOGIC ENGINE ────────────────────────────────────────────
-//   Friday Sweep, Heartbeat Audit, Wealth Bridge
-// ─────────────────────────────────────────────────────────────────────────────
-
-// GET /api/business-pro/dashboard — summary data for Business Pro command center
-app.get('/api/business-pro/dashboard', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT pricing_tier, business_path_type, survival_burn_cents, bucket_cert_completed,
-              bucket3_balance_cents, bucket3_updated_at,
-              heartbeat_in_truth, heartbeat_consecutive_passes
-       FROM users WHERE id = $1`,
-      [req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ success: false, message: 'User not found.' });
-    const u = result.rows[0];
-    const sovereigntyFloor = u.survival_burn_cents ? u.survival_burn_cents * 6 : 0;
-    const bucket3          = u.bucket3_balance_cents || 0;
-    const floorMet         = bucket3 >= sovereigntyFloor && sovereigntyFloor > 0;
-
-    res.json({
-      success: true,
-      business_path_type:          u.business_path_type || null,
-      survival_burn_cents:         u.survival_burn_cents || 0,
-      sovereignty_floor_cents:     sovereigntyFloor,
-      bucket3_balance_cents:       bucket3,
-      bucket3_updated_at:          u.bucket3_updated_at || null,
-      bucket_cert_completed:       u.bucket_cert_completed || false,
-      heartbeat_in_truth:          u.heartbeat_in_truth !== false,
-      heartbeat_consecutive_passes: u.heartbeat_consecutive_passes || 0,
-      wealth_bridge_unlocked:      floorMet,
-      vesting_complete:            (u.heartbeat_consecutive_passes || 0) >= 3
-    });
-  } catch (err) {
-    console.error('[BusinessPro] dashboard error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to load dashboard.' });
-  }
-});
-
-// POST /api/business-pro/sweep — Record a Friday Sweep allocation
-// Body: { gross_revenue_cents: number, bucket3_balance_cents: number, notes?: string }
-app.post('/api/business-pro/sweep', requireAuth, async (req, res) => {
-  try {
-    const { gross_revenue_cents, bucket3_balance_cents, notes } = req.body;
-
-    if (!Number.isInteger(gross_revenue_cents) || gross_revenue_cents <= 0) {
-      return res.status(400).json({ success: false, message: 'gross_revenue_cents must be a positive integer.' });
-    }
-    if (!Number.isInteger(bucket3_balance_cents) || bucket3_balance_cents < 0) {
-      return res.status(400).json({ success: false, message: 'bucket3_balance_cents must be a non-negative integer.' });
-    }
-
-    // Verify user is on business tier and has completed onboarding
-    const uRes = await pool.query(
-      'SELECT pricing_tier, survival_burn_cents, bucket_cert_completed FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (!uRes.rows.length) return res.status(404).json({ success: false, message: 'User not found.' });
-    const user = uRes.rows[0];
-    if (!['business_core', 'business_bundle'].includes(user.pricing_tier)) {
-      return res.status(403).json({ success: false, message: 'Business plan required.' });
-    }
-
-    const sovereigntyFloor = (user.survival_burn_cents || 0) * 6;
-
-    // ── Friday Sweep Allocation Math ────────────────────────────────────────
-    const gross          = gross_revenue_cents;
-    const taxShield      = Math.round(gross * 0.25);   // 25% → Bucket 2
-    const growth         = Math.round(gross * 0.15);   // 15% → Bucket 4 (marketing)
-    const innovation     = Math.round(gross * 0.10);   // 10% → Bucket 4 (R&D)
-    const reserveFill    = gross - taxShield - growth - innovation; // Remaining 50%
-
-    // Route Reserve Fill based on Bucket 3 vs SOVEREIGNTY_FLOOR
-    const destination = (bucket3_balance_cents < sovereigntyFloor || sovereigntyFloor === 0)
-      ? 'operating_reserve'
-      : 'wealth_bridge';
-
-    // Save the sweep
-    const sweepRes = await pool.query(
-      `INSERT INTO business_pro_sweeps
-         (user_id, sweep_date, gross_revenue_cents, bucket3_balance_cents,
-          tax_shield_cents, growth_cents, innovation_cents, reserve_fill_cents,
-          reserve_destination, notes)
-       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [req.userId, gross, bucket3_balance_cents,
-       taxShield, growth, innovation, reserveFill, destination, notes || null]
-    );
-
-    // Update user's bucket3 balance snapshot
-    const newBucket3 = destination === 'operating_reserve'
-      ? bucket3_balance_cents + reserveFill
-      : bucket3_balance_cents;
-
-    await pool.query(
-      'UPDATE users SET bucket3_balance_cents = $1, bucket3_updated_at = NOW() WHERE id = $2',
-      [newBucket3, req.userId]
-    );
-
-    const floorMet = newBucket3 >= sovereigntyFloor && sovereigntyFloor > 0;
-
-    res.json({
-      success: true,
-      sweep: sweepRes.rows[0],
-      allocation: {
-        gross_revenue_cents: gross,
-        tax_shield_cents:    taxShield,
-        growth_cents:        growth,
-        innovation_cents:    innovation,
-        reserve_fill_cents:  reserveFill,
-        reserve_destination: destination
-      },
-      sovereignty_floor_cents:  sovereigntyFloor,
-      bucket3_balance_cents:    newBucket3,
-      wealth_bridge_unlocked:   floorMet
-    });
-  } catch (err) {
-    console.error('[BusinessPro] sweep error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to record sweep.' });
-  }
-});
-
-// GET /api/business-pro/sweeps — List recent Friday Sweeps
-app.get('/api/business-pro/sweeps', requireAuth, async (req, res) => {
-  try {
-    const { limit = 10 } = req.query;
-    const rows = await pool.query(
-      `SELECT * FROM business_pro_sweeps
-       WHERE user_id = $1
-       ORDER BY sweep_date DESC, created_at DESC
-       LIMIT $2`,
-      [req.userId, Math.min(parseInt(limit) || 10, 50)]
-    );
-    res.json({ success: true, sweeps: rows.rows });
-  } catch (err) {
-    console.error('[BusinessPro] sweeps list error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to load sweeps.' });
-  }
-});
-
-// GET /api/business-pro/heartbeat/status — Get current Business Pro heartbeat status
-app.get('/api/business-pro/heartbeat/status', requireAuth, async (req, res) => {
-  try {
-    const uRes = await pool.query(
-      `SELECT heartbeat_in_truth, heartbeat_consecutive_passes FROM users WHERE id = $1`,
-      [req.userId]
-    );
-    if (!uRes.rows.length) return res.status(404).json({ success: false, message: 'User not found.' });
-    const u = uRes.rows[0];
-
-    // Determine audit window (1st-7th of current month)
-    const now      = new Date();
-    const dayOfMonth = now.getDate();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const withinWindow = dayOfMonth >= 1 && dayOfMonth <= 7;
-    const daysLeft = Math.max(0, 7 - dayOfMonth + 1);
-
-    // Month label for this audit
-    const monthLabel = monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-    // Check if already completed this month
-    const existingCheck = await pool.query(
-      `SELECT id, in_truth, bank_balance_cents, ledger_balance_cents, variance_cents, created_at
-       FROM business_pro_heartbeats
-       WHERE user_id = $1 AND audit_month = $2`,
-      [req.userId, monthStart.toISOString().split('T')[0]]
-    );
-    const completed = existingCheck.rows.length > 0;
-    const thisMonthAudit = completed ? existingCheck.rows[0] : null;
-
-    res.json({
-      success: true,
-      monthLabel,
-      withinWindow,
-      daysLeft,
-      completed,
-      audit: thisMonthAudit,
-      heartbeat_in_truth:           u.heartbeat_in_truth !== false,
-      heartbeat_consecutive_passes: u.heartbeat_consecutive_passes || 0,
-      vesting_complete:             (u.heartbeat_consecutive_passes || 0) >= 3,
-      commissionsOnHold:            u.heartbeat_in_truth === false
-    });
-  } catch (err) {
-    console.error('[BusinessPro] heartbeat status error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to load heartbeat status.' });
-  }
-});
-
-// POST /api/business-pro/heartbeat — Submit Business Pro monthly heartbeat audit
-// Body: { bank_balance_cents: number, ledger_balance_cents: number, signer_name: string }
-app.post('/api/business-pro/heartbeat', requireAuth, async (req, res) => {
-  try {
-    const { bank_balance_cents, ledger_balance_cents, signer_name } = req.body;
-
-    if (!Number.isInteger(bank_balance_cents)) {
-      return res.status(400).json({ success: false, message: 'bank_balance_cents must be an integer.' });
-    }
-    if (!Number.isInteger(ledger_balance_cents)) {
-      return res.status(400).json({ success: false, message: 'ledger_balance_cents must be an integer.' });
-    }
-    if (!signer_name || signer_name.trim().length < 2) {
-      return res.status(400).json({ success: false, message: 'signer_name required.' });
-    }
-
-    // Verify Business Pro tier
-    const uRes = await pool.query(
-      'SELECT pricing_tier, heartbeat_consecutive_passes FROM users WHERE id = $1',
-      [req.userId]
-    );
-    if (!uRes.rows.length) return res.status(404).json({ success: false, message: 'User not found.' });
-    if (!['business_core', 'business_bundle'].includes(uRes.rows[0].pricing_tier)) {
-      return res.status(403).json({ success: false, message: 'Business plan required.' });
-    }
-
-    // Determine audit month
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const dayOfMonth = now.getDate();
-
-    // Enforce window: 1st-7th only
-    if (dayOfMonth < 1 || dayOfMonth > 7) {
-      return res.status(400).json({ success: false, message: 'Heartbeat Audit window is the 1st–7th of each month.' });
-    }
-
-    // Check if already completed this month
-    const existing = await pool.query(
-      'SELECT id FROM business_pro_heartbeats WHERE user_id = $1 AND audit_month = $2',
-      [req.userId, monthStart.toISOString().split('T')[0]]
-    );
-    if (existing.rows.length > 0) {
-      return res.status(409).json({ success: false, message: 'Heartbeat already completed for this month.' });
-    }
-
-    // Determine "In Truth" status
-    // Tolerance: within 1% or $50 (500 cents), whichever is greater
-    const variance = Math.abs(bank_balance_cents - ledger_balance_cents);
-    const tolerance = Math.max(500, Math.round(Math.abs(ledger_balance_cents) * 0.01));
-    const inTruth = variance <= tolerance;
-
-    // Insert heartbeat record
-    const hbRes = await pool.query(
-      `INSERT INTO business_pro_heartbeats
-         (user_id, audit_month, bank_balance_cents, ledger_balance_cents,
-          variance_cents, in_truth, signer_name)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [req.userId, monthStart.toISOString().split('T')[0],
-       bank_balance_cents, ledger_balance_cents, variance, inTruth,
-       signer_name.trim()]
-    );
-
-    // Update user's consecutive passes and in_truth status
-    const prevPasses = uRes.rows[0].heartbeat_consecutive_passes || 0;
-    const newPasses  = inTruth ? prevPasses + 1 : 0;
-    await pool.query(
-      `UPDATE users
-       SET heartbeat_in_truth = $1, heartbeat_consecutive_passes = $2
-       WHERE id = $3`,
-      [inTruth, newPasses, req.userId]
-    );
-
-    res.json({
-      success: true,
-      audit: hbRes.rows[0],
-      in_truth: inTruth,
-      heartbeat_consecutive_passes: newPasses,
-      vesting_complete: newPasses >= 3,
-      message: inTruth
-        ? `In Truth ✓ — ${newPasses} of 3 consecutive pass${newPasses !== 1 ? 'es' : ''} recorded.`
-        : 'Out of Truth — commissions frozen until 3 consecutive passes achieved.'
-    });
-  } catch (err) {
-    console.error('[BusinessPro] heartbeat submit error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to submit heartbeat.' });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-// POST /api/auth/migrate-data — Migrate localStorage data to server
-app.post('/api/auth/migrate-data', requireAuth, async (req, res) => {
-  try {
-    const { transactions } = req.body;
-    const userId = req.userId;
-
-    if (!Array.isArray(transactions)) {
-      return res.json({ migrated: 0 });
-    }
-
-    const client = await pool.connect();
-    let migrated = 0;
-
-    try {
-      await client.query('BEGIN');
-
-      for (const txn of transactions) {
-        if (!txn.type || !txn.amount) continue;
-
-        // Find category_id by slug or name if provided
-        let categoryId = txn.category_id || null;
-        if (!categoryId && txn.category_slug) {
-          const catResult = await client.query(
-            'SELECT id FROM categories WHERE slug = $1',
-            [txn.category_slug]
-          );
-          if (catResult.rows.length > 0) categoryId = catResult.rows[0].id;
-        }
-
-        await client.query(
-          `INSERT INTO transactions (user_id, type, amount, description, category_id, subcategory, payment_method, transaction_date)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            userId,
-            txn.type,
-            parseFloat(txn.amount),
-            txn.description || null,
-            categoryId,
-            txn.subcategory || null,
-            txn.payment_method || null,
-            txn.transaction_date || new Date().toISOString().split('T')[0]
-          ]
-        );
-        migrated++;
-      }
-
-      await client.query('COMMIT');
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-
-    res.json({ migrated });
-  } catch (err) {
-    console.error('POST /api/auth/migrate-data error:', err.message);
-    res.status(500).json({ error: 'Failed to migrate data' });
-  }
-});
 
 // ═══════════════════════════════════════════════════════════
 // ─── CATEGORIES (per-user allocations) ───────────────────
@@ -3115,496 +1769,496 @@ app.post('/api/auth/migrate-data', requireAuth, async (req, res) => {
 
 // Six FACTS buckets. Used when the categories table is empty and as slug aliases
 // so one-time / permanent saves still resolve on older schemas.
-const FACTS_ALLOCATION_BUCKETS = [
-  { slug: 'necessities', name: 'Necessities', percentage: 50, color: '#10b981', icon: '🏠', sort_order: 1 },
-  { slug: 'velocity', name: 'Velocity', percentage: 10, color: '#f59e0b', icon: '⚡', sort_order: 2 },
-  { slug: 'reserve', name: 'Reserve', percentage: 10, color: '#818cf8', icon: '🛡️', sort_order: 3 },
-  { slug: 'lifestyle', name: 'Lifestyle', percentage: 10, color: '#ec4899', icon: '🌿', sort_order: 4 },
-  { slug: 'growth', name: 'Growth', percentage: 10, color: '#06b6d4', icon: '📈', sort_order: 5 },
-  { slug: 'legacy', name: 'Legacy', percentage: 10, color: '#c9a227', icon: '👑', sort_order: 6 }
-];
+// [Phase2] allocations → routes/allocations.js
 
-const FACTS_SLUG_ALIASES = {
-  necessities: ['necessities', 'fixed-expenses', 'fixed_expenses', 'fixed'],
-  velocity: ['velocity'],
-  reserve: ['reserve', 'save', 'future-expenses', 'future_expenses'],
-  lifestyle: ['lifestyle', 'fun'],
-  growth: ['growth', 'ff', 'financial-freedom', 'financial_freedom'],
-  legacy: ['legacy']
-};
 
-function factsBucketFor(slugOrName) {
-  const key = String(slugOrName || '').trim().toLowerCase();
-  if (!key) return null;
-  for (const bucket of FACTS_ALLOCATION_BUCKETS) {
-    if (bucket.slug === key || bucket.name.toLowerCase() === key) return bucket;
-    if ((FACTS_SLUG_ALIASES[bucket.slug] || []).indexOf(key) !== -1) return bucket;
-  }
-  return null;
-}
 
-let _factsAllocSchemaPromise = null;
-function loadFactsAllocSchema() {
-  if (!_factsAllocSchemaPromise) {
-    _factsAllocSchemaPromise = (async () => {
-      async function columnsFor(table) {
-        const exists = await pool.query(
-          `SELECT 1 FROM information_schema.tables
-           WHERE table_schema = 'public' AND table_name = $1`,
-          [table]
-        );
-        if (!exists.rowCount) return null;
-        const cols = await pool.query(
-          `SELECT column_name FROM information_schema.columns
-           WHERE table_schema = 'public' AND table_name = $1`,
-          [table]
-        );
-        return new Set(cols.rows.map(r => r.column_name));
-      }
-      return {
-        categories: await columnsFor('categories'),
-        user_allocations: await columnsFor('user_allocations'),
-        permanent_allocations: await columnsFor('permanent_allocations'),
-        allocation_config: await columnsFor('allocation_config')
-      };
-    })().catch(err => {
-      _factsAllocSchemaPromise = null;
-      throw err;
-    });
-  }
-  return _factsAllocSchemaPromise;
-}
 
-function allocationHttpError(status, message) {
-  const err = new Error(message);
-  err.status = status;
-  return err;
-}
 
-async function readUserAllocationView(userId) {
-  const schema = await loadFactsAllocSchema();
-  if (!schema.categories) {
-    return {
-      categories: FACTS_ALLOCATION_BUCKETS.map(b => Object.assign({ id: null }, b)),
-      has_temporary: false
-    };
-  }
 
-  const c = schema.categories;
-  const select = ['c.id', 'c.name'];
-  if (c.has('slug')) select.push('c.slug');
-  if (c.has('color')) select.push('c.color');
-  if (c.has('icon')) select.push('c.icon');
-  if (c.has('sort_order')) select.push('c.sort_order');
-  if (c.has('default_percentage')) select.push('c.default_percentage');
-  const where = c.has('is_active') ? 'WHERE c.is_active IS DISTINCT FROM FALSE' : '';
-  const order = c.has('sort_order') ? 'ORDER BY c.sort_order, c.id' : 'ORDER BY c.id';
-  const cats = await pool.query(`SELECT ${select.join(', ')} FROM categories c ${where} ${order}`);
 
-  const permanent = new Map();
-  if (schema.permanent_allocations) {
-    const rows = await pool.query(
-      'SELECT category_id, percentage FROM permanent_allocations WHERE user_id = $1',
-      [userId]
-    );
-    rows.rows.forEach(r => permanent.set(Number(r.category_id), r.percentage));
-  }
 
-  const temporary = new Map();
-  const base = new Map();
-  if (schema.user_allocations) {
-    const hasTemp = schema.user_allocations.has('is_temporary');
-    const rows = await pool.query(
-      `SELECT category_id, percentage${hasTemp ? ', is_temporary' : ''}
-       FROM user_allocations WHERE user_id = $1`,
-      [userId]
-    );
-    rows.rows.forEach(r => {
-      const isTemp = hasTemp && (r.is_temporary === true || r.is_temporary === 't');
-      if (isTemp) temporary.set(Number(r.category_id), r.percentage);
-      else base.set(Number(r.category_id), r.percentage);
-    });
-  }
 
-  const config = new Map();
-  if (schema.allocation_config && schema.allocation_config.has('category_id') && schema.allocation_config.has('percentage')) {
-    const rows = await pool.query('SELECT category_id, percentage FROM allocation_config');
-    rows.rows.forEach(r => config.set(Number(r.category_id), r.percentage));
-  }
 
-  let categories = cats.rows.map(row => {
-    const id = Number(row.id);
-    const bucket = factsBucketFor(row.slug) || factsBucketFor(row.name);
-    let percentage = null;
-    if (temporary.has(id)) percentage = temporary.get(id);
-    else if (permanent.has(id)) percentage = permanent.get(id);
-    else if (base.has(id)) percentage = base.get(id);
-    else if (config.has(id)) percentage = config.get(id);
-    else if (row.default_percentage != null) percentage = row.default_percentage;
-    else if (bucket) percentage = bucket.percentage;
-    else percentage = 0;
-    return {
-      id,
-      name: row.name,
-      slug: row.slug || (bucket && bucket.slug) || '',
-      color: row.color || (bucket && bucket.color) || '#94a3b8',
-      icon: row.icon || (bucket && bucket.icon) || '📁',
-      sort_order: row.sort_order,
-      percentage: parseFloat(percentage)
-    };
-  });
 
-  if (!categories.length) {
-    categories = FACTS_ALLOCATION_BUCKETS.map(b => Object.assign({ id: null }, b));
-  }
 
-  return { categories, has_temporary: temporary.size > 0 };
-}
 
-async function insertFactsCategory(client, schema, bucket) {
-  const cols = schema.categories;
-  const fields = [];
-  const values = [];
-  function add(col, val) {
-    if (cols.has(col)) {
-      fields.push(col);
-      values.push(val);
-    }
-  }
-  add('slug', bucket.slug);
-  add('name', bucket.name);
-  add('sort_order', bucket.sort_order);
-  add('color', bucket.color);
-  add('icon', bucket.icon);
-  add('default_percentage', bucket.percentage);
-  add('is_active', true);
-  if (!fields.length) throw allocationHttpError(500, 'Allocation categories are not available');
-  const placeholders = fields.map((_, i) => '$' + (i + 1)).join(', ');
-  const inserted = await client.query(
-    `INSERT INTO categories (${fields.join(', ')}) VALUES (${placeholders}) RETURNING id`,
-    values
-  );
-  return inserted.rows[0].id;
-}
 
-async function resolveAllocationCategoryId(client, schema, alloc) {
-  if (!schema.categories) throw allocationHttpError(500, 'Allocation categories are not available');
-  const numericId = parseInt(alloc.category_id, 10);
-  if (Number.isFinite(numericId)) {
-    const found = await client.query('SELECT id FROM categories WHERE id = $1', [numericId]);
-    if (found.rows.length) return found.rows[0].id;
-  }
 
-  const bucket = factsBucketFor(alloc.slug) || factsBucketFor(alloc.name);
-  const candidates = [];
-  if (alloc.slug) candidates.push(String(alloc.slug));
-  if (alloc.name) candidates.push(String(alloc.name));
-  if (bucket) {
-    candidates.push(bucket.slug, bucket.name);
-    (FACTS_SLUG_ALIASES[bucket.slug] || []).forEach(alias => candidates.push(alias));
-  }
 
-  const cols = schema.categories;
-  for (const candidate of candidates) {
-    if (cols.has('slug')) {
-      const bySlug = await client.query(
-        'SELECT id FROM categories WHERE LOWER(slug) = LOWER($1) LIMIT 1',
-        [candidate]
-      );
-      if (bySlug.rows.length) return bySlug.rows[0].id;
-    }
-    const byName = await client.query(
-      'SELECT id FROM categories WHERE LOWER(name) = LOWER($1) LIMIT 1',
-      [candidate]
-    );
-    if (byName.rows.length) return byName.rows[0].id;
-  }
 
-  if (bucket) return insertFactsCategory(client, schema, bucket);
-  throw allocationHttpError(400, 'Unknown category: ' + (alloc.slug || alloc.name || alloc.category_id || 'missing'));
-}
 
-async function upsertPermanentAllocation(client, schema, userId, categoryId, percentage) {
-  const cols = schema.permanent_allocations;
-  if (!cols) return;
-  const hasUpdated = cols.has('updated_at');
-  const updated = await client.query(
-    `UPDATE permanent_allocations
-     SET percentage = $3${hasUpdated ? ', updated_at = NOW()' : ''}
-     WHERE user_id = $1 AND category_id = $2`,
-    [userId, categoryId, percentage]
-  );
-  if (updated.rowCount > 0) return;
-  if (hasUpdated) {
-    await client.query(
-      `INSERT INTO permanent_allocations (user_id, category_id, percentage, updated_at)
-       VALUES ($1, $2, $3, NOW())`,
-      [userId, categoryId, percentage]
-    );
-  } else {
-    await client.query(
-      `INSERT INTO permanent_allocations (user_id, category_id, percentage)
-       VALUES ($1, $2, $3)`,
-      [userId, categoryId, percentage]
-    );
-  }
-}
 
-async function upsertUserAllocationRow(client, schema, userId, categoryId, percentage, asTemporary) {
-  const cols = schema.user_allocations;
-  if (!cols) return;
-  const hasTemp = cols.has('is_temporary');
-  const hasUpdated = cols.has('updated_at');
 
-  if (hasTemp && !asTemporary) {
-    const updated = await client.query(
-      `UPDATE user_allocations
-       SET percentage = $3, is_temporary = FALSE${hasUpdated ? ', updated_at = NOW()' : ''}
-       WHERE user_id = $1 AND category_id = $2 AND is_temporary = FALSE`,
-      [userId, categoryId, percentage]
-    );
-    if (updated.rowCount > 0) return;
-  } else if (!hasTemp) {
-    const updated = await client.query(
-      `UPDATE user_allocations
-       SET percentage = $3${hasUpdated ? ', updated_at = NOW()' : ''}
-       WHERE user_id = $1 AND category_id = $2`,
-      [userId, categoryId, percentage]
-    );
-    if (updated.rowCount > 0) return;
-  }
 
-  try {
-    if (hasTemp && hasUpdated) {
-      await client.query(
-        `INSERT INTO user_allocations (user_id, category_id, percentage, is_temporary, updated_at)
-         VALUES ($1, $2, $3, $4, NOW())`,
-        [userId, categoryId, percentage, !!asTemporary]
-      );
-    } else if (hasTemp) {
-      await client.query(
-        `INSERT INTO user_allocations (user_id, category_id, percentage, is_temporary)
-         VALUES ($1, $2, $3, $4)`,
-        [userId, categoryId, percentage, !!asTemporary]
-      );
-    } else if (hasUpdated) {
-      await client.query(
-        `INSERT INTO user_allocations (user_id, category_id, percentage, updated_at)
-         VALUES ($1, $2, $3, NOW())`,
-        [userId, categoryId, percentage]
-      );
-    } else {
-      await client.query(
-        `INSERT INTO user_allocations (user_id, category_id, percentage)
-         VALUES ($1, $2, $3)`,
-        [userId, categoryId, percentage]
-      );
-    }
-  } catch (err) {
-    if (err.code !== '23505') throw err;
-    if (hasTemp) {
-      await client.query(
-        `UPDATE user_allocations
-         SET percentage = $3, is_temporary = $4${hasUpdated ? ', updated_at = NOW()' : ''}
-         WHERE user_id = $1 AND category_id = $2`,
-        [userId, categoryId, percentage, !!asTemporary]
-      );
-    } else {
-      await client.query(
-        `UPDATE user_allocations
-         SET percentage = $3${hasUpdated ? ', updated_at = NOW()' : ''}
-         WHERE user_id = $1 AND category_id = $2`,
-        [userId, categoryId, percentage]
-      );
-    }
-  }
-}
 
-async function ensureAllocationConfigRow(client, schema, categoryId, percentage) {
-  const cols = schema.allocation_config;
-  if (!cols || !cols.has('category_id') || !cols.has('percentage')) return;
-  try {
-    const existing = await client.query(
-      'SELECT 1 FROM allocation_config WHERE category_id = $1',
-      [categoryId]
-    );
-    if (existing.rowCount) return;
-    await client.query(
-      'INSERT INTO allocation_config (category_id, percentage) VALUES ($1, $2)',
-      [categoryId, percentage]
-    );
-  } catch (err) {
-    console.error('allocation_config seed skipped:', err.message);
-  }
-}
 
-async function savePermanentAllocationRow(client, schema, userId, categoryId, percentage) {
-  await upsertPermanentAllocation(client, schema, userId, categoryId, percentage);
-  await upsertUserAllocationRow(client, schema, userId, categoryId, percentage, false);
-  await ensureAllocationConfigRow(client, schema, categoryId, percentage);
-}
 
-async function saveTemporaryAllocationRow(client, schema, userId, categoryId, percentage) {
-  const cols = schema.user_allocations;
-  if (!cols) throw allocationHttpError(500, 'Allocation storage is not available');
-  const hasTemp = cols.has('is_temporary');
-  const hasUpdated = cols.has('updated_at');
 
-  if (!hasTemp) {
-    const current = await client.query(
-      'SELECT percentage FROM user_allocations WHERE user_id = $1 AND category_id = $2',
-      [userId, categoryId]
-    );
-    if (current.rows[0]) {
-      await upsertPermanentAllocation(client, schema, userId, categoryId, current.rows[0].percentage);
-    }
-    await upsertUserAllocationRow(client, schema, userId, categoryId, percentage, false);
-    return;
-  }
 
-  const existing = await client.query(
-    `SELECT percentage, is_temporary FROM user_allocations
-     WHERE user_id = $1 AND category_id = $2`,
-    [userId, categoryId]
-  );
-  const storedDefault = existing.rows.find(r => r.is_temporary !== true);
-  if (storedDefault && schema.permanent_allocations) {
-    const already = await client.query(
-      'SELECT 1 FROM permanent_allocations WHERE user_id = $1 AND category_id = $2',
-      [userId, categoryId]
-    );
-    if (!already.rowCount) {
-      await upsertPermanentAllocation(client, schema, userId, categoryId, storedDefault.percentage);
-    }
-  }
 
-  await client.query(
-    `DELETE FROM user_allocations
-     WHERE user_id = $1 AND category_id = $2 AND is_temporary = TRUE`,
-    [userId, categoryId]
-  );
 
-  try {
-    if (hasUpdated) {
-      await client.query(
-        `INSERT INTO user_allocations (user_id, category_id, percentage, is_temporary, updated_at)
-         VALUES ($1, $2, $3, TRUE, NOW())`,
-        [userId, categoryId, percentage]
-      );
-    } else {
-      await client.query(
-        `INSERT INTO user_allocations (user_id, category_id, percentage, is_temporary)
-         VALUES ($1, $2, $3, TRUE)`,
-        [userId, categoryId, percentage]
-      );
-    }
-  } catch (err) {
-    // Older databases unique on (user_id, category_id) only, so a default row
-    // already occupies the key. Mark that row one-time; permanent_allocations
-    // keeps the previous default so the next income can revert.
-    if (err.code !== '23505') throw err;
-    await client.query(
-      `UPDATE user_allocations
-       SET percentage = $3, is_temporary = TRUE${hasUpdated ? ', updated_at = NOW()' : ''}
-       WHERE user_id = $1 AND category_id = $2`,
-      [userId, categoryId, percentage]
-    );
-  }
-}
 
-function validateAllocationPayload(allocations) {
-  if (!Array.isArray(allocations) || allocations.length === 0) {
-    return 'allocations array required';
-  }
-  const total = allocations.reduce((sum, a) => sum + parseFloat(a.percentage), 0);
-  if (!Number.isFinite(total) || Math.abs(total - 100) > 0.01) {
-    const shown = Number.isFinite(total) ? total.toFixed(2) : 'invalid';
-    return `Percentages must sum to 100 (got ${shown})`;
-  }
-  return null;
-}
 
-app.get('/api/categories', requireAuth, async (req, res) => {
-  try {
-    const view = await readUserAllocationView(req.userId);
-    res.json(view);
-  } catch (err) {
-    console.error('GET /api/categories error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch categories' });
-  }
-});
 
-// ─── ALLOCATION CONFIG (per-user) ──────────────────────────
-// PUT /api/allocations/permanent - Save as permanent allocation (default for all future transactions)
-app.put('/api/allocations/permanent', requireAuth, async (req, res) => {
-  const { allocations } = req.body;
-  const userId = req.userId;
-  const invalid = validateAllocationPayload(allocations);
-  if (invalid) return res.status(400).json({ error: invalid });
 
-  const client = await pool.connect();
-  try {
-    const schema = await loadFactsAllocSchema();
-    await client.query('BEGIN');
 
-    for (const alloc of allocations) {
-      const categoryId = await resolveAllocationCategoryId(client, schema, alloc);
-      await savePermanentAllocationRow(client, schema, userId, categoryId, parseFloat(alloc.percentage));
-    }
 
-    if (schema.user_allocations && schema.user_allocations.has('is_temporary')) {
-      await client.query(
-        'DELETE FROM user_allocations WHERE user_id = $1 AND is_temporary = TRUE',
-        [userId]
-      );
-    }
 
-    await client.query('COMMIT');
-    const view = await readUserAllocationView(userId);
-    view.has_temporary = false;
-    res.json(view);
-  } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (rollbackErr) { /* already closed */ }
-    console.error('PUT /api/allocations/permanent error:', err.message);
-    res.status(err.status || 500).json({ error: err.status ? err.message : 'Failed to update permanent allocations' });
-  } finally {
-    client.release();
-  }
-});
 
-// PUT /api/allocations/temporary - Save as one-time allocation (applies to next transaction only)
-app.put('/api/allocations/temporary', requireAuth, async (req, res) => {
-  const { allocations } = req.body;
-  const userId = req.userId;
-  const invalid = validateAllocationPayload(allocations);
-  if (invalid) return res.status(400).json({ error: invalid });
 
-  const client = await pool.connect();
-  try {
-    const schema = await loadFactsAllocSchema();
-    await client.query('BEGIN');
 
-    for (const alloc of allocations) {
-      const categoryId = await resolveAllocationCategoryId(client, schema, alloc);
-      await saveTemporaryAllocationRow(client, schema, userId, categoryId, parseFloat(alloc.percentage));
-    }
 
-    await client.query('COMMIT');
-    const view = await readUserAllocationView(userId);
-    res.json(view);
-  } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (rollbackErr) { /* already closed */ }
-    console.error('PUT /api/allocations/temporary error:', err.message);
-    res.status(err.status || 500).json({ error: err.status ? err.message : 'Failed to update temporary allocations' });
-  } finally {
-    client.release();
-  }
-});
 
-// Backward compatibility: PUT /api/allocations defaults to permanent
-app.put('/api/allocations', requireAuth, async (req, res) => {
-  return app._router.handle({ ...req, url: '/api/allocations/permanent', method: 'PUT' }, res);
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─── SUBCATEGORIES (per-user) ──────────────────────────────
 app.get('/api/subcategories', requireAuth, async (req, res) => {
@@ -3704,2257 +2358,2257 @@ app.delete('/api/subcategories/:id', requireAuth, async (req, res) => {
 });
 
 // ─── TRANSACTIONS (per-user) ──────────────────────────────
-app.get('/api/transactions', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { type, category_id, limit = 50, offset = 0, start_date, end_date } = req.query;
-    let query = `
-      SELECT t.*, c.name as category_name, c.slug as category_slug,
-             c.color as category_color, c.icon as category_icon,
-             COALESCE(ba.name, bra.name) as bank_account_name,
-             ba_from.name as transfer_from_name,
-             ba_to.name as transfer_to_name,
-             EXISTS(SELECT 1 FROM transaction_splits ts WHERE ts.transaction_id = t.id) AS has_member_splits
-      FROM transactions t
-      LEFT JOIN categories c ON c.id = t.category_id
-      LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
-      LEFT JOIN brokerage_accounts bra ON bra.id = t.brokerage_account_id
-      LEFT JOIN bank_accounts ba_from ON ba_from.id = t.bank_account_id AND t.type = 'transfer'
-      LEFT JOIN bank_accounts ba_to ON ba_to.id = t.transfer_to_account_id AND t.type = 'transfer'
-      WHERE t.user_id = $1
-    `;
-    const params = [userId];
-    let paramIdx = 2;
-
-    if (type) {
-      query += ` AND t.type = $${paramIdx++}`;
-      params.push(type);
-    }
-    if (category_id) {
-      query += ` AND t.category_id = $${paramIdx++}`;
-      params.push(parseInt(category_id));
-    }
-    if (start_date) {
-      query += ` AND t.transaction_date >= $${paramIdx++}`;
-      params.push(start_date);
-    }
-    if (end_date) {
-      query += ` AND t.transaction_date <= $${paramIdx++}`;
-      params.push(end_date);
-    }
-
-    query += ` ORDER BY t.transaction_date DESC, t.created_at DESC`;
-    query += ` LIMIT $${paramIdx++} OFFSET $${paramIdx++}`;
-    params.push(parseInt(limit), parseInt(offset));
-
-    const result = await pool.query(query, params);
-
-    // Attach allocation snapshots for income transactions and split expenses
-    const allocIds = result.rows.filter(t => t.type === 'income' || t.is_split).map(t => t.id);
-    let allocMap = {};
-    if (allocIds.length > 0) {
-      const allocResult = await pool.query(`
-        SELECT ta.transaction_id, ta.percentage, ta.amount,
-               c.name as category_name, c.slug as category_slug, c.color as category_color
-        FROM transaction_allocations ta
-        JOIN categories c ON c.id = ta.category_id
-        WHERE ta.transaction_id = ANY($1)
-        ORDER BY ta.transaction_id, c.sort_order
-      `, [allocIds]);
-      for (const row of allocResult.rows) {
-        if (!allocMap[row.transaction_id]) allocMap[row.transaction_id] = [];
-        allocMap[row.transaction_id].push({
-          category_name: row.category_name,
-          category_slug: row.category_slug,
-          category_color: row.category_color,
-          percentage: parseFloat(row.percentage),
-          amount: row.amount ? parseFloat(row.amount) : null
-        });
-      }
-    }
-
-    const rows = result.rows.map(t => ({
-      ...t,
-      // Normalize transaction_date to YYYY-MM-DD string (pg returns Date objects for DATE columns)
-      transaction_date: t.transaction_date
-        ? (t.transaction_date instanceof Date
-            ? t.transaction_date.toISOString().split('T')[0]
-            : String(t.transaction_date).split('T')[0])
-        : null,
-      allocations: (t.type === 'income' || t.is_split) ? (allocMap[t.id] || []) : undefined
-    }));
-
-    res.json(rows);
-  } catch (err) {
-    console.error('GET /api/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
-  }
-});
-
-app.post('/api/transactions', requireAuth, async (req, res) => {
-  const userId = req.userId;
-  const body = req.body || {};
-  const { type, description, category_id, subcategory, payment_method, transaction_date, bank_account_id, splits, brokerage_income } = body;
-  const amount = sanitizeNumber(body.amount);
-
-  if (!type || !['income', 'expense'].includes(type)) {
-    return res.status(400).json({ success: false, error: 'type must be "income" or "expense"' });
-  }
-  if (!(amount > 0)) {
-    return res.status(400).json({ success: false, error: 'Invalid amount' });
-  }
-
-  const isSplit = type === 'expense' && Array.isArray(splits) && splits.length > 1;
-
-  if (type === 'expense' && !isSplit && !category_id) {
-    return res.status(400).json({ success: false, error: 'category_id required for expenses' });
-  }
-  if (isSplit) {
-    if (splits.some(s => !s.category_id || !(sanitizeNumber(s.amount) > 0))) {
-      return res.status(400).json({ success: false, error: 'Each split must have a valid category_id and amount' });
-    }
-    const splitTotal = splits.reduce((sum, s) => sum + sanitizeNumber(s.amount), 0);
-    if (Math.abs(splitTotal - amount) > 0.01) {
-      return res.status(400).json({ success: false, error: `Split amounts ($${splitTotal.toFixed(2)}) must equal total ($${amount.toFixed(2)})` });
-    }
-  }
-
-  const client = await pool.connect();
-  let open = false;
-  try {
-    await client.query("SET statement_timeout = '8000'");
-    await client.query('BEGIN');
-    open = true;
-
-    // Validate bank account ownership if provided
-    if (bank_account_id) {
-      const baCheck = await client.query(
-        'SELECT id, is_archived FROM bank_accounts WHERE id = $1 AND user_id = $2',
-        [parseInt(bank_account_id), userId]
-      );
-      if (baCheck.rows.length === 0) {
-        await client.query('ROLLBACK');
-        open = false;
-        return res.status(400).json({ success: false, error: 'Bank account not found' });
-      }
-      if (baCheck.rows[0].is_archived) {
-        await client.query('ROLLBACK');
-        open = false;
-        return res.status(400).json({ success: false, error: 'Cannot tag to an archived bank account' });
-      }
-    }
-
-    // Create transaction. Older ledgers store dollars in amount; the book schema stores cents.
-    const txnCols = await loadTransactionColumns(client);
-    const fields = ['user_id', 'type'];
-    const values = [userId, type];
-    function addTxnColumn(column, value) {
-      if (!txnCols[column]) return;
-      fields.push(column);
-      values.push(value);
-    }
-    if (txnCols.amount) addTxnColumn('amount', amount);
-    if (txnCols.amount_cents) addTxnColumn('amount_cents', Math.round(amount * 100));
-    addTxnColumn('description', description || null);
-    addTxnColumn('category_id', isSplit ? null : (category_id || null));
-    addTxnColumn('subcategory', subcategory || null);
-    addTxnColumn('payment_method', payment_method || null);
-    const when = transaction_date || new Date().toISOString().split('T')[0];
-    addTxnColumn('transaction_date', when);
-    if (!txnCols.transaction_date) addTxnColumn('occurred_at', when);
-    addTxnColumn('bank_account_id', bank_account_id ? parseInt(bank_account_id, 10) : null);
-    addTxnColumn('is_split', !!isSplit);
-    const placeholders = values.map(function (_, index) { return '$' + (index + 1); }).join(', ');
-    const result = await client.query(
-      `INSERT INTO transactions (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`,
-      values
-    );
-
-    const transaction = result.rows[0];
-
-    // Update bank account balance if tagged
-    if (bank_account_id) {
-      const balanceChange = type === 'income' ? amount : -amount;
-      await client.query(
-        'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
-        [balanceChange, parseInt(bank_account_id)]
-      );
-    }
-
-    // CRITICAL: Snapshot current allocations for this transaction (forward-only logic)
-    // This ensures allocation changes never retroactively affect past transactions
-    if (type === 'income') {
-      if (brokerage_income) {
-        // Brokerage income (dividends, interest, deposits): snapshot as 100% Financial Freedom
-        // Money already in a brokerage account is already "invested" — no 6-category split needed
-        const ffResult = await client.query(
-          `SELECT id FROM categories WHERE slug IN ('growth','ff','financial-freedom') OR name ILIKE '%financial freedom%' LIMIT 1`
-        );
-        if (ffResult.rows.length > 0) {
-          await client.query(
-            `INSERT INTO transaction_allocations (transaction_id, category_id, percentage) VALUES ($1, $2, $3)`,
-            [transaction.id, ffResult.rows[0].id, 100]
-          );
-        }
-        // Temporary allocations are NOT consumed — they remain for the next non-brokerage income
-      } else {
-        // Normal income: snapshot current allocations (temporary if active, otherwise permanent)
-        const allocations = await client.query(`
-          SELECT c.id as category_id,
-                 COALESCE(ua.percentage, pa.percentage, ac.percentage) as percentage
-          FROM categories c
-          JOIN allocation_config ac ON ac.category_id = c.id
-          LEFT JOIN permanent_allocations pa ON pa.category_id = c.id AND pa.user_id = $1
-          LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = $1 AND ua.is_temporary = TRUE
-          ORDER BY c.sort_order
-        `, [userId]);
-
-        // Snapshot allocations into transaction_allocations
-        for (const alloc of allocations.rows) {
-          await client.query(
-            `INSERT INTO transaction_allocations (transaction_id, category_id, percentage)
-             VALUES ($1, $2, $3)`,
-            [transaction.id, alloc.category_id, alloc.percentage]
-          );
-        }
-
-        // If temporary allocations were used, delete them (revert to permanent)
-        await client.query(
-          `DELETE FROM user_allocations WHERE user_id = $1 AND is_temporary = TRUE`,
-          [userId]
-        );
-      }
-    }
-
-    // For split expenses: record each category split with its dollar amount
-    if (isSplit) {
-      const totalAmount = amount;
-      for (const split of splits) {
-        const splitAmount = sanitizeNumber(split.amount);
-        const splitPercentage = totalAmount > 0 ? (splitAmount / totalAmount * 100) : 0;
-        await client.query(
-          `INSERT INTO transaction_allocations (transaction_id, category_id, percentage, amount)
-           VALUES ($1, $2, $3, $4)`,
-          [transaction.id, parseInt(split.category_id), splitPercentage.toFixed(2), splitAmount]
-        );
-      }
-    }
-
-    await client.query('COMMIT');
-    open = false;
-
-    // ── Auto-complete transaction-based challenges (fire-and-forget) ──
-    // Don't block the response — run in background
-    const txUserId = userId;
-    setImmediate(async () => {
-      try {
-        // "Log a transaction" challenge
-        await tryAutoCompleteChallenge(txUserId, 'log_transaction');
-        // "Log 3 transactions today" challenge
-        await tryAutoCompleteChallenge(txUserId, 'log_3_transactions');
-        // "Log a bill payment" challenge (if it was an expense)
-        if (type === 'expense') {
-          await tryAutoCompleteChallenge(txUserId, 'log_bill');
-        }
-        // Weekly: "Log 15+ transactions this week"
-        await tryAutoCompleteChallenge(txUserId, 'log_15_weekly');
-        // Monthly: "Log 50+ transactions"
-        await tryAutoCompleteChallenge(txUserId, 'monthly_50_logs');
-      } catch (e) { console.error('[AutoComplete] post-transaction error:', e.message); }
-
-      // Award 5 TFR Points per transaction (max 10 transactions/day = 50 pts cap on this action)
-      try {
-        await ensureFgBalance(txUserId);
-        const txToday = new Date().toISOString().split('T')[0];
-        const txCurrentMonth = txToday.substring(0, 7);
-        const txBal = (await pool.query(
-          'SELECT daily_txn_points_date, daily_txn_count, monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-          [txUserId]
-        )).rows[0] || {};
-        const isSameDay = txBal.daily_txn_points_date &&
-          String(txBal.daily_txn_points_date).split('T')[0] === txToday;
-        const dailyCount = isSameDay ? (parseInt(txBal.daily_txn_count) || 0) : 0;
-        if (dailyCount < 10) {
-          const monthEarnedTx = txBal.monthly_cap_reset_month === txCurrentMonth
-            ? (parseInt(txBal.monthly_points_earned) || 0) : 0;
-          const capRemaining = Math.max(0, 5000 - monthEarnedTx);
-          const txPts = Math.min(5, capRemaining);
-          if (txPts > 0) {
-            await pool.query(
-              `UPDATE fg_points_balances
-               SET balance = balance + $2,
-                   total_earned = total_earned + $2,
-                   daily_txn_points_date = $3,
-                   daily_txn_count = CASE WHEN daily_txn_points_date = $3::date THEN daily_txn_count + 1 ELSE 1 END,
-                   monthly_points_earned = CASE WHEN monthly_cap_reset_month = $4 THEN monthly_points_earned + $2 ELSE $2 END,
-                   monthly_cap_reset_month = $4,
-                   updated_at = NOW()
-               WHERE user_id = $1`,
-              [txUserId, txPts, txToday, txCurrentMonth]
-            );
-            await pool.query(
-              `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-               VALUES ($1, 'transaction_logged', 'Transaction logged — 5 FACTS Points', $2)`,
-              [txUserId, txPts]
-            );
-          }
-          // First transaction achievement (one-time, 25 pts)
-          const existingAch = (await pool.query(
-            `SELECT id FROM rewards_achievements WHERE user_id = $1 AND achievement_key = 'first_transaction'`,
-            [txUserId]
-          )).rows[0];
-          if (!existingAch) {
-            const achMonthEarned = txBal.monthly_cap_reset_month === txCurrentMonth
-              ? (parseInt(txBal.monthly_points_earned) || 0) + txPts : txPts;
-            const achCapRemaining = Math.max(0, 5000 - achMonthEarned);
-            const achPts = Math.min(25, achCapRemaining);
-            if (achPts > 0) {
-              await pool.query(
-                `UPDATE fg_points_balances
-                 SET balance = balance + $2,
-                     total_earned = total_earned + $2,
-                     monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-                     monthly_cap_reset_month = $3,
-                     updated_at = NOW()
-                 WHERE user_id = $1`,
-                [txUserId, achPts, txCurrentMonth]
-              );
-              await pool.query(
-                `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-                 VALUES ($1, 'achievement', 'Achievement: First Transaction Logged — 25 FACTS Points', $2)`,
-                [txUserId, achPts]
-              );
-            }
-            await pool.query(
-              `INSERT INTO rewards_achievements (user_id, achievement_key, points_awarded)
-               VALUES ($1, 'first_transaction', $2) ON CONFLICT DO NOTHING`,
-              [txUserId, achPts || 0]
-            );
-          }
-        }
-      } catch (rpTxErr) {
-        console.error('[Rewards] transaction points error:', rpTxErr.message);
-      }
-    });
-
-    if (!res.headersSent) {
-      return res.status(201).json(Object.assign({}, transaction, { success: true }));
-    }
-  } catch (error) {
-    console.error("Transaction Save Error:", error);
-    if (open) {
-      try { await client.query('ROLLBACK'); } catch (rollbackErr) {
-        console.error("Transaction Save Error:", rollbackErr);
-      }
-      open = false;
-    }
-    if (!res.headersSent) {
-      return res.status(500).json({
-        success: false,
-        error: error.message || 'Failed to create transaction'
-      });
-    }
-  } finally {
-    if (client) {
-      try { await client.query("RESET statement_timeout"); } catch (resetErr) {
-        console.error("Transaction Save Error:", resetErr);
-      }
-      try { client.release(); } catch (releaseErr) {
-        console.error("Transaction Save Error:", releaseErr);
-      }
-    }
-  }
-});
-
-app.delete('/api/transactions/:id', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const result = await client.query(
-      'DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING *',
-      [parseInt(req.params.id), userId]
-    );
-    if (result.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Transaction not found' });
-    }
-
-    const deleted = result.rows[0];
-
-    // Reverse bank account balance if transaction was tagged
-    if (deleted.bank_account_id) {
-      const reversal = deleted.type === 'income' ? -parseFloat(deleted.amount) : parseFloat(deleted.amount);
-      await client.query(
-        'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
-        [reversal, deleted.bank_account_id]
-      );
-    }
-
-    await client.query('COMMIT');
-    res.json({ deleted });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('DELETE /api/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to delete transaction' });
-  } finally {
-    client.release();
-  }
-});
-
-// ─── BULK EDIT TRANSACTIONS (full parity with individual edit) ───
-app.put('/api/transactions/bulk', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const { ids, changes } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'ids array required' });
-    }
-    if (!changes || typeof changes !== 'object') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'changes object required' });
-    }
-    const idInts = ids.map(Number).filter(n => n > 0 && Number.isInteger(n));
-    if (idInts.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'No valid transaction IDs provided' });
-    }
-
-    // Fetch all transactions with ownership + row lock
-    const txnResult = await client.query(
-      'SELECT * FROM transactions WHERE id = ANY($1) AND user_id = $2 FOR UPDATE',
-      [idInts, userId]
-    );
-    if (txnResult.rows.length !== idInts.length) {
-      await client.query('ROLLBACK');
-      return res.status(403).json({ error: 'One or more transactions not found' });
-    }
-    const transactions = txnResult.rows;
-
-    const INVESTMENT_TYPES = new Set([
-      'Investment / Brokerage', 'Retirement – 401(k)', 'Retirement – IRA',
-      'Retirement – Roth IRA', 'Retirement – 403(b)', 'Retirement – 457',
-      'Crypto – Exchange', 'Crypto – Hot Wallet', 'Crypto – Cold Wallet', 'Crypto – DeFi / On-chain'
-    ]);
-
-    // Detect complex changes that require per-transaction processing
-    const hasTypeChange = Object.prototype.hasOwnProperty.call(changes, 'type');
-    const hasBankChange = Object.prototype.hasOwnProperty.call(changes, 'bank_account_id');
-    const hasSplitChange = Array.isArray(changes.split_percentages) && changes.split_percentages.length > 1;
-    const isTransfer = hasTypeChange && changes.type === 'transfer';
-
-    // Helper to parse "bank_5" / "brokerage_3" values
-    function parseTfVal(val) {
-      if (!val) return null;
-      const parts = val.split('_');
-      return { source: parts[0], id: parseInt(parts.slice(1).join('_')) };
-    }
-
-    // Validate transfer accounts upfront
-    let tfFrom = null, tfTo = null, tfFromIsInvestment = false, tfToIsInvestment = false;
-    if (isTransfer) {
-      if (!changes.transfer_from || !changes.transfer_to) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Both source and destination accounts are required for transfers' });
-      }
-      tfFrom = parseTfVal(changes.transfer_from);
-      tfTo = parseTfVal(changes.transfer_to);
-      if (!tfFrom || !tfTo) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Invalid transfer account format' });
-      }
-      if (tfFrom.source === tfTo.source && tfFrom.id === tfTo.id) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Cannot transfer to the same account' });
-      }
-      const fromTbl = tfFrom.source === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
-      const toTbl = tfTo.source === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
-      const fromChk = await client.query(`SELECT id, account_type FROM ${fromTbl} WHERE id = $1 AND user_id = $2`, [tfFrom.id, userId]);
-      const toChk = await client.query(`SELECT id, account_type FROM ${toTbl} WHERE id = $1 AND user_id = $2`, [tfTo.id, userId]);
-      if (fromChk.rows.length === 0 || toChk.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'One or both transfer accounts not found' });
-      }
-      tfFromIsInvestment = tfFrom.source === 'brokerage' || INVESTMENT_TYPES.has(fromChk.rows[0].account_type || '');
-      tfToIsInvestment = tfTo.source === 'brokerage' || INVESTMENT_TYPES.has(toChk.rows[0].account_type || '');
-    }
-
-    // Validate bank account if changing
-    if (hasBankChange && changes.bank_account_id) {
-      const baId = parseInt(changes.bank_account_id);
-      const baChk = await client.query('SELECT id, is_archived FROM bank_accounts WHERE id = $1 AND user_id = $2', [baId, userId]);
-      if (baChk.rows.length === 0) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Bank account not found' }); }
-      if (baChk.rows[0].is_archived) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Cannot tag to an archived bank account' }); }
-    }
-
-    // Validate split percentages
-    if (hasSplitChange) {
-      const totalPct = changes.split_percentages.reduce((s, sp) => s + parseFloat(sp.percentage || 0), 0);
-      if (Math.abs(totalPct - 100) > 0.01) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Split percentages must total 100%' }); }
-      if (changes.split_percentages.some(sp => !sp.category_id || !sp.percentage || parseFloat(sp.percentage) <= 0)) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Each split must have category_id and positive percentage' });
-      }
-    }
-
-    const needsPerTxn = hasTypeChange || hasBankChange || hasSplitChange;
-
-    if (!needsPerTxn) {
-      // ─── SIMPLE BATCH UPDATE (category, subcategory, description, payment_method, date) ───
-      const allowed = ['category_id', 'subcategory', 'description', 'payment_method', 'transaction_date'];
-      const sets = [];
-      const params = [];
-      let pIdx = 1;
-      for (const field of allowed) {
-        if (Object.prototype.hasOwnProperty.call(changes, field)) {
-          sets.push(`${field} = $${pIdx}`);
-          const val = changes[field];
-          params.push((val === '' || val === undefined) ? null : val);
-          pIdx++;
-        }
-      }
-      if (sets.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'No valid fields to update' });
-      }
-      sets.push(`updated_at = NOW()`);
-      params.push(idInts);
-      params.push(userId);
-      await client.query(
-        `UPDATE transactions SET ${sets.join(', ')} WHERE id = ANY($${pIdx}) AND user_id = $${pIdx + 1}`,
-        params
-      );
-    } else {
-      // ─── PER-TRANSACTION PROCESSING (type/bank/transfer/split changes) ───
-      // Pre-fetch allocation config once (for income/investment transfers)
-      let allocConfig = null;
-
-      for (const old of transactions) {
-        const txnId = old.id;
-        const oldAmount = parseFloat(old.amount);
-        const newType = hasTypeChange ? changes.type : old.type;
-
-        // Helper: get old date as string
-        const oldDateStr = old.transaction_date instanceof Date
-          ? old.transaction_date.toISOString().split('T')[0]
-          : String(old.transaction_date).split('T')[0];
-
-        // Resolve simple fields (apply changes or keep old)
-        const newDate = Object.prototype.hasOwnProperty.call(changes, 'transaction_date') ? changes.transaction_date : oldDateStr;
-        const newDesc = Object.prototype.hasOwnProperty.call(changes, 'description') ? (changes.description || null) : old.description;
-        const newSub = Object.prototype.hasOwnProperty.call(changes, 'subcategory') ? (changes.subcategory || null) : old.subcategory;
-        const newPay = Object.prototype.hasOwnProperty.call(changes, 'payment_method') ? (changes.payment_method || null) : old.payment_method;
-
-        // ── Reverse old balance impact ──
-        if (old.bank_account_id && old.type !== 'transfer') {
-          const reversal = old.type === 'income' ? -oldAmount : oldAmount;
-          await client.query('UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2', [reversal, old.bank_account_id]);
-        }
-        if (old.type === 'transfer' && old.bank_account_id) {
-          await client.query('UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2', [oldAmount, old.bank_account_id]);
-          if (old.transfer_to_account_id) {
-            await client.query('UPDATE bank_accounts SET current_balance = current_balance - $1, updated_at = NOW() WHERE id = $2', [oldAmount, old.transfer_to_account_id]);
-          }
-        }
-
-        if (newType === 'transfer' && isTransfer) {
-          // ── TRANSFER ──
-          const fromTbl = tfFrom.source === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
-          const toTbl = tfTo.source === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
-          const fromBankId = tfFrom.source === 'bank' ? tfFrom.id : null;
-          const toBankId = tfTo.source === 'bank' ? tfTo.id : null;
-
-          await client.query(
-            `UPDATE transactions SET type = 'transfer', description = $1, category_id = NULL, subcategory = NULL,
-             payment_method = NULL, transaction_date = $2, bank_account_id = $3, transfer_to_account_id = $4,
-             is_split = FALSE, updated_at = NOW() WHERE id = $5 AND user_id = $6`,
-            [newDesc, newDate, fromBankId, toBankId, txnId, userId]
-          );
-
-          // Apply transfer balances
-          await client.query(`UPDATE ${fromTbl} SET current_balance = current_balance - $1, updated_at = NOW() WHERE id = $2`, [oldAmount, tfFrom.id]);
-          await client.query(`UPDATE ${toTbl} SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2`, [oldAmount, tfTo.id]);
-
-          // Allocations
-          await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
-          if (tfFromIsInvestment && tfToIsInvestment) {
-            const ffCat = await client.query("SELECT id FROM categories WHERE slug IN ('growth','ff','financial-freedom') OR name ILIKE '%financial freedom%' LIMIT 1");
-            if (ffCat.rows.length > 0) {
-              await client.query('INSERT INTO transaction_allocations (transaction_id, category_id, percentage, amount) VALUES ($1, $2, 100, $3)', [txnId, ffCat.rows[0].id, oldAmount]);
-            }
-          } else if (tfFromIsInvestment && !tfToIsInvestment) {
-            if (!allocConfig) {
-              allocConfig = (await client.query(`
-                SELECT c.id as category_id, COALESCE(ua.percentage, pa.percentage, ac.percentage) as percentage
-                FROM categories c JOIN allocation_config ac ON ac.category_id = c.id
-                LEFT JOIN permanent_allocations pa ON pa.category_id = c.id AND pa.user_id = $1
-                LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = $1 AND ua.is_temporary = TRUE
-                ORDER BY c.sort_order
-              `, [userId])).rows;
-            }
-            for (const alloc of allocConfig) {
-              await client.query('INSERT INTO transaction_allocations (transaction_id, category_id, percentage) VALUES ($1, $2, $3)', [txnId, alloc.category_id, alloc.percentage]);
-            }
-          }
-
-          // Account transfer record
-          await client.query(`
-            INSERT INTO account_transfers (user_id, from_account_id, to_account_id, amount, description, transfer_date)
-            VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING
-          `, [userId, tfFrom.id, tfTo.id, oldAmount, newDesc, newDate || new Date().toISOString().split('T')[0]]);
-
-        } else {
-          // ── EXPENSE / INCOME ──
-          const isSplit = hasSplitChange && newType === 'expense';
-          const newCatId = isSplit ? null : (Object.prototype.hasOwnProperty.call(changes, 'category_id') ? (changes.category_id || null) : old.category_id);
-          const newBankId = hasBankChange ? (changes.bank_account_id ? parseInt(changes.bank_account_id) : null) : old.bank_account_id;
-
-          await client.query(
-            `UPDATE transactions SET type = $1, description = $2, category_id = $3, subcategory = $4,
-             payment_method = $5, transaction_date = $6, bank_account_id = $7, is_split = $8,
-             transfer_to_account_id = NULL, updated_at = NOW() WHERE id = $9 AND user_id = $10`,
-            [newType, newDesc, newCatId, newSub, newPay, newDate, newBankId, isSplit, txnId, userId]
-          );
-
-          // Apply new bank balance
-          if (newBankId) {
-            const balChg = newType === 'income' ? oldAmount : -oldAmount;
-            await client.query('UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2', [balChg, newBankId]);
-          }
-
-          // Allocation handling
-          if (hasTypeChange && newType === 'income' && old.type !== 'income') {
-            if (!allocConfig) {
-              allocConfig = (await client.query(`
-                SELECT c.id as category_id, COALESCE(ua.percentage, pa.percentage, ac.percentage) as percentage
-                FROM categories c JOIN allocation_config ac ON ac.category_id = c.id
-                LEFT JOIN permanent_allocations pa ON pa.category_id = c.id AND pa.user_id = $1
-                LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = $1 AND ua.is_temporary = TRUE
-                ORDER BY c.sort_order
-              `, [userId])).rows;
-            }
-            await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
-            for (const alloc of allocConfig) {
-              await client.query('INSERT INTO transaction_allocations (transaction_id, category_id, percentage) VALUES ($1, $2, $3)', [txnId, alloc.category_id, alloc.percentage]);
-            }
-          } else if (isSplit) {
-            await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
-            for (const sp of changes.split_percentages) {
-              const spAmt = (oldAmount * parseFloat(sp.percentage) / 100);
-              await client.query(
-                'INSERT INTO transaction_allocations (transaction_id, category_id, percentage, amount) VALUES ($1, $2, $3, $4)',
-                [txnId, parseInt(sp.category_id), parseFloat(sp.percentage), spAmt.toFixed(2)]
-              );
-            }
-          } else if ((hasTypeChange && newType === 'expense' && (old.type === 'income' || old.is_split || old.type === 'transfer'))) {
-            await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
-          }
-        }
-      }
-    }
-
-    await client.query('COMMIT');
-    res.json({ success: true, updated: idInts.length });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('PUT /api/transactions/bulk error:', err.message);
-    res.status(500).json({ error: 'Failed to bulk update transactions' });
-  } finally {
-    client.release();
-  }
-});
-
-// ─── EDIT TRANSACTION ───────────────────────────────────────
-app.put('/api/transactions/:id', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const txnId = parseInt(req.params.id);
-
-    // Fetch existing transaction
-    const existing = await client.query(
-      'SELECT * FROM transactions WHERE id = $1 AND user_id = $2',
-      [txnId, userId]
-    );
-    if (existing.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Transaction not found' });
-    }
-    const old = existing.rows[0];
-
-    const { type, amount, description, category_id, subcategory, payment_method, transaction_date, bank_account_id, brokerage_account_id, splits, transfer_from_account_id, transfer_to_account_id, transfer_from_source, transfer_to_source } = req.body;
-
-    const newType = type !== undefined ? type : old.type;
-    if (!['income', 'expense', 'transfer'].includes(newType)) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'type must be "income", "expense", or "transfer"' });
-    }
-
-    const newAmount = amount !== undefined ? parseFloat(amount) : parseFloat(old.amount);
-    if (!newAmount || newAmount <= 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'amount must be positive' });
-    }
-
-    const isSplit = newType === 'expense' && Array.isArray(splits) && splits.length > 1;
-    const wasSplit = old.is_split;
-
-    // For split: validate split amounts sum to total
-    if (isSplit) {
-      if (splits.some(s => !s.category_id || !s.amount || parseFloat(s.amount) <= 0)) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Each split must have a valid category_id and amount' });
-      }
-      const splitTotal = splits.reduce((sum, s) => sum + parseFloat(s.amount), 0);
-      if (Math.abs(splitTotal - newAmount) > 0.01) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: `Split amounts ($${splitTotal.toFixed(2)}) must equal total ($${newAmount.toFixed(2)})` });
-      }
-    }
-
-    // ─── TRANSFER TYPE HANDLING ─────────────────────────────
-    if (newType === 'transfer') {
-      const fromAcctId = transfer_from_account_id ? parseInt(transfer_from_account_id) : null;
-      const toAcctId = transfer_to_account_id ? parseInt(transfer_to_account_id) : null;
-      const fromSrc = transfer_from_source || 'bank';
-      const toSrc = transfer_to_source || 'bank';
-
-      if (!fromAcctId || !toAcctId) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Both source and destination accounts are required for transfers' });
-      }
-      if (fromSrc === toSrc && fromAcctId === toAcctId) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Cannot transfer to the same account' });
-      }
-
-      const fromTable = fromSrc === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
-      const toTable = toSrc === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
-
-      // Verify both accounts belong to user
-      const fromCheck = await client.query(
-        `SELECT id, ${fromSrc === 'bank' ? 'is_archived,' : ''} account_type FROM ${fromTable} WHERE id = $1 AND user_id = $2 FOR UPDATE`,
-        [fromAcctId, userId]
-      );
-      const toCheck = await client.query(
-        `SELECT id, ${toSrc === 'bank' ? 'is_archived,' : ''} account_type FROM ${toTable} WHERE id = $1 AND user_id = $2 FOR UPDATE`,
-        [toAcctId, userId]
-      );
-
-      if (fromCheck.rows.length === 0 || toCheck.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'One or both accounts not found' });
-      }
-      if (fromSrc === 'bank' && fromCheck.rows[0].is_archived) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Cannot transfer from an archived account' });
-      }
-      if (toSrc === 'bank' && toCheck.rows[0].is_archived) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Cannot transfer to an archived account' });
-      }
-
-      const fromAccountType = fromCheck.rows[0].account_type || '';
-      const toAccountType = toCheck.rows[0].account_type || '';
-
-      // Investment account types (must match client-side INVESTMENT_ACCOUNT_TYPES)
-      const INVESTMENT_TYPES = new Set([
-        'Investment / Brokerage', 'Retirement – 401(k)', 'Retirement – IRA',
-        'Retirement – Roth IRA', 'Retirement – 403(b)', 'Retirement – 457',
-        'Crypto – Exchange', 'Crypto – Hot Wallet', 'Crypto – Cold Wallet', 'Crypto – DeFi / On-chain'
-      ]);
-      const fromIsInvestment = fromSrc === 'brokerage' || INVESTMENT_TYPES.has(fromAccountType);
-      const toIsInvestment = toSrc === 'brokerage' || INVESTMENT_TYPES.has(toAccountType);
-
-      // Reverse old bank account balance impact (if this was previously an expense/income)
-      if (old.bank_account_id && old.type !== 'transfer') {
-        const reversal = old.type === 'income' ? -parseFloat(old.amount) : parseFloat(old.amount);
-        await client.query(
-          'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
-          [reversal, old.bank_account_id]
-        );
-      }
-      // If old type was transfer, reverse old transfer balance changes
-      if (old.type === 'transfer' && old.bank_account_id) {
-        await client.query(
-          'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
-          [parseFloat(old.amount), old.bank_account_id]
-        );
-        if (old.transfer_to_account_id) {
-          await client.query(
-            'UPDATE bank_accounts SET current_balance = current_balance - $1, updated_at = NOW() WHERE id = $2',
-            [parseFloat(old.amount), old.transfer_to_account_id]
-          );
-        }
-      }
-
-      // Update transaction record for transfer
-      // Only set bank_account_id and transfer_to_account_id if they're bank accounts (FK constraint)
-      const fromBankId = fromSrc === 'bank' ? fromAcctId : null;
-      const toBankId = toSrc === 'bank' ? toAcctId : null;
-
-      const newDate = transaction_date !== undefined ? transaction_date : (
-        old.transaction_date instanceof Date
-          ? old.transaction_date.toISOString().split('T')[0]
-          : String(old.transaction_date).split('T')[0]
-      );
-      const result = await client.query(
-        `UPDATE transactions
-         SET type = 'transfer', amount = $1, description = $2, category_id = NULL, subcategory = NULL,
-             payment_method = NULL, transaction_date = $3, bank_account_id = $4, transfer_to_account_id = $5,
-             is_split = FALSE, updated_at = NOW()
-         WHERE id = $6 AND user_id = $7
-         RETURNING *`,
-        [newAmount, description !== undefined ? (description || null) : old.description,
-         newDate, fromBankId, toBankId, txnId, userId]
-      );
-
-      // Apply transfer balance changes: deduct from source, add to destination
-      await client.query(
-        `UPDATE ${fromTable} SET current_balance = current_balance - $1, updated_at = NOW() WHERE id = $2`,
-        [newAmount, fromAcctId]
-      );
-      await client.query(
-        `UPDATE ${toTable} SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2`,
-        [newAmount, toAcctId]
-      );
-
-      // Handle allocations based on brokerage transfer rules
-      await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
-
-      if (fromIsInvestment && toIsInvestment) {
-        // Investment → Investment: auto-categorize as Financial Freedom (100%)
-        const ffCat = await client.query("SELECT id FROM categories WHERE slug IN ('growth','ff','financial-freedom') OR name ILIKE '%financial freedom%' LIMIT 1");
-        if (ffCat.rows.length > 0) {
-          await client.query(
-            `INSERT INTO transaction_allocations (transaction_id, category_id, percentage, amount) VALUES ($1, $2, 100, $3)`,
-            [txnId, ffCat.rows[0].id, newAmount]
-          );
-        }
-      } else if (fromIsInvestment && !toIsInvestment) {
-        // Investment → Non-Investment (withdrawal): triggers 6-category allocation
-        const allocations = await client.query(`
-          SELECT c.id as category_id,
-                 COALESCE(ua.percentage, pa.percentage, ac.percentage) as percentage
-          FROM categories c
-          JOIN allocation_config ac ON ac.category_id = c.id
-          LEFT JOIN permanent_allocations pa ON pa.category_id = c.id AND pa.user_id = $1
-          LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = $1 AND ua.is_temporary = TRUE
-          ORDER BY c.sort_order
-        `, [userId]);
-        for (const alloc of allocations.rows) {
-          await client.query(
-            `INSERT INTO transaction_allocations (transaction_id, category_id, percentage) VALUES ($1, $2, $3)`,
-            [txnId, alloc.category_id, alloc.percentage]
-          );
-        }
-      }
-      // Non-investment transfers: no allocations needed (they're just account movements)
-
-      // Also create an account_transfers record for history
-      const newTransferDate = newDate || new Date().toISOString().split('T')[0];
-      await client.query(`
-        INSERT INTO account_transfers (user_id, from_account_id, to_account_id, amount, description, transfer_date)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT DO NOTHING
-      `, [userId, fromAcctId, toAcctId, newAmount,
-          description !== undefined ? (description || null) : old.description, newTransferDate]);
-
-      await client.query('COMMIT');
-      return res.json(result.rows[0]);
-    }
-
-    // ─── EXPENSE / INCOME HANDLING (existing logic) ─────────
-
-    // Category required for regular expense
-    const newCategoryId = isSplit ? null : (category_id !== undefined ? (category_id || null) : old.category_id);
-    if (newType === 'expense' && !isSplit && !newCategoryId) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'category_id required for expenses' });
-    }
-
-    // Resolve new bank account id
-    const newBankAccountId = bank_account_id !== undefined
-      ? (bank_account_id ? parseInt(bank_account_id) : null)
-      : old.bank_account_id;
-
-    // Resolve new brokerage account id
-    const newBrokerageAccountId = brokerage_account_id !== undefined
-      ? (brokerage_account_id ? parseInt(brokerage_account_id) : null)
-      : old.brokerage_account_id;
-
-    // If switching to a brokerage account, clear bank_account_id (and vice versa)
-    const finalBankAccountId = newBrokerageAccountId ? null : newBankAccountId;
-    const finalBrokerageAccountId = newBankAccountId ? null : newBrokerageAccountId;
-
-    if (finalBankAccountId) {
-      const baCheck = await client.query(
-        'SELECT id, is_archived FROM bank_accounts WHERE id = $1 AND user_id = $2',
-        [finalBankAccountId, userId]
-      );
-      if (baCheck.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Bank account not found' });
-      }
-      if (baCheck.rows[0].is_archived) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Cannot tag to an archived bank account' });
-      }
-    }
-
-    if (finalBrokerageAccountId) {
-      const braCheck = await client.query(
-        'SELECT id FROM brokerage_accounts WHERE id = $1 AND user_id = $2',
-        [finalBrokerageAccountId, userId]
-      );
-      if (braCheck.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Brokerage account not found' });
-      }
-    }
-
-    // Reverse old bank account balance impact
-    if (old.bank_account_id && old.type !== 'transfer') {
-      const reversal = old.type === 'income' ? -parseFloat(old.amount) : parseFloat(old.amount);
-      await client.query(
-        'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
-        [reversal, old.bank_account_id]
-      );
-    }
-    // Reverse old brokerage account balance impact
-    if (old.brokerage_account_id && old.type !== 'transfer') {
-      const reversal = old.type === 'income' ? -parseFloat(old.amount) : parseFloat(old.amount);
-      await client.query(
-        'UPDATE brokerage_accounts SET current_balance = current_balance + $1 WHERE id = $2',
-        [reversal, old.brokerage_account_id]
-      );
-    }
-    // If old type was transfer, reverse the transfer balance changes
-    if (old.type === 'transfer' && old.bank_account_id) {
-      await client.query(
-        'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
-        [parseFloat(old.amount), old.bank_account_id]
-      );
-      if (old.transfer_to_account_id) {
-        await client.query(
-          'UPDATE bank_accounts SET current_balance = current_balance - $1, updated_at = NOW() WHERE id = $2',
-          [parseFloat(old.amount), old.transfer_to_account_id]
-        );
-      }
-    }
-
-    // Update transaction record
-    const newDate = transaction_date !== undefined ? transaction_date : (
-      old.transaction_date instanceof Date
-        ? old.transaction_date.toISOString().split('T')[0]
-        : String(old.transaction_date).split('T')[0]
-    );
-    const result = await client.query(
-      `UPDATE transactions
-       SET type = $1, amount = $2, description = $3, category_id = $4, subcategory = $5,
-           payment_method = $6, transaction_date = $7, bank_account_id = $8, is_split = $9,
-           transfer_to_account_id = NULL, brokerage_account_id = $10, updated_at = NOW()
-       WHERE id = $11 AND user_id = $12
-       RETURNING *`,
-      [
-        newType, newAmount,
-        description !== undefined ? (description || null) : old.description,
-        newCategoryId,
-        subcategory !== undefined ? (subcategory || null) : old.subcategory,
-        payment_method !== undefined ? (payment_method || null) : old.payment_method,
-        newDate, finalBankAccountId, isSplit,
-        finalBrokerageAccountId, txnId, userId
-      ]
-    );
-
-    // Apply new bank account balance impact
-    if (finalBankAccountId) {
-      const balanceChange = newType === 'income' ? newAmount : -newAmount;
-      await client.query(
-        'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
-        [balanceChange, finalBankAccountId]
-      );
-    }
-    // Apply new brokerage account balance impact
-    if (finalBrokerageAccountId) {
-      const balanceChange = newType === 'income' ? newAmount : -newAmount;
-      await client.query(
-        'UPDATE brokerage_accounts SET current_balance = current_balance + $1 WHERE id = $2',
-        [balanceChange, finalBrokerageAccountId]
-      );
-    }
-
-    // Handle transaction_allocations based on type changes
-    if (newType === 'income' && old.type !== 'income') {
-      // Changed to income: create fresh allocation snapshot
-      const allocations = await client.query(`
-        SELECT c.id as category_id,
-               COALESCE(ua.percentage, pa.percentage, ac.percentage) as percentage
-        FROM categories c
-        JOIN allocation_config ac ON ac.category_id = c.id
-        LEFT JOIN permanent_allocations pa ON pa.category_id = c.id AND pa.user_id = $1
-        LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = $1 AND ua.is_temporary = TRUE
-        ORDER BY c.sort_order
-      `, [userId]);
-      await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
-      for (const alloc of allocations.rows) {
-        await client.query(
-          `INSERT INTO transaction_allocations (transaction_id, category_id, percentage) VALUES ($1, $2, $3)`,
-          [txnId, alloc.category_id, alloc.percentage]
-        );
-      }
-    } else if ((newType === 'expense' && !isSplit && (old.type === 'income' || wasSplit)) || old.type === 'transfer') {
-      // Changed away from income, split, or transfer → plain expense: remove allocations
-      await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
-    } else if (isSplit) {
-      // Re-write split allocations
-      await client.query('DELETE FROM transaction_allocations WHERE transaction_id = $1', [txnId]);
-      const totalAmount = newAmount;
-      for (const split of splits) {
-        const splitAmount = parseFloat(split.amount);
-        const splitPercentage = (splitAmount / totalAmount * 100);
-        await client.query(
-          `INSERT INTO transaction_allocations (transaction_id, category_id, percentage, amount) VALUES ($1, $2, $3, $4)`,
-          [txnId, parseInt(split.category_id), splitPercentage.toFixed(2), splitAmount]
-        );
-      }
-    }
-    // If income stays income: allocation snapshot percentages unchanged (they auto-scale with new amount)
-
-    await client.query('COMMIT');
-    res.json(result.rows[0]);
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('PUT /api/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to update transaction' });
-  } finally {
-    client.release();
-  }
-});
-
-// ─── FIND SIMILAR TRANSACTIONS ──────────────────────────────
-app.get('/api/transactions/similar', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { description, category_id, exclude_id } = req.query;
-    const orClauses = [];
-    const params = [userId];
-    let idx = 2;
-    // Match by normalized description (first 5 words)
-    if (description && description.trim()) {
-      const term = description.trim().split(/\s+/).slice(0, 5).join(' ').toLowerCase();
-      if (term.length >= 2) {
-        orClauses.push(`LOWER(COALESCE(description, '')) LIKE $${idx}`);
-        params.push(`%${term}%`);
-        idx++;
-      }
-    }
-    // Also match by same category
-    if (category_id && parseInt(category_id) > 0) {
-      orClauses.push(`category_id = $${idx}`);
-      params.push(parseInt(category_id));
-      idx++;
-    }
-    if (orClauses.length === 0) return res.json({ transactions: [] });
-    let whereClause = `user_id = $1 AND (${orClauses.join(' OR ')})`;
-    if (exclude_id && parseInt(exclude_id) > 0) {
-      whereClause += ` AND id != $${idx}`;
-      params.push(parseInt(exclude_id));
-    }
-    const result = await pool.query(
-      `SELECT id, description, category_id, amount, transaction_date, type, is_split
-       FROM transactions WHERE ${whereClause}
-       ORDER BY transaction_date DESC LIMIT 200`,
-      params
-    );
-    res.json({ transactions: result.rows });
-  } catch (err) {
-    console.error('GET /api/transactions/similar error:', err.message);
-    res.status(500).json({ error: 'Failed to find similar transactions' });
-  }
-});
-
-// ─── CSV EXPORT (Pro feature) ───────────────────────────────
-app.get('/api/transactions/export', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-
-    // Check Pro access
-    const hasPro = await hasProAccess(userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        error: 'CSV export is a paid feature. Please upgrade to access.',
-        code: 'PRO_REQUIRED'
-      });
-    }
-
-    // Parse date filters from query params
-    const { start_date, end_date } = req.query;
-
-    // Build query with date filters
-    let query = `
-      SELECT
-        t.transaction_date,
-        t.type,
-        c.name as category,
-        t.subcategory,
-        t.amount,
-        t.description
-      FROM transactions t
-      LEFT JOIN categories c ON t.category_id = c.id
-      WHERE t.user_id = $1
-    `;
-
-    const params = [userId];
-
-    if (start_date) {
-      params.push(start_date);
-      query += ` AND t.transaction_date >= $${params.length}`;
-    }
-
-    if (end_date) {
-      params.push(end_date);
-      query += ` AND t.transaction_date <= $${params.length}`;
-    }
-
-    query += ` ORDER BY t.transaction_date DESC`;
-
-    const result = await pool.query(query, params);
-
-    // Convert to CSV format
-    const csvRows = [];
-
-    // Header row
-    csvRows.push('Date,Type,Category,Subcategory,Amount,Description');
-
-    // Data rows
-    for (const row of result.rows) {
-      const date = row.transaction_date ? new Date(row.transaction_date).toISOString().split('T')[0] : '';
-      const type = row.type || '';
-      const category = row.category || '';
-      const subcategory = row.subcategory || '';
-      const amount = row.amount || '0.00';
-      // Escape description: wrap in quotes and escape internal quotes
-      const description = row.description ? `"${row.description.replace(/"/g, '""')}"` : '';
-
-      csvRows.push(`${date},${type},${category},${subcategory},${amount},${description}`);
-    }
-
-    const csvContent = csvRows.join('\n');
-
-    // Set headers for file download
-    const filename = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
-    res.send(csvContent);
-  } catch (err) {
-    console.error('GET /api/transactions/export error:', err.message);
-    res.status(500).json({ error: 'Failed to export transactions' });
-  }
-});
-
-// ─── RECURRING BILLS ────────────────────────────────────────
-// Get all recurring bills for user
-app.get('/api/bills', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(`
-      SELECT
-        b.*,
-        c.name as category_name,
-        c.color as category_color
-      FROM recurring_bills b
-      LEFT JOIN categories c ON b.category_id = c.id
-      WHERE b.user_id = $1
-      ORDER BY b.due_day ASC
-    `, [userId]);
-    res.json({ bills: result.rows });
-  } catch (err) {
-    console.error('GET /api/bills error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch bills' });
-  }
-});
-
-// Create new recurring bill
-app.post('/api/bills', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { name, amount, due_day, frequency, category_id, account_id, notes } = req.body;
-
-    if (!name || !amount || !due_day || !frequency) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Try with account_id column, fall back without if column doesn't exist yet
-    try {
-      const result = await pool.query(`
-        INSERT INTO recurring_bills (user_id, name, amount, due_day, frequency, category_id, account_id, notes)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *
-      `, [userId, name, amount, due_day, frequency, category_id || null, account_id || null, notes || null]);
-      return res.json({ bill: result.rows[0] });
-    } catch (colErr) {
-      // Column might not exist yet — fall back to original schema
-      const result = await pool.query(`
-        INSERT INTO recurring_bills (user_id, name, amount, due_day, frequency, category_id, notes)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-      `, [userId, name, amount, due_day, frequency, category_id || null, notes || null]);
-      return res.json({ bill: result.rows[0] });
-    }
-  } catch (err) {
-    console.error('POST /api/bills error:', err.message);
-    res.status(500).json({ error: 'Failed to create bill' });
-  }
-});
-
-// Update recurring bill
-app.put('/api/bills/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { name, amount, due_day, frequency, category_id, notes } = req.body;
-
-    const result = await pool.query(`
-      UPDATE recurring_bills
-      SET name = $1, amount = $2, due_day = $3, frequency = $4,
-          category_id = $5, notes = $6, updated_at = NOW()
-      WHERE id = $7 AND user_id = $8
-      RETURNING *
-    `, [name, amount, due_day, frequency, category_id || null, notes || null,
-        parseInt(req.params.id), userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Bill not found' });
-    }
-
-    res.json({ bill: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/bills error:', err.message);
-    res.status(500).json({ error: 'Failed to update bill' });
-  }
-});
-
-// Toggle paid status — when marking paid, also create an expense transaction
-app.patch('/api/bills/:id/toggle-paid', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(`
-      UPDATE recurring_bills
-      SET is_paid = NOT is_paid, updated_at = NOW()
-      WHERE id = $1 AND user_id = $2
-      RETURNING *
-    `, [parseInt(req.params.id), userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Bill not found' });
-    }
-
-    const bill = result.rows[0];
-
-    // If bill was just marked as PAID, create an expense transaction
-    if (bill.is_paid) {
-      try {
-        await pool.query(`
-          INSERT INTO transactions (user_id, type, amount, description, category_id, date, payment_method, account_id)
-          VALUES ($1, 'expense', $2, $3, $4, CURRENT_DATE, 'bill_payment', $5)
-        `, [userId, bill.amount, `Bill payment: ${bill.name}`, bill.category_id || null, bill.account_id || null]);
-      } catch (txnErr) {
-        console.error('Failed to create bill payment transaction:', txnErr.message);
-        // Non-fatal: bill status already updated
-      }
-    }
-
-    res.json({ bill });
-  } catch (err) {
-    console.error('PATCH /api/bills/:id/toggle-paid error:', err.message);
-    res.status(500).json({ error: 'Failed to toggle bill status' });
-  }
-});
-
-// Delete recurring bill
-app.delete('/api/bills/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(
-      'DELETE FROM recurring_bills WHERE id = $1 AND user_id = $2 RETURNING *',
-      [parseInt(req.params.id), userId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Bill not found' });
-    }
-    res.json({ deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/bills error:', err.message);
-    res.status(500).json({ error: 'Failed to delete bill' });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── DEBT REDUCTION CALCULATOR (PRO FEATURE) ──────────────
-// ═══════════════════════════════════════════════════════════
-
-// Get all debts for user
-app.get('/api/debts', requireAuth, async (req, res) => {
-  try {
-    // Check Pro access
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        error: 'Debt Reduction Calculator is a paid feature. Please upgrade to access.',
-        code: 'PRO_REQUIRED'
-      });
-    }
-
-    const userId = req.userId;
-    const result = await pool.query(`
-      SELECT *
-      FROM debts
-      WHERE user_id = $1
-      ORDER BY interest_rate DESC, balance DESC
-    `, [userId]);
-    res.json({ debts: result.rows });
-  } catch (err) {
-    console.error('GET /api/debts error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch debts' });
-  }
-});
-
-// Create new debt
-app.post('/api/debts', requireAuth, async (req, res) => {
-  try {
-    // Check Pro access
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        error: 'Debt Reduction Calculator is a paid feature. Please upgrade to access.',
-        code: 'PRO_REQUIRED'
-      });
-    }
-
-    const userId = req.userId;
-    const { name, balance, interest_rate, minimum_payment, current_payment, notes } = req.body;
-
-    if (!name || balance == null || interest_rate == null || minimum_payment == null) {
-      return res.status(400).json({ error: 'Missing required fields: name, balance, interest_rate, minimum_payment' });
-    }
-
-    if (balance < 0 || interest_rate < 0 || minimum_payment < 0) {
-      return res.status(400).json({ error: 'Balance, interest rate, and minimum payment must be non-negative' });
-    }
-
-    if (current_payment != null && current_payment < minimum_payment) {
-      return res.status(400).json({ error: 'Current payment cannot be less than minimum payment' });
-    }
-
-    const result = await pool.query(`
-      INSERT INTO debts (user_id, name, balance, interest_rate, minimum_payment, current_payment, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `, [userId, name, balance, interest_rate, minimum_payment, current_payment || null, notes || null]);
-
-    res.json({ debt: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/debts error:', err.message);
-    res.status(500).json({ error: 'Failed to create debt' });
-  }
-});
-
-// Update debt
-app.put('/api/debts/:id', requireAuth, async (req, res) => {
-  try {
-    // Check Pro access
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        error: 'Debt Reduction Calculator is a paid feature. Please upgrade to access.',
-        code: 'PRO_REQUIRED'
-      });
-    }
-
-    const userId = req.userId;
-    const { name, balance, interest_rate, minimum_payment, current_payment, notes } = req.body;
-
-    if (!name || balance == null || interest_rate == null || minimum_payment == null) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    if (balance < 0 || interest_rate < 0 || minimum_payment < 0) {
-      return res.status(400).json({ error: 'Values must be non-negative' });
-    }
-
-    if (current_payment != null && current_payment < minimum_payment) {
-      return res.status(400).json({ error: 'Current payment cannot be less than minimum payment' });
-    }
-
-    const result = await pool.query(`
-      UPDATE debts
-      SET name = $1, balance = $2, interest_rate = $3, minimum_payment = $4,
-          current_payment = $5, notes = $6, updated_at = NOW()
-      WHERE id = $7 AND user_id = $8
-      RETURNING *
-    `, [name, balance, interest_rate, minimum_payment, current_payment || null, notes || null,
-        parseInt(req.params.id), userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Debt not found' });
-    }
-
-    res.json({ debt: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/debts error:', err.message);
-    res.status(500).json({ error: 'Failed to update debt' });
-  }
-});
-
-// Delete debt
-app.delete('/api/debts/:id', requireAuth, async (req, res) => {
-  try {
-    // Check Pro access
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        error: 'Debt Reduction Calculator is a paid feature. Please upgrade to access.',
-        code: 'PRO_REQUIRED'
-      });
-    }
-
-    const userId = req.userId;
-    const result = await pool.query(
-      'DELETE FROM debts WHERE id = $1 AND user_id = $2 RETURNING *',
-      [parseInt(req.params.id), userId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Debt not found' });
-    }
-    res.json({ deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/debts error:', err.message);
-    res.status(500).json({ error: 'Failed to delete debt' });
-  }
-});
-
-// Calculate debt payoff strategies
-app.post('/api/debts/calculate-strategies', requireAuth, async (req, res) => {
-  try {
-    // Check Pro access
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        error: 'Debt Reduction Calculator is a paid feature. Please upgrade to access.',
-        code: 'PRO_REQUIRED'
-      });
-    }
-
-    const userId = req.userId;
-    const { extra_monthly_payment } = req.body;
-
-    // Fetch user's debts
-    const result = await pool.query(`
-      SELECT id, name, balance, interest_rate, minimum_payment, current_payment
-      FROM debts
-      WHERE user_id = $1 AND balance > 0
-      ORDER BY id
-    `, [userId]);
-
-    const debts = result.rows;
-
-    if (debts.length === 0) {
-      return res.json({
-        strategies: {},
-        message: 'No debts to calculate'
-      });
-    }
-
-    const extraPayment = parseFloat(extra_monthly_payment) || 0;
-
-    // Calculate 4 strategies:
-    // 1. Minimum payments only
-    // 2. Current payments (user's custom payments)
-    // 3. Snowball (lowest balance first)
-    // 4. Avalanche (highest interest rate first)
-
-    const strategies = {
-      minimum: calculatePayoffSchedule(debts, 0, 'minimum'),
-      current: calculatePayoffSchedule(debts, 0, 'current'),
-      snowball: calculatePayoffSchedule(debts, extraPayment, 'snowball'),
-      avalanche: calculatePayoffSchedule(debts, extraPayment, 'avalanche')
-    };
-
-    res.json({ strategies });
-  } catch (err) {
-    console.error('POST /api/debts/calculate-strategies error:', err.message);
-    res.status(500).json({ error: 'Failed to calculate strategies' });
-  }
-});
-
-// Get personalized debt adjustment tips
-app.post('/api/debts/personalized-tips', requireAuth, async (req, res) => {
-  try {
-    // Check Pro access
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        error: 'Debt Reduction Calculator is a paid feature. Please upgrade to access.',
-        code: 'PRO_REQUIRED'
-      });
-    }
-
-    const userId = req.userId;
-    const { debts, strategies } = req.body; // Receive debts and calculated strategies from frontend
-
-    // Validate input
-    if (!debts || !strategies) {
-      return res.status(400).json({ error: 'Missing required data' });
-    }
-
-    // If no debts, no tips needed
-    if (debts.length === 0) {
-      return res.json({ tips: [] });
-    }
-
-    const tips = [];
-
-    // 1. INCOME ANALYSIS (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const incomeResult = await pool.query(`
-      SELECT SUM(amount) as total_income, COUNT(*) as income_count
-      FROM transactions
-      WHERE user_id = $1
-        AND type = 'income'
-        AND transaction_date >= $2
-    `, [userId, sixMonthsAgo.toISOString().split('T')[0]]);
-
-    const totalIncome = parseFloat(incomeResult.rows[0]?.total_income || 0);
-    const incomeCount = parseInt(incomeResult.rows[0]?.income_count || 0);
-    const avgMonthlyIncome = incomeCount > 0 ? totalIncome / 6 : 0;
-
-    // Check for income trend (last 3 months vs previous 3 months)
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const recentIncomeResult = await pool.query(`
-      SELECT SUM(amount) as recent_income
-      FROM transactions
-      WHERE user_id = $1
-        AND type = 'income'
-        AND transaction_date >= $2
-    `, [userId, threeMonthsAgo.toISOString().split('T')[0]]);
-
-    const previousIncomeResult = await pool.query(`
-      SELECT SUM(amount) as previous_income
-      FROM transactions
-      WHERE user_id = $1
-        AND type = 'income'
-        AND transaction_date >= $2
-        AND transaction_date < $3
-    `, [userId, sixMonthsAgo.toISOString().split('T')[0], threeMonthsAgo.toISOString().split('T')[0]]);
-
-    const recentIncome = parseFloat(recentIncomeResult.rows[0]?.recent_income || 0);
-    const previousIncome = parseFloat(previousIncomeResult.rows[0]?.previous_income || 0);
-
-    // 2. SPENDING ANALYSIS BY CATEGORY
-    const expenseResult = await pool.query(`
-      SELECT c.name as category_name, c.slug, SUM(t.amount) as total_spent
-      FROM transactions t
-      JOIN categories c ON c.id = t.category_id
-      WHERE t.user_id = $1
-        AND t.type = 'expense'
-        AND t.transaction_date >= $2
-      GROUP BY c.id, c.name, c.slug
-    `, [userId, sixMonthsAgo.toISOString().split('T')[0]]);
-
-    const totalExpenses = expenseResult.rows.reduce((sum, row) => sum + parseFloat(row.total_spent), 0);
-
-    // 3. GET USER'S ALLOCATION TARGETS
-    const allocationsResult = await pool.query(`
-      SELECT c.name as category_name, c.slug, ua.percentage
-      FROM user_allocations ua
-      JOIN categories c ON c.id = ua.category_id
-      WHERE ua.user_id = $1
-    `, [userId]);
-
-    const userAllocations = {};
-    allocationsResult.rows.forEach(row => {
-      userAllocations[row.slug] = {
-        name: row.category_name,
-        target: parseFloat(row.percentage)
-      };
-    });
-
-    // If user has no allocations set, use defaults
-    if (allocationsResult.rows.length === 0) {
-      const defaultAllocations = await pool.query(`SELECT name, slug, default_percentage FROM categories`);
-      defaultAllocations.rows.forEach(row => {
-        userAllocations[row.slug] = {
-          name: row.name,
-          target: parseFloat(row.default_percentage)
-        };
-      });
-    }
-
-    // 4. CALCULATE ACTUAL SPENDING PERCENTAGES
-    const actualSpending = {};
-    expenseResult.rows.forEach(row => {
-      const percentage = totalExpenses > 0 ? (parseFloat(row.total_spent) / totalExpenses) * 100 : 0;
-      actualSpending[row.slug] = {
-        name: row.category_name,
-        actual: percentage,
-        amount: parseFloat(row.total_spent) / 6 // Monthly average
-      };
-    });
-
-    // 5. GENERATE TIPS BASED ON GAPS
-
-    // Tip: Income increase
-    if (previousIncome > 0 && recentIncome > previousIncome) {
-      const incomeIncrease = ((recentIncome - previousIncome) / previousIncome) * 100;
-      const extraPerMonth = (recentIncome - previousIncome) / 3; // Monthly average increase
-
-      if (extraPerMonth > 50 && debts.length > 0) {
-        // Calculate impact of applying this extra income to debt
-        const currentMonths = strategies.current?.months || strategies.minimum?.months || 0;
-        const avalancheMonths = strategies.avalanche?.months || 0;
-
-        // Estimate new payoff with extra payment (simplified - using avalanche as best case)
-        const projectedMonthsSaved = Math.round(currentMonths * 0.1); // Conservative 10% reduction estimate
-        const interestSaved = (strategies.current?.totalInterest || 0) - (strategies.avalanche?.totalInterest || 0);
-
-        tips.push({
-          type: 'income_increase',
-          icon: '📈',
-          title: 'Your Income is Growing!',
-          message: `Your income increased ${incomeIncrease.toFixed(0)}% over the last 3 months. Applying the extra $${extraPerMonth.toFixed(0)}/mo to your highest-interest debt using avalanche method could save you ${projectedMonthsSaved} months and $${interestSaved.toFixed(0)} in interest.`,
-          impact: 'high'
-        });
-      }
-    }
-
-    // Tip: Spending vs allocation gaps
-    Object.keys(actualSpending).forEach(slug => {
-      const target = userAllocations[slug]?.target || 0;
-      const actual = actualSpending[slug].actual;
-      const monthlyAmount = actualSpending[slug].amount;
-      const gap = actual - target;
-
-      // Only generate tips for categories that are significantly over target (>5 percentage points)
-      if (gap > 5 && monthlyAmount > 100) {
-        const excessAmount = (gap / 100) * (totalExpenses / 6); // Monthly excess
-
-        // Calculate impact on debt payoff
-        const currentMonths = strategies.current?.months || strategies.minimum?.months || 0;
-        const currentInterest = strategies.current?.totalInterest || strategies.minimum?.totalInterest || 0;
-
-        // Estimate impact of redirecting half the excess (conservative)
-        const redirectAmount = excessAmount / 2;
-        const monthsSaved = Math.max(1, Math.round(currentMonths * (redirectAmount / (totalExpenses / 6)) * 0.5)); // Conservative estimate
-        const interestSaved = Math.max(50, Math.round(currentInterest * (redirectAmount / (totalExpenses / 6)) * 0.3)); // Conservative estimate
-
-        tips.push({
-          type: 'spending_gap',
-          icon: '💡',
-          title: `${actualSpending[slug].name} Spending Above Target`,
-          message: `You're spending ${actual.toFixed(0)}% on ${actualSpending[slug].name} vs your ${target.toFixed(0)}% target. Redirecting half of that excess ($${redirectAmount.toFixed(0)}/mo) to your highest-interest debt could save ${monthsSaved} months and $${interestSaved.toFixed(0)} in interest.`,
-          impact: gap > 15 ? 'high' : 'medium'
-        });
-      }
-    });
-
-    // Tip: Strategy comparison (if avalanche is significantly better than current)
-    if (strategies.avalanche && strategies.current) {
-      const monthsSaved = strategies.current.months - strategies.avalanche.months;
-      const interestSaved = strategies.current.totalInterest - strategies.avalanche.totalInterest;
-
-      if (monthsSaved > 6 || interestSaved > 500) {
-        tips.push({
-          type: 'strategy_optimization',
-          icon: '⚡',
-          title: 'Optimize Your Debt Strategy',
-          message: `Switching from your current payment plan to the avalanche method (paying highest-interest debts first) would save you ${monthsSaved} months and $${interestSaved.toFixed(0)} in interest. No extra money needed—just redirect what you're already paying!`,
-          impact: 'high'
-        });
-      }
-    }
-
-    // If no tips generated and user has income/expense data, provide encouragement
-    if (tips.length === 0 && (incomeCount > 0 || totalExpenses > 0)) {
-      tips.push({
-        type: 'encouragement',
-        icon: '✅',
-        title: 'You\'re On Track!',
-        message: 'Your spending aligns well with your allocation targets. Keep up the great work! Continue making your current payments and you\'ll be debt-free on schedule.',
-        impact: 'low'
-      });
-    }
-
-    // If no transaction data at all
-    if (incomeCount === 0 && totalExpenses === 0) {
-      tips.push({
-        type: 'no_data',
-        icon: 'ℹ️',
-        title: 'Add Transactions for Personalized Tips',
-        message: 'Start tracking your income and expenses in the Transactions tab to get personalized debt payoff tips based on your actual spending habits.',
-        impact: 'low'
-      });
-    }
-
-    res.json({ tips });
-  } catch (err) {
-    console.error('POST /api/debts/personalized-tips error:', err.message);
-    res.status(500).json({ error: 'Failed to generate personalized tips' });
-  }
-});
-
-/**
- * Calculate debt payoff schedule for a given strategy
- * @param {Array} debts - List of debt objects
- * @param {Number} extraPayment - Extra monthly payment to apply
- * @param {String} strategy - 'minimum', 'current', 'snowball', or 'avalanche'
- * @returns {Object} - { months, totalPaid, totalInterest, schedule }
- */
-function calculatePayoffSchedule(debts, extraPayment, strategy) {
-  // Clone debts to avoid mutation
-  let debtList = debts.map(d => ({
-    id: d.id,
-    name: d.name,
-    balance: parseFloat(d.balance),
-    rate: parseFloat(d.interest_rate) / 100 / 12, // Monthly rate
-    minPayment: parseFloat(d.minimum_payment),
-    currentPayment: d.current_payment ? parseFloat(d.current_payment) : parseFloat(d.minimum_payment)
-  }));
-
-  // Sort based on strategy
-  if (strategy === 'snowball') {
-    debtList.sort((a, b) => a.balance - b.balance);
-  } else if (strategy === 'avalanche') {
-    debtList.sort((a, b) => b.rate - a.rate);
-  }
-
-  let month = 0;
-  let totalPaid = 0;
-  let totalInterest = 0;
-  const schedule = [];
-  const MAX_MONTHS = 600; // 50 years max to prevent infinite loops
-
-  while (debtList.some(d => d.balance > 0) && month < MAX_MONTHS) {
-    month++;
-    let monthlyInterest = 0;
-    let monthlyPrincipal = 0;
-
-    // Calculate interest for all debts
-    debtList.forEach(debt => {
-      if (debt.balance > 0) {
-        const interest = debt.balance * debt.rate;
-        debt.balance += interest;
-        monthlyInterest += interest;
-      }
-    });
-
-    // Determine total payment for this month
-    let availablePayment = 0;
-    if (strategy === 'minimum') {
-      availablePayment = debtList.reduce((sum, d) => sum + (d.balance > 0 ? d.minPayment : 0), 0);
-    } else if (strategy === 'current') {
-      availablePayment = debtList.reduce((sum, d) => sum + (d.balance > 0 ? d.currentPayment : 0), 0);
-    } else {
-      // Snowball/avalanche: minimum on all debts + extra on target
-      availablePayment = debtList.reduce((sum, d) => sum + (d.balance > 0 ? d.minPayment : 0), 0) + extraPayment;
-    }
-
-    // Apply payments
-    if (strategy === 'minimum' || strategy === 'current') {
-      // Each debt gets its designated payment
-      debtList.forEach(debt => {
-        if (debt.balance > 0) {
-          const payment = strategy === 'minimum' ? debt.minPayment : debt.currentPayment;
-          const paid = Math.min(payment, debt.balance);
-          debt.balance -= paid;
-          monthlyPrincipal += paid;
-        }
-      });
-    } else {
-      // Snowball/Avalanche: pay minimums first, then attack target with extra
-      debtList.forEach(debt => {
-        if (debt.balance > 0) {
-          const paid = Math.min(debt.minPayment, debt.balance);
-          debt.balance -= paid;
-          monthlyPrincipal += paid;
-          availablePayment -= paid;
-        }
-      });
-
-      // Apply extra payment to first debt with balance (already sorted)
-      const targetDebt = debtList.find(d => d.balance > 0);
-      if (targetDebt && availablePayment > 0) {
-        const extraPaid = Math.min(availablePayment, targetDebt.balance);
-        targetDebt.balance -= extraPaid;
-        monthlyPrincipal += extraPaid;
-      }
-    }
-
-    totalPaid += monthlyPrincipal + monthlyInterest;
-    totalInterest += monthlyInterest;
-
-    // Snapshot for timeline
-    if (month % 6 === 0 || !debtList.some(d => d.balance > 0)) {
-      schedule.push({
-        month,
-        totalBalance: debtList.reduce((sum, d) => sum + d.balance, 0),
-        totalPaid,
-        totalInterest
-      });
-    }
-  }
-
-  // Handle case where debts couldn't be paid off
-  if (month >= MAX_MONTHS) {
-    return {
-      months: MAX_MONTHS,
-      totalPaid: totalPaid,
-      totalInterest: totalInterest,
-      schedule: schedule,
-      warning: 'Unable to pay off debt with current payment plan (exceeds 50 years)'
-    };
-  }
-
-  return {
-    months: month,
-    totalPaid: Math.round(totalPaid * 100) / 100,
-    totalInterest: Math.round(totalInterest * 100) / 100,
-    schedule: schedule
-  };
-}
-
-// ═══════════════════════════════════════════════════════════
-// ─── GIFT CARD WALLET ─────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// Get all gift cards for user
-app.get('/api/gift-cards', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const showArchived = req.query.show_archived === 'true';
-
-    let query = `
-      SELECT gc.*,
-        COALESCE(
-          (SELECT SUM(gct.amount) FROM gift_card_transactions gct WHERE gct.gift_card_id = gc.id),
-          0
-        ) as total_spent,
-        (SELECT COUNT(*) FROM gift_card_transactions gct WHERE gct.gift_card_id = gc.id) as transaction_count
-      FROM gift_cards gc
-      WHERE gc.user_id = $1
-    `;
-
-    if (!showArchived) {
-      query += ` AND gc.is_archived = FALSE`;
-    }
-
-    query += ` ORDER BY gc.is_archived ASC, gc.created_at DESC`;
-
-    const result = await pool.query(query, [userId]);
-    res.json({ gift_cards: result.rows });
-  } catch (err) {
-    console.error('GET /api/gift-cards error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch gift cards' });
-  }
-});
-
-// Create new gift card
-app.post('/api/gift-cards', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { name, initial_balance, notes } = req.body;
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Gift card name is required' });
-    }
-    if (!initial_balance || parseFloat(initial_balance) <= 0) {
-      return res.status(400).json({ error: 'Initial balance must be positive' });
-    }
-
-    const balance = parseFloat(initial_balance);
-
-    const result = await pool.query(`
-      INSERT INTO gift_cards (user_id, name, initial_balance, current_balance, notes)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-    `, [userId, name.trim(), balance, balance, notes || null]);
-
-    res.json({ gift_card: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/gift-cards error:', err.message);
-    res.status(500).json({ error: 'Failed to create gift card' });
-  }
-});
-
-// Update gift card (name, notes only — balance is managed by transactions)
-app.put('/api/gift-cards/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { name, notes } = req.body;
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Gift card name is required' });
-    }
-
-    const result = await pool.query(`
-      UPDATE gift_cards
-      SET name = $1, notes = $2, updated_at = NOW()
-      WHERE id = $3 AND user_id = $4
-      RETURNING *
-    `, [name.trim(), notes || null, parseInt(req.params.id), userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Gift card not found' });
-    }
-
-    res.json({ gift_card: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/gift-cards error:', err.message);
-    res.status(500).json({ error: 'Failed to update gift card' });
-  }
-});
-
-// Archive/unarchive gift card
-app.patch('/api/gift-cards/:id/archive', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(`
-      UPDATE gift_cards
-      SET is_archived = NOT is_archived, updated_at = NOW()
-      WHERE id = $1 AND user_id = $2
-      RETURNING *
-    `, [parseInt(req.params.id), userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Gift card not found' });
-    }
-
-    res.json({ gift_card: result.rows[0] });
-  } catch (err) {
-    console.error('PATCH /api/gift-cards/:id/archive error:', err.message);
-    res.status(500).json({ error: 'Failed to toggle archive status' });
-  }
-});
-
-// Delete gift card
-app.delete('/api/gift-cards/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-
-    // Check if gift card has remaining balance
-    const check = await pool.query(
-      'SELECT current_balance FROM gift_cards WHERE id = $1 AND user_id = $2',
-      [parseInt(req.params.id), userId]
-    );
-
-    if (check.rows.length === 0) {
-      return res.status(404).json({ error: 'Gift card not found' });
-    }
-
-    const result = await pool.query(
-      'DELETE FROM gift_cards WHERE id = $1 AND user_id = $2 RETURNING *',
-      [parseInt(req.params.id), userId]
-    );
-
-    res.json({ deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/gift-cards error:', err.message);
-    res.status(500).json({ error: 'Failed to delete gift card' });
-  }
-});
-
-// Spend from gift card — this does NOT create a real expense (prevents double-dip)
-app.post('/api/gift-cards/:id/spend', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const userId = req.userId;
-    const giftCardId = parseInt(req.params.id);
-    const { amount, description, transaction_date } = req.body;
-
-    if (!amount || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: 'Amount must be positive' });
-    }
-
-    const spendAmount = parseFloat(amount);
-
-    // Get gift card and verify ownership
-    const gcResult = await client.query(
-      'SELECT * FROM gift_cards WHERE id = $1 AND user_id = $2 FOR UPDATE',
-      [giftCardId, userId]
-    );
-
-    if (gcResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Gift card not found' });
-    }
-
-    const gc = gcResult.rows[0];
-
-    if (gc.is_archived) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Cannot spend from an archived gift card' });
-    }
-
-    if (spendAmount > parseFloat(gc.current_balance)) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        error: `Insufficient balance. Available: $${parseFloat(gc.current_balance).toFixed(2)}`
-      });
-    }
-
-    // Create gift card transaction (NOT a real expense — the expense was recorded when the card was purchased)
-    const gctResult = await client.query(`
-      INSERT INTO gift_card_transactions (gift_card_id, user_id, amount, description, transaction_date)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-    `, [giftCardId, userId, spendAmount, description || null,
-        transaction_date || new Date().toISOString().split('T')[0]]);
-
-    // Deduct from gift card balance
-    const newBalance = parseFloat(gc.current_balance) - spendAmount;
-    await client.query(`
-      UPDATE gift_cards
-      SET current_balance = $1, updated_at = NOW()
-      WHERE id = $2
-    `, [newBalance, giftCardId]);
-
-    await client.query('COMMIT');
-
-    res.json({
-      transaction: gctResult.rows[0],
-      new_balance: newBalance,
-      gift_card_name: gc.name
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/gift-cards/:id/spend error:', err.message);
-    res.status(500).json({ error: 'Failed to record gift card spending' });
-  } finally {
-    client.release();
-  }
-});
-
-// Get spending history for a gift card
-app.get('/api/gift-cards/:id/transactions', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const giftCardId = parseInt(req.params.id);
-
-    // Verify ownership
-    const gcCheck = await pool.query(
-      'SELECT id FROM gift_cards WHERE id = $1 AND user_id = $2',
-      [giftCardId, userId]
-    );
-
-    if (gcCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Gift card not found' });
-    }
-
-    const result = await pool.query(`
-      SELECT * FROM gift_card_transactions
-      WHERE gift_card_id = $1 AND user_id = $2
-      ORDER BY transaction_date DESC, created_at DESC
-    `, [giftCardId, userId]);
-
-    res.json({ transactions: result.rows });
-  } catch (err) {
-    console.error('GET /api/gift-cards/:id/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch gift card transactions' });
-  }
-});
-
-// Add balance to gift card (e.g., received as a gift, or reload)
-app.post('/api/gift-cards/:id/add-balance', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const giftCardId = parseInt(req.params.id);
-    const { amount } = req.body;
-
-    if (!amount || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: 'Amount must be positive' });
-    }
-
-    const addAmount = parseFloat(amount);
-
-    const result = await pool.query(`
-      UPDATE gift_cards
-      SET current_balance = current_balance + $1,
-          initial_balance = initial_balance + $1,
-          updated_at = NOW()
-      WHERE id = $2 AND user_id = $3
-      RETURNING *
-    `, [addAmount, giftCardId, userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Gift card not found' });
-    }
-
-    res.json({ gift_card: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/gift-cards/:id/add-balance error:', err.message);
-    res.status(500).json({ error: 'Failed to add balance' });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── LOANS ───────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// Get all loans
-app.get('/api/loans', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT * FROM loans WHERE user_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json({ loans: result.rows });
-  } catch (err) {
-    console.error('GET /api/loans error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch loans' });
-  }
-});
-
-// Create loan
-app.post('/api/loans', requireAuth, async (req, res) => {
-  try {
-    const { name, institution, loan_type, original_amount, current_balance, interest_rate, monthly_payment, start_date, payoff_date, notes,
-            has_escrow, escrow_amount, escrow_taxes, escrow_insurance, escrow_pmi, escrow_balance } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
-    const result = await pool.query(
-      `INSERT INTO loans (user_id, name, institution, loan_type, original_amount, current_balance, interest_rate, monthly_payment, start_date, payoff_date, notes,
-       has_escrow, escrow_amount, escrow_taxes, escrow_insurance, escrow_pmi, escrow_balance)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
-      [req.userId, name, institution || null, loan_type || 'personal',
-       original_amount || null, current_balance || 0, interest_rate || 0,
-       monthly_payment || 0, start_date || null, payoff_date || null, notes || null,
-       has_escrow || false, escrow_amount || 0, escrow_taxes || 0, escrow_insurance || 0, escrow_pmi || 0, escrow_balance || 0]
-    );
-    res.json({ loan: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/loans error:', err.message);
-    res.status(500).json({ error: 'Failed to create loan' });
-  }
-});
-
-// Update loan
-app.put('/api/loans/:id', requireAuth, async (req, res) => {
-  try {
-    const { name, institution, loan_type, original_amount, current_balance, interest_rate, monthly_payment, start_date, payoff_date, notes,
-            has_escrow, escrow_amount, escrow_taxes, escrow_insurance, escrow_pmi, escrow_balance } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
-    const result = await pool.query(
-      `UPDATE loans SET name=$1, institution=$2, loan_type=$3, original_amount=$4, current_balance=$5,
-       interest_rate=$6, monthly_payment=$7, start_date=$8, payoff_date=$9, notes=$10,
-       has_escrow=$11, escrow_amount=$12, escrow_taxes=$13, escrow_insurance=$14, escrow_pmi=$15, escrow_balance=$16, updated_at=NOW()
-       WHERE id=$17 AND user_id=$18 RETURNING *`,
-      [name, institution || null, loan_type || 'personal', original_amount || null,
-       current_balance || 0, interest_rate || 0, monthly_payment || 0,
-       start_date || null, payoff_date || null, notes || null,
-       has_escrow || false, escrow_amount || 0, escrow_taxes || 0, escrow_insurance || 0, escrow_pmi || 0, escrow_balance || 0,
-       parseInt(req.params.id), req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Loan not found' });
-    res.json({ loan: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/loans/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update loan' });
-  }
-});
-
-// Delete loan
-app.delete('/api/loans/:id', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'DELETE FROM loans WHERE id=$1 AND user_id=$2 RETURNING *',
-      [parseInt(req.params.id), req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Loan not found' });
-    res.json({ deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/loans/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete loan' });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── CREDIT CARDS ─────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// Get all credit cards
-app.get('/api/credit-cards', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT * FROM credit_cards WHERE user_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json({ credit_cards: result.rows });
-  } catch (err) {
-    console.error('GET /api/credit-cards error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch credit cards' });
-  }
-});
-
-// Create credit card
-app.post('/api/credit-cards', requireAuth, async (req, res) => {
-  try {
-    const { name, institution, credit_limit, current_balance, apr, due_date_day, notes } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
-    const result = await pool.query(
-      `INSERT INTO credit_cards (user_id, name, institution, credit_limit, current_balance, apr, due_date_day, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [req.userId, name, institution || null, credit_limit || 0, current_balance || 0,
-       apr || 0, due_date_day || null, notes || null]
-    );
-    res.json({ credit_card: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/credit-cards error:', err.message);
-    res.status(500).json({ error: 'Failed to create credit card' });
-  }
-});
-
-// Update credit card
-app.put('/api/credit-cards/:id', requireAuth, async (req, res) => {
-  try {
-    const { name, institution, credit_limit, current_balance, apr, due_date_day, notes } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
-    const result = await pool.query(
-      `UPDATE credit_cards SET name=$1, institution=$2, credit_limit=$3, current_balance=$4,
-       apr=$5, due_date_day=$6, notes=$7, updated_at=NOW()
-       WHERE id=$8 AND user_id=$9 RETURNING *`,
-      [name, institution || null, credit_limit || 0, current_balance || 0,
-       apr || 0, due_date_day || null, notes || null,
-       parseInt(req.params.id), req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Credit card not found' });
-    res.json({ credit_card: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/credit-cards/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update credit card' });
-  }
-});
-
-// Delete credit card
-app.delete('/api/credit-cards/:id', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'DELETE FROM credit_cards WHERE id=$1 AND user_id=$2 RETURNING *',
-      [parseInt(req.params.id), req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Credit card not found' });
-    res.json({ deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/credit-cards/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete credit card' });
-  }
-});
+// [Phase2] transactions+bills → routes/transactions.js + routes/bills.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Phase3] debt → routes/debt.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Phase4] gift-cards → routes/giftCards.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Phase3] loans + credit-cards → routes/loans.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── CREDIT SCORES ─────────────────────────────────────────
@@ -6038,879 +4692,879 @@ app.delete('/api/credit-scores/:id', requireAuth, async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 // Get all brokerage accounts
-app.get('/api/brokerage-accounts', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT * FROM brokerage_accounts WHERE user_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json({ brokerage_accounts: result.rows });
-  } catch (err) {
-    console.error('GET /api/brokerage-accounts error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch brokerage accounts' });
-  }
-});
+// [Phase4] brokerage-accounts/quotes/all-accounts → routes/investments.js (+ accounts/all → vault)
 
-// GET /api/accounts/all — Returns all accounts (bank + brokerage) in a unified format.
-// Used by the import flow to populate the "Select Account" dropdown with every account type.
-app.get('/api/accounts/all', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
 
-    // Fetch bank accounts (checking, savings, credit cards, loans, etc.)
-    const bankRes = await pool.query(
-      `SELECT id, name, institution_name AS institution, account_type, current_balance, is_archived
-       FROM bank_accounts
-       WHERE user_id = $1 AND is_archived = FALSE
-       ORDER BY created_at DESC`,
-      [userId]
-    );
 
-    // Fetch brokerage/investment accounts
-    const brokerageRes = await pool.query(
-      `SELECT id, name, institution, account_type, current_balance
-       FROM brokerage_accounts
-       WHERE user_id = $1
-       ORDER BY created_at DESC`,
-      [userId]
-    );
 
-    const bankAccounts = bankRes.rows.map(a => ({
-      id: a.id,
-      name: a.name,
-      institution: a.institution || null,
-      account_type: a.account_type || null,
-      current_balance: a.current_balance,
-      source: 'bank'
-    }));
 
-    const brokerageAccounts = brokerageRes.rows.map(a => ({
-      id: a.id,
-      name: a.name,
-      institution: a.institution || null,
-      account_type: a.account_type || null,
-      current_balance: a.current_balance,
-      source: 'brokerage'
-    }));
 
-    res.json({
-      accounts: [...bankAccounts, ...brokerageAccounts],
-      bank_count: bankAccounts.length,
-      brokerage_count: brokerageAccounts.length
-    });
-  } catch (err) {
-    console.error('GET /api/accounts/all error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch accounts' });
-  }
-});
 
-// Create brokerage account
-app.post('/api/brokerage-accounts', requireAuth, async (req, res) => {
-  try {
-    const { name, institution, account_type, current_balance, account_number_last4, notes } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
-    const result = await pool.query(
-      `INSERT INTO brokerage_accounts (user_id, name, institution, account_type, current_balance, account_number_last4, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [req.userId, name, institution || null, account_type || 'brokerage',
-       current_balance || 0, account_number_last4 || null, notes || null]
-    );
-    res.json({ brokerage_account: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/brokerage-accounts error:', err.message);
-    res.status(500).json({ error: 'Failed to create brokerage account' });
-  }
-});
 
-// Update brokerage account
-app.put('/api/brokerage-accounts/:id', requireAuth, async (req, res) => {
-  try {
-    const { name, institution, account_type, current_balance, account_number_last4, notes } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
-    const result = await pool.query(
-      `UPDATE brokerage_accounts SET name=$1, institution=$2, account_type=$3, current_balance=$4,
-       account_number_last4=$5, notes=$6, updated_at=NOW()
-       WHERE id=$7 AND user_id=$8 RETURNING *`,
-      [name, institution || null, account_type || 'brokerage', current_balance || 0,
-       account_number_last4 || null, notes || null,
-       parseInt(req.params.id), req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Brokerage account not found' });
-    res.json({ brokerage_account: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/brokerage-accounts/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update brokerage account' });
-  }
-});
 
-// Delete brokerage account
-app.delete('/api/brokerage-accounts/:id', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'DELETE FROM brokerage_accounts WHERE id=$1 AND user_id=$2 RETURNING *',
-      [parseInt(req.params.id), req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Brokerage account not found' });
-    res.json({ deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/brokerage-accounts/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete brokerage account' });
-  }
-});
 
-// ─── BROKERAGE HOLDINGS ──────────────────────────────────
-// ═══════════════════════════════════════════════════════════
 
-// Get holdings for a brokerage account
-app.get('/api/brokerage-accounts/:id/holdings', requireAuth, async (req, res) => {
-  try {
-    const acctCheck = await pool.query(
-      'SELECT id FROM brokerage_accounts WHERE id = $1 AND user_id = $2',
-      [parseInt(req.params.id), req.userId]
-    );
-    if (!acctCheck.rows.length) return res.status(404).json({ error: 'Account not found' });
-    const result = await pool.query(
-      'SELECT * FROM brokerage_holdings WHERE brokerage_account_id = $1 AND user_id = $2 ORDER BY current_value DESC',
-      [parseInt(req.params.id), req.userId]
-    );
-    res.json({ holdings: result.rows });
-  } catch (err) {
-    console.error('GET /api/brokerage-accounts/:id/holdings error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch holdings' });
-  }
-});
 
-// Add a holding to a brokerage account
-app.post('/api/brokerage-accounts/:id/holdings', requireAuth, async (req, res) => {
-  try {
-    const acctCheck = await pool.query(
-      'SELECT id FROM brokerage_accounts WHERE id = $1 AND user_id = $2',
-      [parseInt(req.params.id), req.userId]
-    );
-    if (!acctCheck.rows.length) return res.status(404).json({ error: 'Account not found' });
-    const { symbol, name, investment_type, quantity, cost_basis, current_value, notes } = req.body;
-    if (!name) return res.status(400).json({ error: 'Holding name is required' });
-    const result = await pool.query(
-      `INSERT INTO brokerage_holdings (user_id, brokerage_account_id, symbol, name, investment_type, quantity, cost_basis, current_value, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [req.userId, parseInt(req.params.id), symbol || null, name, investment_type || 'Stocks',
-       quantity || 0, cost_basis || 0, current_value || 0, notes || null]
-    );
-    // Update account balance to sum of all holdings
-    await pool.query(
-      `UPDATE brokerage_accounts SET current_balance = (
-        SELECT COALESCE(SUM(current_value), 0) FROM brokerage_holdings WHERE brokerage_account_id = $1
-      ), updated_at = NOW() WHERE id = $1`,
-      [parseInt(req.params.id)]
-    );
-    res.json({ holding: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/brokerage-accounts/:id/holdings error:', err.message);
-    res.status(500).json({ error: 'Failed to add holding' });
-  }
-});
 
-// Update a holding
-app.put('/api/brokerage-holdings/:id', requireAuth, async (req, res) => {
-  try {
-    const { symbol, name, investment_type, quantity, cost_basis, current_value, notes } = req.body;
-    if (!name) return res.status(400).json({ error: 'Holding name is required' });
-    const result = await pool.query(
-      `UPDATE brokerage_holdings SET symbol=$1, name=$2, investment_type=$3, quantity=$4,
-       cost_basis=$5, current_value=$6, notes=$7, updated_at=NOW()
-       WHERE id=$8 AND user_id=$9 RETURNING *`,
-      [symbol || null, name, investment_type || 'Stocks', quantity || 0,
-       cost_basis || 0, current_value || 0, notes || null,
-       parseInt(req.params.id), req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Holding not found' });
-    // Update account balance
-    const accountId = result.rows[0].brokerage_account_id;
-    await pool.query(
-      `UPDATE brokerage_accounts SET current_balance = (
-        SELECT COALESCE(SUM(current_value), 0) FROM brokerage_holdings WHERE brokerage_account_id = $1
-      ), updated_at = NOW() WHERE id = $1`,
-      [accountId]
-    );
-    res.json({ holding: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/brokerage-holdings/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update holding' });
-  }
-});
 
-// Delete a holding
-app.delete('/api/brokerage-holdings/:id', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'DELETE FROM brokerage_holdings WHERE id=$1 AND user_id=$2 RETURNING *',
-      [parseInt(req.params.id), req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Holding not found' });
-    // Update account balance
-    const accountId = result.rows[0].brokerage_account_id;
-    await pool.query(
-      `UPDATE brokerage_accounts SET current_balance = (
-        SELECT COALESCE(SUM(current_value), 0) FROM brokerage_holdings WHERE brokerage_account_id = $1
-      ), updated_at = NOW() WHERE id = $1`,
-      [accountId]
-    );
-    res.json({ deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/brokerage-holdings/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete holding' });
-  }
-});
 
-// ─── STOCK QUOTE API (for brokerage holdings ticker prices) ─────────────────
-// Fetches real-time stock prices from Yahoo Finance v8 (free, no key)
-app.get('/api/stock-quotes', requireAuth, async (req, res) => {
-  try {
-    const { symbols } = req.query; // comma-separated tickers e.g. "AAPL,VOO,JEPI"
-    if (!symbols) return res.status(400).json({ error: 'symbols query parameter required' });
-    const tickerList = symbols.split(',').map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 20);
-    if (!tickerList.length) return res.status(400).json({ error: 'No valid symbols provided' });
 
-    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/spark?symbols=${tickerList.join(',')}&range=1d&interval=1d`;
-    const response = await fetch(yahooUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FACTS/1.0)' }
-    });
 
-    if (!response.ok) {
-      // Fallback: try v7 quote endpoint
-      const v7Url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tickerList.join(',')}`;
-      const v7Response = await fetch(v7Url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FACTS/1.0)' }
-      });
-      if (!v7Response.ok) {
-        return res.json({ quotes: {}, source: 'unavailable' });
-      }
-      const v7Data = await v7Response.json();
-      const quotes = {};
-      (v7Data.quoteResponse?.result || []).forEach(q => {
-        quotes[q.symbol] = {
-          symbol: q.symbol,
-          price: q.regularMarketPrice || 0,
-          change: q.regularMarketChange || 0,
-          changePercent: q.regularMarketChangePercent || 0,
-          name: q.shortName || q.longName || q.symbol,
-          marketState: q.marketState || 'CLOSED'
-        };
-      });
-      return res.json({ quotes, source: 'yahoo_v7' });
-    }
 
-    const data = await response.json();
-    const quotes = {};
-    Object.entries(data || {}).forEach(([symbol, info]) => {
-      if (info && info.close && info.close.length > 0) {
-        const lastPrice = info.close[info.close.length - 1];
-        const prevClose = info.previousClose || info.chartPreviousClose || lastPrice;
-        const change = lastPrice - prevClose;
-        const changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
-        quotes[symbol] = {
-          symbol,
-          price: lastPrice,
-          change,
-          changePercent: changePct,
-          name: symbol,
-          marketState: 'REGULAR'
-        };
-      }
-    });
-    res.json({ quotes, source: 'yahoo_spark' });
-  } catch (err) {
-    console.error('GET /api/stock-quotes error:', err.message);
-    res.json({ quotes: {}, source: 'error' });
-  }
-});
 
-// ─── ALL ACCOUNTS (for account switcher) ─────────────────
-// Returns a unified list of all user accounts for the account switcher
-app.get('/api/all-accounts', requireAuth, async (req, res) => {
-  try {
-    const [bankResult, brokerageResult] = await Promise.all([
-      pool.query(
-        `SELECT id, name, institution_name as institution, account_type, current_balance, 'bank' as source
-         FROM bank_accounts WHERE user_id = $1 AND (is_archived = FALSE OR is_archived IS NULL)
-         ORDER BY name`,
-        [req.userId]
-      ),
-      pool.query(
-        `SELECT id, name, institution, account_type, current_balance, 'brokerage' as source
-         FROM brokerage_accounts WHERE user_id = $1
-         ORDER BY name`,
-        [req.userId]
-      )
-    ]);
-    res.json({
-      accounts: [
-        ...bankResult.rows.map(a => ({ ...a, icon: '🏦' })),
-        ...brokerageResult.rows.map(a => ({ ...a, icon: '📈' }))
-      ]
-    });
-  } catch (err) {
-    console.error('GET /api/all-accounts error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch accounts' });
-  }
-});
 
-// Get transactions for a specific brokerage account (by bank_account_id)
-app.get('/api/brokerage-accounts/:id/transactions', requireAuth, async (req, res) => {
-  try {
-    const acctCheck = await pool.query(
-      'SELECT id, name FROM brokerage_accounts WHERE id = $1 AND user_id = $2',
-      [parseInt(req.params.id), req.userId]
-    );
-    if (!acctCheck.rows.length) return res.status(404).json({ error: 'Account not found' });
-    // Look for transactions linked to bank accounts that match this brokerage account name
-    // Brokerage transactions are tagged via bank_account_id on the transaction
-    const result = await pool.query(
-      `SELECT t.* FROM transactions t
-       JOIN bank_accounts ba ON ba.id = t.bank_account_id
-       WHERE t.user_id = $1 AND ba.name = $2
-       ORDER BY t.transaction_date DESC, t.created_at DESC
-       LIMIT 50`,
-      [req.userId, acctCheck.rows[0].name]
-    );
-    res.json({ transactions: result.rows });
-  } catch (err) {
-    console.error('GET /api/brokerage-accounts/:id/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── BANK ACCOUNT SOURCE TRACKING ────────────────────────
 // ═══════════════════════════════════════════════════════════
 
-const BUILT_IN_INSTITUTIONS = [
-  // Major Banks
-  'Ally Bank', 'American Express', 'Bank of America', 'Capital One', 'Chase',
-  'Citizens Bank', 'Citi', 'Discover Bank', 'Fifth Third Bank', 'Goldman Sachs',
-  'HSBC', 'Huntington Bank', 'KeyBank', 'Morgan Stanley', 'PNC Bank',
-  'Regions Bank', 'TD Bank', 'Truist', 'US Bank', 'Wells Fargo',
-  // Credit Unions
-  'Boeing Employees Credit Union', 'First Tech Federal Credit Union',
-  'Navy Federal Credit Union', 'Pentagon Federal Credit Union',
-  'State Employees Credit Union', 'USAA',
-  // Brokerages
-  'Acorns', 'Charles Schwab', 'E*Trade', 'Edward Jones', 'Fidelity',
-  'Interactive Brokers', 'M1 Finance', 'Merrill Lynch', 'Public',
-  'Raymond James', 'Robinhood', 'TD Ameritrade', 'Vanguard', 'Webull',
-  // Crypto Platforms
-  'Binance', 'Binance.US', 'Coinbase', 'Coinbase Pro', 'Crypto.com',
-  'Exodus', 'Gate.io', 'Gemini', 'Kraken', 'KuCoin',
-  'Ledger', 'MetaMask', 'Phantom', 'Trezor', 'Trust Wallet',
-  // DeFi / On-chain
-  'Aave', 'Compound', 'Uniswap',
-  // Fintech
-  'Aspiration', 'Betterment', 'Brigit', 'Cash App', 'Chime',
-  'Cleo', 'Current', 'Dave', 'Greenlight', 'MoneyLion',
-  'One Finance', 'PayPal', 'Revolut', 'SoFi', 'Stash',
-  'Step', 'Venmo', 'Wealthfront', 'Wise',
-];
-
-const BUILT_IN_ACCOUNT_TYPES = [
-  'Checking',
-  'Savings',
-  'Credit Card',
-  'Investment / Brokerage',
-  'Retirement – 401(k)',
-  'Retirement – IRA',
-  'Retirement – Roth IRA',
-  'Retirement – 403(b)',
-  'Retirement – 457',
-  'Loan – Mortgage',
-  'Loan – HELOC (Home Equity Line of Credit)',
-  'Loan – Auto',
-  'Loan – Student',
-  'Loan – Personal',
-  'HSA',
-  'FSA',
-  'Money Market',
-  'CD (Certificate of Deposit)',
-  'Crypto – Exchange',
-  'Crypto – Hot Wallet',
-  'Crypto – Cold Wallet',
-  'Crypto – DeFi / On-chain',
-  'Cash / Physical',
-  'Other',
-];
-
-// Get built-in + custom account options for the current user
-app.get('/api/bank-accounts/options', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(
-      `SELECT option_type, value FROM custom_account_options
-       WHERE user_id = $1 ORDER BY created_at ASC`,
-      [userId]
-    );
-    const customs = result.rows;
-    const customInstitutions = customs.filter(r => r.option_type === 'institution').map(r => r.value);
-    const customAccountTypes = customs.filter(r => r.option_type === 'account_type').map(r => r.value);
-    res.json({
-      institutions: BUILT_IN_INSTITUTIONS,
-      account_types: BUILT_IN_ACCOUNT_TYPES,
-      custom_institutions: customInstitutions,
-      custom_account_types: customAccountTypes,
-    });
-  } catch (err) {
-    console.error('GET /api/bank-accounts/options error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch options' });
-  }
-});
-
-// Save a custom institution or account type
-app.post('/api/bank-accounts/options', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { option_type, value } = req.body;
-    if (!['institution', 'account_type'].includes(option_type)) {
-      return res.status(400).json({ error: 'Invalid option_type' });
-    }
-    if (!value || !value.trim()) {
-      return res.status(400).json({ error: 'Value is required' });
-    }
-    await pool.query(
-      `INSERT INTO custom_account_options (user_id, option_type, value)
-       VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-      [userId, option_type, value.trim()]
-    );
-    res.json({ success: true, option_type, value: value.trim() });
-  } catch (err) {
-    console.error('POST /api/bank-accounts/options error:', err.message);
-    res.status(500).json({ error: 'Failed to save option' });
-  }
-});
-
-// Get all bank accounts for user (with computed running balance from tagged transactions)
-app.get('/api/bank-accounts', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const showArchived = req.query.show_archived === 'true';
-
-    let query = `
-      SELECT ba.*,
-        COALESCE(
-          (SELECT COUNT(*) FROM transactions t WHERE t.bank_account_id = ba.id),
-          0
-        )::int as transaction_count,
-        COALESCE(
-          (SELECT SUM(t.amount) FROM transactions t WHERE t.bank_account_id = ba.id AND t.type = 'expense'),
-          0
-        ) as total_debits,
-        COALESCE(
-          (SELECT SUM(t.amount) FROM transactions t WHERE t.bank_account_id = ba.id AND t.type = 'income'),
-          0
-        ) as total_credits
-      FROM bank_accounts ba
-      WHERE ba.user_id = $1
-    `;
-
-    if (!showArchived) {
-      query += ` AND ba.is_archived = FALSE`;
-    }
-
-    query += ` ORDER BY ba.is_archived ASC, ba.created_at DESC`;
-
-    const result = await pool.query(query, [userId]);
-    res.json({ bank_accounts: result.rows });
-  } catch (err) {
-    console.error('GET /api/bank-accounts error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch bank accounts' });
-  }
-});
-
-// Create new bank account
-app.post('/api/bank-accounts', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { name, starting_balance, notes, institution_name, account_type } = req.body;
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Account name is required' });
-    }
-
-    const balance = parseFloat(starting_balance) || 0;
-
-    const result = await pool.query(`
-      INSERT INTO bank_accounts (user_id, name, starting_balance, current_balance, notes, institution_name, account_type)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `, [userId, name.trim(), balance, balance, notes || null, institution_name?.trim() || null, account_type?.trim() || null]);
-
-    res.json({ bank_account: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/bank-accounts error:', err.message);
-    res.status(500).json({ error: 'Failed to create bank account' });
-  }
-});
-
-// Update bank account (name, notes, institution_name, account_type)
-app.put('/api/bank-accounts/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { name, notes, institution_name, account_type } = req.body;
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Account name is required' });
-    }
-
-    const result = await pool.query(`
-      UPDATE bank_accounts
-      SET name = $1, notes = $2, institution_name = $3, account_type = $4, updated_at = NOW()
-      WHERE id = $5 AND user_id = $6
-      RETURNING *
-    `, [name.trim(), notes || null, institution_name?.trim() || null, account_type?.trim() || null, parseInt(req.params.id), userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Bank account not found' });
-    }
-
-    res.json({ bank_account: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/bank-accounts error:', err.message);
-    res.status(500).json({ error: 'Failed to update bank account' });
-  }
-});
-
-// Archive/unarchive bank account
-app.patch('/api/bank-accounts/:id/archive', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(`
-      UPDATE bank_accounts
-      SET is_archived = NOT is_archived, updated_at = NOW()
-      WHERE id = $1 AND user_id = $2
-      RETURNING *
-    `, [parseInt(req.params.id), userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Bank account not found' });
-    }
-
-    res.json({ bank_account: result.rows[0] });
-  } catch (err) {
-    console.error('PATCH /api/bank-accounts/:id/archive error:', err.message);
-    res.status(500).json({ error: 'Failed to toggle archive status' });
-  }
-});
-
-// Delete bank account (warns if has transactions)
-app.delete('/api/bank-accounts/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const accountId = parseInt(req.params.id);
-
-    // Check for linked transactions
-    const txnCheck = await pool.query(
-      'SELECT COUNT(*) as count FROM transactions WHERE bank_account_id = $1',
-      [accountId]
-    );
-
-    if (parseInt(txnCheck.rows[0].count) > 0 && req.query.force !== 'true') {
-      return res.status(400).json({
-        error: `This account has ${txnCheck.rows[0].count} tagged transaction(s). Archive instead, or add ?force=true to delete. Transactions will be untagged.`,
-        transaction_count: parseInt(txnCheck.rows[0].count)
-      });
-    }
-
-    // Untag transactions first
-    await pool.query('UPDATE transactions SET bank_account_id = NULL WHERE bank_account_id = $1', [accountId]);
-
-    const result = await pool.query(
-      'DELETE FROM bank_accounts WHERE id = $1 AND user_id = $2 RETURNING *',
-      [accountId, userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Bank account not found' });
-    }
-
-    res.json({ deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/bank-accounts error:', err.message);
-    res.status(500).json({ error: 'Failed to delete bank account' });
-  }
-});
-
-// Adjust bank account balance (manual correction)
-app.post('/api/bank-accounts/:id/adjust', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const accountId = parseInt(req.params.id);
-    const { new_balance } = req.body;
-
-    if (new_balance === undefined || new_balance === null) {
-      return res.status(400).json({ error: 'new_balance is required' });
-    }
-
-    const result = await pool.query(`
-      UPDATE bank_accounts
-      SET current_balance = $1, updated_at = NOW()
-      WHERE id = $2 AND user_id = $3
-      RETURNING *
-    `, [parseFloat(new_balance), accountId, userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Bank account not found' });
-    }
-
-    res.json({ bank_account: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/bank-accounts/:id/adjust error:', err.message);
-    res.status(500).json({ error: 'Failed to adjust balance' });
-  }
-});
-
-// Transfer between accounts
-app.post('/api/bank-accounts/transfer', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const userId = req.userId;
-    const { from_account_id, to_account_id, amount, description, transfer_date } = req.body;
-
-    if (!from_account_id || !to_account_id) {
-      return res.status(400).json({ error: 'Both from and to accounts are required' });
-    }
-    if (parseInt(from_account_id) === parseInt(to_account_id)) {
-      return res.status(400).json({ error: 'Cannot transfer to the same account' });
-    }
-    if (!amount || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: 'Amount must be positive' });
-    }
-
-    const transferAmount = parseFloat(amount);
-
-    // Verify both accounts belong to user and lock them
-    const fromResult = await client.query(
-      'SELECT * FROM bank_accounts WHERE id = $1 AND user_id = $2 FOR UPDATE',
-      [parseInt(from_account_id), userId]
-    );
-    const toResult = await client.query(
-      'SELECT * FROM bank_accounts WHERE id = $1 AND user_id = $2 FOR UPDATE',
-      [parseInt(to_account_id), userId]
-    );
-
-    if (fromResult.rows.length === 0 || toResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'One or both accounts not found' });
-    }
-
-    const fromAccount = fromResult.rows[0];
-    const toAccount = toResult.rows[0];
-
-    if (fromAccount.is_archived || toAccount.is_archived) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Cannot transfer to/from archived accounts' });
-    }
-
-    // Deduct from source
-    await client.query(
-      'UPDATE bank_accounts SET current_balance = current_balance - $1, updated_at = NOW() WHERE id = $2',
-      [transferAmount, parseInt(from_account_id)]
-    );
-
-    // Add to destination
-    await client.query(
-      'UPDATE bank_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2',
-      [transferAmount, parseInt(to_account_id)]
-    );
-
-    // Record transfer
-    const transferResult = await client.query(`
-      INSERT INTO account_transfers (user_id, from_account_id, to_account_id, amount, description, transfer_date)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-    `, [userId, parseInt(from_account_id), parseInt(to_account_id), transferAmount,
-        description || null, transfer_date || new Date().toISOString().split('T')[0]]);
-
-    await client.query('COMMIT');
-
-    res.json({
-      transfer: transferResult.rows[0],
-      from_account: fromAccount.name,
-      to_account: toAccount.name,
-      from_new_balance: parseFloat(fromAccount.current_balance) - transferAmount,
-      to_new_balance: parseFloat(toAccount.current_balance) + transferAmount
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/bank-accounts/transfer error:', err.message);
-    res.status(500).json({ error: 'Failed to transfer' });
-  } finally {
-    client.release();
-  }
-});
-
-// Unified transfer endpoint — supports bank + brokerage accounts
-app.post('/api/accounts/transfer', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const userId = req.userId;
-    const { from_account_id, from_source, to_account_id, to_source, amount, description, transfer_date } = req.body;
-
-    if (!from_account_id || !to_account_id) {
-      return res.status(400).json({ error: 'Both from and to accounts are required' });
-    }
-    if (from_source === to_source && parseInt(from_account_id) === parseInt(to_account_id)) {
-      return res.status(400).json({ error: 'Cannot transfer to the same account' });
-    }
-    if (!amount || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: 'Amount must be positive' });
-    }
-
-    const transferAmount = parseFloat(amount);
-    const fromSrc = from_source || 'bank';
-    const toSrc = to_source || 'bank';
-    const fromTable = fromSrc === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
-    const toTable = toSrc === 'brokerage' ? 'brokerage_accounts' : 'bank_accounts';
-
-    // Verify both accounts belong to user and lock them
-    const fromResult = await client.query(
-      `SELECT * FROM ${fromTable} WHERE id = $1 AND user_id = $2 FOR UPDATE`,
-      [parseInt(from_account_id), userId]
-    );
-    const toResult = await client.query(
-      `SELECT * FROM ${toTable} WHERE id = $1 AND user_id = $2 FOR UPDATE`,
-      [parseInt(to_account_id), userId]
-    );
-
-    if (fromResult.rows.length === 0 || toResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'One or both accounts not found' });
-    }
-
-    const fromAccount = fromResult.rows[0];
-    const toAccount = toResult.rows[0];
-
-    // Check archived for bank accounts
-    if (fromSrc === 'bank' && fromAccount.is_archived) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Cannot transfer from an archived account' });
-    }
-    if (toSrc === 'bank' && toAccount.is_archived) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Cannot transfer to an archived account' });
-    }
-
-    // Deduct from source
-    await client.query(
-      `UPDATE ${fromTable} SET current_balance = current_balance - $1, updated_at = NOW() WHERE id = $2`,
-      [transferAmount, parseInt(from_account_id)]
-    );
-
-    // Add to destination
-    await client.query(
-      `UPDATE ${toTable} SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2`,
-      [transferAmount, parseInt(to_account_id)]
-    );
-
-    // Record transfer — store in account_transfers if both are bank accounts (FK constraint)
-    // Otherwise just record the transaction without the FK-constrained table
-    let transferRecord = null;
-    if (fromSrc === 'bank' && toSrc === 'bank') {
-      const transferResult = await client.query(`
-        INSERT INTO account_transfers (user_id, from_account_id, to_account_id, amount, description, transfer_date)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
-      `, [userId, parseInt(from_account_id), parseInt(to_account_id), transferAmount,
-          description || null, transfer_date || new Date().toISOString().split('T')[0]]);
-      transferRecord = transferResult.rows[0];
-    }
-
-    // Also create a transaction record for the transfer
-    const txnDate = transfer_date || new Date().toISOString().split('T')[0];
-    const txnDesc = description || `Transfer: ${fromAccount.name} → ${toAccount.name}`;
-
-    // Only set bank_account_id and transfer_to_account_id if they're bank accounts (FK constraint)
-    const fromBankId = fromSrc === 'bank' ? parseInt(from_account_id) : null;
-    const toBankId = toSrc === 'bank' ? parseInt(to_account_id) : null;
-
-    await client.query(`
-      INSERT INTO transactions (user_id, amount, type, description, transaction_date, bank_account_id, transfer_to_account_id)
-      VALUES ($1, $2, 'transfer', $3, $4, $5, $6)
-    `, [userId, transferAmount, txnDesc, txnDate, fromBankId, toBankId]);
-
-    await client.query('COMMIT');
-
-    res.json({
-      transfer: transferRecord,
-      from_account: fromAccount.name,
-      to_account: toAccount.name,
-      from_source: fromSrc,
-      to_source: toSrc,
-      from_new_balance: parseFloat(fromAccount.current_balance) - transferAmount,
-      to_new_balance: parseFloat(toAccount.current_balance) + transferAmount
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/accounts/transfer error:', err.message);
-    res.status(500).json({ error: 'Failed to transfer' });
-  } finally {
-    client.release();
-  }
-});
-
-// Get transfer history
-app.get('/api/bank-accounts/transfers', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(`
-      SELECT at.*,
-        fa.name as from_account_name,
-        ta.name as to_account_name
-      FROM account_transfers at
-      JOIN bank_accounts fa ON fa.id = at.from_account_id
-      JOIN bank_accounts ta ON ta.id = at.to_account_id
-      WHERE at.user_id = $1
-      ORDER BY at.transfer_date DESC, at.created_at DESC
-      LIMIT 50
-    `, [userId]);
-
-    res.json({ transfers: result.rows });
-  } catch (err) {
-    console.error('GET /api/bank-accounts/transfers error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch transfers' });
-  }
-});
-
-// Get transactions for a specific bank account
-app.get('/api/bank-accounts/:id/transactions', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const accountId = parseInt(req.params.id);
-
-    // Verify ownership
-    const baCheck = await pool.query(
-      'SELECT id FROM bank_accounts WHERE id = $1 AND user_id = $2',
-      [accountId, userId]
-    );
-    if (baCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Bank account not found' });
-    }
-
-    const result = await pool.query(`
-      SELECT t.*, c.name as category_name, c.icon as category_icon
-      FROM transactions t
-      LEFT JOIN categories c ON c.id = t.category_id
-      WHERE t.bank_account_id = $1 AND t.user_id = $2
-      ORDER BY t.transaction_date DESC, t.created_at DESC
-      LIMIT 100
-    `, [accountId, userId]);
-
-    res.json({ transactions: result.rows });
-  } catch (err) {
-    console.error('GET /api/bank-accounts/:id/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch account transactions' });
-  }
-});
+// [Phase4] bank-accounts → routes/vault.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── FINANCIAL FREEDOM CALCULATOR (PRO FEATURE) ───────────
@@ -7143,254 +5797,254 @@ function calculateFIProjections(params) {
   };
 }
 
-// ─── family FINANCIAL FREEDOM CALCULATOR ────────────────────────────
+// [Phase5] family FI calc → routes/family.js
 
-// Helper: check if user is member of a family
-async function isHouseholdMember(userId, householdId) {
-  const r = await pool.query(
-    'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-    [householdId, userId]
-  );
-  return r.rows.length > 0;
-}
 
-// GET /api/households/:household_id/fi-calculator
-app.get('/api/households/:household_id/fi-calculator', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', code: 'PRO_REQUIRED' });
 
-    const householdId = parseInt(req.params.household_id);
-    if (!(await isHouseholdMember(req.userId, householdId))) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    const result = await pool.query(
-      'SELECT * FROM household_fi_calculator WHERE household_id = $1',
-      [householdId]
-    );
-    res.json({ data: result.rows[0] || null });
-  } catch (err) {
-    console.error('GET family fi-calculator error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch family FI data' });
-  }
-});
 
-// POST /api/households/:household_id/fi-calculator  (save/upsert)
-app.post('/api/households/:household_id/fi-calculator', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', code: 'PRO_REQUIRED' });
 
-    const householdId = parseInt(req.params.household_id);
-    if (!(await isHouseholdMember(req.userId, householdId))) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    const {
-      total_monthly_expenses,
-      total_current_savings,
-      total_monthly_savings,
-      safe_withdrawal_rate = 4.0,
-      expected_return_rate = 7.0,
-      member_count = 1
-    } = req.body;
 
-    if (total_monthly_expenses == null || total_current_savings == null || total_monthly_savings == null) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
 
-    const result = await pool.query(`
-      INSERT INTO household_fi_calculator
-        (household_id, total_monthly_expenses, total_current_savings, total_monthly_savings,
-         safe_withdrawal_rate, expected_return_rate, member_count)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (household_id) DO UPDATE SET
-        total_monthly_expenses = EXCLUDED.total_monthly_expenses,
-        total_current_savings = EXCLUDED.total_current_savings,
-        total_monthly_savings = EXCLUDED.total_monthly_savings,
-        safe_withdrawal_rate = EXCLUDED.safe_withdrawal_rate,
-        expected_return_rate = EXCLUDED.expected_return_rate,
-        member_count = EXCLUDED.member_count,
-        updated_at = NOW()
-      RETURNING *
-    `, [householdId, total_monthly_expenses, total_current_savings,
-        total_monthly_savings, safe_withdrawal_rate, expected_return_rate, member_count]);
 
-    res.json({ data: result.rows[0] });
-  } catch (err) {
-    console.error('POST family fi-calculator error:', err.message);
-    res.status(500).json({ error: 'Failed to save family FI data' });
-  }
-});
 
-// POST /api/households/:household_id/fi-calculator/calculate  (calculate, no save)
-app.post('/api/households/:household_id/fi-calculator/calculate', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', code: 'PRO_REQUIRED' });
 
-    const householdId = parseInt(req.params.household_id);
-    if (!(await isHouseholdMember(req.userId, householdId))) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    const {
-      total_monthly_expenses,
-      total_current_savings,
-      total_monthly_savings,
-      safe_withdrawal_rate = 4.0,
-      expected_return_rate = 7.0,
-      extra_monthly_savings = 0
-    } = req.body;
 
-    if (total_monthly_expenses == null || total_current_savings == null || total_monthly_savings == null) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
 
-    const swr = parseFloat(safe_withdrawal_rate) / 100;
-    const annualExpenses = parseFloat(total_monthly_expenses) * 12;
-    const ffNumber = annualExpenses / swr;
-    const currentSavings = parseFloat(total_current_savings);
-    const monthlySavings = parseFloat(total_monthly_savings) + parseFloat(extra_monthly_savings);
-    const returnRate = parseFloat(expected_return_rate) / 100;
-    const monthlyReturn = returnRate / 12;
 
-    const currentProgress = Math.min((currentSavings / ffNumber) * 100, 100);
 
-    // Project months until FF#
-    let savings = currentSavings;
-    let month = 0;
-    const MAX_MONTHS = 600;
-    const projectionSchedule = [];
 
-    while (savings < ffNumber && month < MAX_MONTHS) {
-      month++;
-      savings = savings * (1 + monthlyReturn) + monthlySavings;
-      if (month % 12 === 0 || savings >= ffNumber) {
-        projectionSchedule.push({
-          month,
-          year: Math.floor(month / 12),
-          savings: Math.round(savings * 100) / 100,
-          ffNumber: Math.round(ffNumber * 100) / 100,
-          progress: Math.min((savings / ffNumber) * 100, 100)
-        });
-      }
-      if (savings >= ffNumber) break;
-    }
 
-    const monthsUntilFF = month < MAX_MONTHS ? month : null;
-    const yearsUntilFF = monthsUntilFF ? Math.round((monthsUntilFF / 12) * 10) / 10 : null;
-    const daysUntilFF = monthsUntilFF ? Math.ceil(monthsUntilFF * 30.44) : null;
-    const projectedYear = monthsUntilFF ? new Date().getFullYear() + Math.floor(monthsUntilFF / 12) : null;
 
-    res.json({
-      ffNumber: Math.round(ffNumber * 100) / 100,
-      currentSavings: Math.round(currentSavings * 100) / 100,
-      currentProgress: Math.round(currentProgress * 100) / 100,
-      monthsUntilFF,
-      yearsUntilFF,
-      daysUntilFF,
-      projectedYear,
-      projectionSchedule,
-      status: monthsUntilFF === null ? 'unreachable' : (yearsUntilFF <= 15 ? 'on_track' : 'in_progress')
-    });
-  } catch (err) {
-    console.error('POST family fi-calculator/calculate error:', err.message);
-    res.status(500).json({ error: 'Failed to calculate family FI projections' });
-  }
-});
 
-// GET /api/households/:household_id/fi-calculator/aggregate  (auto-aggregate from members)
-app.get('/api/households/:household_id/fi-calculator/aggregate', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', code: 'PRO_REQUIRED' });
 
-    const householdId = parseInt(req.params.household_id);
-    if (!(await isHouseholdMember(req.userId, householdId))) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get all family members
-    const membersResult = await pool.query(
-      'SELECT user_id FROM household_members WHERE household_id = $1',
-      [householdId]
-    );
-    const memberIds = membersResult.rows.map(r => r.user_id);
 
-    // Aggregate from individual fi calculators (only members who have data)
-    let totalExpenses = 0, totalSavings = 0, totalMonthlySavings = 0;
-    let memberCount = 0;
-    const memberFIDates = [];
 
-    for (const memberId of memberIds) {
-      const fiData = await pool.query(
-        'SELECT * FROM financial_freedom WHERE user_id = $1',
-        [memberId]
-      );
-      if (fiData.rows.length > 0) {
-        const fi = fiData.rows[0];
-        totalExpenses += parseFloat(fi.monthly_expenses);
-        totalSavings += parseFloat(fi.current_savings);
-        totalMonthlySavings += parseFloat(fi.monthly_savings_rate);
-        memberCount++;
 
-        // Calculate individual projected FI date for comparison
-        const returnRate = parseFloat(fi.expected_return_rate) / 100 / 12;
-        const annualExp = parseFloat(fi.monthly_expenses) * 12;
-        const fiNum = annualExp * 25;
-        let s = parseFloat(fi.current_savings);
-        let m = 0;
-        while (s < fiNum && m < 600) {
-          m++;
-          s = s * (1 + returnRate) + parseFloat(fi.monthly_savings_rate);
-          if (s >= fiNum) break;
-        }
-        const yearsUntil = m < 600 ? Math.round((m / 12) * 10) / 10 : null;
-        const projYear = yearsUntil ? new Date().getFullYear() + Math.floor(m / 12) : null;
 
-        // Get user display name
-        const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [memberId]);
-        const email = userResult.rows[0]?.email || 'Member';
-        const displayName = email.split('@')[0];
 
-        memberFIDates.push({
-          userId: memberId,
-          displayName,
-          yearsUntilFI: yearsUntil,
-          projectedYear: projYear,
-          isSelf: memberId === req.userId
-        });
-      }
-    }
 
-    // Also aggregate from transactions for members without manual FI data
-    const dashResult = await pool.query(`
-      SELECT
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expenses
-      FROM transactions
-      WHERE user_id = ANY($1)
-    `, [memberIds]);
 
-    if (memberCount === 0) {
-      // Fall back to transaction-based aggregate
-      totalExpenses = parseFloat(dashResult.rows[0].total_expenses);
-    }
 
-    res.json({
-      total_monthly_expenses: Math.round(totalExpenses * 100) / 100,
-      total_current_savings: Math.round(totalSavings * 100) / 100,
-      total_monthly_savings: Math.round(totalMonthlySavings * 100) / 100,
-      member_count: memberCount || memberIds.length,
-      total_members: memberIds.length,
-      memberFIDates
-    });
-  } catch (err) {
-    console.error('GET family fi-calculator/aggregate error:', err.message);
-    res.status(500).json({ error: 'Failed to aggregate family data' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─── DASHBOARD STATS (per-user) ────────────────────────────
 const { sanitizeNumber, loadTransactionColumns, moneyExpression } = require('./lib/transaction-columns');
@@ -7595,1855 +6249,1855 @@ app.get('/api/dashboard', requireAuth, async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════
-// ─── family SYSTEM ────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// Create a new family
-app.post('/api/households/create', requireAuth, async (req, res) => {
-  try {
-    const { name } = req.body;
-
-    if (!name || name.trim().length === 0) {
-      return res.status(400).json({ error: 'family name is required' });
-    }
-
-    // Individual Plan users cannot create or join households (single-user plan)
-    const indivCheck = await pool.query('SELECT pricing_tier FROM users WHERE id = $1', [req.userId]);
-    if (indivCheck.rows.length > 0 && indivCheck.rows[0].pricing_tier === 'individual_pro') {
-      return res.status(403).json({ error: 'family features are not available on the Individual Plan. Upgrade to the Family Plan ($25/mo) to add family members.' });
-    }
-
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Create family
-      const householdResult = await client.query(
-        'INSERT INTO households (name, owner_id) VALUES ($1, $2) RETURNING *',
-        [name.trim(), req.userId]
-      );
-      const family = householdResult.rows[0];
-
-      // Add owner as first member
-      await client.query(
-        `INSERT INTO household_members (household_id, user_id, role, status) VALUES ($1, $2, $3, 'active')`,
-        [family.id, req.userId, 'owner']
-      );
-
-      // Clear any lingering offboarding records — user is back in a family
-      await client.query(
-        `UPDATE household_offboarding_records SET reintegrated_at = NOW() WHERE user_id = $1 AND reintegrated_at IS NULL`,
-        [req.userId]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        family
-      });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('POST /api/households/create error:', err.message);
-    res.status(500).json({ error: 'Failed to create family' });
-  }
-});
-
-// Get user's households
-app.get('/api/households', requireAuth, async (req, res) => {
-  try {
-    // Get all households where user is a member
-    const result = await pool.query(`
-      SELECT
-        h.*,
-        hm.role,
-        hm.joined_at,
-        u.email as owner_email,
-        u.name as owner_name
-      FROM households h
-      INNER JOIN household_members hm ON h.id = hm.household_id
-      LEFT JOIN users u ON h.owner_id = u.id
-      WHERE hm.user_id = $1
-      ORDER BY h.created_at DESC
-    `, [req.userId]);
-
-    res.json({ households: result.rows });
-  } catch (err) {
-    console.error('GET /api/households error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch households' });
-  }
-});
-
-// Get family members (with family meta for UI)
-app.get('/api/households/:id/members', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Load family (verify exists)
-    const householdResult = await pool.query(
-      'SELECT id, name, owner_id, co_admin_id, cancellation_grace_ends_at, cancelled_at FROM households WHERE id = $1', [id]
-    );
-    if (householdResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const family = householdResult.rows[0];
-
-    // Verify user is a member
-    const memberCheck = await pool.query(
-      `SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2 AND status = 'active'`,
-      [id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
-
-    // Get all active members
-    const result = await pool.query(`
-      SELECT
-        hm.id, hm.user_id, hm.role, hm.status, hm.joined_at,
-        u.email, u.name,
-        u.id = $2 as is_you
-      FROM household_members hm
-      INNER JOIN users u ON hm.user_id = u.id
-      WHERE hm.household_id = $1 AND hm.status = 'active'
-      ORDER BY
-        CASE WHEN hm.role = 'owner' THEN 0
-             WHEN hm.role = 'co_admin' THEN 1
-             ELSE 2 END,
-        hm.joined_at ASC
-    `, [id, req.userId]);
-
-    res.json({
-      success: true,
-      family: {
-        id: family.id,
-        name: family.name,
-        owner_id: family.owner_id,
-        co_admin_id: family.co_admin_id,
-        is_owner: family.owner_id === req.userId,
-        is_co_admin: family.co_admin_id === req.userId,
-        cancellation_grace_ends_at: family.cancellation_grace_ends_at || null,
-        cancelled_at: family.cancelled_at || null
-      },
-      members: result.rows,
-      max_members: 6
-    });
-  } catch (err) {
-    console.error('GET /api/households/:id/members error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch family members' });
-  }
-});
-
-// ─── family INVITE HELPERS ──────────────────────────────────────────────────
-
-const HOUSEHOLD_MAX_MEMBERS = 6;
-// Family Incubator: 1 head + up to 5 sub-accounts = 6 total (matches HOUSEHOLD_MAX_MEMBERS)
-const INCUBATOR_MAX_SUB_ACCOUNTS = 5;
-
-async function sendHouseholdInviteEmail({ toEmail, inviterName, householdName, inviteUrl, role, customNote }) {
-  const roleLabel = { co_admin: 'Co-Admin', adult: 'Adult Member', minor: 'Junior Member' }[role] || (role || 'Member');
-  const noteHtml = customNote
-    ? `<p style="font-size:14px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:12px 14px;color:#c9a84c;margin:0 0 20px;line-height:1.6">${customNote}</p>`
-    : '';
-  try {
-    await sendEmail({
-        to: toEmail,
-        subject: `${inviterName} invited you to join their FACTS family`,
-        html: `
-          <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;background:#0a0f1a;color:#e8e0d4;padding:32px 24px;border-radius:12px">
-            <div style="margin-bottom:24px">
-              <span style="font-size:22px;font-weight:700;color:#c9a84c;letter-spacing:-0.5px">FACTS</span>
-            </div>
-            <h1 style="font-size:22px;font-weight:700;margin:0 0 12px;color:#e8e0d4">You've been invited!</h1>
-            <p style="font-size:15px;color:#a89a7e;margin:0 0 16px;line-height:1.6">
-              <strong style="color:#e8e0d4">${inviterName}</strong> has invited you to join
-              <strong style="color:#c9a84c">${householdName}</strong> on FACTS as a <strong style="color:#e8e0d4">${roleLabel}</strong>.
-            </p>
-            ${noteHtml}
-            <p style="font-size:14px;color:#a89a7e;margin:0 0 28px;line-height:1.6">
-              FACTS is the financial system built for families — track budgets, share insights, and build wealth together.
-              This invite expires in 7 days.
-            </p>
-            <a href="${inviteUrl}" style="display:inline-block;background:#c9a84c;color:#0a0f1a;font-weight:700;font-size:15px;padding:14px 28px;border-radius:8px;text-decoration:none">
-              Accept Invite →
-            </a>
-            <p style="font-size:12px;color:#6b5c44;margin-top:28px">
-              If you didn't expect this invite, you can safely ignore this email.
-            </p>
-          </div>
-        `
-    });
-  } catch (e) {
-    console.error('[family Invite Email] Failed to send:', e.message);
-  }
-}
-
-// Create family invite (email-based, with secure token)
-// Owner OR co-admin can invite
-app.post('/api/households/:id/invite', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { email, role = 'adult' } = req.body;
-
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Valid email address is required' });
-    }
-    if (!['co_admin', 'adult', 'minor'].includes(role)) {
-      return res.status(400).json({ error: 'Role must be co_admin, adult, or minor' });
-    }
-
-    // Individual Plan users cannot invite family members
-    const indivInvCheck = await pool.query('SELECT pricing_tier FROM users WHERE id = $1', [req.userId]);
-    if (indivInvCheck.rows.length > 0 && indivInvCheck.rows[0].pricing_tier === 'individual_pro') {
-      return res.status(403).json({ error: 'family invites are not available on the Individual Plan. Upgrade to the Family Plan ($25/mo) to add family members.' });
-    }
-
-    // Verify requester is owner OR co_admin
-    const householdResult = await pool.query(
-      'SELECT id, name, owner_id, co_admin_id FROM households WHERE id = $1',
-      [id]
-    );
-    if (householdResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const family = householdResult.rows[0];
-    const canInvite = family.owner_id === req.userId || family.co_admin_id === req.userId;
-    if (!canInvite) {
-      return res.status(403).json({ error: 'Only the owner or co-admin can send invites' });
-    }
-
-    // Only owner can invite a co_admin
-    if (role === 'co_admin' && family.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Only the owner can invite a co-admin' });
-    }
-
-    // Check active member count (max 6, including any accepted-but-not-yet-removed)
-    const memberCount = await pool.query(
-      `SELECT COUNT(*) as count FROM household_members
-       WHERE household_id = $1 AND status = 'active'`,
-      [id]
-    );
-    if (parseInt(memberCount.rows[0].count) >= HOUSEHOLD_MAX_MEMBERS) {
-      return res.status(400).json({ error: `family is full (max ${HOUSEHOLD_MAX_MEMBERS} members)` });
-    }
-
-    // Check if invited email already a member
-    const alreadyMember = await pool.query(
-      `SELECT hm.id FROM household_members hm
-       JOIN users u ON u.id = hm.user_id
-       WHERE hm.household_id = $1 AND LOWER(u.email) = LOWER($2) AND hm.status = 'active'`,
-      [id, email]
-    );
-    if (alreadyMember.rows.length > 0) {
-      return res.status(400).json({ error: 'This person is already a member' });
-    }
-
-    // Cancel any existing pending invite for this email in this family
-    await pool.query(
-      `UPDATE household_invites SET status = 'cancelled'
-       WHERE household_id = $1 AND LOWER(email) = LOWER($2) AND status = 'pending'`,
-      [id, email]
-    );
-
-    // Generate secure token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-    const result = await pool.query(`
-      INSERT INTO household_invites
-        (household_id, invite_code, created_by_user_id, invited_by, email, role, token, expires_at, status, max_uses, uses_count)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', 1, 0)
-      RETURNING *
-    `, [id, crypto.randomBytes(8).toString('hex'), req.userId, req.userId, email.toLowerCase(), role, token, expires_at]);
-
-    const invite = result.rows[0];
-    const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
-    const inviteUrl = `${APP_URL}/family-invite.html?token=${token}`;
-
-    // Get inviter's name
-    const inviterResult = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const inviter = inviterResult.rows[0];
-    const inviterName = inviter.name || inviter.email.split('@')[0];
-
-    // Send email (non-blocking)
-    sendHouseholdInviteEmail({
-      toEmail: email,
-      inviterName,
-      householdName: family.name,
-      inviteUrl,
-      role
-    });
-
-    res.json({
-      success: true,
-      invite: { id: invite.id, email, role, expires_at, status: 'pending' },
-      invite_url: inviteUrl
-    });
-  } catch (err) {
-    console.error('POST /api/households/:id/invite error:', err.message);
-    res.status(500).json({ error: 'Failed to send invite' });
-  }
-});
-
-// List pending invites for a family (owner or co-admin only)
-app.get('/api/households/:id/invites', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const householdResult = await pool.query(
-      'SELECT owner_id, co_admin_id FROM households WHERE id = $1',
-      [id]
-    );
-    if (householdResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const h = householdResult.rows[0];
-    if (h.owner_id !== req.userId && h.co_admin_id !== req.userId) {
-      return res.status(403).json({ error: 'Only owner or co-admin can view invites' });
-    }
-
-    const result = await pool.query(`
-      SELECT hi.id, hi.email, hi.role, hi.status, hi.expires_at, hi.accepted_at,
-             u.name as invited_by_name
-      FROM household_invites hi
-      LEFT JOIN users u ON u.id = hi.invited_by
-      WHERE hi.household_id = $1 AND hi.status IN ('pending', 'accepted', 'declined')
-      ORDER BY hi.id DESC
-    `, [id]);
-
-    res.json({ success: true, invites: result.rows });
-  } catch (err) {
-    console.error('GET /api/households/:id/invites error:', err.message);
-    res.status(500).json({ error: 'Failed to load invites' });
-  }
-});
-
-// Cancel a pending invite (owner or co-admin only)
-app.delete('/api/households/:id/invites/:invite_id', requireAuth, async (req, res) => {
-  try {
-    const { id, invite_id } = req.params;
-
-    const householdResult = await pool.query(
-      'SELECT owner_id, co_admin_id FROM households WHERE id = $1', [id]
-    );
-    if (householdResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const h = householdResult.rows[0];
-    if (h.owner_id !== req.userId && h.co_admin_id !== req.userId) {
-      return res.status(403).json({ error: 'Only owner or co-admin can cancel invites' });
-    }
-
-    await pool.query(
-      `UPDATE household_invites SET status = 'cancelled'
-       WHERE id = $1 AND household_id = $2 AND status = 'pending'`,
-      [invite_id, id]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/households/:id/invites/:invite_id error:', err.message);
-    res.status(500).json({ error: 'Failed to cancel invite' });
-  }
-});
-
-// ─── PUBLIC: Get invite details by token (no auth needed — shows join page) ─────
-app.get('/api/family-invite/:token', async (req, res) => {
-  try {
-    const { token } = req.params;
-
-    const result = await pool.query(`
-      SELECT hi.id, hi.email, hi.role, hi.status, hi.expires_at,
-             h.name as household_name, h.id as household_id,
-             u.name as invited_by_name
-      FROM household_invites hi
-      JOIN households h ON h.id = hi.household_id
-      LEFT JOIN users u ON u.id = hi.invited_by
-      WHERE hi.token = $1
-    `, [token]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Invite not found' });
-    }
-
-    const invite = result.rows[0];
-
-    if (invite.status !== 'pending') {
-      return res.json({ valid: false, status: invite.status, reason: `This invite has already been ${invite.status}` });
-    }
-    if (new Date(invite.expires_at) < new Date()) {
-      await pool.query(`UPDATE household_invites SET status = 'expired' WHERE id = $1`, [invite.id]);
-      return res.json({ valid: false, status: 'expired', reason: 'This invite has expired' });
-    }
-
-    res.json({
-      valid: true,
-      household_name: invite.household_name,
-      household_id: invite.household_id,
-      invited_email: invite.email,
-      role: invite.role,
-      invited_by_name: invite.invited_by_name,
-      expires_at: invite.expires_at,
-      status: invite.status
-    });
-  } catch (err) {
-    console.error('GET /api/family-invite/:token error:', err.message);
-    res.status(500).json({ error: 'Failed to load invite' });
-  }
-});
-
-// Accept invite by token (requires auth — user must be logged in or just signed up)
-app.post('/api/family-invite/:token/accept', requireAuth, async (req, res) => {
-  const { token } = req.params;
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const inviteResult = await client.query(`
-      SELECT hi.*, h.name as household_name, h.owner_id, h.co_admin_id, h.is_incubator
-      FROM household_invites hi
-      JOIN households h ON h.id = hi.household_id
-      WHERE hi.token = $1 AND hi.status = 'pending'
-      FOR UPDATE
-    `, [token]);
-
-    if (inviteResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Invite not found or already used' });
-    }
-
-    const invite = inviteResult.rows[0];
-
-    if (new Date(invite.expires_at) < new Date()) {
-      await client.query(`UPDATE household_invites SET status = 'expired' WHERE id = $1`, [invite.id]);
-      await client.query('ROLLBACK');
-      return res.status(410).json({ error: 'This invite has expired' });
-    }
-
-    // Verify the logged-in user's email matches the invite email
-    const userResult = await client.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    const userEmail = userResult.rows[0]?.email;
-    if (!userEmail || userEmail.toLowerCase() !== invite.email.toLowerCase()) {
-      await client.query('ROLLBACK');
-      return res.status(403).json({
-        error: `This invite was sent to ${invite.email}. Please log in with that account to accept.`
-      });
-    }
-
-    // Check if already a member
-    const existingMember = await client.query(
-      `SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2`,
-      [invite.household_id, req.userId]
-    );
-    if (existingMember.rows.length > 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'You are already a member of this family' });
-    }
-
-    // Check max members
-    const countResult = await client.query(
-      `SELECT COUNT(*) as count FROM household_members WHERE household_id = $1 AND status = 'active'`,
-      [invite.household_id]
-    );
-    if (parseInt(countResult.rows[0].count) >= HOUSEHOLD_MAX_MEMBERS) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'This family is full' });
-    }
-
-    // Map invite role to member role; owner/co_admin stay as-is
-    const memberRole = invite.role === 'co_admin' ? 'co_admin' :
-                       invite.role === 'minor' ? 'minor' : 'adult';
-
-    // For incubator households, enforce sub-account cap (active non-owner members)
-    if (invite.is_incubator) {
-      const subCountResult = await client.query(
-        `SELECT COUNT(*) as count FROM household_members
-         WHERE household_id = $1 AND user_id != $2
-           AND status = 'active' AND broke_away_at IS NULL`,
-        [invite.household_id, invite.owner_id]
-      );
-      if (parseInt(subCountResult.rows[0].count) >= INCUBATOR_MAX_SUB_ACCOUNTS) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({
-          error: `This Family Incubator is full (max ${INCUBATOR_MAX_SUB_ACCOUNTS} sub-accounts)`
-        });
-      }
-    }
-
-    // Add member — mark as sub-account if this is an incubator family
-    const isSubAccount = invite.is_incubator && invite.role !== 'co_admin';
-    await client.query(
-      `INSERT INTO household_members (household_id, user_id, role, status, joined_at, is_sub_account)
-       VALUES ($1, $2, $3, 'active', NOW(), $4)`,
-      [invite.household_id, req.userId, memberRole, isSubAccount]
-    );
-
-    // If invited as co_admin, promote on households table too
-    if (invite.role === 'co_admin') {
-      await client.query(
-        `UPDATE households SET co_admin_id = $1 WHERE id = $2`,
-        [req.userId, invite.household_id]
-      );
-    }
-
-    // Mark invite accepted
-    await client.query(
-      `UPDATE household_invites SET status = 'accepted', accepted_at = NOW(), uses_count = uses_count + 1 WHERE id = $1`,
-      [invite.id]
-    );
-
-    // ── Family Affiliate Setup ────────────────────────────────────────────────
-    // When member joins family plan:
-    // 1. Set referred_by_user_id to the family owner (makes them a direct leg)
-    // 2. Create/update their affiliate record with family_household_id (if 18+)
-    // 3. Under-18 members get is_minor=true, no affiliate code yet
-    try {
-      const memberUser = await client.query(
-        'SELECT id, email, date_of_birth, referred_by_user_id FROM users WHERE id = $1',
-        [req.userId]
-      );
-      const memberData = memberUser.rows[0];
-
-      // Set referred_by_user_id to owner if not already set
-      // This makes them a permanent leg under the owner's affiliate tree
-      if (memberData && !memberData.referred_by_user_id) {
-        await client.query(
-          'UPDATE users SET referred_by_user_id = $1 WHERE id = $2',
-          [invite.owner_id, req.userId]
-        );
-      }
-
-      // Age check
-      let isMinor = true;
-      if (memberData?.date_of_birth) {
-        const dob = new Date(memberData.date_of_birth);
-        const eighteenth = new Date(dob);
-        eighteenth.setFullYear(eighteenth.getFullYear() + 18);
-        isMinor = new Date() < eighteenth;
-      }
-
-      if (!isMinor && invite.role !== 'minor') {
-        // Adult member (18+): create/update affiliate with family_household_id
-        const existingCode = await client.query(
-          'SELECT referral_code FROM affiliates WHERE user_id = $1', [req.userId]
-        );
-        let referralCode = existingCode.rows[0]?.referral_code;
-        if (!referralCode) {
-          referralCode = await generateUniqueReferralCode();
-        }
-        await client.query(
-          `INSERT INTO affiliates (user_id, email, referral_code, status, is_minor, age_verified_at, family_household_id)
-           VALUES ($1, $2, $3, 'active', false, NOW(), $4)
-           ON CONFLICT (user_id) DO UPDATE SET
-             family_household_id = $4, is_minor = false, updated_at = NOW()`,
-          [req.userId, memberData.email, referralCode, invite.household_id]
-        );
-        await client.query(
-          `UPDATE household_members SET affiliate_id = (SELECT id FROM affiliates WHERE user_id = $1)
-           WHERE household_id = $2 AND user_id = $1`,
-          [req.userId, invite.household_id]
-        );
-      } else {
-        // Minor: flag as minor, no affiliate code
-        await client.query(
-          `INSERT INTO affiliates (user_id, email, referral_code, status, is_minor, family_household_id)
-           VALUES ($1, $2, 'MINOR-' || $1, 'paused', true, $3)
-           ON CONFLICT (user_id) DO UPDATE SET is_minor = true, family_household_id = $3, updated_at = NOW()`,
-          [req.userId, memberData?.email || '', invite.household_id]
-        );
-      }
-    } catch (affiliateErr) {
-      // Non-fatal: affiliate setup failure doesn't block invite acceptance
-      console.error('[FamilyPlan] Affiliate setup on invite accept failed:', affiliateErr.message);
-    }
-    // ── End Family Affiliate Setup ────────────────────────────────────────────
-
-    await client.query('COMMIT');
-
-    res.json({
-      success: true,
-      household_id: invite.household_id,
-      household_name: invite.household_name,
-      role: memberRole
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/family-invite/:token/accept error:', err.message);
-    res.status(500).json({ error: 'Failed to accept invite' });
-  } finally {
-    client.release();
-  }
-});
-
-// Decline invite by token (requires auth)
-app.post('/api/family-invite/:token/decline', requireAuth, async (req, res) => {
-  try {
-    const { token } = req.params;
-    const result = await pool.query(
-      `UPDATE household_invites SET status = 'declined', declined_at = NOW()
-       WHERE token = $1 AND status = 'pending'
-       RETURNING id`,
-      [token]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Invite not found or already handled' });
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST /api/family-invite/:token/decline error:', err.message);
-    res.status(500).json({ error: 'Failed to decline invite' });
-  }
-});
-
-// Join family via legacy invite code (backward-compat — kept for old links)
-app.post('/api/households/join', requireAuth, async (req, res) => {
-  try {
-    const { invite_code } = req.body;
-
-    if (!invite_code) {
-      return res.status(400).json({ error: 'Invite code is required' });
-    }
-
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      const inviteResult = await client.query(`
-        SELECT hi.*, h.name as household_name, h.owner_id
-        FROM household_invites hi
-        INNER JOIN households h ON hi.household_id = h.id
-        WHERE hi.invite_code = $1
-          AND (hi.expires_at IS NULL OR hi.expires_at > NOW())
-          AND hi.uses_count < hi.max_uses
-        FOR UPDATE
-      `, [invite_code]);
-
-      if (inviteResult.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Invalid or expired invite code' });
-      }
-
-      const invite = inviteResult.rows[0];
-
-      const existingMember = await client.query(
-        'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-        [invite.household_id, req.userId]
-      );
-      if (existingMember.rows.length > 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'You are already a member of this family' });
-      }
-
-      const memberCount = await client.query(
-        `SELECT COUNT(*) as count FROM household_members WHERE household_id = $1 AND status = 'active'`,
-        [invite.household_id]
-      );
-      if (parseInt(memberCount.rows[0].count) >= HOUSEHOLD_MAX_MEMBERS) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: `family is full (max ${HOUSEHOLD_MAX_MEMBERS} members)` });
-      }
-
-      await client.query(
-        `INSERT INTO household_members (household_id, user_id, role, status) VALUES ($1, $2, 'adult', 'active')`,
-        [invite.household_id, req.userId]
-      );
-
-      await client.query(
-        'UPDATE household_invites SET uses_count = uses_count + 1 WHERE id = $1',
-        [invite.id]
-      );
-
-      // Clear any lingering offboarding records — user is back in a family
-      await client.query(
-        `UPDATE household_offboarding_records SET reintegrated_at = NOW() WHERE user_id = $1 AND reintegrated_at IS NULL`,
-        [req.userId]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        household_id: invite.household_id,
-        household_name: invite.household_name
-      });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('POST /api/households/join error:', err.message);
-    res.status(500).json({ error: 'Failed to join family' });
-  }
-});
-
-// Remove member from family (owner/co-admin) — records offboarding with 30-day grace period
-app.delete('/api/households/:household_id/members/:user_id', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { household_id, user_id } = req.params;
-    const targetUserId = parseInt(user_id);
-
-    // Load family — verify existence and check requester permissions
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id, co_admin_id FROM households WHERE id = $1',
-      [household_id]
-    );
-    if (hhResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const hh = hhResult.rows[0];
-
-    const isOwner = hh.owner_id === req.userId;
-    const isCoAdmin = hh.co_admin_id === req.userId;
-
-    if (!isOwner && !isCoAdmin) {
-      return res.status(403).json({ error: 'Only the owner or co-admin can remove members' });
-    }
-    const householdName = hh.name;
-
-    // Cannot remove the owner
-    if (targetUserId === req.userId) {
-      return res.status(400).json({ error: 'Owner cannot remove themselves. Use Leave family instead.' });
-    }
-
-    // Check member exists
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, targetUserId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Member not found' });
-    }
-
-    await client.query('BEGIN');
-
-    // Remove member from family
-    await client.query(
-      'DELETE FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, targetUserId]
-    );
-
-    // Clean up permissions and sharing settings
-    await client.query(
-      'DELETE FROM household_permissions WHERE household_id = $1 AND (owner_user_id = $2 OR viewer_user_id = $2)',
-      [household_id, targetUserId]
-    );
-    await client.query(
-      'DELETE FROM household_sharing_settings WHERE household_id = $1 AND user_id = $2',
-      [household_id, targetUserId]
-    );
-
-    // Affiliate offboarding: clear family_household_id from their affiliate record
-    // Their affiliate network belongs to THEM — stays with them after removal
-    // Once they leave they remain a direct leg in the owner's affiliate tree
-    await client.query(
-      `UPDATE affiliates SET family_household_id = NULL, updated_at = NOW()
-       WHERE user_id = $1 AND family_household_id = $2`,
-      [targetUserId, household_id]
-    );
-
-    // Record offboarding with 30-day grace period
-    const graceExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await client.query(
-      `INSERT INTO household_offboarding_records
-         (household_id, household_name, user_id, removal_type, removed_by_user_id, grace_expires_at)
-       VALUES ($1, $2, $3, 'removed', $4, $5)`,
-      [household_id, householdName, targetUserId, req.userId, graceExpiry]
-    );
-
-    const removedUserInfo = await client.query('SELECT name, email FROM users WHERE id = $1', [targetUserId]);
-    const removedUser = removedUserInfo.rows[0];
-    const removedName = removedUser?.name || removedUser?.email || 'A member';
-
-    // Notify the removed member about grace period
-    await client.query(
-      `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-       VALUES ($1, $2, 'you_were_removed', $3, $4)`,
-      [
-        household_id,
-        targetUserId,
-        `You've been removed from ${householdName}. You have 30 days to join another Family Plan or upgrade to individual Pro to keep your data.`,
-        JSON.stringify({ household_name: householdName, grace_expires_at: graceExpiry })
-      ]
-    );
-
-    // Notify remaining members
-    const remainingMembers = await client.query(
-      'SELECT user_id FROM household_members WHERE household_id = $1 AND user_id != $2',
-      [household_id, targetUserId]
-    );
-
-    for (const member of remainingMembers.rows) {
-      await client.query(
-        `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-         VALUES ($1, $2, 'member_removed', $3, $4)`,
-        [
-          household_id,
-          member.user_id,
-          `${removedName} has been removed from the family`,
-          JSON.stringify({ removed_user_name: removedName, household_name: householdName })
-        ]
-      );
-    }
-
-    // Send grace period email to removed member
-    if (removedUser?.email) {
-      sendGracePeriodEmail({
-        toEmail: removedUser.email,
-        toName: removedName,
-        householdName,
-        graceExpiry,
-        reason: 'removed'
-      }).catch(err => console.error('[FamilyPlan] Grace email failed:', err.message));
-    }
-
-    await client.query('COMMIT');
-    res.json({ success: true, grace_expires_at: graceExpiry });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('DELETE /api/households/:household_id/members/:user_id error:', err.message);
-    res.status(500).json({ error: 'Failed to remove member' });
-  } finally {
-    client.release();
-  }
-});
-
-// Leave family (any member can leave, with data portability & grace period)
-// Owners MUST transfer ownership first if other members exist
-app.delete('/api/households/:household_id/leave', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { household_id } = req.params;
-
-    // Check user is a member
-    const memberCheck = await pool.query(
-      `SELECT hm.role, h.name, h.owner_id
-       FROM household_members hm
-       JOIN households h ON h.id = hm.household_id
-       WHERE hm.household_id = $1 AND hm.user_id = $2`,
-      [household_id, req.userId]
-    );
-
-    if (memberCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'You are not a member of this family' });
-    }
-
-    const { role, name: householdName } = memberCheck.rows[0];
-
-    // Count members
-    const countResult = await pool.query(
-      'SELECT COUNT(*) AS count FROM household_members WHERE household_id = $1',
-      [household_id]
-    );
-    const memberCount = parseInt(countResult.rows[0].count);
-
-    await client.query('BEGIN');
-
-    if (memberCount === 1) {
-      // Last member — dissolve the family completely
-      await client.query('DELETE FROM household_notifications WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_offboarding_records WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_permissions WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_invites WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_links WHERE household_1_id = $1 OR household_2_id = $1', [household_id]);
-      await client.query('DELETE FROM household_sharing_settings WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM household_members WHERE household_id = $1', [household_id]);
-      await client.query('DELETE FROM households WHERE id = $1', [household_id]);
-      // Mark any lingering offboarding records for this user as reintegrated
-      await client.query(
-        `UPDATE household_offboarding_records SET reintegrated_at = NOW() WHERE user_id = $1 AND reintegrated_at IS NULL`,
-        [req.userId]
-      );
-      await client.query('COMMIT');
-      return res.json({ success: true, action: 'dissolved', household_name: householdName });
-    }
-
-    // Owner cannot leave if there are other members — must transfer ownership first
-    if (role === 'owner') {
-      await client.query('ROLLBACK');
-      return res.status(403).json({
-        error: 'You must transfer family ownership to another member before leaving.',
-        requires_transfer: true
-      });
-    }
-
-    // Remove the leaving member
-    await client.query(
-      'DELETE FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-
-    // Clean up permissions and sharing settings
-    await client.query(
-      'DELETE FROM household_permissions WHERE household_id = $1 AND (owner_user_id = $2 OR viewer_user_id = $2)',
-      [household_id, req.userId]
-    );
-    await client.query(
-      'DELETE FROM household_sharing_settings WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-
-    // Record offboarding with 30-day grace period
-    const graceExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await client.query(
-      `INSERT INTO household_offboarding_records
-         (household_id, household_name, user_id, removal_type, removed_by_user_id, grace_expires_at)
-       VALUES ($1, $2, $3, 'left', $4, $5)`,
-      [household_id, householdName, req.userId, req.userId, graceExpiry]
-    );
-
-    // Notify remaining members
-    const remainingMembers = await client.query(
-      'SELECT user_id FROM household_members WHERE household_id = $1',
-      [household_id]
-    );
-    const leavingUserInfo = await client.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const leavingName = leavingUserInfo.rows[0]?.name || leavingUserInfo.rows[0]?.email || 'A member';
-
-    for (const member of remainingMembers.rows) {
-      await client.query(
-        `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-         VALUES ($1, $2, 'member_left', $3, $4)`,
-        [
-          household_id,
-          member.user_id,
-          `${leavingName} has left the family`,
-          JSON.stringify({ left_user_name: leavingName, household_name: householdName })
-        ]
-      );
-    }
-
-    await client.query('COMMIT');
-    res.json({
-      success: true,
-      action: 'left',
-      household_name: householdName,
-      grace_expires_at: graceExpiry
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('DELETE /api/households/:household_id/leave error:', err.message);
-    res.status(500).json({ error: 'Failed to leave family' });
-  } finally {
-    client.release();
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── FAMILY INCUBATOR (1+5 MODEL) ──────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-/**
- * POST /api/households/:id/enable-incubator
- * Enable incubator mode on an existing family (owner only).
- * Only the head of family (owner) with an active Pro subscription can do this.
- * Once enabled, all non-owner members become sub-accounts with educational (L1-3) access.
- */
-app.post('/api/households/:id/enable-incubator', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-
-    // Verify ownership
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id, is_incubator FROM households WHERE id = $1',
-      [householdId]
-    );
-    if (hhResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const hh = hhResult.rows[0];
-    if (hh.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Only the family owner can enable incubator mode' });
-    }
-    if (hh.is_incubator) {
-      return res.json({ success: true, message: 'family is already in incubator mode', family: hh });
-    }
-
-    // Verify the owner has an active Pro subscription
-    const ownerProCheck = await hasProAccess(req.userId);
-    if (!ownerProCheck) {
-      return res.status(403).json({
-        error: 'A $25/mo TFR Pro subscription is required to enable the Family Incubator'
-      });
-    }
-
-    // Count current non-owner members
-    const memberCount = await client.query(
-      `SELECT COUNT(*) as count FROM household_members
-       WHERE household_id = $1 AND user_id != $2 AND status = 'active'`,
-      [householdId, req.userId]
-    );
-    if (parseInt(memberCount.rows[0].count) > INCUBATOR_MAX_SUB_ACCOUNTS) {
-      return res.status(400).json({
-        error: `Incubator supports max ${INCUBATOR_MAX_SUB_ACCOUNTS} sub-accounts. Current family has ${memberCount.rows[0].count} non-owner members. Please reduce to ${INCUBATOR_MAX_SUB_ACCOUNTS} first.`
-      });
-    }
-
-    await client.query('BEGIN');
-
-    // Mark family as incubator
-    await client.query(
-      'UPDATE households SET is_incubator = true, updated_at = NOW() WHERE id = $1',
-      [householdId]
-    );
-
-    // Mark all non-owner active members as sub-accounts
-    const subResult = await client.query(
-      `UPDATE household_members
-       SET is_sub_account = true
-       WHERE household_id = $1 AND user_id != $2 AND status = 'active'
-       RETURNING user_id`,
-      [householdId, req.userId]
-    );
-
-    await client.query('COMMIT');
-
-    console.log(`[Incubator] family ${householdId} enabled incubator mode. ${subResult.rowCount} sub-account(s) created.`);
-
-    res.json({
-      success: true,
-      message: 'Family Incubator enabled successfully',
-      sub_accounts_created: subResult.rowCount,
-      max_sub_accounts: INCUBATOR_MAX_SUB_ACCOUNTS
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/enable-incubator error:', err.message);
-    res.status(500).json({ error: 'Failed to enable incubator mode' });
-  } finally {
-    client.release();
-  }
-});
-
-/**
- * GET /api/households/:id/incubator-status
- * Get incubator status for a family.
- * Returns sub-account list, breakaway counts, and commission eligibility.
- */
-app.get('/api/households/:id/incubator-status', requireAuth, async (req, res) => {
-  try {
-    const householdId = parseInt(req.params.id);
-
-    // Verify user is a member
-    const memberCheck = await pool.query(
-      `SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2 AND status = 'active'`,
-      [householdId, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
-
-    const hhResult = await pool.query(
-      'SELECT id, name, owner_id, is_incubator FROM households WHERE id = $1',
-      [householdId]
-    );
-    if (hhResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const hh = hhResult.rows[0];
-
-    if (!hh.is_incubator) {
-      return res.json({ is_incubator: false });
-    }
-
-    // Get sub-account details
-    const subAccounts = await pool.query(`
-      SELECT hm.user_id, hm.is_sub_account, hm.broke_away_at, hm.commission_eligible,
-             hm.joined_at, u.name, u.email, u.avatar_url, u.avatar_color
-      FROM household_members hm
-      JOIN users u ON u.id = hm.user_id
-      WHERE hm.household_id = $1 AND hm.user_id != $2 AND hm.status = 'active'
-      ORDER BY hm.joined_at ASC
-    `, [householdId, hh.owner_id]);
-
-    const active = subAccounts.rows.filter(s => !s.broke_away_at);
-    const brokeAway = subAccounts.rows.filter(s => s.broke_away_at);
-
-    res.json({
-      is_incubator: true,
-      household_id: hh.id,
-      household_name: hh.name,
-      is_owner: hh.owner_id === req.userId,
-      active_sub_accounts: active.length,
-      max_sub_accounts: INCUBATOR_MAX_SUB_ACCOUNTS,
-      slots_available: INCUBATOR_MAX_SUB_ACCOUNTS - active.length,
-      sub_accounts: active.map(s => ({
-        user_id: s.user_id,
-        name: s.name,
-        email: s.email,
-        avatar_url: s.avatar_url,
-        avatar_color: s.avatar_color,
-        joined_at: s.joined_at,
-        commission_eligible: s.commission_eligible,
-        broke_away: false
-      })),
-      broke_away_members: brokeAway.map(s => ({
-        user_id: s.user_id,
-        name: s.name,
-        broke_away_at: s.broke_away_at,
-        commission_eligible: s.commission_eligible
-      }))
-    });
-  } catch (err) {
-    console.error('GET /api/households/:id/incubator-status error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch incubator status' });
-  }
-});
-
-/**
- * POST /api/households/:id/breakaway
- * A sub-account member breaks away from the Family Incubator.
- * - Marks broke_away_at timestamp
- * - Sets commission_eligible = true
- * - Marks their affiliate record as full-eligibility
- * - Head of family's sub-account count decreases by 1
- * - Permanent: cannot rejoin as sub-account
- *
- * The sub-account keeps their referral tree position.
- * They must subscribe to their own $25/mo TFR Pro to retain Pro features.
- */
-app.post('/api/households/:id/breakaway', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-
-    // Verify requester is an active sub-account of this family
-    const memberResult = await client.query(`
-      SELECT hm.id as member_id, hm.user_id, hm.is_sub_account, hm.broke_away_at,
-             hm.commission_eligible, h.owner_id, h.name as household_name, h.is_incubator
-      FROM household_members hm
-      JOIN households h ON h.id = hm.household_id
-      WHERE hm.household_id = $1 AND hm.user_id = $2 AND hm.status = 'active'
-    `, [householdId, req.userId]);
-
-    if (memberResult.rows.length === 0) {
-      return res.status(404).json({ error: 'You are not an active member of this family' });
-    }
-
-    const member = memberResult.rows[0];
-
-    if (!member.is_incubator) {
-      return res.status(400).json({ error: 'This family is not running the Family Incubator model' });
-    }
-    if (member.owner_id === req.userId) {
-      return res.status(400).json({ error: 'The head of family cannot break away. You can dissolve the family instead.' });
-    }
-    if (!member.is_sub_account) {
-      return res.status(400).json({ error: 'Only sub-accounts can use the breakaway feature' });
-    }
-    if (member.broke_away_at) {
-      return res.status(400).json({ error: 'You have already broken away from this family' });
-    }
-
-    await client.query('BEGIN');
-
-    const now = new Date();
-
-    // 1. Mark breakaway on household_members
-    await client.query(
-      `UPDATE household_members
-       SET broke_away_at = $1, commission_eligible = true
-       WHERE household_id = $2 AND user_id = $3`,
-      [now, householdId, req.userId]
-    );
-
-    // 2. Activate full commission eligibility on their affiliate record
-    //    Their referral tree position is preserved — they remain in the same leg
-    await client.query(
-      `UPDATE affiliates
-       SET family_household_id = NULL, status = 'active', updated_at = NOW()
-       WHERE user_id = $1 AND family_household_id = $2`,
-      [req.userId, householdId]
-    );
-
-    // 3. Unfreeze any frozen commissions from the family plan split
-    await client.query(
-      `UPDATE commissions
-       SET frozen_until_pro = false, unfrozen_at = $1, updated_at = NOW()
-       WHERE affiliate_id = (SELECT id FROM affiliates WHERE user_id = $2)
-         AND frozen_until_pro = true`,
-      [now, req.userId]
-    );
-
-    // 4. Notify the head of family
-    const userInfo = await client.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const memberName = userInfo.rows[0]?.name || userInfo.rows[0]?.email || 'A sub-account';
-
-    try {
-      await client.query(
-        `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-         VALUES ($1, $2, 'sub_account_breakaway', $3, $4)`,
-        [
-          householdId,
-          member.owner_id,
-          `${memberName} has broken away from the Family Incubator and is now an independent subscriber. They will need their own TFR Pro subscription to maintain full access.`,
-          JSON.stringify({ user_id: req.userId, user_name: memberName, broke_away_at: now })
-        ]
-      );
-    } catch (notifErr) {
-      // Non-fatal
-    }
-
-    await client.query('COMMIT');
-
-    console.log(`[Incubator] User ${req.userId} broke away from family ${householdId}`);
-
-    res.json({
-      success: true,
-      message: 'You have successfully broken away from the Family Incubator',
-      broke_away_at: now,
-      commission_eligible: true,
-      note: 'Your referral tree position is preserved. Subscribe to TFR Pro ($25/mo) to unlock full features.'
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/breakaway error:', err.message);
-    res.status(500).json({ error: 'Failed to process breakaway' });
-  } finally {
-    client.release();
-  }
-});
-
-/**
- * POST /api/households/:id/invite-sub-account
- * Invite a new sub-account to the Family Incubator (head of family only).
- * Enforces the 5 sub-account limit.
- */
-app.post('/api/households/:id/invite-sub-account', requireAuth, async (req, res) => {
-  try {
-    const householdId = parseInt(req.params.id);
-    const { email, name } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: 'Email address is required' });
-    }
-
-    // Verify family is incubator + requester is the head
-    const hhResult = await pool.query(
-      'SELECT id, name, owner_id, is_incubator FROM households WHERE id = $1',
-      [householdId]
-    );
-    if (hhResult.rows.length === 0) {
-      return res.status(404).json({ error: 'family not found' });
-    }
-    const hh = hhResult.rows[0];
-    if (!hh.is_incubator) {
-      return res.status(400).json({ error: 'This family is not in incubator mode' });
-    }
-    if (hh.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Only the head of family can invite sub-accounts' });
-    }
-
-    // Verify head has active Pro
-    const headProCheck = await hasProAccess(req.userId);
-    if (!headProCheck) {
-      return res.status(403).json({
-        error: 'Your TFR Pro subscription must be active to invite sub-accounts'
-      });
-    }
-
-    // Count active sub-accounts (exclude broken-away)
-    const activeCount = await pool.query(
-      `SELECT COUNT(*) as count FROM household_members
-       WHERE household_id = $1 AND user_id != $2
-         AND status = 'active' AND broke_away_at IS NULL`,
-      [householdId, req.userId]
-    );
-    if (parseInt(activeCount.rows[0].count) >= INCUBATOR_MAX_SUB_ACCOUNTS) {
-      return res.status(400).json({
-        error: `Family Incubator is full. Max ${INCUBATOR_MAX_SUB_ACCOUNTS} sub-accounts allowed. ${activeCount.rows[0].count} currently active.`
-      });
-    }
-
-    // Check if email already a member
-    const existingMember = await pool.query(`
-      SELECT hm.id FROM household_members hm
-      JOIN users u ON u.id = hm.user_id
-      WHERE hm.household_id = $1 AND LOWER(u.email) = LOWER($2) AND hm.status = 'active'
-    `, [householdId, email]);
-    if (existingMember.rows.length > 0) {
-      return res.status(400).json({ error: 'This person is already a member of the family' });
-    }
-
-    // Cancel any pending invite for this email
-    await pool.query(
-      `UPDATE household_invites SET status = 'cancelled'
-       WHERE household_id = $1 AND LOWER(email) = LOWER($2) AND status = 'pending'`,
-      [householdId, email]
-    );
-
-    // Create invite token
-    const token = require('crypto').randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-    await pool.query(
-      `INSERT INTO household_invites
-         (household_id, invite_code, created_by_user_id, invited_by, email, role, token, expires_at, status, max_uses, uses_count)
-       VALUES ($1, $2, $3, $3, $4, 'adult', $5, $6, 'pending', 1, 0)`,
-      [householdId, token.substring(0, 20), req.userId, email, token, expiresAt]
-    );
-
-    const APP_URL = process.env.APP_URL || 'https://app.factsmoney.com';
-    const inviteUrl = `${APP_URL}/family-invite.html?token=${token}&incubator=1`;
-
-    // Send invite email
-    const inviterInfo = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const inviterName = inviterInfo.rows[0]?.name || 'Your Head of family';
-
-    try {
-      await sendHouseholdInviteEmail({
-        toEmail: email,
-        inviterName,
-        householdName: hh.name,
-        inviteUrl,
-        role: 'Sub-Account (Family Incubator)',
-        customNote: 'As a Family Incubator sub-account, you\'ll get free educational access to Levels 1-3 of the FACTS system. You can upgrade to full TFR Pro at any time.'
-      });
-    } catch (emailErr) {
-      console.error('[Incubator] Invite email failed:', emailErr.message);
-      // Non-fatal: still return success, log the URL
-    }
-
-    console.log(`[Incubator] Sub-account invite sent to ${email} for family ${householdId}`);
-
-    res.json({
-      success: true,
-      message: `Invitation sent to ${email}`,
-      invite_url: inviteUrl,
-      expires_at: expiresAt,
-      slots_remaining: INCUBATOR_MAX_SUB_ACCOUNTS - parseInt(activeCount.rows[0].count) - 1
-    });
-  } catch (err) {
-    console.error('POST /api/households/:id/invite-sub-account error:', err.message);
-    res.status(500).json({ error: 'Failed to send sub-account invitation' });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── family OFFBOARDING & DATA PORTABILITY ──────────────
-// ═══════════════════════════════════════════════════════════
-
-// Transfer family ownership (owner must do this before leaving if others exist)
-app.post('/api/households/:household_id/transfer-ownership', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { household_id } = req.params;
-    const { new_owner_id } = req.body;
-
-    if (!new_owner_id) {
-      return res.status(400).json({ error: 'new_owner_id is required' });
-    }
-
-    // Verify requester is the current owner
-    const ownerCheck = await pool.query(
-      'SELECT name FROM households WHERE id = $1 AND owner_id = $2',
-      [household_id, req.userId]
-    );
-    if (ownerCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Only the current owner can transfer ownership' });
-    }
-    const householdName = ownerCheck.rows[0].name;
-
-    // Verify new owner is a member
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, new_owner_id]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'New owner must be a current family member' });
-    }
-
-    if (parseInt(new_owner_id) === req.userId) {
-      return res.status(400).json({ error: 'You are already the owner' });
-    }
-
-    await client.query('BEGIN');
-
-    // Transfer ownership
-    await client.query('UPDATE households SET owner_id = $1 WHERE id = $2', [new_owner_id, household_id]);
-    await client.query(
-      "UPDATE household_members SET role = 'owner' WHERE household_id = $1 AND user_id = $2",
-      [household_id, new_owner_id]
-    );
-    await client.query(
-      "UPDATE household_members SET role = 'member' WHERE household_id = $1 AND user_id = $2",
-      [household_id, req.userId]
-    );
-
-    // Notify new owner
-    const prevOwnerInfo = await client.query('SELECT name, email FROM users WHERE id = $1', [req.userId]);
-    const prevOwnerName = prevOwnerInfo.rows[0]?.name || prevOwnerInfo.rows[0]?.email || 'The previous owner';
-    await client.query(
-      `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-       VALUES ($1, $2, 'ownership_transferred', $3, $4)`,
-      [
-        household_id,
-        new_owner_id,
-        `You are now the owner of "${householdName}"`,
-        JSON.stringify({ transferred_by: prevOwnerName, household_name: householdName })
-      ]
-    );
-
-    await client.query('COMMIT');
-    res.json({ success: true, message: `Ownership of "${householdName}" transferred successfully` });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:household_id/transfer-ownership error:', err.message);
-    res.status(500).json({ error: 'Failed to transfer ownership' });
-  } finally {
-    client.release();
-  }
-});
-
-// ─── Family Plan Affiliate System ────────────────────────────────────────────
-
-// Helper: send grace period email when member is released or owner cancels
-async function sendGracePeriodEmail({ toEmail, toName, householdName, graceExpiry, reason }) {
-  try {
-    const graceDate = new Date(graceExpiry).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const subjectMap = {
-      removed: `You've been removed from ${householdName} — 30-day grace period`,
-      owner_cancelled: `Your Family Plan is ending — 30-day grace period`,
-      left: `You've left ${householdName} — 30-day grace period`
-    };
-    const subject = subjectMap[reason] || `Family Plan change — 30-day grace period`;
-
-    const messageMap = {
-      removed: `You've been removed from the <strong>${householdName}</strong> Family Plan. You have a 30-day grace period (until <strong>${graceDate}</strong>) to either join another Family Plan or upgrade to individual Pro to keep full access to your account.`,
-      owner_cancelled: `The <strong>${householdName}</strong> Family Plan has been cancelled. You have a 30-day grace period (until <strong>${graceDate}</strong>) to upgrade to individual Pro or join another Family Plan. After that, your account will revert to Free.`,
-      left: `You've left the <strong>${householdName}</strong> Family Plan. Your 30-day grace period ends on <strong>${graceDate}</strong>.`
-    };
-    const messageBody = messageMap[reason] || `Your Family Plan status has changed. Grace period ends ${graceDate}.`;
-    const appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
-
-    await sendEmail({
-        to: toEmail,
-        subject,
-        html: `
-          <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;background:#0a0f1a;color:#e8e0d4;padding:32px 24px;border-radius:12px">
-            <div style="margin-bottom:20px">
-              <span style="font-size:20px;font-weight:700;color:#c9a84c;letter-spacing:-0.5px">FACTS</span>
-              <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#c9a84c;margin-left:10px;background:rgba(201,162,39,0.12);padding:3px 8px;border-radius:4px">Family Plan</span>
-            </div>
-            <h2 style="font-size:20px;font-weight:700;margin:0 0 14px;color:#e8e0d4">${subject}</h2>
-            <p style="font-size:14px;line-height:1.6;color:#a89a7e;margin:0 0 24px">${messageBody}</p>
-            <a href="${appUrl}/pricing.html"
-               style="display:inline-block;background:#c9a84c;color:#0a0f1a;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none">
-              View Plans →
-            </a>
-          </div>
-        `
-    });
-  } catch (err) {
-    console.error('[FamilyPlan] sendGracePeriodEmail failed:', err.message);
-  }
-}
-
-// Helper: get the family owner's affiliate record
-async function getHouseholdOwnerAffiliate(client, householdId) {
-  const result = await client.query(
-    `SELECT a.id, a.user_id, a.referral_code FROM affiliates a
-     JOIN households h ON h.owner_id = a.user_id
-     WHERE h.id = $1 AND a.status IN ('active','at_risk') LIMIT 1`,
-    [householdId]
-  );
-  return result.rows[0] || null;
-}
-
-// GET /api/households/:id/family-commissions
-// Owner views the 50/50 commission split per family member
-app.get('/api/households/:id/family-commissions', requireAuth, async (req, res) => {
-  try {
-    const householdId = parseInt(req.params.id);
-
-    // Verify requester is owner
-    const hhResult = await pool.query(
-      'SELECT id, name, owner_id FROM households WHERE id = $1', [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    if (hhResult.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Only the owner can view family commissions' });
-
-    // Get all family members with their affiliate data + commission totals
-    const membersResult = await pool.query(
-      `SELECT
-         hm.user_id,
-         u.name,
-         u.email,
-         hm.role,
-         a.id AS affiliate_id,
-         a.referral_code,
-         a.status AS affiliate_status,
-         -- Owner's earned share (owner_share type)
-         COALESCE(owner_commissions.total_owner_cents, 0) AS owner_earned_cents,
-         -- Member's frozen share (member_frozen type, still frozen)
-         COALESCE(frozen_commissions.total_frozen_cents, 0) AS member_frozen_cents,
-         -- Member's frozen that has been unfrozen (Pro upgrade)
-         COALESCE(unfrozen_commissions.total_unfrozen_cents, 0) AS member_unfrozen_cents,
-         -- Gifts sent by owner to this member
-         COALESCE(gifts.total_gifted_cents, 0) AS owner_gifted_cents
-       FROM household_members hm
-       JOIN users u ON u.id = hm.user_id
-       LEFT JOIN affiliates a ON a.user_id = hm.user_id AND a.family_household_id = $1
-       LEFT JOIN (
-         SELECT affiliate_id, SUM(amount_cents) AS total_owner_cents
-         FROM commissions
-         WHERE family_household_id = $1 AND family_split_type = 'owner_share' AND status != 'forfeited'
-         GROUP BY affiliate_id
-       ) owner_commissions ON owner_commissions.affiliate_id = a.id
-       LEFT JOIN (
-         SELECT affiliate_id, SUM(amount_cents) AS total_frozen_cents
-         FROM commissions
-         WHERE family_household_id = $1 AND family_split_type = 'member_frozen'
-           AND frozen_until_pro = true AND unfrozen_at IS NULL AND status != 'forfeited'
-         GROUP BY affiliate_id
-       ) frozen_commissions ON frozen_commissions.affiliate_id = a.id
-       LEFT JOIN (
-         SELECT affiliate_id, SUM(amount_cents) AS total_unfrozen_cents
-         FROM commissions
-         WHERE family_household_id = $1 AND family_split_type = 'member_frozen' AND unfrozen_at IS NOT NULL
-         GROUP BY affiliate_id
-       ) unfrozen_commissions ON unfrozen_commissions.affiliate_id = a.id
-       LEFT JOIN (
-         SELECT to_affiliate_id, SUM(amount_cents) AS total_gifted_cents
-         FROM family_commission_gifts
-         WHERE household_id = $1
-         GROUP BY to_affiliate_id
-       ) gifts ON gifts.to_affiliate_id = a.id
-       WHERE hm.household_id = $1 AND hm.user_id != $2
-       ORDER BY hm.joined_at ASC`,
-      [householdId, req.userId]
-    );
-
-    // Get owner's own affiliate total from family plan
-    const ownerAffResult = await pool.query(
-      `SELECT
-         a.id, a.referral_code, a.status,
-         COALESCE(SUM(c.amount_cents) FILTER (WHERE c.family_split_type = 'owner_share' AND c.status != 'forfeited'), 0) AS total_owner_earned_cents
-       FROM affiliates a
-       LEFT JOIN commissions c ON c.affiliate_id = a.id AND c.family_household_id = $1
-       WHERE a.user_id = $2
-       GROUP BY a.id, a.referral_code, a.status
-       LIMIT 1`,
-      [householdId, req.userId]
-    );
-
-    res.json({
-      success: true,
-      household_id: householdId,
-      owner_affiliate: ownerAffResult.rows[0] || null,
-      members: membersResult.rows.map(m => ({
-        user_id: m.user_id,
-        name: m.name,
-        email: m.email,
-        role: m.role,
-        affiliate_id: m.affiliate_id,
-        referral_code: m.referral_code,
-        affiliate_status: m.affiliate_status,
-        owner_earned_cents: parseInt(m.owner_earned_cents),
-        member_frozen_cents: parseInt(m.member_frozen_cents),
-        member_unfrozen_cents: parseInt(m.member_unfrozen_cents),
-        owner_gifted_cents: parseInt(m.owner_gifted_cents),
-        net_owner_available_cents: Math.max(0, parseInt(m.owner_earned_cents) - parseInt(m.owner_gifted_cents))
-      }))
-    });
-  } catch (err) {
-    console.error('GET /api/households/:id/family-commissions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch family commissions' });
-  }
-});
-
-// POST /api/households/:id/gift-commission
-// Owner gifts some or all of their earned 50% to a family member,
-// OR releases the member's frozen 50% to them
-app.post('/api/households/:id/gift-commission', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-    const { to_user_id, amount_cents, gift_type = 'owner_to_member', note } = req.body;
-
-    if (!to_user_id || !amount_cents || amount_cents <= 0) {
-      return res.status(400).json({ error: 'to_user_id and amount_cents (positive) are required' });
-    }
-    if (!['owner_to_member', 'unfreeze_member'].includes(gift_type)) {
-      return res.status(400).json({ error: 'gift_type must be owner_to_member or unfreeze_member' });
-    }
-
-    // Verify requester is owner
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id FROM households WHERE id = $1', [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    if (hhResult.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Only the owner can gift commissions' });
-
-    // Get owner affiliate
-    const ownerAff = await client.query(
-      'SELECT id FROM affiliates WHERE user_id = $1 AND status IN (\'active\',\'at_risk\') LIMIT 1',
-      [req.userId]
-    );
-    if (ownerAff.rows.length === 0) return res.status(400).json({ error: 'Owner must be an active affiliate to gift commissions' });
-    const ownerAffiliateId = ownerAff.rows[0].id;
-
-    // Get member affiliate
-    const memberAff = await client.query(
-      'SELECT id, user_id FROM affiliates WHERE user_id = $1 AND family_household_id = $2 LIMIT 1',
-      [to_user_id, householdId]
-    );
-    if (memberAff.rows.length === 0) return res.status(404).json({ error: 'Member affiliate not found in this family' });
-    const memberAffiliateId = memberAff.rows[0].id;
-
-    await client.query('BEGIN');
-
-    if (gift_type === 'owner_to_member') {
-      // Owner gifts their 50% share to the member
-      // Deduct from owner's pending_balance_cents, add to member's
-      const gifted = parseInt(amount_cents);
-      await client.query(
-        `UPDATE affiliates SET pending_balance_cents = pending_balance_cents - $1, updated_at = NOW() WHERE id = $2`,
-        [gifted, ownerAffiliateId]
-      );
-      await client.query(
-        `UPDATE affiliates SET pending_balance_cents = pending_balance_cents + $1, updated_at = NOW() WHERE id = $2`,
-        [gifted, memberAffiliateId]
-      );
-    } else if (gift_type === 'unfreeze_member') {
-      // Owner releases member's frozen commissions
-      // Mark frozen commissions as unfrozen (member can now withdraw)
-      const gifted = parseInt(amount_cents);
-      await client.query(
-        `UPDATE commissions SET frozen_until_pro = false, unfrozen_at = NOW(), updated_at = NOW()
-         WHERE affiliate_id = $1 AND family_household_id = $2 AND family_split_type = 'member_frozen'
-           AND frozen_until_pro = true AND unfrozen_at IS NULL
-         LIMIT CEIL($3::float / NULLIF((
-           SELECT AVG(amount_cents) FROM commissions
-           WHERE affiliate_id = $1 AND family_split_type = 'member_frozen' AND frozen_until_pro = true
-         ), 1))`,
-        [memberAffiliateId, householdId, amount_cents]
-      );
-      // Move from frozen to accessible in affiliate balance
-      await client.query(
-        `UPDATE affiliates SET pending_balance_cents = pending_balance_cents + $1, updated_at = NOW() WHERE id = $2`,
-        [gifted, memberAffiliateId]
-      );
-    }
-
-    // Record the gift
-    await client.query(
-      `INSERT INTO family_commission_gifts
-         (household_id, from_affiliate_id, to_affiliate_id, from_user_id, to_user_id, amount_cents, gift_type, note)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [householdId, ownerAffiliateId, memberAffiliateId, req.userId, to_user_id, amount_cents, gift_type, note || null]
-    );
-
-    // Notify the member
-    await client.query(
-      `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-       VALUES ($1, $2, 'commission_gift', $3, $4)`,
-      [
-        householdId,
-        to_user_id,
-        gift_type === 'unfreeze_member'
-          ? `$${(amount_cents / 100).toFixed(2)} of your frozen commissions have been released by the family owner!`
-          : `The family owner gifted you $${(amount_cents / 100).toFixed(2)} from their commission earnings!`,
-        JSON.stringify({ amount_cents, gift_type })
-      ]
-    );
-
-    await client.query('COMMIT');
-    res.json({ success: true, amount_gifted_cents: amount_cents, gift_type });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/gift-commission error:', err.message);
-    res.status(500).json({ error: 'Failed to process gift' });
-  } finally {
-    client.release();
-  }
-});
-
-// POST /api/households/:id/cascade-cancellation-grace
-// Called when billing owner cancels their subscription — all members get 30-day grace
-app.post('/api/households/:id/cascade-cancellation-grace', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id FROM households WHERE id = $1', [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    if (hhResult.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Owner only' });
-
-    const householdName = hhResult.rows[0].name;
-    const graceExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-    await client.query('BEGIN');
-
-    // Mark family as cancelled with grace period
-    await client.query(
-      `UPDATE households SET cancelled_at = NOW(), cancellation_grace_ends_at = $1 WHERE id = $2`,
-      [graceExpiry, householdId]
-    );
-
-    // Get all non-owner members
-    const membersResult = await client.query(
-      `SELECT hm.user_id, u.name, u.email
-       FROM household_members hm
-       JOIN users u ON u.id = hm.user_id
-       WHERE hm.household_id = $1 AND hm.user_id != $2`,
-      [householdId, req.userId]
-    );
-
-    for (const member of membersResult.rows) {
-      // Record offboarding with grace for each member
-      await client.query(
-        `INSERT INTO household_offboarding_records
-           (household_id, household_name, user_id, removal_type, removed_by_user_id, grace_expires_at)
-         VALUES ($1, $2, $3, 'dissolved', $4, $5)
-         ON CONFLICT DO NOTHING`,
-        [householdId, householdName, member.user_id, req.userId, graceExpiry]
-      );
-
-      // In-app notification
-      await client.query(
-        `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-         VALUES ($1, $2, 'plan_cancelled', $3, $4)`,
-        [
-          householdId,
-          member.user_id,
-          `The ${householdName} Family Plan has been cancelled. You have 30 days to upgrade to individual Pro or elect a new billing owner.`,
-          JSON.stringify({ household_name: householdName, grace_expires_at: graceExpiry })
-        ]
-      );
-
-      // Email
-      if (member.email) {
-        sendGracePeriodEmail({
-          toEmail: member.email,
-          toName: member.name || member.email,
-          householdName,
-          graceExpiry,
-          reason: 'owner_cancelled'
-        }).catch(() => {});
-      }
-    }
-
-    await client.query('COMMIT');
-    res.json({ success: true, grace_expires_at: graceExpiry, members_notified: membersResult.rows.length });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/cascade-cancellation-grace error:', err.message);
-    res.status(500).json({ error: 'Failed to cascade cancellation grace' });
-  } finally {
-    client.release();
-  }
-});
-
-// POST /api/households/:id/reactivate
-// Owner can undo a cancellation during the grace period to re-activate their family
-app.post('/api/households/:id/reactivate', requireAuth, async (req, res) => {
-  try {
-    const householdId = parseInt(req.params.id);
-
-    const hhResult = await pool.query(
-      'SELECT id, name, owner_id, cancelled_at, cancellation_grace_ends_at FROM households WHERE id = $1',
-      [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const hh = hhResult.rows[0];
-
-    if (hh.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Only the family owner can reactivate' });
-    }
-    if (!hh.cancelled_at) {
-      return res.json({ success: true, message: 'family is already active' });
-    }
-
-    await pool.query(
-      'UPDATE households SET cancelled_at = NULL, cancellation_grace_ends_at = NULL WHERE id = $1',
-      [householdId]
-    );
-
-    // Clear offboarding records for members of this family
-    await pool.query(
-      `UPDATE household_offboarding_records SET reintegrated_at = NOW()
-       WHERE household_id = $1 AND reintegrated_at IS NULL`,
-      [householdId]
-    );
-
-    res.json({ success: true, message: 'family reactivated successfully' });
-  } catch (err) {
-    console.error('POST /api/households/:id/reactivate error:', err.message);
-    res.status(500).json({ error: 'Failed to reactivate family' });
-  }
-});
-
-// POST /api/households/:id/elect-owner
-// During grace period after owner cancellation, a member nominates themselves as new billing owner
-app.post('/api/households/:id/elect-owner', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const householdId = parseInt(req.params.id);
-
-    const hhResult = await client.query(
-      'SELECT id, name, owner_id, cancellation_grace_ends_at FROM households WHERE id = $1', [householdId]
-    );
-    if (hhResult.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const hh = hhResult.rows[0];
-
-    // Grace period must be active
-    if (!hh.cancellation_grace_ends_at || new Date(hh.cancellation_grace_ends_at) < new Date()) {
-      return res.status(400).json({ error: 'Grace period has expired' });
-    }
-
-    // Must be an active member
-    const memberCheck = await client.query(
-      `SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2`,
-      [householdId, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'You must be a family member to become the billing owner' });
-    }
-
-    await client.query('BEGIN');
-
-    // Transfer ownership
-    await client.query('UPDATE households SET owner_id = $1, cancelled_at = NULL, cancellation_grace_ends_at = NULL WHERE id = $2',
-      [req.userId, householdId]);
-    await client.query(
-      `UPDATE household_members SET role = 'owner' WHERE household_id = $1 AND user_id = $2`,
-      [householdId, req.userId]
-    );
-    await client.query(
-      `UPDATE household_members SET role = 'member' WHERE household_id = $1 AND user_id = $2`,
-      [householdId, hh.owner_id]
-    );
-
-    // Record election
-    await client.query(
-      `INSERT INTO household_owner_elections (household_id, nominee_user_id, nominated_by_user_id, status, resolved_at)
-       VALUES ($1, $2, $2, 'accepted', NOW())`,
-      [householdId, req.userId]
-    );
-
-    // Notify family
-    await client.query(
-      `INSERT INTO household_notifications (household_id, for_user_id, type, message, metadata)
-       VALUES ($1, $2, 'new_owner_elected', $3, $4)`,
-      [householdId, req.userId, `You are now the billing owner of ${hh.name}. Upgrade to Family Plan to restore full access for all members.`,
-       JSON.stringify({ household_name: hh.name })]
-    );
-
-    await client.query('COMMIT');
-    res.json({ success: true, new_owner_id: req.userId, household_id: householdId });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('POST /api/households/:id/elect-owner error:', err.message);
-    res.status(500).json({ error: 'Failed to elect new owner' });
-  } finally {
-    client.release();
-  }
-});
+// [Phase5] family core/incubator → routes/family.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // POST /api/user/date-of-birth
 // Set user's date of birth (required for affiliate age gate)
@@ -9854,587 +8508,587 @@ app.get('/api/user/personal-data-export', requireAuth, async (req, res) => {
   }
 });
 
-// Get family notifications for current user
-app.get('/api/households/notifications', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, household_id, type, message, metadata, read_at, created_at
-       FROM household_notifications
-       WHERE for_user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 20`,
-      [req.userId]
-    );
-    res.json({ notifications: result.rows, unread_count: result.rows.filter(n => !n.read_at).length });
-  } catch (err) {
-    console.error('GET /api/households/notifications error:', err.message);
-    res.status(500).json({ error: 'Failed to load notifications' });
-  }
-});
+// [Phase5] family dashboards → routes/family.js
 
-// Mark family notification as read
-app.post('/api/households/notifications/:id/read', requireAuth, async (req, res) => {
-  try {
-    await pool.query(
-      'UPDATE household_notifications SET read_at = NOW() WHERE id = $1 AND for_user_id = $2',
-      [req.params.id, req.userId]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST notification read error:', err.message);
-    res.status(500).json({ error: 'Failed to mark notification' });
-  }
-});
 
-// Mark all family notifications as read
-app.post('/api/households/notifications/read-all', requireAuth, async (req, res) => {
-  try {
-    await pool.query(
-      'UPDATE household_notifications SET read_at = NOW() WHERE for_user_id = $1 AND read_at IS NULL',
-      [req.userId]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST notifications read-all error:', err.message);
-    res.status(500).json({ error: 'Failed to mark notifications' });
-  }
-});
 
-// ═══════════════════════════════════════════════════════════
-// ─── family LINKING ─────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
 
-// Link two households together (owner only)
-// Allows viewing data across linked households (max 3 households total)
-app.post('/api/households/:household_id/link', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
-    const { target_household_id } = req.body;
 
-    if (!target_household_id) {
-      return res.status(400).json({ error: 'target_household_id is required' });
-    }
 
-    // Verify requester is owner of source family
-    const ownerCheck = await pool.query(
-      'SELECT 1 FROM households WHERE id = $1 AND owner_id = $2',
-      [household_id, req.userId]
-    );
-    if (ownerCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Only family owner can create links' });
-    }
 
-    // Verify user is also a member (not necessarily owner) of target family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [target_household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'You must be a member of the target family to link it' });
-    }
 
-    // Check if already linked
-    const existingLink = await pool.query(
-      `SELECT 1 FROM household_links
-       WHERE (household_1_id = $1 AND household_2_id = $2)
-          OR (household_1_id = $2 AND household_2_id = $1)`,
-      [household_id, target_household_id]
-    );
-    if (existingLink.rows.length > 0) {
-      return res.status(400).json({ error: 'Households are already linked' });
-    }
 
-    // Count current links for source family (including transitive links)
-    const sourceLinks = await pool.query(
-      `SELECT household_1_id, household_2_id FROM household_links
-       WHERE household_1_id = $1 OR household_2_id = $1`,
-      [household_id]
-    );
 
-    // Build set of all connected households
-    const connectedHouseholds = new Set([parseInt(household_id)]);
-    sourceLinks.rows.forEach(link => {
-      connectedHouseholds.add(link.household_1_id);
-      connectedHouseholds.add(link.household_2_id);
-    });
 
-    // Check target family's links too
-    const targetLinks = await pool.query(
-      `SELECT household_1_id, household_2_id FROM household_links
-       WHERE household_1_id = $1 OR household_2_id = $1`,
-      [target_household_id]
-    );
-    targetLinks.rows.forEach(link => {
-      connectedHouseholds.add(link.household_1_id);
-      connectedHouseholds.add(link.household_2_id);
-    });
 
-    // Verify we won't exceed 3 total households in the group
-    if (connectedHouseholds.size >= 3) {
-      return res.status(400).json({ error: 'Cannot link more than 3 households together' });
-    }
 
-    // Create link (always store with lower ID first)
-    const [h1, h2] = [household_id, target_household_id].sort((a, b) => a - b);
-    await pool.query(
-      'INSERT INTO household_links (household_1_id, household_2_id) VALUES ($1, $2)',
-      [h1, h2]
-    );
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST /api/households/:household_id/link error:', err.message);
-    res.status(500).json({ error: 'Failed to link households' });
-  }
-});
 
-// Get all linked households for a family
-app.get('/api/households/:household_id/links', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
 
-    // Verify user is a member of this family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get all linked households
-    const result = await pool.query(
-      `SELECT
-        h.id, h.name, h.owner_id, h.created_at,
-        (SELECT COUNT(*) FROM household_members WHERE household_id = h.id) as member_count
-      FROM household_links hl
-      INNER JOIN households h ON (
-        CASE
-          WHEN hl.household_1_id = $1 THEN h.id = hl.household_2_id
-          ELSE h.id = hl.household_1_id
-        END
-      )
-      WHERE hl.household_1_id = $1 OR hl.household_2_id = $1
-      ORDER BY h.name`,
-      [household_id]
-    );
 
-    res.json({ links: result.rows });
-  } catch (err) {
-    console.error('GET /api/households/:household_id/links error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch linked households' });
-  }
-});
 
-// Remove family link (owner of either family)
-app.delete('/api/households/:household_id/link/:target_household_id', requireAuth, async (req, res) => {
-  try {
-    const { household_id, target_household_id } = req.params;
 
-    // Verify user is owner of either family
-    const ownerCheck = await pool.query(
-      'SELECT 1 FROM households WHERE (id = $1 OR id = $2) AND owner_id = $3',
-      [household_id, target_household_id, req.userId]
-    );
-    if (ownerCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Only family owners can remove links' });
-    }
 
-    // Delete link (check both orderings)
-    const [h1, h2] = [household_id, target_household_id].sort((a, b) => a - b);
-    const result = await pool.query(
-      'DELETE FROM household_links WHERE household_1_id = $1 AND household_2_id = $2 RETURNING *',
-      [h1, h2]
-    );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Link not found' });
-    }
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/households/:household_id/link/:target_household_id error:', err.message);
-    res.status(500).json({ error: 'Failed to remove link' });
-  }
-});
 
-// ═══════════════════════════════════════════════════════════
-// ─── family DASHBOARD ──────────────────────────────────
-// ═══════════════════════════════════════════════════════════
 
-// Get combined family dashboard (all members' financial data aggregated)
-app.get('/api/households/:household_id/dashboard', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
 
-    // Verify user is a member of this family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get family name + all member IDs
-    const householdInfoResult = await pool.query(
-      'SELECT name FROM households WHERE id = $1',
-      [household_id]
-    );
-    const householdName = householdInfoResult.rows.length > 0 ? householdInfoResult.rows[0].name : null;
 
-    const membersResult = await pool.query(
-      'SELECT user_id FROM household_members WHERE household_id = $1 AND status = $2',
-      [household_id, 'active']
-    );
-    const memberIds = membersResult.rows.map(m => m.user_id);
 
-    if (memberIds.length === 0) {
-      return res.json({
-        household_name: householdName,
-        total_income: '0.00',
-        total_expenses: '0.00',
-        net_balance: '0.00',
-        categories: [],
-        member_count: 0
-      });
-    }
 
-    // Calculate family totals
-    const totals = await pool.query(`
-      SELECT
-        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expenses
-      FROM transactions
-      WHERE user_id = ANY($1)
-    `, [memberIds]);
 
-    const { total_income, total_expenses } = totals.rows[0];
-    const net_balance = parseFloat(total_income) - parseFloat(total_expenses);
 
-    // Get category breakdown across all family members (includes split expenses + actual set-aside)
-    const categoryStats = await pool.query(`
-      WITH expense_by_category AS (
-        SELECT category_id, SUM(amount) as spent
-        FROM transactions
-        WHERE user_id = ANY($1) AND type = 'expense' AND (is_split = FALSE OR is_split IS NULL)
-        GROUP BY category_id
-        UNION ALL
-        SELECT ta.category_id, SUM(ta.amount) as spent
-        FROM transaction_allocations ta
-        JOIN transactions t ON t.id = ta.transaction_id
-        WHERE t.user_id = ANY($1) AND t.type = 'expense' AND t.is_split = TRUE
-        GROUP BY ta.category_id
-      ),
-      income_alloc_by_cat AS (
-        SELECT ta.category_id, SUM(t.amount * ta.percentage / 100.0) as set_aside
-        FROM transaction_allocations ta
-        JOIN transactions t ON t.id = ta.transaction_id
-        WHERE t.user_id = ANY($1) AND t.type = 'income'
-        GROUP BY ta.category_id
-      ),
-      unallocated_income_total AS (
-        SELECT COALESCE(SUM(t.amount), 0) as total
-        FROM transactions t
-        WHERE t.user_id = ANY($1) AND t.type = 'income'
-          AND NOT EXISTS (
-            SELECT 1 FROM transaction_allocations ta WHERE ta.transaction_id = t.id
-          )
-      )
-      SELECT
-        c.id, c.name, c.slug, c.color, c.icon,
-        COALESCE(SUM(ebc.spent), 0) as spent,
-        COALESCE(iac.set_aside, 0) as snapshot_set_aside
-      FROM categories c
-      LEFT JOIN expense_by_category ebc ON ebc.category_id = c.id
-      LEFT JOIN income_alloc_by_cat iac ON iac.category_id = c.id
-      GROUP BY c.id, c.name, c.slug, c.color, c.icon, iac.set_aside
-      ORDER BY c.sort_order
-    `, [memberIds]);
 
-    // Get unallocated income total for fallback
-    const unallocResult = await pool.query(`
-      SELECT COALESCE(SUM(t.amount), 0) as total
-      FROM transactions t
-      WHERE t.user_id = ANY($1) AND t.type = 'income'
-        AND NOT EXISTS (
-          SELECT 1 FROM transaction_allocations ta WHERE ta.transaction_id = t.id
-        )
-    `, [memberIds]);
-    const unallocatedIncome = parseFloat(unallocResult.rows[0].total) || 0;
 
-    // Get average allocation percentages across family
-    const allocationStats = await pool.query(`
-      SELECT
-        c.id,
-        COALESCE(AVG(COALESCE(ua.percentage, ac.percentage)), 0) as avg_percentage
-      FROM categories c
-      JOIN allocation_config ac ON ac.category_id = c.id
-      LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = ANY($1)
-      GROUP BY c.id
-    `, [memberIds]);
 
-    const allocMap = {};
-    allocationStats.rows.forEach(row => {
-      allocMap[row.id] = parseFloat(row.avg_percentage);
-    });
 
-    const categories = categoryStats.rows.map(cat => {
-      const targetPct = allocMap[cat.id] || 0;
-      const allocated = (targetPct / 100) * parseFloat(total_income);
-      const actualSetAside = parseFloat(cat.snapshot_set_aside) + (unallocatedIncome * targetPct / 100);
-      const spent = parseFloat(cat.spent);
 
-      return {
-        ...cat,
-        allocated: allocated.toFixed(2),
-        actual_set_aside: actualSetAside.toFixed(2),
-        spent: spent.toFixed(2),
-        remaining: (actualSetAside - spent).toFixed(2),
-        usage_percent: actualSetAside > 0 ? Math.min(100, (spent / actualSetAside * 100)).toFixed(1) : '0.0',
-        target_percentage: targetPct.toFixed(1)
-      };
-    });
 
-    res.json({
-      household_name: householdName,
-      total_income: parseFloat(total_income).toFixed(2),
-      total_expenses: parseFloat(total_expenses).toFixed(2),
-      net_balance: net_balance.toFixed(2),
-      categories,
-      member_count: memberIds.length
-    });
-  } catch (err) {
-    console.error('GET /api/households/:household_id/dashboard error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch family dashboard' });
-  }
-});
 
-// Get individual member summaries for a family
-app.get('/api/households/:household_id/members-summary', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
 
-    // Verify user is a member of this family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get all members with their financial summaries
-    const members = await pool.query(`
-      SELECT
-        u.id,
-        u.name,
-        u.email,
-        hm.role,
-        COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as total_expenses
-      FROM household_members hm
-      INNER JOIN users u ON hm.user_id = u.id
-      LEFT JOIN transactions t ON t.user_id = u.id
-      WHERE hm.household_id = $1 AND hm.status = 'active'
-      GROUP BY u.id, u.name, u.email, hm.role
-      ORDER BY
-        CASE WHEN hm.role = 'owner' THEN 0 ELSE 1 END,
-        u.name
-    `, [household_id]);
 
-    const memberSummaries = members.rows.map(member => ({
-      id: member.id,
-      name: member.name,
-      email: member.email,
-      role: member.role,
-      total_income: parseFloat(member.total_income).toFixed(2),
-      total_expenses: parseFloat(member.total_expenses).toFixed(2),
-      net_balance: (parseFloat(member.total_income) - parseFloat(member.total_expenses)).toFixed(2)
-    }));
 
-    res.json({ members: memberSummaries });
-  } catch (err) {
-    console.error('GET /api/households/:household_id/members-summary error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch member summaries' });
-  }
-});
 
-// Get combined dashboard across all linked households
-app.get('/api/households/:household_id/linked-dashboard', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
 
-    // Verify user is a member of this family
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'Not a member of this family' });
-    }
 
-    // Get all linked family IDs (including current family)
-    const linkedResult = await pool.query(`
-      SELECT DISTINCT
-        CASE
-          WHEN household_1_id = $1 THEN household_2_id
-          ELSE household_1_id
-        END as linked_household_id
-      FROM household_links
-      WHERE household_1_id = $1 OR household_2_id = $1
-    `, [household_id]);
 
-    const linkedHouseholdIds = [
-      parseInt(household_id),
-      ...linkedResult.rows.map(r => r.linked_household_id)
-    ];
 
-    // Get all member IDs across all linked households
-    const allMembersResult = await pool.query(
-      'SELECT user_id FROM household_members WHERE household_id = ANY($1)',
-      [linkedHouseholdIds]
-    );
-    const allMemberIds = allMembersResult.rows.map(m => m.user_id);
 
-    if (allMemberIds.length === 0) {
-      return res.json({
-        total_income: '0.00',
-        total_expenses: '0.00',
-        net_balance: '0.00',
-        categories: [],
-        linked_household_count: linkedHouseholdIds.length,
-        total_member_count: 0
-      });
-    }
 
-    // Calculate combined totals
-    const totals = await pool.query(`
-      SELECT
-        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expenses
-      FROM transactions
-      WHERE user_id = ANY($1)
-    `, [allMemberIds]);
 
-    const { total_income, total_expenses } = totals.rows[0];
-    const net_balance = parseFloat(total_income) - parseFloat(total_expenses);
 
-    // Get category breakdown (includes split expenses + actual set-aside)
-    const categoryStats = await pool.query(`
-      WITH expense_by_category AS (
-        SELECT category_id, SUM(amount) as spent
-        FROM transactions
-        WHERE user_id = ANY($1) AND type = 'expense' AND (is_split = FALSE OR is_split IS NULL)
-        GROUP BY category_id
-        UNION ALL
-        SELECT ta.category_id, SUM(ta.amount) as spent
-        FROM transaction_allocations ta
-        JOIN transactions t ON t.id = ta.transaction_id
-        WHERE t.user_id = ANY($1) AND t.type = 'expense' AND t.is_split = TRUE
-        GROUP BY ta.category_id
-      ),
-      income_alloc_by_cat AS (
-        SELECT ta.category_id, SUM(t.amount * ta.percentage / 100.0) as set_aside
-        FROM transaction_allocations ta
-        JOIN transactions t ON t.id = ta.transaction_id
-        WHERE t.user_id = ANY($1) AND t.type = 'income'
-        GROUP BY ta.category_id
-      )
-      SELECT
-        c.id, c.name, c.slug, c.color, c.icon,
-        COALESCE(SUM(ebc.spent), 0) as spent,
-        COALESCE(iac.set_aside, 0) as snapshot_set_aside
-      FROM categories c
-      LEFT JOIN expense_by_category ebc ON ebc.category_id = c.id
-      LEFT JOIN income_alloc_by_cat iac ON iac.category_id = c.id
-      GROUP BY c.id, c.name, c.slug, c.color, c.icon, iac.set_aside
-      ORDER BY c.sort_order
-    `, [allMemberIds]);
 
-    // Get unallocated income total for fallback
-    const linkedUnallocResult = await pool.query(`
-      SELECT COALESCE(SUM(t.amount), 0) as total
-      FROM transactions t
-      WHERE t.user_id = ANY($1) AND t.type = 'income'
-        AND NOT EXISTS (
-          SELECT 1 FROM transaction_allocations ta WHERE ta.transaction_id = t.id
-        )
-    `, [allMemberIds]);
-    const linkedUnallocatedIncome = parseFloat(linkedUnallocResult.rows[0].total) || 0;
 
-    // Get average allocation percentages
-    const allocationStats = await pool.query(`
-      SELECT
-        c.id,
-        COALESCE(AVG(COALESCE(ua.percentage, ac.percentage)), 0) as avg_percentage
-      FROM categories c
-      JOIN allocation_config ac ON ac.category_id = c.id
-      LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = ANY($1)
-      GROUP BY c.id
-    `, [allMemberIds]);
 
-    const allocMap = {};
-    allocationStats.rows.forEach(row => {
-      allocMap[row.id] = parseFloat(row.avg_percentage);
-    });
 
-    const categories = categoryStats.rows.map(cat => {
-      const targetPct = allocMap[cat.id] || 0;
-      const allocated = (targetPct / 100) * parseFloat(total_income);
-      const actualSetAside = parseFloat(cat.snapshot_set_aside) + (linkedUnallocatedIncome * targetPct / 100);
-      const spent = parseFloat(cat.spent);
 
-      return {
-        ...cat,
-        allocated: allocated.toFixed(2),
-        actual_set_aside: actualSetAside.toFixed(2),
-        spent: spent.toFixed(2),
-        remaining: (actualSetAside - spent).toFixed(2),
-        usage_percent: actualSetAside > 0 ? Math.min(100, (spent / actualSetAside * 100)).toFixed(1) : '0.0',
-        target_percentage: targetPct.toFixed(1)
-      };
-    });
 
-    // Get per-family summaries
-    const householdSummaries = await pool.query(`
-      SELECT
-        h.id,
-        h.name,
-        COUNT(DISTINCT hm.user_id) as member_count,
-        COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) as total_expenses
-      FROM households h
-      INNER JOIN household_members hm ON h.id = hm.household_id
-      LEFT JOIN transactions t ON t.user_id = hm.user_id
-      WHERE h.id = ANY($1)
-      GROUP BY h.id, h.name
-      ORDER BY h.id
-    `, [linkedHouseholdIds]);
 
-    const householdBreakdown = householdSummaries.rows.map(h => ({
-      id: h.id,
-      name: h.name,
-      member_count: parseInt(h.member_count),
-      total_income: parseFloat(h.total_income).toFixed(2),
-      total_expenses: parseFloat(h.total_expenses).toFixed(2),
-      net_balance: (parseFloat(h.total_income) - parseFloat(h.total_expenses)).toFixed(2)
-    }));
 
-    res.json({
-      total_income: parseFloat(total_income).toFixed(2),
-      total_expenses: parseFloat(total_expenses).toFixed(2),
-      net_balance: net_balance.toFixed(2),
-      categories,
-      linked_household_count: linkedHouseholdIds.length,
-      total_member_count: allMemberIds.length,
-      household_breakdown: householdBreakdown
-    });
-  } catch (err) {
-    console.error('GET /api/households/:household_id/linked-dashboard error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch linked family dashboard' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── family PERMISSIONS ──────────────────────────────
@@ -10629,879 +9283,879 @@ app.delete('/api/permissions/revoke', requireAuth, async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════
-// ─── family SHARING SETTINGS (Broadcast privacy) ─────
-// ═══════════════════════════════════════════════════════════
+// [Phase5] family sharing → routes/family.js
 
-// GET /api/households/:id/sharing-settings — my broadcast sharing preferences
-app.get('/api/households/:household_id/sharing-settings', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
 
-    const result = await pool.query(`
-      SELECT hss.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon, c.color as category_color
-      FROM household_sharing_settings hss
-      LEFT JOIN categories c ON c.id = hss.category_id
-      WHERE hss.household_id = $1 AND hss.user_id = $2
-      ORDER BY c.sort_order NULLS FIRST
-    `, [household_id, req.userId]);
-    res.json({ settings: result.rows });
-  } catch (err) {
-    console.error('GET family sharing-settings error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch sharing settings' });
-  }
-});
 
-// POST /api/households/:id/sharing-settings — upsert sharing settings
-app.post('/api/households/:household_id/sharing-settings', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
-    const { category_id, share_allocations = false, share_transactions = false } = req.body;
 
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
 
-    const result = await pool.query(`
-      INSERT INTO household_sharing_settings
-        (household_id, user_id, category_id, share_allocations, share_transactions)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (household_id, user_id, category_id)
-      DO UPDATE SET
-        share_allocations = EXCLUDED.share_allocations,
-        share_transactions = EXCLUDED.share_transactions,
-        updated_at = NOW()
-      RETURNING *
-    `, [household_id, req.userId, category_id || null, share_allocations, share_transactions]);
 
-    res.json({ success: true, setting: result.rows[0] });
-  } catch (err) {
-    console.error('POST family sharing-settings error:', err.message);
-    res.status(500).json({ error: 'Failed to update sharing settings' });
-  }
-});
 
-// GET /api/households/:id/members-sharing — all members' sharing settings (what they've unlocked)
-app.get('/api/households/:household_id/members-sharing', requireAuth, async (req, res) => {
-  try {
-    const { household_id } = req.params;
-    const memberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
 
-    // Get all members' sharing settings
-    const result = await pool.query(`
-      SELECT
-        hss.*,
-        u.name as user_name, u.email as user_email,
-        c.id as cat_id, c.name as category_name, c.slug as category_slug,
-        c.icon as category_icon, c.color as category_color
-      FROM household_sharing_settings hss
-      JOIN users u ON u.id = hss.user_id
-      LEFT JOIN categories c ON c.id = hss.category_id
-      WHERE hss.household_id = $1
-      ORDER BY hss.user_id, c.sort_order NULLS FIRST
-    `, [household_id]);
-    res.json({ settings: result.rows });
-  } catch (err) {
-    console.error('GET members-sharing error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch members sharing' });
-  }
-});
 
-// GET /api/households/:id/unlocked-data/:member_user_id — fetch a member's unlocked category data
-app.get('/api/households/:household_id/unlocked-data/:member_user_id', requireAuth, async (req, res) => {
-  try {
-    const { household_id, member_user_id } = req.params;
 
-    // Verify current user is a family member
-    const myMemberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, req.userId]
-    );
-    if (myMemberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
 
-    // Verify target member is also in family
-    const theirMemberCheck = await pool.query(
-      'SELECT 1 FROM household_members WHERE household_id = $1 AND user_id = $2',
-      [household_id, member_user_id]
-    );
-    if (theirMemberCheck.rows.length === 0) return res.status(403).json({ error: 'Target user not in family' });
 
-    // Cannot view own data via this endpoint
-    if (parseInt(member_user_id) === req.userId) return res.status(400).json({ error: 'Use personal dashboard for own data' });
 
-    // Get what they've unlocked
-    const settings = await pool.query(`
-      SELECT hss.category_id, hss.share_allocations, hss.share_transactions
-      FROM household_sharing_settings hss
-      WHERE hss.household_id = $1 AND hss.user_id = $2
-        AND (hss.share_allocations = TRUE OR hss.share_transactions = TRUE)
-    `, [household_id, member_user_id]);
 
-    if (settings.rows.length === 0) return res.json({ categories: [], transactions: [] });
 
-    const unlockedCategoryIds = settings.rows.filter(s => s.category_id !== null).map(s => s.category_id);
-    const allUnlocked = settings.rows.some(s => s.category_id === null);
-    const allocUnlocked = settings.rows.some(s => s.category_id === null && s.share_allocations);
-    const txnsUnlocked = settings.rows.some(s => s.category_id === null && s.share_transactions);
 
-    // Build category data
-    let categoriesResult = { rows: [] };
-    if (allUnlocked || unlockedCategoryIds.length > 0) {
-      const catFilter = allUnlocked ? `TRUE` : `c.id = ANY($2)`;
-      const catParams = allUnlocked ? [member_user_id] : [member_user_id, unlockedCategoryIds];
-      categoriesResult = await pool.query(`
-        WITH expense_by_category AS (
-          SELECT category_id, SUM(amount) as spent
-          FROM transactions
-          WHERE user_id = $1 AND type = 'expense' AND (is_split = FALSE OR is_split IS NULL)
-          GROUP BY category_id
-          UNION ALL
-          SELECT ta.category_id, SUM(ta.amount) as spent
-          FROM transaction_allocations ta
-          JOIN transactions t ON t.id = ta.transaction_id
-          WHERE t.user_id = $1 AND t.type = 'expense' AND t.is_split = TRUE
-          GROUP BY ta.category_id
-        )
-        SELECT
-          c.id, c.name, c.slug, c.color, c.icon,
-          COALESCE(SUM(ebc.spent), 0) as spent,
-          COALESCE(ua.percentage, ac.percentage) as target_percentage
-        FROM categories c
-        JOIN allocation_config ac ON ac.category_id = c.id
-        LEFT JOIN user_allocations ua ON ua.category_id = c.id AND ua.user_id = $1
-        LEFT JOIN expense_by_category ebc ON ebc.category_id = c.id
-        WHERE ${catFilter}
-        GROUP BY c.id, c.name, c.slug, c.color, c.icon, ua.percentage, ac.percentage
-        ORDER BY c.sort_order
-      `, catParams);
-    }
 
-    // Build transactions if unlocked
-    let transactionRows = [];
-    if (txnsUnlocked || settings.rows.some(s => s.share_transactions && s.category_id !== null)) {
-      const txnFilter = txnsUnlocked
-        ? `t.user_id = $1`
-        : `t.user_id = $1 AND t.category_id = ANY($2)`;
-      const txnParams = txnsUnlocked ? [member_user_id] : [member_user_id, unlockedCategoryIds.filter(id => settings.rows.find(s => s.category_id === id && s.share_transactions))];
-      const txnResult = await pool.query(`
-        SELECT t.*, c.name as category_name, c.icon as category_icon, c.color as category_color
-        FROM transactions t
-        LEFT JOIN categories c ON c.id = t.category_id
-        WHERE ${txnFilter}
-        ORDER BY t.transaction_date DESC, t.created_at DESC
-        LIMIT 20
-      `, txnParams);
-      transactionRows = txnResult.rows;
-    }
 
-    res.json({
-      categories: categoriesResult.rows,
-      transactions: transactionRows
-    });
-  } catch (err) {
-    console.error('GET unlocked-data error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch unlocked data' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── TRANSACTION TAGGING (Mine / Theirs / Ours) ──────────
 // ═══════════════════════════════════════════════════════════
 
-// POST /api/transactions/:id/tag — update Mine/Theirs/Ours tag
-app.post('/api/transactions/:id/tag', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { tag, tagged_member_id } = req.body;
-
-    if (!['mine', 'theirs', 'ours'].includes(tag)) {
-      return res.status(400).json({ error: 'tag must be mine, theirs, or ours' });
-    }
-
-    // Verify transaction belongs to user
-    const txnCheck = await pool.query('SELECT id FROM transactions WHERE id = $1 AND user_id = $2', [id, req.userId]);
-    if (txnCheck.rows.length === 0) return res.status(403).json({ error: 'Transaction not found or not yours' });
-
-    const memberId = tag === 'theirs' ? (tagged_member_id || null) : null;
-    const result = await pool.query(
-      'UPDATE transactions SET txn_tag = $1, tagged_member_id = $2 WHERE id = $3 AND user_id = $4 RETURNING *',
-      [tag, memberId, id, req.userId]
-    );
-    res.json({ success: true, transaction: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/transactions/:id/tag error:', err.message);
-    res.status(500).json({ error: 'Failed to tag transaction' });
-  }
-});
-
-// GET /api/transactions — enhance to include txn_tag in response (already returns all columns)
-// The existing endpoint already returns all transaction columns including txn_tag after migration
-
-// ═══════════════════════════════════════════════════════════
-// ─── SHARED family GOALS ──────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// Helper: verify user is a family member, return role
-async function getHouseholdMembership(householdId, userId) {
-  const r = await pool.query(
-    `SELECT hm.role, h.owner_id FROM household_members hm
-     JOIN households h ON h.id = hm.household_id
-     WHERE hm.household_id = $1 AND hm.user_id = $2`,
-    [householdId, userId]
-  );
-  return r.rows[0] || null;
-}
-
-// Helper: calculate contribution total for a goal, returns { total_contributed, contributor_breakdown }
-async function getGoalProgress(goalId) {
-  const r = await pool.query(
-    `SELECT gc.user_id, u.name as member_name, SUM(gc.amount) as contributed
-     FROM goal_contributions gc
-     JOIN users u ON u.id = gc.user_id
-     WHERE gc.goal_id = $1
-     GROUP BY gc.user_id, u.name
-     ORDER BY contributed DESC`,
-    [goalId]
-  );
-  const total = r.rows.reduce((s, row) => s + parseFloat(row.contributed), 0);
-  return { total_contributed: total, contributors: r.rows };
-}
-
-// GET /api/households/:id/goals — list active + paused goals with progress
-app.get('/api/households/:id/goals', requireAuth, async (req, res) => {
-  try {
-    const { id: householdId } = req.params;
-    const membership = await getHouseholdMembership(householdId, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const goalsResult = await pool.query(
-      `SELECT sg.*, u.name as created_by_name,
-              COALESCE(SUM(gc.amount), 0) as total_contributed
-       FROM shared_goals sg
-       LEFT JOIN users u ON u.id = sg.created_by
-       LEFT JOIN goal_contributions gc ON gc.goal_id = sg.id
-       WHERE sg.household_id = $1 AND sg.status IN ('active', 'paused')
-       GROUP BY sg.id, u.name
-       ORDER BY sg.created_at ASC`,
-      [householdId]
-    );
-
-    // For each goal, get contributor breakdown
-    const goals = await Promise.all(goalsResult.rows.map(async (goal) => {
-      const { contributors } = await getGoalProgress(goal.id);
-      return { ...goal, contributors };
-    }));
-
-    res.json({ goals });
-  } catch (err) {
-    console.error('GET /api/households/:id/goals error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch goals' });
-  }
-});
-
-// GET /api/households/:id/goals/achieved — list completed/archived goals
-app.get('/api/households/:id/goals/achieved', requireAuth, async (req, res) => {
-  try {
-    const { id: householdId } = req.params;
-    const membership = await getHouseholdMembership(householdId, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const goalsResult = await pool.query(
-      `SELECT sg.*, u.name as created_by_name,
-              COALESCE(SUM(gc.amount), 0) as total_contributed
-       FROM shared_goals sg
-       LEFT JOIN users u ON u.id = sg.created_by
-       LEFT JOIN goal_contributions gc ON gc.goal_id = sg.id
-       WHERE sg.household_id = $1 AND sg.status IN ('completed', 'archived')
-       GROUP BY sg.id, u.name
-       ORDER BY sg.completed_at DESC NULLS LAST`,
-      [householdId]
-    );
-
-    res.json({ goals: goalsResult.rows });
-  } catch (err) {
-    console.error('GET /api/households/:id/goals/achieved error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch achieved goals' });
-  }
-});
-
-// POST /api/households/:id/goals — create a new goal (any member can propose)
-app.post('/api/households/:id/goals', requireAuth, async (req, res) => {
-  try {
-    const { id: householdId } = req.params;
-    const membership = await getHouseholdMembership(householdId, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const { name, target_amount, target_date, category, emoji, description } = req.body;
-    if (!name || !target_amount) return res.status(400).json({ error: 'name and target_amount are required' });
-    if (parseFloat(target_amount) <= 0) return res.status(400).json({ error: 'target_amount must be positive' });
-
-    const validCategories = ['vacation','emergency','car','home','education','wedding','baby','retirement','custom'];
-    const cat = validCategories.includes(category) ? category : 'custom';
-    const emojiVal = emoji || '🎯';
-
-    const result = await pool.query(
-      `INSERT INTO shared_goals (household_id, created_by, name, target_amount, target_date, category, emoji, description)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [householdId, req.userId, name, target_amount, target_date || null, cat, emojiVal, description || null]
-    );
-
-    res.json({ success: true, goal: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/households/:id/goals error:', err.message);
-    res.status(500).json({ error: 'Failed to create goal' });
-  }
-});
-
-// PUT /api/goals/:id — edit goal (owner only)
-app.put('/api/goals/:id', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found' });
-    const goal = goalCheck.rows[0];
-
-    // Verify user is family owner or goal creator
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-    if (goal.owner_id !== req.userId && goal.created_by !== req.userId) {
-      return res.status(403).json({ error: 'Only family owner or goal creator can edit goals' });
-    }
-
-    const { name, target_amount, target_date, category, emoji, description } = req.body;
-    const validCategories = ['vacation','emergency','car','home','education','wedding','baby','retirement','custom'];
-    const updates = [];
-    const params = [];
-    let pIdx = 1;
-    if (name !== undefined) { updates.push(`name = $${pIdx++}`); params.push(name); }
-    if (target_amount !== undefined) { updates.push(`target_amount = $${pIdx++}`); params.push(target_amount); }
-    if (target_date !== undefined) { updates.push(`target_date = $${pIdx++}`); params.push(target_date || null); }
-    if (category !== undefined && validCategories.includes(category)) { updates.push(`category = $${pIdx++}`); params.push(category); }
-    if (emoji !== undefined) { updates.push(`emoji = $${pIdx++}`); params.push(emoji); }
-    if (description !== undefined) { updates.push(`description = $${pIdx++}`); params.push(description); }
-    updates.push(`updated_at = NOW()`);
-    params.push(id);
-
-    const result = await pool.query(
-      `UPDATE shared_goals SET ${updates.join(', ')} WHERE id = $${pIdx} RETURNING *`,
-      params
-    );
-    res.json({ success: true, goal: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/goals/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update goal' });
-  }
-});
-
-// POST /api/goals/:id/pause — toggle pause/resume (owner only)
-app.post('/api/goals/:id/pause', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1 AND sg.status IN ('active', 'paused')`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found or not active/paused' });
-    const goal = goalCheck.rows[0];
-
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-    if (goal.owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can pause/resume goals' });
-
-    const newStatus = goal.status === 'active' ? 'paused' : 'active';
-    const result = await pool.query(
-      'UPDATE shared_goals SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-      [newStatus, id]
-    );
-    res.json({ success: true, goal: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/goals/:id/pause error:', err.message);
-    res.status(500).json({ error: 'Failed to toggle goal status' });
-  }
-});
-
-// POST /api/goals/:id/complete — mark goal as completed/archived (owner only)
-app.post('/api/goals/:id/complete', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1 AND sg.status NOT IN ('completed', 'archived')`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found or already completed' });
-    const goal = goalCheck.rows[0];
-
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-    if (goal.owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can complete goals' });
-
-    const result = await pool.query(
-      `UPDATE shared_goals SET status = 'completed', completed_at = NOW(), updated_at = NOW()
-       WHERE id = $1 RETURNING *`,
-      [id]
-    );
-    res.json({ success: true, goal: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/goals/:id/complete error:', err.message);
-    res.status(500).json({ error: 'Failed to complete goal' });
-  }
-});
-
-// DELETE /api/goals/:id — delete goal (owner only)
-app.delete('/api/goals/:id', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found' });
-    const goal = goalCheck.rows[0];
-
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-    if (goal.owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can delete goals' });
-
-    await pool.query('DELETE FROM shared_goals WHERE id = $1', [id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/goals/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete goal' });
-  }
-});
-
-// POST /api/goals/:id/contribute — add a contribution (any member)
-app.post('/api/goals/:id/contribute', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { amount, note } = req.body;
-    if (!amount || parseFloat(amount) <= 0) return res.status(400).json({ error: 'amount must be positive' });
-
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1 AND sg.status = 'active'`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found or not active' });
-    const goal = goalCheck.rows[0];
-
-    const membership = await getHouseholdMembership(goal.household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    await pool.query(
-      'INSERT INTO goal_contributions (goal_id, user_id, amount, note) VALUES ($1, $2, $3, $4)',
-      [id, req.userId, amount, note || null]
-    );
-
-    // Check progress and milestone notifications
-    const { total_contributed, contributors } = await getGoalProgress(id);
-    const target = parseFloat(goal.target_amount);
-    const pct = target > 0 ? (total_contributed / target) * 100 : 0;
-
-    const milestones = [];
-    if (pct >= 25 && !goal.milestone_25_notified) {
-      await pool.query('UPDATE shared_goals SET milestone_25_notified = TRUE WHERE id = $1', [id]);
-      milestones.push(25);
-    }
-    if (pct >= 50 && !goal.milestone_50_notified) {
-      await pool.query('UPDATE shared_goals SET milestone_50_notified = TRUE WHERE id = $1', [id]);
-      milestones.push(50);
-    }
-    if (pct >= 75 && !goal.milestone_75_notified) {
-      await pool.query('UPDATE shared_goals SET milestone_75_notified = TRUE WHERE id = $1', [id]);
-      milestones.push(75);
-    }
-    if (pct >= 100 && !goal.milestone_100_notified) {
-      await pool.query('UPDATE shared_goals SET milestone_100_notified = TRUE WHERE id = $1', [id]);
-      milestones.push(100);
-    }
-
-    res.json({
-      success: true,
-      total_contributed,
-      percent: Math.min(pct, 100),
-      contributors,
-      milestones_reached: milestones
-    });
-  } catch (err) {
-    console.error('POST /api/goals/:id/contribute error:', err.message);
-    res.status(500).json({ error: 'Failed to add contribution' });
-  }
-});
-
-// GET /api/goals/:id/contributions — contribution history with member info
-app.get('/api/goals/:id/contributions', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const goalCheck = await pool.query(
-      'SELECT sg.household_id FROM shared_goals sg WHERE sg.id = $1',
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found' });
-
-    const membership = await getHouseholdMembership(goalCheck.rows[0].household_id, req.userId);
-    if (!membership) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const result = await pool.query(
-      `SELECT gc.*, u.name as member_name
-       FROM goal_contributions gc
-       JOIN users u ON u.id = gc.user_id
-       WHERE gc.goal_id = $1
-       ORDER BY gc.created_at DESC`,
-      [id]
-    );
-    res.json({ contributions: result.rows });
-  } catch (err) {
-    console.error('GET /api/goals/:id/contributions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch contributions' });
-  }
-});
-
-// PUT /api/goals/:id/member-target — set per-member monthly target (owner only)
-app.put('/api/goals/:id/member-target', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { user_id, monthly_target } = req.body;
-
-    const goalCheck = await pool.query(
-      `SELECT sg.*, h.owner_id FROM shared_goals sg
-       JOIN households h ON h.id = sg.household_id
-       WHERE sg.id = $1`,
-      [id]
-    );
-    if (goalCheck.rows.length === 0) return res.status(404).json({ error: 'Goal not found' });
-    const goal = goalCheck.rows[0];
-
-    if (goal.owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can set member targets' });
-
-    await pool.query(
-      `INSERT INTO goal_member_targets (goal_id, user_id, monthly_target)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (goal_id, user_id) DO UPDATE SET monthly_target = $3, updated_at = NOW()`,
-      [id, user_id, monthly_target]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('PUT /api/goals/:id/member-target error:', err.message);
-    res.status(500).json({ error: 'Failed to set member target' });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════
-// ─── SHARED BUDGETS ─────────────────────────────────────
-// ═══════════════════════════════════════════════════════════
-
-// GET all shared budget categories with monthly spend + member breakdown
-app.get('/api/households/:id/shared-budgets', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { month, year } = req.query;
-    const memberCheck = await pool.query(
-      `SELECT hm.role FROM household_members hm WHERE hm.household_id = $1 AND hm.user_id = $2`,
-      [id, req.userId]
-    );
-    if (memberCheck.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const targetMonth = parseInt(month) || new Date().getMonth() + 1;
-    const targetYear = parseInt(year) || new Date().getFullYear();
-
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const ownerId = householdRow.rows[0].owner_id;
-
-    const result = await pool.query(`
-      SELECT
-        sbc.id,
-        sbc.name,
-        sbc.emoji,
-        sbc.monthly_target,
-        sbc.sort_order,
-        sbc.created_by,
-        COALESCE(
-          (SELECT SUM(amount) FROM shared_budget_expenses
-           WHERE budget_category_id = sbc.id
-           AND EXTRACT(MONTH FROM expense_date) = $2
-           AND EXTRACT(YEAR FROM expense_date) = $3), 0
-        )::NUMERIC(12,2) as total_spent,
-        (
-          SELECT json_agg(member_data ORDER BY (member_data->>'name'))
-          FROM (
-            SELECT jsonb_build_object(
-              'user_id', u.id,
-              'name', u.name,
-              'amount', COALESCE(
-                (SELECT SUM(sbe.amount) FROM shared_budget_expenses sbe
-                 WHERE sbe.budget_category_id = sbc.id
-                 AND sbe.logged_by = u.id
-                 AND EXTRACT(MONTH FROM sbe.expense_date) = $2
-                 AND EXTRACT(YEAR FROM sbe.expense_date) = $3), 0
-              ),
-              'expected', COALESCE(
-                (SELECT sbmt.expected_amount FROM shared_budget_member_targets sbmt
-                 WHERE sbmt.budget_category_id = sbc.id AND sbmt.user_id = u.id), 0
-              )
-            ) as member_data
-            FROM household_members hm2
-            JOIN users u ON u.id = hm2.user_id
-            WHERE hm2.household_id = sbc.household_id
-          ) t
-        ) as member_breakdown
-      FROM shared_budget_categories sbc
-      WHERE sbc.household_id = $1
-      ORDER BY sbc.sort_order, sbc.created_at
-    `, [id, targetMonth, targetYear]);
-
-    res.json({ success: true, budgets: result.rows, month: targetMonth, year: targetYear, owner_id: ownerId });
-  } catch (err) {
-    console.error('GET /api/households/:id/shared-budgets error:', err.message);
-    res.status(500).json({ error: 'Failed to load shared budgets' });
-  }
-});
-
-// POST create a shared budget category (owner/co-admin only)
-app.post('/api/households/:id/shared-budgets', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, emoji, monthly_target } = req.body;
-    if (!name || monthly_target == null) return res.status(400).json({ error: 'Name and monthly_target are required' });
-
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const memberRow = await pool.query(`SELECT role FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-    const isOwner = householdRow.rows[0].owner_id === req.userId;
-    const isCoAdmin = memberRow.rows[0].role === 'co_admin';
-    if (!isOwner && !isCoAdmin) return res.status(403).json({ error: 'Only owner or co-admin can create budget categories' });
-
-    const sortRow = await pool.query(`SELECT COALESCE(MAX(sort_order), -1) + 1 as next_order FROM shared_budget_categories WHERE household_id = $1`, [id]);
-    const sortOrder = sortRow.rows[0].next_order;
-
-    const result = await pool.query(
-      `INSERT INTO shared_budget_categories (household_id, name, emoji, monthly_target, sort_order, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [id, name.trim(), emoji || '💰', parseFloat(monthly_target), sortOrder, req.userId]
-    );
-    res.json({ success: true, budget: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/households/:id/shared-budgets error:', err.message);
-    res.status(500).json({ error: 'Failed to create shared budget category' });
-  }
-});
-
-// POST seed default budget categories (owner only)
-app.post('/api/households/:id/shared-budgets/seed-defaults', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    if (householdRow.rows[0].owner_id !== req.userId) return res.status(403).json({ error: 'Only family owner can seed defaults' });
-
-    const defaults = [
-      { name: 'Rent/Mortgage', emoji: '🏠', monthly_target: 0 },
-      { name: 'Utilities', emoji: '⚡', monthly_target: 0 },
-      { name: 'Groceries', emoji: '🛒', monthly_target: 0 },
-      { name: 'Insurance', emoji: '🛡️', monthly_target: 0 },
-      { name: 'family Supplies', emoji: '🧹', monthly_target: 0 },
-      { name: 'Shared Savings', emoji: '💎', monthly_target: 0 },
-    ];
-
-    for (let i = 0; i < defaults.length; i++) {
-      const d = defaults[i];
-      await pool.query(
-        `INSERT INTO shared_budget_categories (household_id, name, emoji, monthly_target, sort_order, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [id, d.name, d.emoji, d.monthly_target, i, req.userId]
-      );
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error('POST /api/households/:id/shared-budgets/seed-defaults error:', err.message);
-    res.status(500).json({ error: 'Failed to seed defaults' });
-  }
-});
-
-// PUT edit a shared budget category (owner/co-admin only)
-app.put('/api/households/:id/shared-budgets/:budgetId', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const { name, emoji, monthly_target } = req.body;
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const memberRow = await pool.query(`SELECT role FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-    const isOwner = householdRow.rows[0].owner_id === req.userId;
-    const isCoAdmin = memberRow.rows[0].role === 'co_admin';
-    if (!isOwner && !isCoAdmin) return res.status(403).json({ error: 'Only owner or co-admin can edit budget categories' });
-
-    const result = await pool.query(
-      `UPDATE shared_budget_categories
-       SET name = COALESCE($1, name), emoji = COALESCE($2, emoji),
-           monthly_target = COALESCE($3, monthly_target), updated_at = NOW()
-       WHERE id = $4 AND household_id = $5 RETURNING *`,
-      [name?.trim() || null, emoji || null, monthly_target != null ? parseFloat(monthly_target) : null, budgetId, id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Budget category not found' });
-    res.json({ success: true, budget: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/households/:id/shared-budgets/:budgetId error:', err.message);
-    res.status(500).json({ error: 'Failed to update budget category' });
-  }
-});
-
-// DELETE a shared budget category (owner/co-admin only)
-app.delete('/api/households/:id/shared-budgets/:budgetId', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const memberRow = await pool.query(`SELECT role FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-    const isOwner = householdRow.rows[0].owner_id === req.userId;
-    const isCoAdmin = memberRow.rows[0].role === 'co_admin';
-    if (!isOwner && !isCoAdmin) return res.status(403).json({ error: 'Only owner or co-admin can delete budget categories' });
-    await pool.query(`DELETE FROM shared_budget_categories WHERE id = $1 AND household_id = $2`, [budgetId, id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/households/:id/shared-budgets/:budgetId error:', err.message);
-    res.status(500).json({ error: 'Failed to delete budget category' });
-  }
-});
-
-// POST log an expense against a shared budget category (any member)
-app.post('/api/households/:id/shared-budgets/:budgetId/expenses', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const { amount, description, expense_date } = req.body;
-    if (!amount || parseFloat(amount) <= 0) return res.status(400).json({ error: 'Amount must be greater than 0' });
-
-    const memberRow = await pool.query(`SELECT id FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member of this family' });
-
-    const budgetRow = await pool.query(`SELECT id FROM shared_budget_categories WHERE id = $1 AND household_id = $2`, [budgetId, id]);
-    if (budgetRow.rows.length === 0) return res.status(404).json({ error: 'Budget category not found' });
-
-    const dateStr = expense_date || new Date().toISOString().split('T')[0];
-    const result = await pool.query(
-      `INSERT INTO shared_budget_expenses (budget_category_id, household_id, logged_by, amount, description, expense_date)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [budgetId, id, req.userId, parseFloat(amount), description?.trim() || null, dateStr]
-    );
-    res.json({ success: true, expense: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/households/:id/shared-budgets/:budgetId/expenses error:', err.message);
-    res.status(500).json({ error: 'Failed to log shared expense' });
-  }
-});
-
-// GET expense history for a shared budget category (any member)
-app.get('/api/households/:id/shared-budgets/:budgetId/expenses', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const { month, year } = req.query;
-    const memberRow = await pool.query(`SELECT id FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-
-    const targetMonth = parseInt(month) || new Date().getMonth() + 1;
-    const targetYear = parseInt(year) || new Date().getFullYear();
-
-    const result = await pool.query(`
-      SELECT sbe.id, sbe.amount, sbe.description, sbe.expense_date, sbe.created_at,
-             sbe.logged_by, u.name as member_name
-      FROM shared_budget_expenses sbe
-      JOIN users u ON u.id = sbe.logged_by
-      WHERE sbe.budget_category_id = $1 AND sbe.household_id = $2
-        AND EXTRACT(MONTH FROM sbe.expense_date) = $3
-        AND EXTRACT(YEAR FROM sbe.expense_date) = $4
-      ORDER BY sbe.expense_date DESC, sbe.created_at DESC
-      LIMIT 100
-    `, [budgetId, id, targetMonth, targetYear]);
-
-    res.json({ success: true, expenses: result.rows });
-  } catch (err) {
-    console.error('GET /api/households/:id/shared-budgets/:budgetId/expenses error:', err.message);
-    res.status(500).json({ error: 'Failed to load expenses' });
-  }
-});
-
-// DELETE a shared budget expense (logged_by or family owner)
-app.delete('/api/shared-budget-expenses/:expenseId', requireAuth, async (req, res) => {
-  try {
-    const { expenseId } = req.params;
-    const expRow = await pool.query(
-      `SELECT sbe.*, h.owner_id FROM shared_budget_expenses sbe
-       JOIN households h ON h.id = sbe.household_id
-       WHERE sbe.id = $1`,
-      [expenseId]
-    );
-    if (expRow.rows.length === 0) return res.status(404).json({ error: 'Expense not found' });
-    const exp = expRow.rows[0];
-    if (exp.logged_by !== req.userId && exp.owner_id !== req.userId) {
-      return res.status(403).json({ error: 'Can only delete your own expenses (or be the family owner)' });
-    }
-    await pool.query(`DELETE FROM shared_budget_expenses WHERE id = $1`, [expenseId]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/shared-budget-expenses/:expenseId error:', err.message);
-    res.status(500).json({ error: 'Failed to delete expense' });
-  }
-});
-
-// PUT set per-member contribution targets for a budget category (owner/co-admin)
-app.put('/api/households/:id/shared-budgets/:budgetId/member-targets', requireAuth, async (req, res) => {
-  try {
-    const { id, budgetId } = req.params;
-    const { targets } = req.body; // Array of { user_id, expected_amount }
-    if (!Array.isArray(targets)) return res.status(400).json({ error: 'targets must be an array' });
-
-    const householdRow = await pool.query(`SELECT owner_id FROM households WHERE id = $1`, [id]);
-    if (householdRow.rows.length === 0) return res.status(404).json({ error: 'family not found' });
-    const memberRow = await pool.query(`SELECT role FROM household_members WHERE household_id = $1 AND user_id = $2`, [id, req.userId]);
-    if (memberRow.rows.length === 0) return res.status(403).json({ error: 'Not a member' });
-    const isOwner = householdRow.rows[0].owner_id === req.userId;
-    const isCoAdmin = memberRow.rows[0].role === 'co_admin';
-    if (!isOwner && !isCoAdmin) return res.status(403).json({ error: 'Only owner or co-admin can set member targets' });
-
-    for (const t of targets) {
-      if (parseFloat(t.expected_amount) > 0) {
-        await pool.query(
-          `INSERT INTO shared_budget_member_targets (budget_category_id, user_id, expected_amount)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (budget_category_id, user_id) DO UPDATE SET expected_amount = $3, updated_at = NOW()`,
-          [budgetId, t.user_id, parseFloat(t.expected_amount)]
-        );
-      } else {
-        await pool.query(`DELETE FROM shared_budget_member_targets WHERE budget_category_id = $1 AND user_id = $2`, [budgetId, t.user_id]);
-      }
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error('PUT /api/households/:id/shared-budgets/:budgetId/member-targets error:', err.message);
-    res.status(500).json({ error: 'Failed to set member targets' });
-  }
-});
+// [Phase2] transaction tag → routes/transactions.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [Phase5] family goals/budgets → routes/family.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════
 // ─── SUBSCRIPTIONS ──────────────────────────────────────
@@ -13962,47 +12616,10 @@ app.post('/api/affiliate/enter-orphan-queue', async (req, res) => {
 });
 
 // Admin: manually trigger orphan placement for all ready-to-place pool entries
-app.post('/api/admin/trigger-orphan-placement', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin only' });
-    }
 
-    const readyOrphans = await pool.query(
-      `SELECT user_id FROM orphan_pool WHERE status = 'ready_to_place' ORDER BY upgraded_at ASC`
-    );
-
-    let processed = 0;
-    for (const orphan of readyOrphans.rows) {
-      await processOrphanUpgrade(orphan.user_id);
-      processed++;
-    }
-
-    res.json({ message: `Processed ${processed} orphan placements` });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-orphan-placement error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger orphan placement' });
-  }
-});
 
 // Admin: manually trigger 4x5 depth gate check (for testing + operational control)
-app.post('/api/admin/trigger-depth-gates', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin only' });
-    }
-    console.log('[API] Manual 4x5 depth gate check triggered by admin');
-    res.json({ success: true, message: 'Depth gate check started in background' });
-    runDepthGateCheck(pool).catch(err => {
-      console.error('[DepthGate] Manual trigger error:', err.message);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-depth-gates error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger depth gate check' });
-  }
-});
+
 
 // Stripe Connect: initiate onboarding for affiliate payouts
 app.post('/api/affiliate/stripe-connect/onboard', async (req, res) => {
@@ -14369,93 +12986,13 @@ function getStripe() {
 }
 
 // Admin: Get all affiliates with full account details
-app.get('/api/admin/affiliates', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const result = await pool.query(`
-      SELECT
-        a.id, a.user_id, a.email, a.referral_code, a.status,
-        a.pending_balance_cents, a.approved_balance_cents, a.lifetime_earnings_cents,
-        a.grace_period_started_at, a.grace_period_ends_at,
-        a.stripe_connect_account_id, a.stripe_connect_onboarding_completed, a.w9_completed,
-        a.good_standing_started_at, a.good_standing_achieved_at,
-        a.paused_at, a.created_at,
-        u.name, u.plan, u.paid_until, u.last_login, u.is_creator,
-        (SELECT COUNT(*) FROM referrals r WHERE r.affiliate_id = a.id) AS total_referrals,
-        (SELECT COUNT(*) FROM referrals r WHERE r.affiliate_id = a.id AND r.status = 'converted') AS converted_referrals,
-        (SELECT COUNT(*) FROM commissions c WHERE c.affiliate_id = a.id AND c.status = 'pending') AS pending_commissions,
-        (SELECT COUNT(*) FROM commissions c WHERE c.affiliate_id = a.id AND c.status = 'approved') AS approved_commissions
-      FROM affiliates a
-      JOIN users u ON u.id = a.user_id
-      ORDER BY a.lifetime_earnings_cents DESC, a.created_at DESC
-    `);
 
-    // Stats summary
-    const stats = {
-      total_affiliates: result.rows.length,
-      active: result.rows.filter(r => r.status === 'active').length,
-      paused: result.rows.filter(r => r.status === 'paused').length,
-      at_risk: result.rows.filter(r => r.status === 'at_risk').length,
-      revoked: result.rows.filter(r => r.status === 'revoked').length,
-      total_pending_cents: result.rows.reduce((s, r) => s + (r.pending_balance_cents || 0), 0),
-      total_approved_cents: result.rows.reduce((s, r) => s + (r.approved_balance_cents || 0), 0),
-      total_lifetime_cents: result.rows.reduce((s, r) => s + (r.lifetime_earnings_cents || 0), 0),
-      stripe_connect_ready: result.rows.filter(r => r.stripe_connect_onboarding_completed).length
-    };
-
-    res.json({ affiliates: result.rows, stats });
-  } catch (err) {
-    console.error('GET /api/admin/affiliates error:', err.message);
-    res.status(500).json({ error: 'Failed to load affiliates' });
-  }
-});
 
 // Admin: Pause or reactivate an affiliate
-app.post('/api/admin/affiliates/:id/status', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const { id } = req.params;
-    const { action } = req.body; // 'pause' | 'reactivate' | 'revoke'
 
-    const statusMap = { pause: 'paused', reactivate: 'active', revoke: 'revoked' };
-    if (!statusMap[action]) return res.status(400).json({ error: 'Invalid action' });
-
-    const extra = action === 'pause' ? ', paused_at = NOW()' : (action === 'reactivate' ? ', paused_at = NULL' : '');
-    await pool.query(
-      `UPDATE affiliates SET status = $1${extra}, updated_at = NOW() WHERE id = $2`,
-      [statusMap[action], id]
-    );
-
-    res.json({ success: true, new_status: statusMap[action] });
-  } catch (err) {
-    console.error('POST /api/admin/affiliates/:id/status error:', err.message);
-    res.status(500).json({ error: 'Failed to update affiliate status' });
-  }
-});
 
 // Admin: Adjust affiliate balance (manual correction)
-app.post('/api/admin/affiliates/:id/adjust-balance', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const { id } = req.params;
-    const { field, amount_cents, reason } = req.body;
-    const allowedFields = ['pending_balance_cents', 'approved_balance_cents', 'lifetime_earnings_cents'];
-    if (!allowedFields.includes(field)) return res.status(400).json({ error: 'Invalid field' });
-    if (typeof amount_cents !== 'number') return res.status(400).json({ error: 'amount_cents must be a number' });
 
-    const result = await pool.query(
-      `UPDATE affiliates SET ${field} = GREATEST(0, ${field} + $1), updated_at = NOW() WHERE id = $2 RETURNING *`,
-      [amount_cents, id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Affiliate not found' });
-
-    console.log(`[Admin] Balance adjustment: affiliate ${id}, field=${field}, delta=${amount_cents}, reason=${reason}`);
-    res.json({ success: true, affiliate: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/admin/affiliates/:id/adjust-balance error:', err.message);
-    res.status(500).json({ error: 'Failed to adjust balance' });
-  }
-});
 
 // Admin: Create a Legacy Placement
 //
@@ -14472,236 +13009,16 @@ app.post('/api/admin/affiliates/:id/adjust-balance', requireAuth, async (req, re
 // Commission structure applied automatically:
 //   Month 1: Enroller=20%, Placement Parent=5%, L3=3%, L4=2%, L5=1%
 //   Month 2+: Standard 16-8-4-2-1 based on tree position
-app.post('/api/admin/legacy-placement', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
 
-    const { recruit_user_id, enroller_user_id, placement_parent_id } = req.body;
-
-    if (!recruit_user_id || !enroller_user_id || !placement_parent_id) {
-      return res.status(400).json({
-        error: 'Missing required fields: recruit_user_id, enroller_user_id, placement_parent_id'
-      });
-    }
-
-    // Validate recruit exists and is not already an affiliate
-    const recruitUser = await pool.query('SELECT id, email FROM users WHERE id = $1', [recruit_user_id]);
-    if (recruitUser.rows.length === 0) {
-      return res.status(404).json({ error: 'Recruit user not found' });
-    }
-    const existingAffiliate = await pool.query('SELECT id FROM affiliates WHERE user_id = $1', [recruit_user_id]);
-    if (existingAffiliate.rows.length > 0) {
-      return res.status(409).json({ error: 'Recruit is already a Future Generations member' });
-    }
-
-    // Validate enroller is an active affiliate
-    const enrollerAff = await pool.query(
-      `SELECT a.id FROM affiliates a WHERE a.user_id = $1 AND a.status = 'active'`,
-      [enroller_user_id]
-    );
-    if (enrollerAff.rows.length === 0) {
-      return res.status(400).json({ error: 'Enroller is not an active affiliate' });
-    }
-
-    // Validate placement parent exists as an affiliate
-    const placementParent = await pool.query(
-      `SELECT a.id, a.affiliate_level FROM affiliates a WHERE a.id = $1 AND a.status != 'revoked'`,
-      [placement_parent_id]
-    );
-    if (placementParent.rows.length === 0) {
-      return res.status(400).json({ error: 'Placement parent affiliate not found or is revoked' });
-    }
-
-    // Determine level for the recruit (one deeper than placement parent, capped at 5)
-    const recruitLevel = Math.min((placementParent.rows[0].affiliate_level || 1) + 1, 5);
-
-    // Generate referral code for recruit
-    const recruitEmail = recruitUser.rows[0].email;
-    let referralCode;
-    let codeAttempts = 0;
-    while (codeAttempts < 10) {
-      const username = recruitEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
-      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-      referralCode = `${username.substring(0, 8).toUpperCase()}${random}`;
-      const codeCheck = await pool.query('SELECT id FROM affiliates WHERE referral_code = $1', [referralCode]);
-      if (codeCheck.rows.length === 0) break;
-      codeAttempts++;
-    }
-
-    // Check if recruit already has Pro (to start good standing clock)
-    const proCheck = await hasProAccess(recruit_user_id);
-
-    // Insert the legacy affiliate record
-    const result = await pool.query(
-      `INSERT INTO affiliates
-         (user_id, email, referral_code, status,
-          good_standing_started_at,
-          parent_affiliate_id, affiliate_level, placement_method,
-          enrollment_type, enroller_id, enrolled_at, is_legacy_placement)
-       VALUES ($1, $2, $3, 'active', $4, $5, $6, 'legacy_drop', 'legacy', $7, NOW(), TRUE)
-       RETURNING *`,
-      [
-        recruit_user_id,
-        recruitEmail.toLowerCase(),
-        referralCode,
-        proCheck ? new Date() : null,
-        placement_parent_id,
-        recruitLevel,
-        enrollerAff.rows[0].id
-      ]
-    );
-
-    // Set referred_by_user_id to placement parent's user (for tree continuity on renewals)
-    await pool.query(
-      `UPDATE users SET referred_by_user_id = (SELECT user_id FROM affiliates WHERE id = $1)
-       WHERE id = $2 AND referred_by_user_id IS NULL`,
-      [placement_parent_id, recruit_user_id]
-    );
-
-    console.log(
-      `[Admin] Legacy Placement created: recruit user ${recruit_user_id} placed under affiliate ${placement_parent_id} ` +
-      `by enroller affiliate ${enrollerAff.rows[0].id}. Level: ${recruitLevel}`
-    );
-
-    res.json({
-      success: true,
-      message: 'Legacy Placement created successfully',
-      affiliate: result.rows[0],
-      commission_structure: {
-        month_1: {
-          enroller: '20%',
-          placement_parent: '5%',
-          level_3: '3%',
-          level_4: '2%',
-          level_5: '1%',
-          total: '31%'
-        },
-        month_2_plus: 'Standard 16-8-4-2-1 based on tree position'
-      }
-    });
-  } catch (err) {
-    console.error('POST /api/admin/legacy-placement error:', err.message);
-    if (err.code === '23505') {
-      return res.status(409).json({ error: 'Recruit is already in the affiliate system' });
-    }
-    res.status(500).json({ error: 'Failed to create Legacy Placement' });
-  }
-});
 
 // Admin: Affiliate seed-phase status — X/100 first-line slots filled
-app.get('/api/admin/affiliate-seed-status', requireAuth, async (req, res) => {
-  let client;
-  try {
-    if (!(await requireAdminOrCreator(req, res))) return;
-    if (!pool) return res.status(500).json({ success: false, error: 'Database unavailable' });
-    client = await pool.connect();
-    await client.query("SET statement_timeout = '5000'");
 
-    const firstLine = await client.query("SELECT COUNT(*) FROM affiliates WHERE affiliate_level = 1");
-    const firstLineCount = parseInt(firstLine.rows[0].count, 10);
-    const seedComplete = firstLineCount >= 100;
-
-    // Level breakdown
-    const levelBreakdown = await client.query(`
-      SELECT affiliate_level, placement_method, COUNT(*) as count
-      FROM affiliates
-      GROUP BY affiliate_level, placement_method
-      ORDER BY affiliate_level ASC, placement_method ASC
-    `);
-
-    // Total org size
-    const totalAffiliates = await client.query('SELECT COUNT(*) FROM affiliates');
-
-    res.json({
-      success: true,
-      seed_phase: {
-        active: !seedComplete,
-        first_line_count: firstLineCount,
-        first_line_capacity: 100,
-        first_line_remaining: Math.max(0, 100 - firstLineCount),
-        percent_filled: Math.min(100, Math.round((firstLineCount / 100) * 100))
-      },
-      placement_mode: seedComplete ? 'bfs_auto_fill' : 'seed_phase',
-      total_affiliates: parseInt(totalAffiliates.rows[0].count, 10),
-      level_breakdown: levelBreakdown.rows.map(r => ({
-        level: r.affiliate_level,
-        placement_method: r.placement_method,
-        count: parseInt(r.count, 10)
-      }))
-    });
-  } catch (err) {
-    console.error('GET /api/admin/affiliate-seed-status error:', err.message);
-    if (!res.headersSent) res.status(500).json({ success: false, error: 'Failed to load seed status' });
-  } finally {
-    if (client) {
-      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be dead */ }
-      client.release();
-    }
-  }
-});
 
 // Admin: Get founding members (earliest Pro subscribers, sorted by join date)
-app.get('/api/admin/founding-members', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const { limit = 50, before_date } = req.query;
 
-    // Founding members = users who subscribed to Pro early
-    // If no cutoff provided, return all Pro users sorted by first subscription date
-    const cutoff = before_date ? new Date(before_date) : new Date('2099-01-01');
-
-    const result = await pool.query(`
-      SELECT
-        u.id, u.name, u.email, u.plan, u.paid_until, u.created_at, u.last_login,
-        u.is_creator,
-        s.created_at AS first_subscription_date,
-        s.amount_cents AS subscription_amount,
-        a.id AS affiliate_id, a.referral_code, a.status AS affiliate_status,
-        a.lifetime_earnings_cents, a.pending_balance_cents, a.approved_balance_cents,
-        (SELECT COUNT(*) FROM referrals r WHERE r.affiliate_id = a.id AND r.status = 'converted') AS converted_referrals
-      FROM users u
-      JOIN (
-        SELECT user_id, MIN(created_at) AS created_at, amount_cents
-        FROM subscriptions
-        WHERE status = 'completed'
-        GROUP BY user_id, amount_cents
-      ) s ON s.user_id = u.id
-      LEFT JOIN affiliates a ON a.user_id = u.id
-      WHERE s.created_at < $1
-      ORDER BY s.created_at ASC
-      LIMIT $2
-    `, [cutoff, parseInt(limit)]);
-
-    res.json({
-      founding_members: result.rows,
-      count: result.rows.length,
-      cutoff_date: cutoff
-    });
-  } catch (err) {
-    console.error('GET /api/admin/founding-members error:', err.message);
-    res.status(500).json({ error: 'Failed to load founding members' });
-  }
-});
 
 // Admin: Tag a user as a founding member (manual designation)
-app.post('/api/admin/founding-members/:userId/tag', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const { userId } = req.params;
-    const { is_founding_member } = req.body;
 
-    const result = await pool.query(
-      `UPDATE users SET is_founding_member = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, email, is_founding_member`,
-      [!!is_founding_member, userId]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-
-    res.json({ success: true, user: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/admin/founding-members/:userId/tag error:', err.message);
-    res.status(500).json({ error: 'Failed to update founding member status' });
-  }
-});
 
 async function trackReferral(email, referralCode, subscriptionId) {
   try {
@@ -15428,173 +13745,13 @@ function generatePromoCode() {
 }
 
 // Admin: Generate a new promo code (creator only)
-app.post('/api/admin/promo-codes/generate', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) {
-      return res.status(403).json({ error: 'Only the creator can generate promo codes' });
-    }
 
-    // Generate unique code
-    let code;
-    let attempts = 0;
-    while (attempts < 20) {
-      code = generatePromoCode();
-      const existing = await pool.query('SELECT id FROM promo_codes WHERE code = $1', [code]);
-      if (existing.rows.length === 0) break;
-      attempts++;
-    }
-
-    if (attempts >= 20) {
-      return res.status(500).json({ error: 'Failed to generate unique code' });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO promo_codes (code, created_by, status)
-       VALUES ($1, $2, 'active') RETURNING *`,
-      [code, req.userId]
-    );
-
-    res.json({
-      success: true,
-      promo_code: result.rows[0]
-    });
-  } catch (err) {
-    console.error('POST /api/admin/promo-codes/generate error:', err.message);
-    res.status(500).json({ error: 'Failed to generate promo code' });
-  }
-});
 
 // Admin: List all promo codes (creator only)
-app.get('/api/admin/promo-codes/list', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) {
-      return res.status(403).json({ error: 'Only the creator can view promo codes' });
-    }
 
-    const result = await pool.query(`
-      SELECT
-        pc.id,
-        pc.code,
-        pc.status,
-        pc.created_at,
-        pc.redeemed_at,
-        u.email as redeemed_by_email,
-        u.name as redeemed_by_name
-      FROM promo_codes pc
-      LEFT JOIN users u ON pc.redeemed_by = u.id
-      ORDER BY pc.created_at DESC
-    `);
-
-    const stats = await pool.query(`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'active') as active_count,
-        COUNT(*) FILTER (WHERE status = 'redeemed') as redeemed_count
-      FROM promo_codes
-    `);
-
-    res.json({
-      codes: result.rows,
-      stats: stats.rows[0]
-    });
-  } catch (err) {
-    console.error('GET /api/admin/promo-codes/list error:', err.message);
-    res.status(500).json({ error: 'Failed to list promo codes' });
-  }
-});
 
 // GET /api/admin/trial-stats — Trial system metrics for admin panel
-app.get('/api/admin/trial-stats', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) {
-      return res.status(403).json({ error: 'Creator access required' });
-    }
 
-    const result = await pool.query(`
-      SELECT
-        COUNT(*) FILTER (WHERE trial_used = true)                                               AS total_trials_started,
-        COUNT(*) FILTER (WHERE trial_used = true AND trial_expires_at > NOW())                  AS active_trials,
-        COUNT(*) FILTER (WHERE trial_used = true AND trial_expires_at <= NOW())                 AS expired_trials,
-        COUNT(*) FILTER (
-          WHERE trial_used = true
-            AND trial_expires_at <= NOW()
-            AND plan = 'paid'
-            AND paid_until IS NOT NULL
-            AND paid_until > NOW()
-        )                                                                                        AS converted_to_paid,
-        COUNT(*) FILTER (WHERE trial_used = true AND trial_plan_type = 'individual')            AS individual_trials,
-        COUNT(*) FILTER (WHERE trial_used = true AND trial_plan_type = 'family')             AS household_trials,
-        ROUND(
-          100.0 * COUNT(*) FILTER (
-            WHERE trial_used = true
-              AND trial_expires_at <= NOW()
-              AND plan = 'paid'
-              AND paid_until IS NOT NULL
-              AND paid_until > NOW()
-          ) / NULLIF(COUNT(*) FILTER (WHERE trial_used = true AND trial_expires_at <= NOW()), 0),
-          1
-        )                                                                                        AS conversion_rate_pct
-      FROM users
-    `);
-
-    // Trial duration stats (how many days into trial when they converted)
-    const conversionDaysResult = await pool.query(`
-      SELECT
-        ROUND(AVG(
-          EXTRACT(EPOCH FROM (
-            s.started_at - u.trial_started_at
-          )) / 86400
-        ), 1) AS avg_days_to_convert
-      FROM users u
-      JOIN subscriptions s ON s.user_id = u.id AND s.status = 'completed'
-      WHERE u.trial_used = true
-        AND u.trial_started_at IS NOT NULL
-        AND s.started_at >= u.trial_started_at
-        AND s.started_at <= u.trial_expires_at
-      LIMIT 1
-    `);
-
-    // Active trials list with expiry info
-    const activeTrialsResult = await pool.query(`
-      SELECT
-        u.id,
-        u.email,
-        u.trial_started_at,
-        u.trial_expires_at,
-        u.trial_plan_type,
-        CEIL(EXTRACT(EPOCH FROM (u.trial_expires_at - NOW())) / 86400) AS days_remaining
-      FROM users u
-      WHERE u.trial_used = true
-        AND u.trial_expires_at > NOW()
-        AND u.is_creator = false
-        AND NOT (u.plan = 'paid' AND u.paid_until IS NOT NULL AND u.paid_until > NOW())
-      ORDER BY u.trial_expires_at ASC
-      LIMIT 50
-    `);
-
-    const stats = result.rows[0];
-    const conversionStats = conversionDaysResult.rows[0];
-
-    res.json({
-      summary: {
-        total_trials_started: parseInt(stats.total_trials_started) || 0,
-        active_trials: parseInt(stats.active_trials) || 0,
-        expired_trials: parseInt(stats.expired_trials) || 0,
-        converted_to_paid: parseInt(stats.converted_to_paid) || 0,
-        individual_trials: parseInt(stats.individual_trials) || 0,
-        household_trials: parseInt(stats.household_trials) || 0,
-        conversion_rate_pct: parseFloat(stats.conversion_rate_pct) || 0,
-        avg_days_to_convert: parseFloat(conversionStats.avg_days_to_convert) || null
-      },
-      active_trials: activeTrialsResult.rows
-    });
-  } catch (err) {
-    console.error('GET /api/admin/trial-stats error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch trial stats' });
-  }
-});
 
 // Public: Redeem a promo code
 app.post('/api/promo-codes/redeem', requireAuth, async (req, res) => {
@@ -17695,17 +15852,7 @@ if (process.env.IN_PROCESS_CRONS_ENABLED === 'true') {
 }
 
 // POST /api/admin/trigger-trial-expiry — Manual trigger for trial expiry job (admin only)
-app.post('/api/admin/trigger-trial-expiry', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
-    console.log('[TrialExpiry] Manual trigger by admin');
-    runTrialExpiryJob(pool).catch(err => console.error('[TrialExpiry] Manual job error:', err.message));
-    res.json({ success: true, message: 'Trial expiry job triggered' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+
 
 // Initialize affiliate jobs scheduler (runs daily at 6 AM UTC)
 // Handles: grace period monitoring, dunning emails, Day-21 forfeiture + downline compression,
@@ -17911,977 +16058,76 @@ try {
 // ─── Vault health endpoint ────────────────────────────────────────────────────
 // GET /api/vault/health — module health including last cycle status
 
-app.get('/api/vault/health', async (req, res) => {
-  try {
-    await pool.query('SELECT 1');
+// [Phase4] vault health → routes/vault.js
 
-    // Pull latest cycle run from DB for accurate data
-    const { rows: [latestRun] } = await pool.query(`
-      SELECT
-        cycle_date,
-        deals_checked,
-        alerts_generated,
-        auto_revokes_triggered,
-        locked_open_activations,
-        status,
-        completed_at,
-        started_at
-      FROM lens_cycle_runs
-      ORDER BY cycle_date DESC
-      LIMIT 1
-    `).catch(() => ({ rows: [] }));
 
-    res.json({
-      status: 'healthy',
-      module: 'tdagsis_vault_services',
-      lastCycleRun:              latestRun?.completed_at || sovereignLensLastCycle.lastRun || null,
-      lastCycleDealsChecked:     latestRun?.deals_checked ?? sovereignLensLastCycle.lastDealsChecked,
-      lastCycleAlertsGenerated:  latestRun?.alerts_generated ?? sovereignLensLastCycle.lastAlertsGenerated,
-      lastCycleStatus:           latestRun?.status || 'never_run',
-      lastCycleDate:             latestRun?.cycle_date || null,
-    });
-  } catch (err) {
-    res.status(503).json({ status: 'unhealthy', error: err.message });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─── Manual trigger endpoint ──────────────────────────────────────────────────
 // POST /api/vault/admin/trigger-nightly-cycle — trigger cycle immediately (admin only)
 
-app.post('/api/vault/admin/trigger-nightly-cycle', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Admin access required' });
 
-    console.log('[SovereignLens] Manual cycle trigger by admin:', req.userId);
-
-    // Fire-and-forget in background — returns immediately
-    runSovereignLensNightlyCycle(pool)
-      .then(summary => {
-        sovereignLensLastCycle = {
-          lastRun:             new Date().toISOString(),
-          lastDealsChecked:    summary.dealsChecked,
-          lastAlertsGenerated: summary.alertsGenerated,
-        };
-        console.log('[SovereignLens] Manual cycle complete:', summary);
-      })
-      .catch(err => {
-        console.error('[SovereignLens] Manual cycle error:', err.message);
-      });
-
-    res.json({
-      success: true,
-      message: 'Sovereign Lens nightly cycle triggered. Check /api/vault/health for results.',
-      triggeredAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.error('POST /api/vault/admin/trigger-nightly-cycle error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // ─── Admin cycle history endpoint ────────────────────────────────────────────
 // GET /api/vault/admin/cycle-history — last 30 days of nightly cycle runs (admin only)
 
-app.get('/api/vault/admin/cycle-history', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Admin access required' });
 
-    const { rows: runs } = await pool.query(`
-      SELECT
-        id,
-        cycle_date,
-        deals_checked,
-        alerts_generated,
-        auto_revokes_triggered,
-        locked_open_activations,
-        locked_open_deactivations,
-        status,
-        error_message,
-        started_at,
-        completed_at,
-        EXTRACT(EPOCH FROM (completed_at - started_at))::int AS duration_secs
-      FROM lens_cycle_runs
-      WHERE cycle_date >= CURRENT_DATE - INTERVAL '30 days'
-      ORDER BY cycle_date DESC
-    `);
-
-    // Also get total active deals count
-    const { rows: [dealStats] } = await pool.query(`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'active')    AS active_deals,
-        COUNT(*) FILTER (WHERE status = 'completed') AS completed_deals,
-        COUNT(*)                                      AS total_deals
-      FROM lending_deals
-    `).catch(() => ({ rows: [{ active_deals: 0, completed_deals: 0, total_deals: 0 }] }));
-
-    // Unread alert count
-    const { rows: [alertStats] } = await pool.query(`
-      SELECT
-        COUNT(*) FILTER (WHERE NOT acknowledged)              AS unacknowledged_alerts,
-        COUNT(*) FILTER (WHERE severity = 'critical' AND NOT acknowledged) AS critical_unack,
-        COUNT(*)                                               AS total_alerts
-      FROM asset_shield_alerts
-      WHERE created_at >= NOW() - INTERVAL '30 days'
-    `).catch(() => ({ rows: [{ unacknowledged_alerts: 0, critical_unack: 0, total_alerts: 0 }] }));
-
-    res.json({
-      success: true,
-      dealStats,
-      alertStats,
-      cycleRuns: runs,
-      generatedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.error('GET /api/vault/admin/cycle-history error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // ─── Admin/Test endpoints ──────────────────────────────────
 
 // Manual trigger for inactivity job (creator/admin only, for testing)
-app.post('/api/admin/trigger-inactivity-job', async (req, res) => {
-  try {
-    // Verify creator email (uses centralized CREATOR_EMAIL constant)
-    const { adminEmail } = req.body;
 
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    if (!scheduler) {
-      return res.status(500).json({ error: 'Scheduler not initialized' });
-    }
-
-    console.log('[API] Manual inactivity job triggered by admin');
-    res.json({ success: true, message: 'Inactivity job started in background' });
-
-    // Run asynchronously without blocking response
-    scheduler.runNow().catch(err => {
-      console.error('[API] Inactivity job error:', err);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-inactivity-job error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger job' });
-  }
-});
 
 // Manual trigger for price change notifier (creator/admin only)
-app.post('/api/admin/trigger-price-notifier', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    if (!priceScheduler) {
-      return res.status(500).json({ error: 'Price notifier scheduler not initialized' });
-    }
-    console.log('[API] Manual price notifier job triggered by admin');
-    res.json({ success: true, message: 'Price change notifier started in background' });
-    priceScheduler.runNow().catch(err => {
-      console.error('[API] Price notifier job error:', err);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-price-notifier error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger price notifier' });
-  }
-});
+
 
 // Manual trigger for promo grace job (creator/admin only, for testing)
-app.post('/api/admin/trigger-promo-grace-job', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    if (!promoGraceScheduler) {
-      return res.status(500).json({ error: 'Promo grace scheduler not initialized' });
-    }
-    console.log('[API] Manual promo grace job triggered by admin');
-    res.json({ success: true, message: 'Promo grace job started in background' });
-    promoGraceScheduler.runNow().catch(err => {
-      console.error('[API] Promo grace job error:', err);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-promo-grace-job error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger promo grace job' });
-  }
-});
+
 
 // Manual trigger for affiliate jobs (creator/admin only, for testing)
 // Runs the full affiliate job suite: grace periods, dunning emails, forfeiture, commission approval.
-app.post('/api/admin/trigger-affiliate-jobs', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    if (!affiliateJobsScheduler) {
-      return res.status(500).json({ error: 'Affiliate jobs scheduler not initialized' });
-    }
-    console.log('[API] Manual affiliate jobs triggered by admin');
-    res.json({ success: true, message: 'Affiliate jobs started in background' });
-    affiliateJobsScheduler.runNow().catch(err => {
-      console.error('[API] Affiliate jobs error:', err);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-affiliate-jobs error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger affiliate jobs' });
-  }
-});
+
 
 // Manual trigger: heartbeat compliance check (8th-of-month job, creator/admin only)
-app.post('/api/admin/trigger-heartbeat-compliance', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    if (!heartbeatComplianceScheduler) {
-      return res.status(500).json({ error: 'Heartbeat compliance scheduler not initialized' });
-    }
-    console.log('[API] Manual heartbeat compliance check triggered by admin');
-    res.json({ success: true, message: 'Heartbeat compliance check started in background' });
-    heartbeatComplianceScheduler.runComplianceCheck().catch(err => {
-      console.error('[API] Heartbeat compliance check error:', err);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-heartbeat-compliance error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger heartbeat compliance' });
-  }
-});
+
 
 // Manual trigger: Day 5 squad health report + family alerts (creator/admin only)
 // Manual trigger: heartbeat Day 1 reminders (admin only)
-app.post('/api/admin/trigger-heartbeat-day1', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    if (!heartbeatComplianceScheduler) {
-      return res.status(500).json({ error: 'Scheduler not initialized' });
-    }
-    console.log('[API] Manual heartbeat Day 1 reminders triggered by admin');
-    res.json({ success: true, message: 'Day 1 heartbeat reminders started in background' });
-    heartbeatComplianceScheduler.runDay1().catch(err => {
-      console.error('[API] Day 1 reminders error:', err);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-heartbeat-day1 error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger Day 1 reminders' });
-  }
-});
+
 
 // Manual trigger: heartbeat Day 60/90 cliff warnings (admin only)
-app.post('/api/admin/trigger-heartbeat-cliff-warnings', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    if (!heartbeatComplianceScheduler) {
-      return res.status(500).json({ error: 'Scheduler not initialized' });
-    }
-    console.log('[API] Manual heartbeat cliff warnings triggered by admin');
-    res.json({ success: true, message: 'Day 60/90 cliff warning job started in background' });
-    heartbeatComplianceScheduler.runCliffWarnings().catch(err => {
-      console.error('[API] Cliff warnings error:', err);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-heartbeat-cliff-warnings error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger cliff warnings' });
-  }
-});
 
-app.post('/api/admin/trigger-heartbeat-day5', async (req, res) => {
-  try {
-    const { adminEmail } = req.body;
-    if (!requestIsAdmin(req)) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    if (!heartbeatComplianceScheduler) {
-      return res.status(500).json({ error: 'Heartbeat compliance scheduler not initialized' });
-    }
-    console.log('[API] Manual Day 5 squad health + family alerts triggered by admin');
-    res.json({ success: true, message: 'Day 5 squad health report started in background' });
-    heartbeatComplianceScheduler.runDay5().catch(err => {
-      console.error('[API] Day 5 job error:', err);
-    });
-  } catch (err) {
-    console.error('POST /api/admin/trigger-heartbeat-day5 error:', err.message);
-    res.status(500).json({ error: 'Failed to trigger Day 5 job' });
-  }
-});
 
-// ═══════════════════════════════════════════════════════════
-// ─── ADMIN AFFILIATE TREE BUILDER ─────────────────────────
-// ═══════════════════════════════════════════════════════════
 
-// Helper: check creator access (reuses isCreator from above)
-async function requireCreator(req, res) {
-  const creatorCheck = await isCreator(req.userId);
-  if (!creatorCheck) {
-    res.status(403).json({ error: 'Admin access required', users: [], success: false });
-    return false;
-  }
-  return true;
-}
-
-async function requireAdminOrCreator(req, res) {
-  try {
-    const { userCanOpenAdmin } = require('./config/adminAccess');
-    if (await userCanOpenAdmin(pool, req.userId)) return true;
-  } catch (err) {
-    console.warn('admin check failed:', err.message);
-  }
-  return requireCreator(req, res);
-}
-
-// GET /api/admin/affiliate-tree — Full affiliate referral tree
-app.get('/api/admin/affiliate-tree', requireAuth, async (req, res) => {
-  let client;
-  try {
-    if (!(await requireAdminOrCreator(req, res))) return;
-    if (!pool) return res.status(500).json({ success: false, users: [], error: 'Database unavailable' });
-    client = await pool.connect();
-    await client.query("SET statement_timeout = '5000'");
-
-    // Get all users with affiliate info (including new tree placement fields)
-    const usersResult = await client.query(`
-      SELECT u.id, u.name, u.email, u.referred_by_user_id, u.plan, u.paid_until,
-             u.is_creator, u.promo_code_used, u.created_at,
-             a.id as affiliate_id, a.referral_code, a.status as affiliate_status,
-             a.pending_balance_cents, a.approved_balance_cents, a.lifetime_earnings_cents,
-             a.affiliate_level, a.parent_affiliate_id, a.placement_method,
-             (u.email LIKE '%@test-affiliate.facts%') as is_test_user
-      FROM users u
-      LEFT JOIN affiliates a ON a.user_id = u.id
-      ORDER BY u.created_at ASC
-    `);
-
-    // Get referral counts per user (how many direct referrals)
-    const referralCounts = await client.query(`
-      SELECT referred_by_user_id, COUNT(*) as referral_count
-      FROM users
-      WHERE referred_by_user_id IS NOT NULL
-      GROUP BY referred_by_user_id
-    `);
-
-    const countMap = {};
-    referralCounts.rows.forEach(r => {
-      countMap[r.referred_by_user_id] = parseInt(r.referral_count);
-    });
-
-    // Build user list with referral counts
-    const users = (usersResult.rows || []).map(u => ({
-      id: u.id,
-      name: u.name || (u.email ? String(u.email).split('@')[0] : 'User'),
-      email: u.email || '',
-      referred_by_user_id: u.referred_by_user_id,
-      plan: u.plan,
-      is_creator: u.is_creator,
-      is_test_user: u.is_test_user,
-      created_at: u.created_at,
-      affiliate_id: u.affiliate_id,
-      referral_code: u.referral_code,
-      affiliate_status: u.affiliate_status,
-      pending_balance_cents: u.pending_balance_cents || 0,
-      approved_balance_cents: u.approved_balance_cents || 0,
-      lifetime_earnings_cents: u.lifetime_earnings_cents || 0,
-      direct_referrals: countMap[u.id] || 0,
-      // Tree placement fields
-      affiliate_level: u.affiliate_level || null,
-      parent_affiliate_id: u.parent_affiliate_id || null,
-      placement_method: u.placement_method || null
-    }));
-
-    res.json({ success: true, users });
-  } catch (err) {
-    console.error('GET /api/admin/affiliate-tree error:', err.message);
-    if (!res.headersSent) {
-      res.status(500).json({ success: false, users: [], error: 'Failed to load affiliate tree' });
-    }
-  } finally {
-    if (client) {
-      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be dead */ }
-      client.release();
-    }
-  }
-});
-
-// POST /api/admin/affiliate-tree/place — Place user under a parent in the tree
-app.post('/api/admin/affiliate-tree/place', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-
-    const { user_id, parent_user_id } = req.body;
-    if (!user_id || !parent_user_id) {
-      return res.status(400).json({ error: 'user_id and parent_user_id required' });
-    }
-    if (user_id === parent_user_id) {
-      return res.status(400).json({ error: 'Cannot place user under themselves' });
-    }
-
-    // Circular reference check: walk up from parent to make sure we don't hit user_id
-    let currentId = parent_user_id;
-    const visited = new Set();
-    while (currentId) {
-      if (currentId === user_id) {
-        return res.status(400).json({ error: 'Circular reference detected — parent is already a descendant of this user' });
-      }
-      if (visited.has(currentId)) break; // safety net
-      visited.add(currentId);
-      const parentResult = await pool.query('SELECT referred_by_user_id FROM users WHERE id = $1', [currentId]);
-      if (parentResult.rows.length === 0) break;
-      currentId = parentResult.rows[0].referred_by_user_id;
-    }
-
-    // Check if user currently has referrals underneath (subtree will move with them)
-    const subtreeCheck = await pool.query(
-      'SELECT COUNT(*) as count FROM users WHERE referred_by_user_id = $1', [user_id]
-    );
-    const subtreeCount = parseInt(subtreeCheck.rows[0].count);
-
-    // Perform placement: update commission tree pointer
-    await pool.query(
-      'UPDATE users SET referred_by_user_id = $1, updated_at = NOW() WHERE id = $2',
-      [parent_user_id, user_id]
-    );
-
-    // Step 1: Ensure the parent is an affiliate (auto-create if not)
-    const parentUserData = await pool.query('SELECT email FROM users WHERE id = $1', [parent_user_id]);
-    const parentAffExist = await pool.query('SELECT id FROM affiliates WHERE user_id = $1', [parent_user_id]);
-    if (parentAffExist.rows.length === 0 && parentUserData.rows.length > 0) {
-      const code = generateReferralCode(parentUserData.rows[0].email);
-      await pool.query(
-        `INSERT INTO affiliates (user_id, email, referral_code, status, affiliate_level, placement_method)
-         VALUES ($1, $2, $3, 'active', 1, 'seed')
-         ON CONFLICT DO NOTHING`,
-        [parent_user_id, parentUserData.rows[0].email.toLowerCase(), code]
-      );
-    }
-
-    // Step 2: Query affiliate records (after auto-create so they definitely exist)
-    const parentAffData = await pool.query(
-      'SELECT id, affiliate_level, referral_code FROM affiliates WHERE user_id = $1', [parent_user_id]
-    );
-    const userAffData = await pool.query('SELECT id FROM affiliates WHERE user_id = $1', [user_id]);
-
-    // Step 3: Update affiliates.parent_affiliate_id + affiliate_level
-    if (parentAffData.rows.length > 0 && userAffData.rows.length > 0) {
-      const newLevel = Math.min((parentAffData.rows[0].affiliate_level || 1) + 1, 5);
-      await pool.query(
-        `UPDATE affiliates SET parent_affiliate_id = $1, affiliate_level = $2,
-                               placement_method = 'code', updated_at = NOW()
-         WHERE id = $3`,
-        [parentAffData.rows[0].id, newLevel, userAffData.rows[0].id]
-      );
-    }
-
-    // Step 4: Create a referral record if one doesn't exist
-    const childUserData = await pool.query('SELECT email FROM users WHERE id = $1', [user_id]);
-    const existingReferral = await pool.query(
-      `SELECT r.id FROM referrals r
-       JOIN affiliates a ON a.id = r.affiliate_id
-       WHERE a.user_id = $1 AND r.referred_email = LOWER($2)`,
-      [parent_user_id, childUserData.rows[0]?.email || '']
-    );
-    if (existingReferral.rows.length === 0 && parentAffData.rows.length > 0 && childUserData.rows.length > 0) {
-      await pool.query(
-        `INSERT INTO referrals (affiliate_id, referred_email, referral_code, status)
-         VALUES ($1, $2, $3, 'converted')
-         ON CONFLICT DO NOTHING`,
-        [parentAffData.rows[0].id, childUserData.rows[0].email.toLowerCase(), parentAffData.rows[0].referral_code]
-      );
-    }
-
-    res.json({
-      success: true,
-      message: `User placed under parent. ${subtreeCount > 0 ? `${subtreeCount} descendant(s) moved with them.` : ''}`,
-      subtree_moved: subtreeCount
-    });
-  } catch (err) {
-    console.error('POST /api/admin/affiliate-tree/place error:', err.message);
-    res.status(500).json({ error: 'Failed to place user in tree' });
-  }
-});
-
-// POST /api/admin/affiliate-tree/create-test-user — Create test user quickly
-app.post('/api/admin/affiliate-tree/create-test-user', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-
-    const { name, email } = req.body;
-    if (!name || !email) {
-      return res.status(400).json({ error: 'name and email required' });
-    }
-
-    // Check if email already exists
-    const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-    if (existing.rows.length > 0) {
-      return res.status(409).json({ error: 'User with this email already exists' });
-    }
-
-    // Create test user with a hashed password
-    const bcrypt = require('bcryptjs');
-    const hashedPassword = await bcrypt.hash('TestUser123!', 10);
-
-    const result = await pool.query(
-      `INSERT INTO users (name, email, password_hash, plan, created_at, updated_at)
-       VALUES ($1, $2, $3, 'free', NOW(), NOW()) RETURNING id, name, email, plan, created_at`,
-      [name, email.toLowerCase(), hashedPassword]
-    );
-
-    res.json({ success: true, user: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/admin/affiliate-tree/create-test-user error:', err.message);
-    res.status(500).json({ error: 'Failed to create test user' });
-  }
-});
-
-// POST /api/admin/affiliate-tree/simulate-payment — Simulate subscription payment
-app.post('/api/admin/affiliate-tree/simulate-payment', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-
-    const { user_id, amount_cents, is_renewal } = req.body;
-    if (!user_id) return res.status(400).json({ error: 'user_id required' });
-
-    const paymentAmount = amount_cents || 1499; // Default $14.99 (Individual Pro)
-
-    // Get user
-    const userResult = await pool.query('SELECT id, email, referred_by_user_id FROM users WHERE id = $1', [user_id]);
-    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    const user = userResult.rows[0];
-
-    if (!user.referred_by_user_id) {
-      return res.status(400).json({ error: 'User has no referrer — place them in the tree first' });
-    }
-
-    // Make user Pro (simulate subscription)
-    await pool.query(
-      `UPDATE users SET plan = 'paid', paid_until = NOW() + INTERVAL '30 days', updated_at = NOW() WHERE id = $1`,
-      [user_id]
-    );
-
-    // Create a simulated subscription record
-    const subResult = await pool.query(
-      `INSERT INTO subscriptions (user_id, email, stripe_session_id, plan, amount_cents, status, started_at, created_at, updated_at)
-       VALUES ($1, $2, $3, 'monthly', $4, 'completed', NOW(), NOW(), NOW()) RETURNING id`,
-      [user_id, user.email, `sim_ses_${user_id}_${Date.now()}`, paymentAmount]
-    );
-    const subscriptionId = subResult.rows[0].id;
-
-    // Ensure referral record exists for commission processing
-    const parentAff = await pool.query('SELECT id, referral_code FROM affiliates WHERE user_id = $1', [user.referred_by_user_id]);
-    if (parentAff.rows.length > 0) {
-      const existRef = await pool.query(
-        'SELECT id FROM referrals WHERE affiliate_id = $1 AND referred_email = LOWER($2)',
-        [parentAff.rows[0].id, user.email]
-      );
-      if (existRef.rows.length === 0) {
-        await pool.query(
-          `INSERT INTO referrals (affiliate_id, referred_email, subscription_id, referral_code, status, converted_at)
-           VALUES ($1, $2, $3, $4, 'converted', NOW())`,
-          [parentAff.rows[0].id, user.email.toLowerCase(), subscriptionId, parentAff.rows[0].referral_code]
-        );
-      } else {
-        // Update existing referral with subscription id if missing
-        await pool.query(
-          `UPDATE referrals SET subscription_id = $1, status = 'converted', converted_at = COALESCE(converted_at, NOW()), updated_at = NOW()
-           WHERE id = $2 AND (subscription_id IS NULL)`,
-          [subscriptionId, existRef.rows[0].id]
-        );
-      }
-    }
-
-    // Process commissions through the tree
-    await processCommission(subscriptionId, !!is_renewal);
-
-    // Get commission breakdown for this payment
-    const commissions = await pool.query(`
-      SELECT c.level, c.type, c.amount_cents, c.percentage, c.status,
-             a.email as affiliate_email, u.name as affiliate_name
-      FROM commissions c
-      JOIN affiliates a ON a.id = c.affiliate_id
-      JOIN users u ON u.id = a.user_id
-      WHERE c.subscription_id = $1
-      ORDER BY c.level ASC
-    `, [subscriptionId]);
-
-    res.json({
-      success: true,
-      message: `Simulated ${is_renewal ? 'renewal' : 'initial'} payment of $${(paymentAmount / 100).toFixed(2)} for ${user.email}`,
-      subscription_id: subscriptionId,
-      commission_chain: commissions.rows.map(c => ({
-        level: c.level,
-        affiliate: c.affiliate_name || c.affiliate_email,
-        email: c.affiliate_email,
-        type: c.type,
-        amount: `$${(c.amount_cents / 100).toFixed(2)}`,
-        percentage: `${c.percentage}%`,
-        status: c.status
-      }))
-    });
-  } catch (err) {
-    console.error('POST /api/admin/affiliate-tree/simulate-payment error:', err.message);
-    res.status(500).json({ error: 'Failed to simulate payment' });
-  }
-});
-
-// GET /api/admin/affiliate-tree/commissions — View all commissions with breakdown
-app.get('/api/admin/affiliate-tree/commissions', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-
-    const { user_id } = req.query;
-
-    let whereClause = '';
-    let params = [];
-
-    if (user_id) {
-      whereClause = 'WHERE c.source_user_id = $1 OR a.user_id = $1';
-      params = [parseInt(user_id)];
-    }
-
-    const commissions = await pool.query(`
-      SELECT c.id, c.level, c.type, c.amount_cents, c.percentage, c.status, c.earned_at,
-             a.email as affiliate_email, a.user_id as affiliate_user_id,
-             u.name as affiliate_name,
-             su.email as source_email, su.name as source_name
-      FROM commissions c
-      JOIN affiliates a ON a.id = c.affiliate_id
-      JOIN users u ON u.id = a.user_id
-      LEFT JOIN users su ON su.id = c.source_user_id
-      ${whereClause}
-      ORDER BY c.earned_at DESC
-      LIMIT 200
-    `, params);
-
-    // Summary stats
-    const stats = await pool.query(`
-      SELECT
-        COUNT(*) as total_commissions,
-        SUM(amount_cents) FILTER (WHERE status = 'pending') as total_pending_cents,
-        SUM(amount_cents) FILTER (WHERE status = 'approved') as total_approved_cents,
-        SUM(amount_cents) FILTER (WHERE status = 'paid') as total_paid_cents,
-        SUM(amount_cents) as total_all_cents
-      FROM commissions
-    `);
-
-    res.json({
-      success: true,
-      commissions: commissions.rows,
-      stats: stats.rows[0]
-    });
-  } catch (err) {
-    console.error('GET /api/admin/affiliate-tree/commissions error:', err.message);
-    res.status(500).json({ error: 'Failed to load commissions' });
-  }
-});
-
-// DELETE /api/admin/affiliate-tree/reset-test-data — Remove test users and their data
-app.delete('/api/admin/affiliate-tree/reset-test-data', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Find test users (email pattern: *@test-affiliate.facts)
-      const testUsers = await client.query(
-        `SELECT id, email FROM users WHERE email LIKE '%@test-affiliate.facts'`
-      );
-
-      if (testUsers.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.json({ success: true, message: 'No test data to clean up', removed: 0 });
-      }
-
-      const testUserIds = testUsers.rows.map(u => u.id);
-      const testEmails = testUsers.rows.map(u => u.email.toLowerCase());
-
-      // Remove commissions tied to test users (as source or affiliate)
-      await client.query(
-        `DELETE FROM commissions WHERE source_user_id = ANY($1)
-         OR affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ANY($1))`,
-        [testUserIds]
-      );
-
-      // Remove referrals
-      await client.query(
-        `DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ANY($1))
-         OR referred_email = ANY($2)`,
-        [testUserIds, testEmails]
-      );
-
-      // Remove payouts
-      await client.query(
-        `DELETE FROM payouts WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ANY($1))`,
-        [testUserIds]
-      );
-
-      // Remove affiliates
-      await client.query(
-        `DELETE FROM affiliates WHERE user_id = ANY($1)`,
-        [testUserIds]
-      );
-
-      // Remove simulated subscriptions
-      await client.query(
-        `DELETE FROM subscriptions WHERE stripe_customer_id LIKE 'sim_cus_%' AND email = ANY($1)`,
-        [testEmails]
-      );
-
-      // Clear referred_by pointers TO test users
-      await client.query(
-        `UPDATE users SET referred_by_user_id = NULL WHERE referred_by_user_id = ANY($1)`,
-        [testUserIds]
-      );
-
-      // Remove test users
-      await client.query(
-        `DELETE FROM users WHERE id = ANY($1)`,
-        [testUserIds]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        message: `Removed ${testUsers.rows.length} test user(s) and all associated data`,
-        removed: testUsers.rows.length,
-        emails: testEmails
-      });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('DELETE /api/admin/affiliate-tree/reset-test-data error:', err.message);
-    res.status(500).json({ error: 'Failed to reset test data' });
-  }
-});
-
-// POST /api/admin/affiliate-tree/detach — Remove user from tree (set referred_by to null)
-app.post('/api/admin/affiliate-tree/detach', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-
-    const { user_id } = req.body;
-    if (!user_id) return res.status(400).json({ error: 'user_id required' });
-
-    await pool.query(
-      'UPDATE users SET referred_by_user_id = NULL, updated_at = NOW() WHERE id = $1',
-      [user_id]
-    );
-
-    res.json({ success: true, message: 'User detached from tree' });
-  } catch (err) {
-    console.error('POST /api/admin/affiliate-tree/detach error:', err.message);
-    res.status(500).json({ error: 'Failed to detach user' });
-  }
-});
-
-// ── 2FA ROUTES ────────────────────────────────────────────────────────────────
-
-// GET /api/auth/2fa/status — Return 2FA enabled state for current user
-app.get('/api/auth/2fa/status', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT two_factor_enabled FROM users WHERE id = $1', [req.userId]);
-    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
-    res.json({ success: true, enabled: result.rows[0].two_factor_enabled });
-  } catch (err) {
-    console.error('GET /api/auth/2fa/status error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch 2FA status' });
-  }
-});
-
-// POST /api/auth/2fa/enable — Enable 2FA (requires password confirmation)
-app.post('/api/auth/2fa/enable', requireAuth, async (req, res) => {
-  try {
-    const { password } = req.body;
-    if (!password) return res.status(400).json({ error: 'Password required to enable 2FA' });
-
-    const result = await pool.query('SELECT password_hash, email FROM users WHERE id = $1', [req.userId]);
-    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
-
-    const { password_hash, email } = result.rows[0];
-    if (!password_hash) return res.status(400).json({ error: 'No password set on this account' });
-
-    const match = await bcrypt.compare(password, password_hash);
-    if (!match) return res.status(401).json({ error: 'Incorrect password' });
-
-    await pool.query('UPDATE users SET two_factor_enabled = TRUE, updated_at = NOW() WHERE id = $1', [req.userId]);
-    res.json({ success: true, message: 'Two-factor authentication enabled. Verification codes will be sent to ' + maskEmail(email) + ' on each login.' });
-  } catch (err) {
-    console.error('POST /api/auth/2fa/enable error:', err.message);
-    res.status(500).json({ error: 'Failed to enable 2FA' });
-  }
-});
-
-// POST /api/auth/2fa/disable — Disable 2FA (requires current 2FA code or password)
-app.post('/api/auth/2fa/disable', requireAuth, async (req, res) => {
-  try {
-    const { password } = req.body;
-    if (!password) return res.status(400).json({ error: 'Password required to disable 2FA' });
-
-    const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.userId]);
-    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
-
-    const match = await bcrypt.compare(password, result.rows[0].password_hash);
-    if (!match) return res.status(401).json({ error: 'Incorrect password' });
-
-    await pool.query('UPDATE users SET two_factor_enabled = FALSE, updated_at = NOW() WHERE id = $1', [req.userId]);
-    // Revoke all trust tokens for this user
-    await pool.query('DELETE FROM device_trust_tokens WHERE user_id = $1', [req.userId]);
-    res.json({ success: true, message: 'Two-factor authentication disabled.' });
-  } catch (err) {
-    console.error('POST /api/auth/2fa/disable error:', err.message);
-    res.status(500).json({ error: 'Failed to disable 2FA' });
-  }
-});
-
-// POST /api/auth/2fa/send-code — Resend verification code (during pending 2FA login)
-app.post('/api/auth/2fa/send-code', async (req, res) => {
-  try {
-    const userId = req.session && req.session.pending2faUserId;
-    const method2fa = (req.session && req.session.pending2faMethod) || 'email';
-    const phone2fa = req.session && req.session.pending2faPhone;
-
-    if (!userId) return res.status(401).json({ error: 'No pending 2FA session. Please log in again.' });
-
-    if (method2fa === 'sms' && phone2fa) {
-      const smsResult = await sendVerification(phone2fa);
-      if (!smsResult.success && !smsResult.stub) {
-        return res.status(500).json({ error: smsResult.error || 'Failed to send SMS code.' });
-      }
-    } else {
-      await send2faCode(userId);
-    }
-
-    res.json({ success: true, message: 'Verification code sent.' });
-  } catch (err) {
-    if (err.code === 'RATE_LIMIT') {
-      return res.status(429).json({ error: 'Too many code requests. Please wait before requesting a new code.' });
-    }
-    console.error('POST /api/auth/2fa/send-code error:', err.message);
-    res.status(500).json({ error: 'Failed to send code' });
-  }
-});
-
-// POST /api/auth/2fa/verify — Verify 6-digit code and complete login
-app.post('/api/auth/2fa/verify', async (req, res) => {
-  try {
-    const { code, remember_device } = req.body;
-    const userId = req.session && req.session.pending2faUserId;
-    const userEmail = req.session && req.session.pending2faEmail;
-    const method2fa = (req.session && req.session.pending2faMethod) || 'email';
-    const phone2fa = req.session && req.session.pending2faPhone;
-
-    if (!userId) return res.status(401).json({ error: 'No pending 2FA session. Please log in again.' });
-    if (!code || !/^\d{6}$/.test(code.toString().trim())) {
-      return res.status(400).json({ error: 'Please enter a valid 6-digit code.' });
-    }
-
-    const cleanCode = code.toString().trim();
-
-    // ── SMS path via Twilio Verify ─────────────────────────────────────────
-    if (method2fa === 'sms' && phone2fa) {
-      const smsCheck = await checkVerification(phone2fa, cleanCode);
-      if (!smsCheck.success) {
-        return res.status(401).json({ error: smsCheck.error || 'Incorrect verification code.' });
-      }
-
-      const userResult = await pool.query(
-        'SELECT id, email, name, password_hash, plan, paid_until, is_creator, promo_code_used, promo_grace_expired FROM users WHERE id = $1',
-        [userId]
-      );
-      if (!userResult.rows.length) return res.status(404).json({ error: 'User not found' });
-
-      if (remember_device) {
-        const trustToken = crypto.randomBytes(40).toString('hex');
-        const trustExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        await pool.query(
-          `INSERT INTO device_trust_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)`,
-          [userId, trustToken, trustExpiry]
-        );
-        res.cookie('facts_trust', trustToken, {
-          httpOnly: true, secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000, path: '/'
-        });
-      }
-
-      return await completeLogin(req, res, userResult.rows[0]);
-    }
-
-    // ── Email path via two_factor_codes table ──────────────────────────────
-
-    // Get the latest valid (unused, unexpired) code for this user
-    const codeResult = await pool.query(
-      `SELECT id, code, attempts FROM two_factor_codes
-       WHERE user_id = $1 AND used = FALSE AND expires_at > NOW()
-       ORDER BY created_at DESC LIMIT 1`,
-      [userId]
-    );
-
-    if (!codeResult.rows.length) {
-      return res.status(400).json({ error: 'Code expired or not found. Please request a new code.' });
-    }
-
-    const record = codeResult.rows[0];
-
-    // Max 5 attempts
-    if (record.attempts >= 5) {
-      await pool.query('UPDATE two_factor_codes SET used = TRUE WHERE id = $1', [record.id]);
-      return res.status(429).json({ error: 'Too many failed attempts. Please request a new code.' });
-    }
-
-    if (record.code !== cleanCode) {
-      await pool.query('UPDATE two_factor_codes SET attempts = attempts + 1 WHERE id = $1', [record.id]);
-      const remaining = 4 - record.attempts;
-      return res.status(401).json({ error: `Incorrect code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.` });
-    }
-
-    // Code matches — mark as used
-    await pool.query('UPDATE two_factor_codes SET used = TRUE WHERE id = $1', [record.id]);
-
-    // "Remember this device" — 30-day trust token stored in HttpOnly cookie
-    if (remember_device) {
-      const trustToken = crypto.randomBytes(40).toString('hex');
-      const trustExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      await pool.query(
-        `INSERT INTO device_trust_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)`,
-        [userId, trustToken, trustExpiry]
-      );
-      res.cookie('facts_trust', trustToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        path: '/'
-      });
-    }
-
-    // Fetch full user object to complete login
-    const userResult = await pool.query(
-      'SELECT id, email, name, password_hash, plan, paid_until, is_creator, promo_code_used, promo_grace_expired FROM users WHERE id = $1',
-      [userId]
-    );
-    if (!userResult.rows.length) return res.status(404).json({ error: 'User not found' });
-
-    await completeLogin(req, res, userResult.rows[0]);
-  } catch (err) {
-    console.error('POST /api/auth/2fa/verify error:', err.message);
-    res.status(500).json({ error: 'Verification failed' });
-  }
-});
 
 // ── VERIFICATION METHOD SETTINGS ──────────────────────────────────────────
 
@@ -19349,217 +16595,217 @@ async function ensureFgBalance(userId) {
   );
 }
 
-// GET /future-generations — Info landing page
-app.get('/future-generations', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'future-generations.html'));
-});
+// [Phase5] FG points routes → routes/gamification.js
 
-// GET /future-generations/dashboard — Points dashboard
-app.get('/future-generations/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'future-generations-dashboard.html'));
-});
 
-// GET /sovereign-dashboard — Sovereign Command Center (affiliate 4x5 map, wallets, compliance)
-app.get('/sovereign-dashboard', optionalAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sovereign-dashboard.html'));
-});
 
-// GET /future-generations/sovereign — alias
-app.get('/future-generations/sovereign', optionalAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sovereign-dashboard.html'));
-});
 
-// GET /api/future-generations/status — Auth + Pro status for the current user
-app.get('/api/future-generations/status', optionalAuth, async (req, res) => {
-  try {
-    if (!req.userId) {
-      return res.json({ authenticated: false, has_access: false, is_affiliate: false });
-    }
-    const hasPro = await hasProAccess(req.userId);
-    // Check affiliate enrollment
-    let isAffiliate = false;
-    try {
-      const affRes = await pool.query(
-        "SELECT id FROM affiliates WHERE user_id = $1 AND status != 'revoked'",
-        [req.userId]
-      );
-      isAffiliate = affRes.rows.length > 0;
-    } catch (e) { /* non-fatal */ }
-    return res.json({ authenticated: true, has_access: hasPro, is_affiliate: isAffiliate });
-  } catch (err) {
-    console.error('[FutureGen] /status error:', err.message);
-    res.status(500).json({ success: false, error: 'Server error' });
-  }
-});
 
-// GET /api/future-generations/points — Points summary (all authenticated users; cashout requires Pro)
-app.get('/api/future-generations/points', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    await ensureFgBalance(req.userId);
-    const result = await pool.query(
-      'SELECT balance, total_earned, total_redeemed, last_daily_points_date, updated_at FROM fg_points_balances WHERE user_id = $1',
-      [req.userId]
-    );
-    const row = result.rows[0] || { balance: 0, total_earned: 0, total_redeemed: 0 };
-    const today = new Date().toISOString().split('T')[0];
-    const earnedTodayAlready = row.last_daily_points_date
-      ? row.last_daily_points_date.toISOString().split('T')[0] === today
-      : false;
-    res.json({
-      success: true,
-      balance: parseInt(row.balance),
-      total_earned: parseInt(row.total_earned),
-      total_redeemed: parseInt(row.total_redeemed),
-      can_cashout: hasPro,           // Free users can earn but not cash out
-      earned_today: earnedTodayAlready
-    });
-  } catch (err) {
-    console.error('[FutureGen] /points error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch points' });
-  }
-});
 
-// GET /api/future-generations/earnings — Earning history (all authenticated users)
-app.get('/api/future-generations/earnings', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, activity_type, description, points, created_at
-       FROM fg_earning_events
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 100`,
-      [req.userId]
-    );
-    res.json({ success: true, events: result.rows });
-  } catch (err) {
-    console.error('[FutureGen] /earnings error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch earning history' });
-  }
-});
 
-// GET /api/future-generations/redemptions — Redemption history (all authenticated users)
-app.get('/api/future-generations/redemptions', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, item_name, points_spent, external_ref, status, created_at
-       FROM fg_redemption_events
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 100`,
-      [req.userId]
-    );
-    res.json({ success: true, events: result.rows });
-  } catch (err) {
-    console.error('[FutureGen] /redemptions error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch redemption history' });
-  }
-});
 
-// POST /api/future-generations/cashout — Pro users cash out points to bank ($1/point)
-const FG_CASHOUT_MINIMUM_POINTS = 10; // minimum 10 points ($10) per cashout
 
-app.post('/api/future-generations/cashout', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
 
-    // Must be Pro to cash out
-    const hasPro = await hasProAccess(userId);
-    if (!hasPro) {
-      return res.status(403).json({
-        success: false,
-        error: 'Cashout requires a Pro subscription. Free accounts can earn and view points but cannot cash out.',
-        code: 'PRO_REQUIRED'
-      });
-    }
 
-    await ensureFgBalance(userId);
-    const balanceResult = await pool.query(
-      'SELECT balance FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    );
-    const balance = balanceResult.rows[0] ? parseInt(balanceResult.rows[0].balance) : 0;
 
-    if (balance < FG_CASHOUT_MINIMUM_POINTS) {
-      return res.status(400).json({
-        success: false,
-        error: `Minimum cashout is ${FG_CASHOUT_MINIMUM_POINTS} points ($${FG_CASHOUT_MINIMUM_POINTS}). You have ${balance} point${balance === 1 ? '' : 's'}.`
-      });
-    }
 
-    const { points } = req.body;
-    const pointsToCash = points ? Math.min(parseInt(points), balance) : balance;
 
-    if (!pointsToCash || pointsToCash < FG_CASHOUT_MINIMUM_POINTS) {
-      return res.status(400).json({
-        success: false,
-        error: `Must cash out at least ${FG_CASHOUT_MINIMUM_POINTS} points.`
-      });
-    }
 
-    const amountCents = pointsToCash * 100; // 1 point = $1 = 100 cents
 
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
 
-      // Deduct points
-      await client.query(
-        `UPDATE fg_points_balances
-         SET balance = balance - $2, total_redeemed = total_redeemed + $2, updated_at = NOW()
-         WHERE user_id = $1`,
-        [userId, pointsToCash]
-      );
 
-      // Record redemption event
-      await client.query(
-        `INSERT INTO fg_redemption_events (user_id, item_name, points_spent, status)
-         VALUES ($1, 'Bank Cashout', $2, 'pending')`,
-        [userId, pointsToCash]
-      );
 
-      // Create cashout request
-      const cashoutResult = await client.query(
-        `INSERT INTO fg_cashouts (user_id, points_cashed_out, amount_cents, status)
-         VALUES ($1, $2, $3, 'pending')
-         RETURNING *`,
-        [userId, pointsToCash, amountCents]
-      );
 
-      await client.query('COMMIT');
 
-      res.json({
-        success: true,
-        message: `Cashout of ${pointsToCash} point${pointsToCash === 1 ? '' : 's'} ($${(amountCents / 100).toFixed(2)}) requested. Processing typically takes 3–5 business days.`,
-        cashout: cashoutResult.rows[0]
-      });
-    } catch (txErr) {
-      await client.query('ROLLBACK');
-      throw txErr;
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    console.error('[FutureGen] /cashout error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to process cashout' });
-  }
-});
 
-// GET /api/future-generations/cashouts — Cashout history for current user
-app.get('/api/future-generations/cashouts', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, points_cashed_out, amount_cents, status, requested_at, processed_at
-       FROM fg_cashouts WHERE user_id = $1
-       ORDER BY requested_at DESC LIMIT 50`,
-      [req.userId]
-    );
-    res.json({ success: true, cashouts: result.rows });
-  } catch (err) {
-    console.error('[FutureGen] /cashouts error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch cashout history' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DUPLICATE DETECTION
@@ -21622,504 +18868,504 @@ async function tfrAwardXp(userId, source, description, baseXp, client) {
   return { xp: newXp, level: newLevel, xp_earned: earned, multiplier, leveled_up: leveledUp, phase_up: phaseUp, new_rank: TFR_RANKS.find(r => r.level === newLevel) };
 }
 
-// GET /sovereign - Sovereign: The TFR Protocol (primary route)
-app.get('/sovereign', optionalAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'command-console.html'));
-});
+// [Phase5] TFR routes → routes/gamification.js
 
-// GET /command-console → redirect to /sovereign (backward compat)
-app.get('/command-console', (req, res) => {
-  res.redirect(301, '/sovereign');
-});
 
-// GET /api/tfr/status
-app.get('/api/tfr/status', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const stats = await tfrEnsureStats(userId, pool);
-    const level = tfrCalcLevel(stats.xp);
-    const rank = TFR_RANKS.find(r => r.level === level) || TFR_RANKS[0];
-    const nextRank = TFR_RANKS.find(r => r.level === level + 1);
-    const phase = rank.phase;
-    const theme = TFR_PHASE_THEMES[phase];
-    const xpToNext = tfrXpToNext(stats.xp, level);
-    const xpProgress = nextRank
-      ? Math.round(((stats.xp - rank.xp_required) / (nextRank.xp_required - rank.xp_required)) * 100)
-      : 100;
-    const streakMultiplier = (stats.streak_days || 0) >= 3 ? 1.5 : 1.0;
-    const firstBloodDeadline = stats.first_blood_deadline;
-    const hoursLeft = firstBloodDeadline && !stats.first_blood_done
-      ? Math.max(0, Math.round((new Date(firstBloodDeadline) - Date.now()) / (1000 * 60 * 60)))
-      : null;
-    const xpEvents = (await pool.query(
-      'SELECT * FROM tfr_xp_events WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10', [userId]
-    )).rows;
-    const achievements = (await pool.query(
-      'SELECT achievement_key, earned_at FROM tfr_achievements WHERE user_id = $1', [userId]
-    )).rows;
-    const isPro = await hasProAccess(userId);
-    const productTier = await getUserProductTier(userId);
-    const isElite = await hasEliteAccess(userId);
-    const isBusiness = await hasBusinessAccess(userId);
-    const isSovereign = await hasSovereignAccess(userId);
-    const creditGate = await checkCreditGate(userId);
 
-    // Fetch TFR Reward Points (Aura Restored loyalty points)
-    await ensureFgBalance(userId);
-    const fgRow = (await pool.query(
-      'SELECT balance, total_earned, total_redeemed FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0] || { balance: 0, total_earned: 0, total_redeemed: 0 };
 
-    // Determine which tier band the current level belongs to
-    const tierBands = {
-      free:     [1,2,3],
-      pro:      [4,5,6],
-      business: [7,8,9],
-      elite:    [10,11,12],
-      sovereign: [],
-    };
-    const currentLevelTierBand = level <= 3 ? 'free' : level <= 6 ? 'pro' : level <= 9 ? 'business' : 'elite';
-    const isLevelAccessible = (
-      (level <= 3) ||
-      (level <= 6 && isPro) ||
-      (level <= 9 && isBusiness) ||
-      (level <= 12 && isElite)
-    );
 
-    res.json({
-      success: true,
-      is_pro: isPro,
-      product_tier: productTier,
-      tier_access: {
-        free:     true,
-        pro:      isPro,
-        business: isBusiness,
-        elite:    isElite,
-        sovereign: isSovereign,
-        current_tier: productTier,
-        current_level_band: currentLevelTierBand,
-        level_accessible: isLevelAccessible,
-      },
-      credit_gate: creditGate,
-      stats: {
-        xp: stats.xp, level, streak_days: stats.streak_days || 0,
-        longest_streak: stats.longest_streak || 0, prestige: stats.prestige || false,
-        first_blood_done: stats.first_blood_done || false,
-        first_blood_deadline: firstBloodDeadline, first_blood_hours_left: hoursLeft,
-      },
-      rank: {
-        level, name: rank.name, phase, phase_name: TFR_PHASE_NAMES[phase], theme,
-        xp_progress: xpProgress, xp_to_next: xpToNext,
-        current_xp_threshold: rank.xp_required,
-        next_xp_threshold: nextRank ? nextRank.xp_required : null,
-        next_rank_name: nextRank ? nextRank.name : 'MAX RANK',
-      },
-      streak: { days: stats.streak_days || 0, multiplier: streakMultiplier, multiplier_active: streakMultiplier > 1 },
-      xp_events: xpEvents,
-      achievements,
-      reward_points: {
-        balance: parseInt(fgRow.balance) || 0,
-        total_earned: parseInt(fgRow.total_earned) || 0,
-        total_redeemed: parseInt(fgRow.total_redeemed) || 0,
-      },
-    });
-  } catch (err) {
-    console.error('[TFR] GET /api/tfr/status error:', err.message);
-    res.status(500).json({ error: 'Failed to load TFR status' });
-  }
-});
 
-// POST /api/tfr/checkin — open to all users (free=5 XP, pro=25 XP)
-app.post('/api/tfr/checkin', requireAuth, async (req, res) => {
-  const isPro = await hasProAccess(req.userId);
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const stats = await tfrEnsureStats(userId, client);
 
-    // Use user's local timezone for day boundaries (falls back to UTC)
-    const userTz = (req.body && req.body.timezone && isValidTimezone(req.body.timezone))
-      ? req.body.timezone : (stats.checkin_timezone || null);
-    const today = getUserLocalDate(userTz);
-    const lastDate = stats.last_activity_date
-      ? new Date(stats.last_activity_date).toISOString().split('T')[0] : null;
-    if (lastDate === today) {
-      await client.query('COMMIT');
-      return res.json({ success: false, message: 'Already checked in today', already_done: true });
-    }
-    const yesterday = getUserLocalYesterday(userTz);
-    let newStreak = lastDate === yesterday ? (stats.streak_days || 0) + 1 : 1;
 
-    // Persist user's timezone for future reference
-    if (req.body && req.body.timezone && isValidTimezone(req.body.timezone)) {
-      await client.query(
-        'UPDATE tfr_user_stats SET checkin_timezone = $1 WHERE user_id = $2',
-        [req.body.timezone, userId]
-      );
-    }
-    const newLongest = Math.max(newStreak, stats.longest_streak || 0);
-    await client.query(`
-      UPDATE tfr_user_stats
-      SET streak_days = $1, longest_streak = $2, last_activity_date = $3, updated_at = NOW()
-      WHERE user_id = $4
-    `, [newStreak, newLongest, today, userId]);
 
-    // Pro gets 25 XP; free gets 5 XP — both track streaks
-    const baseXp = isPro ? 25 : 5;
-    const result = await tfrAwardXp(userId, 'daily_checkin', 'Daily check-in', baseXp, client);
 
-    // Complete the "daily_checkin" challenge
-    const checkinChal = (await client.query(
-      "SELECT id, xp_reward FROM engagement_challenges WHERE criteria_key = 'daily_checkin' AND active = TRUE LIMIT 1"
-    )).rows[0];
-    if (checkinChal) {
-      const periodKey = today;
-      const alreadyDone = (await client.query(
-        'SELECT id FROM user_challenges WHERE user_id=$1 AND challenge_id=$2 AND period_key=$3 AND status=$4',
-        [userId, checkinChal.id, periodKey, 'completed']
-      )).rows[0];
-      if (!alreadyDone) {
-        const chalXp = isPro ? checkinChal.xp_reward * 2 : checkinChal.xp_reward;
-        await client.query(`
-          INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-          VALUES ($1, $2, $3, 'completed', NOW(), $4) ON CONFLICT DO NOTHING
-        `, [userId, checkinChal.id, periodKey, chalXp]);
-        await tfrAwardXp(userId, 'challenge_complete', 'Challenge: Complete your daily check-in', chalXp, client);
-      }
-    }
 
-    // Check streak milestones (7, 30, 90, 365) — award achievement + bonus XP
-    const STREAK_MILESTONES = { 7: 50, 30: 150, 90: 300, 365: 1000 };
-    if (STREAK_MILESTONES[newStreak]) {
-      const achKey = `streak_${newStreak}`;
-      const alreadyEarned = (await client.query(
-        'SELECT id FROM tfr_achievements WHERE user_id=$1 AND achievement_key=$2', [userId, achKey]
-      )).rows[0];
-      if (!alreadyEarned) {
-        await client.query(
-          'INSERT INTO tfr_achievements (user_id, achievement_key) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [userId, achKey]
-        );
-        const milestoneXp = isPro ? STREAK_MILESTONES[newStreak] * 2 : STREAK_MILESTONES[newStreak];
-        await tfrAwardXp(userId, 'streak_milestone', `${newStreak}-Day Streak Milestone!`, milestoneXp, client);
-        result.milestone_unlocked = { days: newStreak, xp_bonus: milestoneXp, key: achKey };
-      }
-    }
 
-    // Update total_points
-    await client.query(
-      'UPDATE tfr_user_stats SET total_points = COALESCE(total_points,0) + $1 WHERE user_id = $2',
-      [result.xp_earned || baseXp, userId]
-    );
 
-    // Award 15 TFR Reward Points for daily check-in (monthly cap enforced)
-    let checkinPointsAwarded = 0;
-    try {
-      const CHECKIN_PTS = 15;
-      const currentMonth = today.substring(0, 7);
-      await ensureFgBalance(userId);
-      const balRow2 = (await client.query(
-        'SELECT monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-        [userId]
-      )).rows[0] || {};
-      const monthEarned2 = balRow2.monthly_cap_reset_month === currentMonth
-        ? (parseInt(balRow2.monthly_points_earned) || 0) : 0;
-      const remaining2 = Math.max(0, 5000 - monthEarned2);
-      const toAward2 = Math.min(CHECKIN_PTS, remaining2);
-      if (toAward2 > 0) {
-        await client.query(
-          `UPDATE fg_points_balances
-           SET balance = balance + $2,
-               total_earned = total_earned + $2,
-               monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-               monthly_cap_reset_month = $3,
-               updated_at = NOW()
-           WHERE user_id = $1`,
-          [userId, toAward2, currentMonth]
-        );
-        await client.query(
-          `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-           VALUES ($1, 'daily_checkin', 'Daily check-in — 15 FACTS Points', $2)`,
-          [userId, toAward2]
-        );
-        checkinPointsAwarded = toAward2;
-      }
-      // First check-in achievement (one-time)
-      await client.query(
-        `INSERT INTO rewards_achievements (user_id, achievement_key, points_awarded)
-         VALUES ($1, 'first_checkin', 0) ON CONFLICT DO NOTHING`,
-        [userId]
-      );
-    } catch (rpErr) {
-      console.error('[Rewards] checkin points error:', rpErr.message);
-    }
 
-    await client.query('COMMIT');
-    res.json({
-      success: true,
-      message: newStreak >= 3 ? `Day ${newStreak} — 1.5x XP ACTIVE` : `Day ${newStreak} streak`,
-      streak: newStreak, xp_earned: result.xp_earned, multiplier: result.multiplier,
-      leveled_up: result.leveled_up, level: result.level, new_rank: result.new_rank,
-      milestone_unlocked: result.milestone_unlocked || null,
-      is_pro: isPro,
-      reward_points_earned: checkinPointsAwarded,
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[TFR] checkin error:', err.message);
-    res.status(500).json({ error: 'Check-in failed' });
-  } finally { client.release(); }
-});
 
-// GET /api/tfr/leaks
-app.get('/api/tfr/leaks', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    // Gate leaks to Pro users only
-    const isPro = await hasProAccess(userId);
-    if (!isPro) {
-      return res.status(403).json({ success: false, pro_required: true, message: 'Upgrade to access the Leak Detector' });
-    }
-    const stats = await tfrEnsureStats(userId, pool);
-    const level = tfrCalcLevel(stats.xp);
-    if (level < 2) {
-      return res.json({ success: false, locked: true, message: 'Leak Detector unlocks at Level 2', xp_needed: TFR_RANKS[1].xp_required - stats.xp });
-    }
-    const txCount = (await pool.query("SELECT COUNT(*) FROM transactions WHERE user_id = $1", [userId])).rows[0].count;
-    if (parseInt(txCount) < 5) {
-      return res.json({ success: true, leaks: [], message: 'Not enough transaction data yet. Keep logging to enable leak detection.', total_monthly_waste: 0 });
-    }
-    const recurringRaw = (await pool.query(`
-      SELECT description AS merchant, ROUND(ABS(amount)::numeric, 2) AS amount,
-        COUNT(*) AS occurrences, MIN(date) AS first_seen, MAX(date) AS last_seen
-      FROM transactions
-      WHERE user_id = $1 AND type = 'expense' AND date >= NOW() - INTERVAL '90 days' AND ABS(amount) <= 100
-      GROUP BY description, ROUND(ABS(amount)::numeric, 2)
-      HAVING COUNT(*) >= 2
-      ORDER BY occurrences DESC, amount ASC LIMIT 20
-    `, [userId])).rows;
-    const spikesRaw = (await pool.query(`
-      WITH monthly AS (
-        SELECT c.name AS category, DATE_TRUNC('month', t.date) AS month, SUM(ABS(t.amount)) AS total
-        FROM transactions t JOIN categories c ON c.id = t.category_id
-        WHERE t.user_id = $1 AND t.type = 'expense' AND t.date >= NOW() - INTERVAL '60 days'
-        GROUP BY c.name, DATE_TRUNC('month', t.date)
-      ),
-      pivoted AS (
-        SELECT category,
-          SUM(CASE WHEN month = DATE_TRUNC('month', NOW()) THEN total ELSE 0 END) AS this_month,
-          SUM(CASE WHEN month = DATE_TRUNC('month', NOW() - INTERVAL '1 month') THEN total ELSE 0 END) AS last_month
-        FROM monthly GROUP BY category
-      )
-      SELECT category, this_month, last_month,
-        ROUND(((this_month - last_month) / NULLIF(last_month, 0)) * 100) AS pct_increase
-      FROM pivoted WHERE last_month > 20 AND this_month > last_month * 1.3
-      ORDER BY pct_increase DESC LIMIT 5
-    `, [userId])).rows;
-    const existingDecisions = (await pool.query(
-      "SELECT merchant_name, amount, user_decision FROM tfr_leak_candidates WHERE user_id = $1 AND scan_date = CURRENT_DATE",
-      [userId]
-    )).rows;
-    const decisionMap = {};
-    existingDecisions.forEach(d => { decisionMap[`${d.merchant_name}_${d.amount}`] = d.user_decision; });
-    const leaks = [];
-    const seen = new Set();
-    for (const r of recurringRaw) {
-      const key = `${r.merchant}_${r.amount}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const isPhantom = parseFloat(r.amount) <= 9.99;
-      leaks.push({
-        id: key, merchant: r.merchant, amount: parseFloat(r.amount),
-        leak_type: isPhantom ? 'phantom' : 'subscription',
-        monthly_cost: parseFloat(r.amount), occurrences: parseInt(r.occurrences),
-        note: isPhantom ? 'Phantom charge — small recurring amount' : `Charged ${r.occurrences}× in 90 days`,
-        user_decision: decisionMap[key] || null,
-      });
-    }
-    for (const s of spikesRaw) {
-      const key = `spike_${s.category}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      leaks.push({
-        id: key, merchant: s.category, amount: parseFloat(s.this_month),
-        leak_type: 'spike', monthly_cost: Math.max(0, parseFloat(s.this_month) - parseFloat(s.last_month)),
-        pct_increase: parseInt(s.pct_increase),
-        note: `Up ${s.pct_increase}% vs last month ($${parseFloat(s.last_month).toFixed(0)} → $${parseFloat(s.this_month).toFixed(0)})`,
-        user_decision: decisionMap[key] || null,
-      });
-    }
-    const total_monthly_waste = leaks.filter(l => l.user_decision !== 'keep').reduce((sum, l) => sum + l.monthly_cost, 0);
-    res.json({ success: true, leaks, total_monthly_waste: Math.round(total_monthly_waste * 100) / 100, level_unlocked: true });
-  } catch (err) {
-    console.error('[TFR] leaks error:', err.message);
-    res.status(500).json({ error: 'Leak detection failed' });
-  }
-});
 
-// POST /api/tfr/leaks/decision
-app.post('/api/tfr/leaks/decision', requireAuth, async (req, res) => {
-  const isPro = await hasProAccess(req.userId);
-  if (!isPro) {
-    return res.status(403).json({ success: false, pro_required: true, message: 'Upgrade to use the Leak Detector' });
-  }
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const { merchant, amount, leak_type, decision } = req.body;
-    if (!merchant || !amount || !decision || !['keep', 'eliminate'].includes(decision)) {
-      return res.status(400).json({ error: 'merchant, amount, leak_type, decision required' });
-    }
-    await client.query(`
-      INSERT INTO tfr_leak_candidates (user_id, merchant_name, amount, leak_type, frequency, monthly_cost, user_decision, decided_at, scan_date)
-      VALUES ($1, $2, $3, $4, 'monthly', $3, $5, NOW(), CURRENT_DATE)
-      ON CONFLICT DO NOTHING
-    `, [userId, merchant, amount, leak_type || 'subscription', decision]);
-    let xp_result = null;
-    if (decision === 'eliminate') {
-      xp_result = await tfrAwardXp(userId, 'leak_eliminated', `Eliminated leak: ${merchant}`, 50, client);
-      const eliminatedSum = (await client.query(`
-        SELECT COALESCE(SUM(monthly_cost), 0) AS total FROM tfr_leak_candidates
-        WHERE user_id = $1 AND user_decision = 'eliminate' AND monthly_cost > 0
-      `, [userId])).rows[0].total;
-      if (parseFloat(eliminatedSum) >= 100) {
-        await client.query(`INSERT INTO tfr_achievements (user_id, achievement_key) VALUES ($1, 'leak_slayer') ON CONFLICT DO NOTHING`, [userId]);
-      }
-      const stats = (await client.query('SELECT * FROM tfr_user_stats WHERE user_id = $1', [userId])).rows[0];
-      if (stats && !stats.first_blood_done && stats.first_blood_deadline && new Date() <= new Date(stats.first_blood_deadline)) {
-        await client.query(`UPDATE tfr_user_stats SET first_blood_done = TRUE, updated_at = NOW() WHERE user_id = $1`, [userId]);
-        await tfrAwardXp(userId, 'first_blood', 'FIRST BLOOD — First leak eliminated within 48 hours', 150, client);
-        await client.query(`INSERT INTO tfr_micro_wins (user_id, win_type, xp_awarded) VALUES ($1, 'first_blood', 150) ON CONFLICT DO NOTHING`, [userId]);
-        await client.query(`INSERT INTO tfr_achievements (user_id, achievement_key) VALUES ($1, 'first_blood') ON CONFLICT DO NOTHING`, [userId]);
-        if (xp_result) xp_result.first_blood_achieved = true;
-      }
-    }
-    await client.query('COMMIT');
-    res.json({ success: true, decision, xp_result });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[TFR] leaks/decision error:', err.message);
-    res.status(500).json({ error: 'Failed to record decision' });
-  } finally { client.release(); }
-});
 
-// GET /api/tfr/xp-events
-app.get('/api/tfr/xp-events', requireAuth, async (req, res) => {
-  try {
-    const events = (await pool.query(
-      'SELECT * FROM tfr_xp_events WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20', [req.userId]
-    )).rows;
-    res.json({ success: true, events });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed' });
-  }
-});
 
-// POST /api/tfr/award-transaction-xp
-app.post('/api/tfr/award-transaction-xp', requireAuth, async (req, res) => {
-  // Gate XP earning to Pro users only
-  const isPro = await hasProAccess(req.userId);
-  if (!isPro) {
-    return res.status(403).json({ success: false, pro_required: true, message: 'Upgrade to earn XP' });
-  }
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    await tfrEnsureStats(userId, client);
-    const today = new Date().toISOString().split('T')[0];
-    const todayCount = (await client.query(`
-      SELECT COUNT(*) FROM tfr_xp_events
-      WHERE user_id = $1 AND source = 'transaction_log' AND created_at::date = $2
-    `, [userId, today])).rows[0].count;
-    if (parseInt(todayCount) >= 3) {
-      await client.query('COMMIT');
-      return res.json({ success: false, message: 'Daily limit reached' });
-    }
-    const stats = (await client.query('SELECT * FROM tfr_user_stats WHERE user_id = $1', [userId])).rows[0];
-    const lastDate = stats?.last_activity_date ? new Date(stats.last_activity_date).toISOString().split('T')[0] : null;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    if (lastDate !== today) {
-      const newStreak = lastDate === yesterday ? (stats?.streak_days || 0) + 1 : 1;
-      const newLongest = Math.max(newStreak, stats?.longest_streak || 0);
-      await client.query(`UPDATE tfr_user_stats SET streak_days=$1, longest_streak=$2, last_activity_date=$3, updated_at=NOW() WHERE user_id=$4`,
-        [newStreak, newLongest, today, userId]);
-    }
-    const result = await tfrAwardXp(userId, 'transaction_log', 'Transaction logged', 10, client);
-    await client.query('COMMIT');
-    res.json({ success: true, ...result });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: 'XP award failed' });
-  } finally { client.release(); }
-});
 
-// GET /api/tfr/all-ranks
-app.get('/api/tfr/all-ranks', (req, res) => {
-  res.json({ success: true, ranks: TFR_RANKS, phases: TFR_PHASE_NAMES, themes: TFR_PHASE_THEMES });
-});
 
-// GET /api/tfr/tier-map — returns the full 12-level tier mapping
-app.get('/api/tfr/tier-map', async (req, res) => {
-  try {
-    const rows = (await pool.query('SELECT * FROM level_tier_map ORDER BY level ASC')).rows;
-    res.json({ success: true, levels: rows });
-  } catch (err) {
-    // If the table doesn't exist yet (pre-migration), fall back to TFR_RANKS
-    const fallback = TFR_RANKS.map(r => ({
-      level: r.level,
-      rank_name: r.name,
-      phase: r.phase,
-      xp_required: r.xp_required,
-      tier_band: r.level <= 3 ? 'free' : r.level <= 6 ? 'pro' : r.level <= 9 ? 'business' : 'elite',
-    }));
-    res.json({ success: true, levels: fallback });
-  }
-});
 
-// GET /api/tfr/credit-gate/status — check credit gate for current user
-app.get('/api/tfr/credit-gate/status', requireAuth, async (req, res) => {
-  try {
-    const gate = await checkCreditGate(req.userId);
-    const hasCreditDoc = (await pool.query(
-      "SELECT id FROM user_documents WHERE user_id = $1 AND category = 'credit_reports' LIMIT 1",
-      [req.userId]
-    )).rows.length > 0;
 
-    // Auto-satisfy if they have a credit report uploaded
-    if (hasCreditDoc && !['uploaded','waived'].includes(gate.status)) {
-      await pool.query(
-        "UPDATE users SET credit_gate_status = 'uploaded' WHERE id = $1",
-        [req.userId]
-      );
-      gate.status = 'uploaded';
-      gate.satisfied = true;
-    }
 
-    res.json({ success: true, ...gate, has_credit_document: hasCreditDoc });
-  } catch (err) {
-    console.error('[TFR] credit-gate/status error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to check credit gate' });
-  }
-});
 
-// POST /api/tfr/credit-gate/satisfy — called when user uploads credit report
-// This is triggered from document-vault.html after a credit_report upload
-app.post('/api/tfr/credit-gate/satisfy', requireAuth, async (req, res) => {
-  try {
-    await pool.query(
-      "UPDATE users SET credit_gate_status = 'uploaded' WHERE id = $1",
-      [req.userId]
-    );
-    res.json({ success: true, message: 'Credit gate satisfied. You can now access Elite features (Levels 4-6).' });
-  } catch (err) {
-    console.error('[TFR] credit-gate/satisfy error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to update credit gate' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // GET /knowledge-vault — serve the knowledge vault page
 app.get('/knowledge-vault', optionalAuth, (req, res) => {
@@ -22343,521 +19589,521 @@ app.get('/crypto-tracker', (req, res) => {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
-const PRICE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+// [Phase4] crypto → routes/investments.js
 
-// Fetch prices from CoinGecko and update cache in DB
-async function refreshCryptoPrices(coinIds) {
-  if (!coinIds || coinIds.length === 0) return {};
-  const ids = [...new Set(coinIds)].join(',');
-  try {
-    const url = `${COINGECKO_BASE}/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=250&sparkline=false&price_change_percentage=24h`;
-    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!resp.ok) return {};
-    const data = await resp.json();
-    const prices = {};
-    for (const coin of data) {
-      prices[coin.id] = {
-        price_usd: coin.current_price || 0,
-        price_change_24h: coin.price_change_percentage_24h || 0,
-        market_cap_usd: coin.market_cap || 0,
-        image_url: coin.image || null,
-        coin_symbol: (coin.symbol || '').toUpperCase(),
-        coin_name: coin.name || coin.id
-      };
-      await pool.query(
-        `INSERT INTO crypto_price_cache (coin_id, coin_symbol, coin_name, price_usd, price_change_24h, market_cap_usd, image_url, last_updated)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
-         ON CONFLICT (coin_id) DO UPDATE SET
-           price_usd=$4, price_change_24h=$5, market_cap_usd=$6, image_url=$7, coin_symbol=$2, coin_name=$3, last_updated=NOW()`,
-        [coin.id, prices[coin.id].coin_symbol, prices[coin.id].coin_name,
-         prices[coin.id].price_usd, prices[coin.id].price_change_24h,
-         prices[coin.id].market_cap_usd, prices[coin.id].image_url]
-      );
-    }
-    return prices;
-  } catch (err) {
-    console.error('[Crypto] CoinGecko fetch error:', err.message);
-    return {};
-  }
-}
 
-// Get prices — from cache if fresh, else fetch from CoinGecko
-async function getCryptoPrices(coinIds) {
-  if (!coinIds || coinIds.length === 0) return {};
-  const uniqueIds = [...new Set(coinIds)];
-  const staleThreshold = new Date(Date.now() - PRICE_CACHE_TTL_MS);
-  const cached = await pool.query(
-    `SELECT * FROM crypto_price_cache WHERE coin_id = ANY($1) AND last_updated > $2`,
-    [uniqueIds, staleThreshold]
-  );
-  const cachedMap = {};
-  for (const r of cached.rows) cachedMap[r.coin_id] = r;
 
-  const staleIds = uniqueIds.filter(id => !cachedMap[id]);
-  if (staleIds.length > 0) {
-    const fresh = await refreshCryptoPrices(staleIds);
-    Object.assign(cachedMap, Object.fromEntries(
-      Object.entries(fresh).map(([id, v]) => [id, { ...v, coin_id: id }])
-    ));
-  }
-  return cachedMap;
-}
 
-// Build enriched holdings array with live prices and gains/losses
-async function buildEnrichedHoldings(userId) {
-  const rows = await pool.query(
-    `SELECT h.*, wc.label AS wallet_label, wc.address AS wallet_address
-     FROM crypto_holdings h
-     LEFT JOIN crypto_wallet_connections wc ON wc.id = h.wallet_connection_id
-     WHERE h.user_id = $1
-     ORDER BY h.created_at ASC`,
-    [userId]
-  );
-  if (rows.rows.length === 0) return [];
 
-  const coinIds = rows.rows.map(r => r.coin_id);
-  const prices = await getCryptoPrices(coinIds);
 
-  return rows.rows.map(h => {
-    const p = prices[h.coin_id] || {};
-    const qty = parseFloat(h.quantity) || 0;
-    const currentPrice = parseFloat(p.price_usd || 0);
-    const purchasePrice = parseFloat(h.purchase_price_usd || 0);
-    const currentValue = qty * currentPrice;
-    const costBasis = qty * purchasePrice;
-    const gainLoss = costBasis > 0 ? currentValue - costBasis : null;
-    const gainLossPct = costBasis > 0 ? ((currentValue - costBasis) / costBasis) * 100 : null;
 
-    return {
-      id: h.id,
-      source: h.source,
-      coin_id: h.coin_id,
-      coin_symbol: p.coin_symbol || h.coin_symbol,
-      coin_name: p.coin_name || h.coin_name,
-      quantity: qty,
-      purchase_price_usd: purchasePrice,
-      purchase_date: h.purchase_date,
-      notes: h.notes,
-      wallet_label: h.wallet_label || null,
-      wallet_address: h.wallet_address || null,
-      wallet_connection_id: h.wallet_connection_id,
-      current_price_usd: currentPrice,
-      price_change_24h: parseFloat(p.price_change_24h || 0),
-      image_url: p.image_url || null,
-      current_value_usd: currentValue,
-      cost_basis_usd: costBasis,
-      gain_loss_usd: gainLoss,
-      gain_loss_pct: gainLossPct
-    };
-  });
-}
 
-// Read ETH balance from public RPC (no API key needed)
-async function fetchEthBalance(address) {
-  try {
-    const rpc = 'https://eth.llamarpc.com';
-    const body = JSON.stringify({
-      jsonrpc: '2.0', method: 'eth_getBalance',
-      params: [address, 'latest'], id: 1
-    });
-    const resp = await fetch(rpc, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body
-    });
-    const json = await resp.json();
-    if (json.result) {
-      const wei = BigInt(json.result);
-      const eth = Number(wei) / 1e18;
-      return Math.round(eth * 1e10) / 1e10;
-    }
-    return 0;
-  } catch (err) {
-    console.error('[Crypto] ETH balance fetch error:', err.message);
-    return 0;
-  }
-}
 
-// Fetch common ERC-20 token balances via Etherscan (free tier, no key needed for single calls)
-async function fetchEthTokenBalances(address) {
-  // Common ERC-20 tokens with CoinGecko IDs
-  const tokens = [
-    { symbol: 'USDT', contract: '0xdac17f958d2ee523a2206206994597c13d831ec7', coinId: 'tether' },
-    { symbol: 'USDC', contract: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', coinId: 'usd-coin' },
-    { symbol: 'LINK', contract: '0x514910771af9ca656af840dff83e8264ecf986ca', coinId: 'chainlink' },
-    { symbol: 'UNI', contract: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', coinId: 'uniswap' },
-    { symbol: 'SHIB', contract: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE', coinId: 'shiba-inu' },
-    { symbol: 'WBTC', contract: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', coinId: 'wrapped-bitcoin' },
-  ];
 
-  const results = [];
-  const etherscanKey = process.env.ETHERSCAN_API_KEY || 'YourApiKeyToken';
-  for (const token of tokens) {
-    try {
-      const url = `https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=${token.contract}&address=${address}&tag=latest&apikey=${etherscanKey}`;
-      const resp = await fetch(url);
-      const json = await resp.json();
-      if (json.status === '1' && json.result && json.result !== '0') {
-        // Most ERC-20 use 6 or 18 decimals — we'll check CoinGecko decimals or assume 18
-        const decimals = ['USDT','USDC'].includes(token.symbol) ? 6 : 18;
-        const balance = Number(BigInt(json.result)) / Math.pow(10, decimals);
-        if (balance > 0.0001) {
-          results.push({ ...token, balance: Math.round(balance * 1e8) / 1e8 });
-        }
-      }
-    } catch (_) {}
-  }
-  return results;
-}
 
-// ── GET /api/crypto/holdings ──────────────────────────────────────────────────
-app.get('/api/crypto/holdings', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Crypto Tracker is a paid feature. Upgrade to access it.', code: 'PRO_REQUIRED' });
-  }
-  try {
-    const holdings = await buildEnrichedHoldings(req.userId);
-    const totalValue = holdings.reduce((s, h) => s + h.current_value_usd, 0);
-    const totalCostBasis = holdings.reduce((s, h) => s + h.cost_basis_usd, 0);
-    const totalGainLoss = totalCostBasis > 0 ? totalValue - totalCostBasis : null;
-    const totalGainLossPct = totalCostBasis > 0 ? ((totalValue - totalCostBasis) / totalCostBasis) * 100 : null;
 
-    const wallets = await pool.query(
-      `SELECT id, wallet_type, address, label, last_synced_at FROM crypto_wallet_connections WHERE user_id=$1 ORDER BY created_at`,
-      [req.userId]
-    );
 
-    res.json({
-      success: true,
-      holdings,
-      wallets: wallets.rows,
-      summary: { totalValue, totalCostBasis, totalGainLoss, totalGainLossPct, count: holdings.length }
-    });
-  } catch (err) {
-    console.error('[Crypto] GET holdings error:', err);
-    res.status(500).json({ success: false, error: 'Failed to load holdings' });
-  }
-});
 
-// ── POST /api/crypto/holdings ─────────────────────────────────────────────────
-app.post('/api/crypto/holdings', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
-  }
-  const { coin_id, coin_symbol, coin_name, quantity, purchase_price_usd, purchase_date, notes } = req.body;
-  if (!coin_id || !coin_symbol || !coin_name || !quantity) {
-    return res.status(400).json({ success: false, error: 'coin_id, coin_symbol, coin_name, quantity are required' });
-  }
-  const qty = parseFloat(quantity);
-  if (isNaN(qty) || qty <= 0) return res.status(400).json({ success: false, error: 'quantity must be a positive number' });
 
-  try {
-    const result = await pool.query(
-      `INSERT INTO crypto_holdings (user_id, source, coin_id, coin_symbol, coin_name, quantity, purchase_price_usd, purchase_date, notes)
-       VALUES ($1,'manual',$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-      [req.userId, coin_id.toLowerCase(), coin_symbol.toUpperCase(), coin_name,
-       qty, purchase_price_usd || null, purchase_date || null, notes || null]
-    );
-    // Warm up the price cache
-    await getCryptoPrices([coin_id.toLowerCase()]);
-    const holdings = await buildEnrichedHoldings(req.userId);
-    res.json({ success: true, id: result.rows[0].id, holdings });
-  } catch (err) {
-    console.error('[Crypto] POST holding error:', err);
-    res.status(500).json({ success: false, error: 'Failed to add holding' });
-  }
-});
 
-// ── PUT /api/crypto/holdings/:id ──────────────────────────────────────────────
-app.put('/api/crypto/holdings/:id', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
-  }
-  const { id } = req.params;
-  const { quantity, purchase_price_usd, purchase_date, notes, coin_id, coin_symbol, coin_name } = req.body;
 
-  try {
-    const existing = await pool.query(
-      `SELECT * FROM crypto_holdings WHERE id=$1 AND user_id=$2`, [id, req.userId]
-    );
-    if (existing.rows.length === 0) return res.status(404).json({ success: false, error: 'Holding not found' });
 
-    const qty = quantity !== undefined ? parseFloat(quantity) : parseFloat(existing.rows[0].quantity);
-    await pool.query(
-      `UPDATE crypto_holdings SET
-         quantity=$1, purchase_price_usd=$2, purchase_date=$3, notes=$4,
-         coin_id=COALESCE($5,coin_id), coin_symbol=COALESCE($6,coin_symbol), coin_name=COALESCE($7,coin_name),
-         updated_at=NOW()
-       WHERE id=$8 AND user_id=$9`,
-      [qty, purchase_price_usd !== undefined ? purchase_price_usd : existing.rows[0].purchase_price_usd,
-       purchase_date || existing.rows[0].purchase_date,
-       notes !== undefined ? notes : existing.rows[0].notes,
-       coin_id ? coin_id.toLowerCase() : null,
-       coin_symbol ? coin_symbol.toUpperCase() : null,
-       coin_name || null,
-       id, req.userId]
-    );
-    const holdings = await buildEnrichedHoldings(req.userId);
-    res.json({ success: true, holdings });
-  } catch (err) {
-    console.error('[Crypto] PUT holding error:', err);
-    res.status(500).json({ success: false, error: 'Failed to update holding' });
-  }
-});
 
-// ── DELETE /api/crypto/holdings/:id ──────────────────────────────────────────
-app.delete('/api/crypto/holdings/:id', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
-  }
-  try {
-    const result = await pool.query(
-      `DELETE FROM crypto_holdings WHERE id=$1 AND user_id=$2 RETURNING id`, [req.params.id, req.userId]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Holding not found' });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to delete' });
-  }
-});
 
-// ── GET /api/crypto/search-coins ──────────────────────────────────────────────
-app.get('/api/crypto/search-coins', requireAuth, async (req, res) => {
-  const q = (req.query.q || '').trim();
-  if (!q) return res.json({ success: true, coins: [] });
-  try {
-    const url = `${COINGECKO_BASE}/search?query=${encodeURIComponent(q)}`;
-    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!resp.ok) return res.json({ success: true, coins: [] });
-    const data = await resp.json();
-    const coins = (data.coins || []).slice(0, 20).map(c => ({
-      id: c.id,
-      symbol: (c.symbol || '').toUpperCase(),
-      name: c.name,
-      thumb: c.thumb
-    }));
-    res.json({ success: true, coins });
-  } catch (err) {
-    res.json({ success: true, coins: [] });
-  }
-});
 
-// ── POST /api/crypto/wallet ───────────────────────────────────────────────────
-app.post('/api/crypto/wallet', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
-  }
-  const { address, label } = req.body;
-  if (!address) return res.status(400).json({ success: false, error: 'Wallet address is required' });
 
-  // Basic EVM address validation
-  const cleanAddr = address.trim();
-  if (!/^0x[0-9a-fA-F]{40}$/.test(cleanAddr)) {
-    return res.status(400).json({ success: false, error: 'Invalid EVM wallet address (must be 0x + 40 hex chars)' });
-  }
 
-  try {
-    // Upsert wallet connection
-    const wResult = await pool.query(
-      `INSERT INTO crypto_wallet_connections (user_id, wallet_type, address, label)
-       VALUES ($1,'evm',$2,$3)
-       ON CONFLICT DO NOTHING RETURNING id`,
-      [req.userId, cleanAddr, label || `Wallet ${cleanAddr.slice(0, 6)}...${cleanAddr.slice(-4)}`]
-    );
 
-    let walletId;
-    if (wResult.rows.length > 0) {
-      walletId = wResult.rows[0].id;
-    } else {
-      const existing = await pool.query(
-        `SELECT id FROM crypto_wallet_connections WHERE user_id=$1 AND address=$2`, [req.userId, cleanAddr]
-      );
-      walletId = existing.rows[0]?.id;
-    }
 
-    if (!walletId) return res.status(500).json({ success: false, error: 'Failed to save wallet' });
 
-    // Fetch ETH balance
-    const ethBalance = await fetchEthBalance(cleanAddr);
-    let tokensAdded = 0;
 
-    // Remove old wallet-synced holdings for this wallet
-    await pool.query(
-      `DELETE FROM crypto_holdings WHERE user_id=$1 AND wallet_connection_id=$2 AND source='wallet'`,
-      [req.userId, walletId]
-    );
 
-    if (ethBalance > 0) {
-      await pool.query(
-        `INSERT INTO crypto_holdings (user_id, source, wallet_connection_id, coin_id, coin_symbol, coin_name, quantity)
-         VALUES ($1,'wallet',$2,'ethereum','ETH','Ethereum',$3)`,
-        [req.userId, walletId, ethBalance]
-      );
-      tokensAdded++;
-    }
 
-    // Try to fetch ERC-20 tokens
-    const tokens = await fetchEthTokenBalances(cleanAddr);
-    for (const token of tokens) {
-      await pool.query(
-        `INSERT INTO crypto_holdings (user_id, source, wallet_connection_id, coin_id, coin_symbol, coin_name, quantity)
-         VALUES ($1,'wallet',$2,$3,$4,$5,$6)`,
-        [req.userId, walletId, token.coinId, token.symbol, token.symbol, token.balance]
-      );
-      tokensAdded++;
-    }
 
-    // Update last_synced_at
-    await pool.query(
-      `UPDATE crypto_wallet_connections SET last_synced_at=NOW() WHERE id=$1`, [walletId]
-    );
 
-    // Fetch updated holdings
-    const holdings = await buildEnrichedHoldings(req.userId);
-    const wallets = await pool.query(
-      `SELECT id, wallet_type, address, label, last_synced_at FROM crypto_wallet_connections WHERE user_id=$1 ORDER BY created_at`,
-      [req.userId]
-    );
 
-    res.json({
-      success: true,
-      walletId,
-      ethBalance,
-      tokensAdded,
-      message: tokensAdded > 0 ? `Synced ${tokensAdded} token(s) from wallet` : 'Wallet connected (no balance found)',
-      holdings,
-      wallets: wallets.rows
-    });
-  } catch (err) {
-    console.error('[Crypto] POST wallet error:', err);
-    res.status(500).json({ success: false, error: 'Failed to connect wallet: ' + err.message });
-  }
-});
 
-// ── POST /api/crypto/wallet/:id/sync ─────────────────────────────────────────
-app.post('/api/crypto/wallet/:id/sync', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
-  }
-  try {
-    const wallet = await pool.query(
-      `SELECT * FROM crypto_wallet_connections WHERE id=$1 AND user_id=$2`, [req.params.id, req.userId]
-    );
-    if (wallet.rows.length === 0) return res.status(404).json({ success: false, error: 'Wallet not found' });
 
-    const { address, id: walletId } = wallet.rows[0];
-    const ethBalance = await fetchEthBalance(address);
 
-    await pool.query(
-      `DELETE FROM crypto_holdings WHERE user_id=$1 AND wallet_connection_id=$2 AND source='wallet'`,
-      [req.userId, walletId]
-    );
 
-    if (ethBalance > 0) {
-      await pool.query(
-        `INSERT INTO crypto_holdings (user_id, source, wallet_connection_id, coin_id, coin_symbol, coin_name, quantity)
-         VALUES ($1,'wallet',$2,'ethereum','ETH','Ethereum',$3)`,
-        [req.userId, walletId, ethBalance]
-      );
-    }
 
-    const tokens = await fetchEthTokenBalances(address);
-    for (const token of tokens) {
-      await pool.query(
-        `INSERT INTO crypto_holdings (user_id, source, wallet_connection_id, coin_id, coin_symbol, coin_name, quantity)
-         VALUES ($1,'wallet',$2,$3,$4,$5,$6)`,
-        [req.userId, walletId, token.coinId, token.symbol, token.symbol, token.balance]
-      );
-    }
 
-    await pool.query(`UPDATE crypto_wallet_connections SET last_synced_at=NOW() WHERE id=$1`, [walletId]);
 
-    const holdings = await buildEnrichedHoldings(req.userId);
-    res.json({ success: true, holdings, message: 'Wallet synced' });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Sync failed: ' + err.message });
-  }
-});
 
-// ── DELETE /api/crypto/wallet/:id ─────────────────────────────────────────────
-app.delete('/api/crypto/wallet/:id', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
-  }
-  try {
-    // Also remove wallet-synced holdings
-    await pool.query(
-      `DELETE FROM crypto_holdings WHERE user_id=$1 AND wallet_connection_id=$2 AND source='wallet'`,
-      [req.userId, req.params.id]
-    );
-    await pool.query(
-      `DELETE FROM crypto_wallet_connections WHERE id=$1 AND user_id=$2`, [req.params.id, req.userId]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to remove wallet' });
-  }
-});
 
-// ── POST /api/crypto/snapshot ─────────────────────────────────────────────────
-app.post('/api/crypto/snapshot', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
-  }
-  try {
-    const holdings = await buildEnrichedHoldings(req.userId);
-    const totalValue = holdings.reduce((s, h) => s + h.current_value_usd, 0);
-    const totalCostBasis = holdings.reduce((s, h) => s + h.cost_basis_usd, 0);
-    const today = new Date().toISOString().split('T')[0];
 
-    await pool.query(
-      `INSERT INTO crypto_portfolio_snapshots (user_id, total_value_usd, total_cost_basis_usd, snapshot_date)
-       VALUES ($1,$2,$3,$4)
-       ON CONFLICT (user_id, snapshot_date) DO UPDATE SET
-         total_value_usd=$2, total_cost_basis_usd=$3`,
-      [req.userId, totalValue, totalCostBasis, today]
-    );
-    res.json({ success: true, totalValue, totalCostBasis });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Snapshot failed' });
-  }
-});
 
-// ── GET /api/crypto/portfolio-history ─────────────────────────────────────────
-app.get('/api/crypto/portfolio-history', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.status(403).json({ success: false, error: 'Paid plan required', code: 'PRO_REQUIRED' });
-  }
-  const days = Math.min(parseInt(req.query.days || '365'), 365);
-  try {
-    const result = await pool.query(
-      `SELECT snapshot_date, total_value_usd, total_cost_basis_usd
-       FROM crypto_portfolio_snapshots
-       WHERE user_id=$1 AND snapshot_date >= NOW()::date - $2
-       ORDER BY snapshot_date ASC`,
-      [req.userId, days]
-    );
-    res.json({ success: true, history: result.rows });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to load history' });
-  }
-});
 
-// ── GET /api/crypto/net-worth-value ───────────────────────────────────────────
-// Called by net-worth.html to include crypto in net worth total
-app.get('/api/crypto/net-worth-value', requireAuth, async (req, res) => {
-  if (!await hasProAccess(req.userId)) {
-    return res.json({ success: true, value: 0 });
-  }
-  try {
-    const holdings = await buildEnrichedHoldings(req.userId);
-    const totalValue = holdings.reduce((s, h) => s + h.current_value_usd, 0);
-    res.json({ success: true, value: totalValue, count: holdings.length });
-  } catch (err) {
-    res.json({ success: true, value: 0 });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -22884,120 +20130,16 @@ app.get('/api/education/content', requireAuth, async (req, res) => {
 });
 
 // GET /api/admin/education/content — all content including unpublished (creator only)
-app.get('/api/admin/education/content', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
 
-    const result = await pool.query(`
-      SELECT id, category, title, description, content_type, body, embed_url, external_url, sort_order, is_published, created_at, updated_at
-      FROM education_content
-      ORDER BY category ASC, sort_order ASC, id ASC
-    `);
-    res.json({ success: true, items: result.rows });
-  } catch (err) {
-    console.error('GET /api/admin/education/content error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to load content' });
-  }
-});
 
 // POST /api/admin/education/content — create new education item (creator only)
-app.post('/api/admin/education/content', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
 
-    const { category, title, description, content_type, body, embed_url, external_url, sort_order, is_published } = req.body;
-
-    if (!category || !title || !content_type) {
-      return res.status(400).json({ error: 'category, title, and content_type are required' });
-    }
-    if (!['article', 'video', 'link'].includes(content_type)) {
-      return res.status(400).json({ error: 'content_type must be article, video, or link' });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO education_content (category, title, description, content_type, body, embed_url, external_url, sort_order, is_published)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [
-        category.trim(),
-        title.trim(),
-        description ? description.trim() : null,
-        content_type,
-        body ? body.trim() : null,
-        embed_url ? embed_url.trim() : null,
-        external_url ? external_url.trim() : null,
-        sort_order !== undefined ? parseInt(sort_order) : 0,
-        is_published !== false
-      ]
-    );
-    res.json({ success: true, item: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/admin/education/content error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to create content' });
-  }
-});
 
 // PUT /api/admin/education/content/:id — update existing item (creator only)
-app.put('/api/admin/education/content/:id', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
 
-    const { id } = req.params;
-    const { category, title, description, content_type, body, embed_url, external_url, sort_order, is_published } = req.body;
-
-    if (!category || !title || !content_type) {
-      return res.status(400).json({ error: 'category, title, and content_type are required' });
-    }
-    if (!['article', 'video', 'link'].includes(content_type)) {
-      return res.status(400).json({ error: 'content_type must be article, video, or link' });
-    }
-
-    const result = await pool.query(
-      `UPDATE education_content
-       SET category=$1, title=$2, description=$3, content_type=$4, body=$5, embed_url=$6, external_url=$7, sort_order=$8, is_published=$9, updated_at=NOW()
-       WHERE id=$10
-       RETURNING *`,
-      [
-        category.trim(),
-        title.trim(),
-        description ? description.trim() : null,
-        content_type,
-        body ? body.trim() : null,
-        embed_url ? embed_url.trim() : null,
-        external_url ? external_url.trim() : null,
-        sort_order !== undefined ? parseInt(sort_order) : 0,
-        is_published !== false,
-        parseInt(id)
-      ]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Content item not found' });
-    }
-    res.json({ success: true, item: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/admin/education/content/:id error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to update content' });
-  }
-});
 
 // DELETE /api/admin/education/content/:id — delete item (creator only)
-app.delete('/api/admin/education/content/:id', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
 
-    const { id } = req.params;
-    await pool.query('DELETE FROM education_content WHERE id = $1', [parseInt(id)]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/admin/education/content/:id error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to delete content' });
-  }
-});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SHOP & SAVE — Affiliate Link Hub
@@ -23020,112 +20162,16 @@ app.get('/api/shop/links', requireAuth, async (req, res) => {
 });
 
 // GET /api/admin/shop/links — all links including inactive (creator only)
-app.get('/api/admin/shop/links', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
-    const result = await pool.query(`
-      SELECT id, category_key, category_name, icon, description, url, button_text, is_active, sort_order, updated_at
-      FROM shop_links
-      ORDER BY sort_order ASC, id ASC
-    `);
-    res.json({ success: true, links: result.rows });
-  } catch (err) {
-    console.error('GET /api/admin/shop/links error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to load shop links' });
-  }
-});
+
 
 // PUT /api/admin/shop/links/:id — update a shop link (creator only)
-app.put('/api/admin/shop/links/:id', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
 
-    const { id } = req.params;
-    const { category_name, icon, description, url, button_text, is_active, sort_order } = req.body;
-
-    const result = await pool.query(
-      `UPDATE shop_links
-       SET category_name = COALESCE($1, category_name),
-           icon = COALESCE($2, icon),
-           description = COALESCE($3, description),
-           url = COALESCE($4, url),
-           button_text = COALESCE($5, button_text),
-           is_active = COALESCE($6, is_active),
-           sort_order = COALESCE($7, sort_order),
-           updated_at = NOW()
-       WHERE id = $8
-       RETURNING *`,
-      [
-        category_name ? category_name.trim() : null,
-        icon ? icon.trim() : null,
-        description !== undefined ? description.trim() : null,
-        url ? url.trim() : null,
-        button_text ? button_text.trim() : null,
-        is_active !== undefined ? is_active : null,
-        sort_order !== undefined ? parseInt(sort_order) : null,
-        parseInt(id)
-      ]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Shop link not found' });
-    }
-    res.json({ success: true, link: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/admin/shop/links/:id error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to update shop link' });
-  }
-});
 
 // POST /api/admin/shop/links — create a new shop link category (creator only)
-app.post('/api/admin/shop/links', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
 
-    const { category_key, category_name, icon, description, url, button_text, sort_order } = req.body;
-    if (!category_key || !category_name) {
-      return res.status(400).json({ error: 'category_key and category_name are required' });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO shop_links (category_key, category_name, icon, description, url, button_text, is_active, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6, true, $7)
-       RETURNING *`,
-      [
-        category_key.trim(),
-        category_name.trim(),
-        (icon || '🔗').trim(),
-        (description || '').trim(),
-        (url || '#').trim(),
-        (button_text || 'Compare & Save').trim(),
-        sort_order !== undefined ? parseInt(sort_order) : 99
-      ]
-    );
-    res.json({ success: true, link: result.rows[0] });
-  } catch (err) {
-    if (err.code === '23505') {
-      return res.status(409).json({ error: 'A category with this key already exists' });
-    }
-    console.error('POST /api/admin/shop/links error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to create shop link' });
-  }
-});
 
 // DELETE /api/admin/shop/links/:id — delete a shop link (creator only)
-app.delete('/api/admin/shop/links/:id', requireAuth, async (req, res) => {
-  try {
-    const creatorCheck = await isCreator(req.userId);
-    if (!creatorCheck) return res.status(403).json({ error: 'Creator access required' });
-    await pool.query('DELETE FROM shop_links WHERE id = $1', [parseInt(req.params.id)]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/admin/shop/links/:id error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to delete shop link' });
-  }
-});
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════
@@ -23239,281 +20285,21 @@ app.get('/api/user/referral-code', requireAuth, async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 
 // GET /api/admin/nda-status — list all users with their NDA acceptance status
-app.get('/api/admin/nda-status', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
 
-    const result = await pool.query(`
-      SELECT
-        u.id,
-        u.email,
-        u.name,
-        u.created_at as signup_date,
-        u.referral_code,
-        u.promo_code_used,
-        u.is_creator,
-        u.referred_by_user_id,
-        na.accepted_at as nda_accepted_at,
-        na.nda_version,
-        CASE WHEN na.id IS NOT NULL THEN true ELSE false END as nda_accepted,
-        (SELECT COUNT(*) FROM users r WHERE r.referred_by_user_id = u.id) as referral_count
-      FROM users u
-      LEFT JOIN nda_acceptances na ON na.user_id = u.id AND na.nda_version = $1
-      ORDER BY u.created_at DESC
-    `, [NDA_VERSION]);
-
-    const stats = {
-      total_users: result.rows.length,
-      nda_accepted: result.rows.filter(u => u.nda_accepted).length,
-      nda_pending: result.rows.filter(u => !u.nda_accepted && !u.is_creator).length,
-      creator_exempt: result.rows.filter(u => u.is_creator).length,
-      total_referrals: result.rows.reduce((sum, u) => sum + parseInt(u.referral_count), 0)
-    };
-
-    res.json({ success: true, stats, users: result.rows });
-  } catch (err) {
-    console.error('GET /api/admin/nda-status error:', err.message);
-    res.status(500).json({ error: 'Failed to get NDA status' });
-  }
-});
 
 // ─── Admin: Account Deletion & User Management ───────────────────────────────
 
 // GET /api/admin/users/search?q=<email_or_name> — search users by email or name
-app.get('/api/admin/users/search', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const q = (req.query.q || '').trim();
-    if (!q || q.length < 2) {
-      return res.json({ success: true, users: [] });
-    }
-    const pattern = `%${q.toLowerCase()}%`;
-    const result = await pool.query(`
-      SELECT
-        u.id,
-        u.email,
-        u.name,
-        u.created_at,
-        u.subscription_status,
-        u.plan,
-        u.is_creator,
-        u.referred_by_user_id,
-        (SELECT COUNT(*) FROM transactions t WHERE t.user_id = u.id) AS transaction_count,
-        (SELECT COUNT(*) FROM subscriptions s WHERE s.user_id = u.id AND s.status = 'completed') AS active_subscriptions,
-        a.id AS affiliate_id,
-        a.status AS affiliate_status,
-        a.parent_affiliate_id
-      FROM users u
-      LEFT JOIN affiliates a ON a.user_id = u.id
-      WHERE LOWER(u.email) LIKE $1 OR LOWER(COALESCE(u.name, '')) LIKE $1
-      ORDER BY u.created_at DESC
-      LIMIT 20
-    `, [pattern]);
-    res.json({ success: true, users: result.rows });
-  } catch (err) {
-    console.error('GET /api/admin/users/search error:', err.message);
-    res.status(500).json({ success: false, error: 'Search failed' });
-  }
-});
+
 
 // GET /api/admin/users/:id/details — full account details before deletion
-app.get('/api/admin/users/:id/details', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const userId = parseInt(req.params.id, 10);
-    if (isNaN(userId)) return res.status(400).json({ success: false, error: 'Invalid user ID' });
 
-    const [userRes, txRes, subRes, affiliateRes, childrenRes, affiliateChildrenRes, debtRes, portfolioRes] = await Promise.all([
-      pool.query('SELECT id, email, name, created_at, subscription_status, plan, is_creator, referred_by_user_id, stripe_subscription_id, p2p_lending_visible, mastermind_access, summit_invite FROM users WHERE id = $1', [userId]),
-      pool.query('SELECT COUNT(*) AS count FROM transactions WHERE user_id = $1', [userId]),
-      pool.query('SELECT id, plan, status, stripe_customer_id, started_at, expires_at FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 3', [userId]),
-      pool.query('SELECT id, status, affiliate_level, parent_affiliate_id, pending_balance_cents, approved_balance_cents, lifetime_earnings_cents, priority_orphan FROM affiliates WHERE user_id = $1', [userId]),
-      pool.query('SELECT COUNT(*) AS count FROM users WHERE referred_by_user_id = $1', [userId]),
-      pool.query(`
-        SELECT COUNT(*) AS count FROM affiliates a
-        INNER JOIN affiliates p ON p.id = a.parent_affiliate_id
-        WHERE p.user_id = $1
-      `, [userId]),
-      pool.query('SELECT COUNT(*) AS count FROM debts WHERE user_id = $1', [userId]),
-      pool.query('SELECT COUNT(*) AS count FROM portfolio_accounts WHERE user_id = $1', [userId])
-    ]);
-
-    if (!userRes.rows.length) return res.status(404).json({ success: false, error: 'User not found' });
-
-    const user = userRes.rows[0];
-    // Fetch the parent user info if they have a referrer
-    let referrer = null;
-    if (user.referred_by_user_id) {
-      const refRes = await pool.query('SELECT id, email, name FROM users WHERE id = $1', [user.referred_by_user_id]);
-      if (refRes.rows.length) referrer = refRes.rows[0];
-    }
-
-    res.json({
-      success: true,
-      user,
-      referrer,
-      transaction_count: parseInt(txRes.rows[0].count, 10),
-      subscriptions: subRes.rows,
-      affiliate: affiliateRes.rows[0] || null,
-      direct_referral_children: parseInt(childrenRes.rows[0].count, 10),
-      affiliate_tree_children: parseInt(affiliateChildrenRes.rows[0].count, 10),
-      debt_count: parseInt(debtRes.rows[0].count, 10),
-      portfolio_count: parseInt(portfolioRes.rows[0].count, 10)
-    });
-  } catch (err) {
-    console.error('GET /api/admin/users/:id/details error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to load user details' });
-  }
-});
 
 // DELETE /api/admin/users/:id — hard delete user with affiliate tree re-linking
-app.delete('/api/admin/users/:id', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const adminId = req.userId;
-    const targetUserId = parseInt(req.params.id, 10);
-    if (isNaN(targetUserId)) return res.status(400).json({ success: false, error: 'Invalid user ID' });
 
-    // Load admin info for audit log
-    const adminRes = await pool.query('SELECT id, email, is_creator FROM users WHERE id = $1', [adminId]);
-    if (!adminRes.rows.length) return res.status(401).json({ success: false, error: 'Admin not found' });
-    const admin = adminRes.rows[0];
-
-    // Load target user
-    const userRes = await pool.query(
-      'SELECT id, email, name, created_at, subscription_status, is_creator, referred_by_user_id FROM users WHERE id = $1',
-      [targetUserId]
-    );
-    if (!userRes.rows.length) return res.status(404).json({ success: false, error: 'User not found' });
-    const target = userRes.rows[0];
-
-    // Protect admin from self-deletion
-    if (target.id === adminId) {
-      return res.status(403).json({ success: false, error: 'Cannot delete your own admin account' });
-    }
-
-    // Protect creator account from deletion
-    const creatorEmail = (process.env.CREATOR_EMAIL || '').toLowerCase().trim();
-    if (target.is_creator || (creatorEmail && target.email.toLowerCase() === creatorEmail)) {
-      return res.status(403).json({ success: false, error: 'Cannot delete the creator account' });
-    }
-
-    // Count transactions for audit log
-    const txCountRes = await pool.query('SELECT COUNT(*) AS count FROM transactions WHERE user_id = $1', [targetUserId]);
-    const txCount = parseInt(txCountRes.rows[0].count, 10);
-
-    // ── Affiliate tree re-linking ──────────────────────────────────────────────
-    // When we delete user X who sits in the tree:
-    //   - X's parent = X.referred_by_user_id (upline)
-    //   - X's children = users WHERE referred_by_user_id = X.id
-    // Re-link: set children's referred_by_user_id to X's parent (grandparent)
-    const parentUserId = target.referred_by_user_id; // may be null (root node)
-
-    const childUsersRes = await pool.query(
-      'SELECT id FROM users WHERE referred_by_user_id = $1',
-      [targetUserId]
-    );
-    const childCount = childUsersRes.rows.length;
-
-    // Re-link child users to grandparent
-    if (childCount > 0) {
-      await pool.query(
-        'UPDATE users SET referred_by_user_id = $1 WHERE referred_by_user_id = $2',
-        [parentUserId || null, targetUserId]
-      );
-    }
-
-    // Also re-link affiliate tree nodes
-    // Find this user's affiliate record
-    const affiliateRes = await pool.query('SELECT id, parent_affiliate_id FROM affiliates WHERE user_id = $1', [targetUserId]);
-    let affiliateChildrenCount = 0;
-    if (affiliateRes.rows.length) {
-      const aff = affiliateRes.rows[0];
-      const parentAffiliateId = aff.parent_affiliate_id; // grandparent in affiliate tree
-
-      // Re-link affiliate children to grandparent
-      const affChildRes = await pool.query(
-        'UPDATE affiliates SET parent_affiliate_id = $1 WHERE parent_affiliate_id = $2',
-        [parentAffiliateId || null, aff.id]
-      );
-      affiliateChildrenCount = affChildRes.rowCount || 0;
-    }
-
-    const treeRelinked = (childCount + affiliateChildrenCount) > 0;
-    const totalChildrenRelinked = childCount + affiliateChildrenCount;
-
-    // ── Delete user (cascades all related data via FK constraints) ─────────────
-    await pool.query('DELETE FROM users WHERE id = $1', [targetUserId]);
-
-    // ── Write audit log ────────────────────────────────────────────────────────
-    try {
-      await pool.query(`
-        INSERT INTO admin_deletion_log
-          (deleted_user_id, deleted_email, deleted_name, admin_id, admin_email,
-           user_created_at, transaction_count, subscription_status,
-           affiliate_tree_relinked, children_relinked_count, notes)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-      `, [
-        target.id,
-        target.email,
-        target.name || null,
-        adminId,
-        admin.email,
-        target.created_at,
-        txCount,
-        target.subscription_status || null,
-        treeRelinked,
-        totalChildrenRelinked,
-        req.body.notes || null
-      ]);
-    } catch (logErr) {
-      // Audit log failure is non-fatal — user is already deleted
-      console.error('[Admin Delete] Audit log insert failed:', logErr.message);
-    }
-
-    console.log(`[Admin Delete] ${admin.email} deleted user ${target.email} (id=${target.id}), relinked ${totalChildrenRelinked} children`);
-
-    res.json({
-      success: true,
-      message: `Account for ${target.email} permanently deleted`,
-      relinked_children: totalChildrenRelinked,
-      tree_relinked: treeRelinked
-    });
-  } catch (err) {
-    console.error('DELETE /api/admin/users/:id error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to delete account: ' + err.message });
-  }
-});
 
 // GET /api/admin/deletion-log — audit log of admin-deleted accounts
-app.get('/api/admin/deletion-log', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireCreator(req, res))) return;
-    const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
-    const result = await pool.query(`
-      SELECT
-        id,
-        deleted_user_id,
-        deleted_email,
-        deleted_name,
-        deleted_at,
-        admin_email,
-        user_created_at,
-        transaction_count,
-        subscription_status,
-        affiliate_tree_relinked,
-        children_relinked_count,
-        notes
-      FROM admin_deletion_log
-      ORDER BY deleted_at DESC
-      LIMIT $1
-    `, [limit]);
-    res.json({ success: true, log: result.rows });
-  } catch (err) {
-    console.error('GET /api/admin/deletion-log error:', err.message);
-    res.status(500).json({ success: false, error: 'Failed to load deletion log' });
-  }
-});
+
 
 // ─── PWA: Push Notification Endpoints ────────────────────────────────────────
 
@@ -25861,369 +22647,28 @@ app.post('/api/succession/sign/:token', async (req, res) => {
 
 // ─── GET /api/admin/succession/plans ───────────────────────────────────────
 // Admin: list all affiliate succession plans
-app.get('/api/admin/succession/plans', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  try {
-    const result = await pool.query(
-      `SELECT a.id AS affiliate_id, a.referral_code, a.status AS affiliate_status,
-              u.id AS user_id, u.email, u.name,
-              a.successor_name, a.successor_email, a.successor_relationship,
-              a.succession_authorized_date,
-              su.email AS successor_user_email
-         FROM affiliates a
-         JOIN users u ON u.id = a.user_id
-         LEFT JOIN users su ON su.id = a.successor_id
-        WHERE a.successor_email IS NOT NULL
-        ORDER BY a.succession_authorized_date DESC`
-    );
 
-    res.json({ success: true, plans: result.rows, count: result.rows.length });
-  } catch (err) {
-    console.error('[Succession] GET /api/admin/succession/plans error:', err.message);
-    res.status(500).json({ error: 'Failed to load succession plans' });
-  }
-});
 
 // ─── GET /api/admin/succession/transfers ───────────────────────────────────
 // Admin: list all succession transfers
-app.get('/api/admin/succession/transfers', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  try {
-    const { status } = req.query;
-    const conditions = status ? `WHERE st.status = $1` : '';
-    const params = status ? [status] : [];
 
-    const result = await pool.query(
-      `SELECT st.*,
-              u_orig.email AS original_holder_email, u_orig.name AS original_holder_name,
-              u_succ.email AS successor_user_email, u_succ.name AS successor_user_name,
-              u_admin.email AS admin_email,
-              a.referral_code
-         FROM succession_transfers st
-         JOIN affiliates a ON a.id = st.affiliate_id
-         JOIN users u_orig ON u_orig.id = a.user_id
-         LEFT JOIN users u_succ ON u_succ.id = st.successor_id
-         LEFT JOIN users u_admin ON u_admin.id = st.admin_id
-         ${conditions}
-        ORDER BY st.created_at DESC`,
-      params
-    );
-
-    res.json({ success: true, transfers: result.rows, count: result.rows.length });
-  } catch (err) {
-    console.error('[Succession] GET /api/admin/succession/transfers error:', err.message);
-    res.status(500).json({ error: 'Failed to load transfers' });
-  }
-});
 
 // ─── POST /api/admin/succession/transfers/:id/execute ──────────────────────
 // Admin: execute a voluntary transfer (both parties have signed)
-app.post('/api/admin/succession/transfers/:id/execute', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  const client = await pool.connect();
-  try {
-    const adminUserId = req.userId;
-    const transferId = parseInt(req.params.id);
-    const { notes } = req.body;
 
-    await client.query('BEGIN');
-
-    // Load transfer
-    const transferResult = await client.query(
-      `SELECT st.*, a.user_id AS original_user_id, a.id AS affiliate_id
-         FROM succession_transfers st
-         JOIN affiliates a ON a.id = st.affiliate_id
-        WHERE st.id = $1 FOR UPDATE`,
-      [transferId]
-    );
-
-    if (!transferResult.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Transfer not found' });
-    }
-
-    const transfer = transferResult.rows[0];
-
-    if (transfer.status !== 'pending_admin_approval') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: `Cannot execute transfer with status: ${transfer.status}` });
-    }
-
-    if (!transfer.successor_id) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Successor must have an account before transfer can execute. Ask them to sign up first.' });
-    }
-
-    // Verify successor account exists
-    const successorResult = await client.query(
-      `SELECT id, email, plan FROM users WHERE id = $1`, [transfer.successor_id]
-    );
-    if (!successorResult.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Successor user account not found' });
-    }
-
-    const originalUserId = transfer.original_user_id;
-    const newUserId = transfer.successor_id;
-    const affiliateId = transfer.affiliate_id;
-
-    // CRITICAL: Swap the user_id on the affiliate record (node_id stays same — all legs intact)
-    await client.query(
-      `UPDATE affiliates SET user_id = $1, updated_at = NOW() WHERE id = $2`,
-      [newUserId, affiliateId]
-    );
-
-    // Original holder becomes Retail subscriber (downgrade to free, remove affiliate status)
-    await client.query(
-      `UPDATE users SET plan = 'free', subscription_status = 'cancelled',
-          stripe_subscription_id = NULL, paid_until = NULL, updated_at = NOW()
-       WHERE id = $1`,
-      [originalUserId]
-    );
-
-    // Set probation deadlines for successor (30/60/90 days)
-    const now = new Date();
-    const proDeadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const certDeadline = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
-    const deactivationDeadline = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-
-    // Update transfer to executed
-    await client.query(
-      `UPDATE succession_transfers SET
-        status = 'executed',
-        admin_id = $1,
-        admin_notes = $2,
-        admin_actioned_at = NOW(),
-        transfer_executed_date = NOW(),
-        old_affiliate_user_id = $3,
-        new_affiliate_user_id = $4,
-        probation_started_at = NOW(),
-        probation_pro_deadline = $5,
-        probation_cert_deadline = $6,
-        probation_deactivation_deadline = $7,
-        probation_status = 'pending',
-        updated_at = NOW()
-       WHERE id = $8`,
-      [adminUserId, notes || null, originalUserId, newUserId, proDeadline, certDeadline, deactivationDeadline, transferId]
-    );
-
-    // Update affiliate succession fields to reflect new holder
-    await client.query(
-      `UPDATE affiliates SET
-        successor_name = NULL, successor_email = NULL, successor_relationship = NULL,
-        succession_authorized_date = NULL, succession_signature_data = NULL, successor_id = NULL,
-        updated_at = NOW()
-       WHERE id = $1`,
-      [affiliateId]
-    );
-
-    await client.query('COMMIT');
-
-    console.log(`[Succession] Transfer #${transferId} executed by admin ${adminUserId}. Node ${affiliateId}: ${originalUserId} → ${newUserId}`);
-
-    res.json({
-      success: true,
-      message: 'Transfer executed successfully. The successor now owns this affiliate position.',
-      probation: {
-        pro_deadline: proDeadline.toISOString(),
-        cert_deadline: certDeadline.toISOString(),
-        deactivation_deadline: deactivationDeadline.toISOString()
-      }
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Succession] POST /api/admin/succession/transfers/:id/execute error:', err.message);
-    res.status(500).json({ error: 'Failed to execute transfer' });
-  } finally {
-    client.release();
-  }
-});
 
 // ─── POST /api/admin/succession/transfers/:id/reject ───────────────────────
 // Admin: reject a transfer
-app.post('/api/admin/succession/transfers/:id/reject', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  try {
-    const adminUserId = req.userId;
-    const transferId = parseInt(req.params.id);
-    const { notes } = req.body;
 
-    const result = await pool.query(
-      `UPDATE succession_transfers SET
-        status = 'rejected',
-        admin_id = $1,
-        admin_notes = $2,
-        admin_actioned_at = NOW(),
-        updated_at = NOW()
-       WHERE id = $3 AND status IN ('pending_successor_signature','pending_admin_approval')
-       RETURNING id`,
-      [adminUserId, notes || null, transferId]
-    );
-
-    if (!result.rows.length) {
-      return res.status(404).json({ error: 'Transfer not found or already processed' });
-    }
-
-    res.json({ success: true, message: 'Transfer rejected.' });
-  } catch (err) {
-    console.error('[Succession] POST /api/admin/succession/transfers/:id/reject error:', err.message);
-    res.status(500).json({ error: 'Failed to reject transfer' });
-  }
-});
 
 // ─── POST /api/admin/succession/transfers/:id/death-override ───────────────
 // Admin: corporate override for death/incapacitation (no successor signature required)
 // This swaps legal_name + tax_id on the account, keeping node_id intact
-app.post('/api/admin/succession/death-override', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  const client = await pool.connect();
-  try {
-    const adminUserId = req.userId;
-    const { affiliate_id, successor_email, successor_name, successor_relationship, notes } = req.body;
 
-    if (!affiliate_id || !successor_email || !successor_name) {
-      return res.status(400).json({ error: 'affiliate_id, successor_email, and successor_name are required' });
-    }
-
-    await client.query('BEGIN');
-
-    // Load affiliate
-    const affResult = await client.query(
-      `SELECT a.id, a.user_id, u.email AS holder_email, u.name AS holder_name
-         FROM affiliates a
-         JOIN users u ON u.id = a.user_id
-        WHERE a.id = $1 FOR UPDATE`,
-      [affiliate_id]
-    );
-
-    if (!affResult.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Affiliate not found' });
-    }
-
-    const aff = affResult.rows[0];
-
-    // Find or require successor user account
-    const successorResult = await client.query(
-      `SELECT id, plan FROM users WHERE LOWER(email) = LOWER($1)`, [successor_email]
-    );
-
-    if (!successorResult.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: `No account found for ${successor_email}. Successor must create an account first.` });
-    }
-
-    const successorUserId = successorResult.rows[0].id;
-    const originalUserId = aff.user_id;
-
-    // Swap user_id on the affiliate node (all legs remain intact)
-    await client.query(
-      `UPDATE affiliates SET user_id = $1, updated_at = NOW() WHERE id = $2`,
-      [successorUserId, affiliate_id]
-    );
-
-    // Downgrade original holder to Retail (free)
-    await client.query(
-      `UPDATE users SET plan = 'free', subscription_status = 'cancelled',
-          stripe_subscription_id = NULL, paid_until = NULL, updated_at = NOW()
-       WHERE id = $1`,
-      [originalUserId]
-    );
-
-    // Create the succession transfer record for audit
-    const now = new Date();
-    const proDeadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const certDeadline = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
-    const deactivationDeadline = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-
-    await client.query(
-      `INSERT INTO succession_transfers (
-        affiliate_id, transfer_type, status,
-        successor_id, successor_email, successor_name, successor_relationship,
-        transferor_signed_at, successor_signed_at,
-        admin_id, admin_notes, admin_actioned_at,
-        transfer_executed_date,
-        old_affiliate_user_id, new_affiliate_user_id,
-        probation_started_at, probation_pro_deadline, probation_cert_deadline,
-        probation_deactivation_deadline, probation_status,
-        created_at, updated_at
-       ) VALUES (
-        $1, 'death', 'executed',
-        $2, $3, $4, $5,
-        NOW(), NOW(),
-        $6, $7, NOW(),
-        NOW(),
-        $8, $2,
-        NOW(), $9, $10,
-        $11, 'pending',
-        NOW(), NOW()
-       )`,
-      [
-        affiliate_id,
-        successorUserId, successor_email, successor_name, successor_relationship || 'other',
-        adminUserId, notes || 'Corporate override — death/incapacitation',
-        originalUserId,
-        proDeadline, certDeadline, deactivationDeadline
-      ]
-    );
-
-    // Clear succession plan from affiliate record
-    await client.query(
-      `UPDATE affiliates SET
-        successor_name = NULL, successor_email = NULL, successor_relationship = NULL,
-        succession_authorized_date = NULL, succession_signature_data = NULL, successor_id = NULL,
-        updated_at = NOW()
-       WHERE id = $1`,
-      [affiliate_id]
-    );
-
-    await client.query('COMMIT');
-
-    console.log(`[Succession] Death override on affiliate ${affiliate_id} by admin ${adminUserId}. ${originalUserId} → ${successorUserId}`);
-
-    res.json({
-      success: true,
-      message: `Death/incapacitation transfer executed. ${successor_name} (${successor_email}) now holds the affiliate position.`,
-      probation: {
-        pro_deadline: proDeadline.toISOString(),
-        cert_deadline: certDeadline.toISOString(),
-        deactivation_deadline: deactivationDeadline.toISOString()
-      }
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Succession] POST /api/admin/succession/death-override error:', err.message);
-    res.status(500).json({ error: 'Failed to execute death override' });
-  } finally {
-    client.release();
-  }
-});
 
 // ─── GET /api/admin/succession/probation ───────────────────────────────────
 // Admin: list transfers in probation (monitoring successor compliance)
-app.get('/api/admin/succession/probation', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  try {
-    const result = await pool.query(
-      `SELECT st.*,
-              u_succ.email AS successor_email_addr, u_succ.name AS successor_user_name,
-              u_succ.plan AS successor_plan,
-              u_succ.is_facts_certified AS successor_facts_certified,
-              a.referral_code
-         FROM succession_transfers st
-         JOIN affiliates a ON a.id = st.affiliate_id
-         LEFT JOIN users u_succ ON u_succ.id = st.new_affiliate_user_id
-        WHERE st.status = 'executed'
-          AND st.probation_status NOT IN ('compliant', 'deactivated')
-        ORDER BY st.probation_deactivation_deadline ASC`
-    );
 
-    res.json({ success: true, probation_cases: result.rows, count: result.rows.length });
-  } catch (err) {
-    console.error('[Succession] GET /api/admin/succession/probation error:', err.message);
-    res.status(500).json({ error: 'Failed to load probation cases' });
-  }
-});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ─── RETAIL-TO-AFFILIATE CONVERSION FLOW ─────────────────────────────────────
@@ -27140,164 +23585,16 @@ app.get('/api/resources/:id/download', requireAuth, async (req, res) => {
 });
 
 // POST /api/admin/resources — create resource (creator only)
-app.post('/api/admin/resources', requireAuth, resourceUpload.single('file'), async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const { title, description, category, resource_type, file_url, thumbnail_emoji, is_pro_only, sort_order } = req.body;
-
-    if (!title || !title.trim()) return res.status(400).json({ error: 'Title is required' });
-    if (!category || !category.trim()) return res.status(400).json({ error: 'Category is required' });
-
-    let fileData = null;
-    let fileName = null;
-    let fileMime = null;
-    let fileSize = 0;
-
-    if (req.file) {
-      fileData = req.file.buffer;
-      fileName = req.file.originalname;
-      fileMime = req.file.mimetype;
-      fileSize = req.file.size;
-    }
-
-    const result = await pool.query(`
-      INSERT INTO resource_center_items
-        (title, description, category, resource_type, file_url, file_data, file_name,
-         file_size_bytes, file_mime_type, thumbnail_emoji, is_pro_only, sort_order, created_by)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-      RETURNING id, title, description, category, resource_type, file_url, file_name,
-                file_size_bytes, thumbnail_emoji, is_pro_only, is_active, sort_order, created_at
-    `, [
-      title.trim(),
-      description || null,
-      category.trim(),
-      resource_type || 'pdf',
-      file_url || null,
-      fileData,
-      fileName,
-      fileSize,
-      fileMime,
-      thumbnail_emoji || '📄',
-      is_pro_only === 'true' || is_pro_only === true,
-      parseInt(sort_order) || 0,
-      req.userId
-    ]);
-
-    res.json({ success: true, resource: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/admin/resources error:', err.message);
-    res.status(500).json({ error: 'Failed to create resource' });
-  }
-});
 
 // PUT /api/admin/resources/:id — update resource (creator only)
-app.put('/api/admin/resources/:id', requireAuth, resourceUpload.single('file'), async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const { title, description, category, resource_type, file_url, thumbnail_emoji, is_pro_only, is_active, sort_order } = req.body;
-
-    const existing = await pool.query('SELECT * FROM resource_center_items WHERE id = $1', [req.params.id]);
-    if (!existing.rows.length) return res.status(404).json({ error: 'Resource not found' });
-
-    let fileData = existing.rows[0].file_data;
-    let fileName = existing.rows[0].file_name;
-    let fileMime = existing.rows[0].file_mime_type;
-    let fileSize = existing.rows[0].file_size_bytes;
-
-    if (req.file) {
-      fileData = req.file.buffer;
-      fileName = req.file.originalname;
-      fileMime = req.file.mimetype;
-      fileSize = req.file.size;
-    }
-
-    const result = await pool.query(`
-      UPDATE resource_center_items SET
-        title = COALESCE($1, title),
-        description = $2,
-        category = COALESCE($3, category),
-        resource_type = COALESCE($4, resource_type),
-        file_url = $5,
-        file_data = $6,
-        file_name = $7,
-        file_size_bytes = $8,
-        file_mime_type = $9,
-        thumbnail_emoji = COALESCE($10, thumbnail_emoji),
-        is_pro_only = $11,
-        is_active = $12,
-        sort_order = COALESCE($13, sort_order),
-        updated_at = NOW()
-      WHERE id = $14
-      RETURNING id, title, description, category, resource_type, file_url, file_name,
-                file_size_bytes, thumbnail_emoji, is_pro_only, is_active, sort_order, updated_at
-    `, [
-      title ? title.trim() : null,
-      description !== undefined ? description : existing.rows[0].description,
-      category ? category.trim() : null,
-      resource_type || null,
-      file_url !== undefined ? (file_url || null) : existing.rows[0].file_url,
-      fileData,
-      fileName,
-      fileSize,
-      fileMime,
-      thumbnail_emoji || null,
-      is_pro_only !== undefined ? (is_pro_only === 'true' || is_pro_only === true) : existing.rows[0].is_pro_only,
-      is_active !== undefined ? (is_active === 'true' || is_active === true) : existing.rows[0].is_active,
-      sort_order !== undefined ? parseInt(sort_order) : null,
-      req.params.id
-    ]);
-
-    res.json({ success: true, resource: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/admin/resources/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update resource' });
-  }
-});
 
 // DELETE /api/admin/resources/:id — delete resource (creator only)
-app.delete('/api/admin/resources/:id', requireAuth, async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const result = await pool.query(
-      'DELETE FROM resource_center_items WHERE id = $1 RETURNING id, title',
-      [req.params.id]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Resource not found' });
-
-    res.json({ success: true, deleted: result.rows[0] });
-  } catch (err) {
-    console.error('DELETE /api/admin/resources/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete resource' });
-  }
-});
 
 // GET /api/admin/resources — list ALL resources including inactive (creator only)
-app.get('/api/admin/resources', requireAuth, async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const result = await pool.query(`
-      SELECT r.id, r.title, r.description, r.category, r.resource_type, r.file_url,
-             r.file_name, r.file_size_bytes, r.thumbnail_emoji, r.is_pro_only,
-             r.is_active, r.sort_order, r.download_count, r.created_at,
-             CASE WHEN r.file_data IS NOT NULL THEN true ELSE false END as has_file_upload
-      FROM resource_center_items r
-      ORDER BY r.sort_order ASC, r.created_at DESC
-    `);
-
-    res.json({ success: true, resources: result.rows, total: result.rowCount });
-  } catch (err) {
-    console.error('GET /api/admin/resources error:', err.message);
-    res.status(500).json({ error: 'Failed to load resources' });
-  }
-});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ─── CONTENT FEED ROUTES ──────────────────────────────────────────────────────
@@ -27490,916 +23787,827 @@ app.post('/api/feed/posts/:id/comments', requireAuth, async (req, res) => {
 // ── Admin feed management ─────────────────────────────────────────────────────
 
 // GET /api/admin/feed/posts — list all posts (creator only)
-app.get('/api/admin/feed/posts', requireAuth, async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const result = await pool.query(`
-      SELECT id, type, title, content, source_url, author, pinned, is_active,
-             scheduled_at, category, like_count, comment_count, bookmark_count, created_at
-      FROM feed_posts
-      ORDER BY pinned DESC, created_at DESC
-    `);
-    res.json({ success: true, posts: result.rows });
-  } catch (err) {
-    console.error('GET /api/admin/feed/posts error:', err.message);
-    res.status(500).json({ error: 'Failed to load posts' });
-  }
-});
 
 // POST /api/admin/feed/posts — create post (creator only)
-app.post('/api/admin/feed/posts', requireAuth, async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const { type, title, content, source_url, author, pinned, scheduled_at, category, is_active } = req.body;
-    if (!content || !content.trim()) return res.status(400).json({ error: 'Content required' });
-    if (!['quote','news','story','tip','digest'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
-
-    const result = await pool.query(`
-      INSERT INTO feed_posts (type, title, content, source_url, author, pinned, scheduled_at, category, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
-    `, [type, title || null, content.trim(), source_url || null, author || null,
-        pinned === true || pinned === 'true', scheduled_at || null, category || null,
-        is_active !== false && is_active !== 'false']);
-
-    res.json({ success: true, post: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/admin/feed/posts error:', err.message);
-    res.status(500).json({ error: 'Failed to create post' });
-  }
-});
 
 // PUT /api/admin/feed/posts/:id — update post (creator only)
-app.put('/api/admin/feed/posts/:id', requireAuth, async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const { type, title, content, source_url, author, pinned, scheduled_at, category, is_active } = req.body;
-    if (!content || !content.trim()) return res.status(400).json({ error: 'Content required' });
-
-    const result = await pool.query(`
-      UPDATE feed_posts
-      SET type=$1, title=$2, content=$3, source_url=$4, author=$5, pinned=$6,
-          scheduled_at=$7, category=$8, is_active=$9, updated_at=NOW()
-      WHERE id=$10
-      RETURNING *
-    `, [type, title || null, content.trim(), source_url || null, author || null,
-        pinned === true || pinned === 'true', scheduled_at || null, category || null,
-        is_active !== false && is_active !== 'false', req.params.id]);
-
-    if (!result.rows.length) return res.status(404).json({ error: 'Post not found' });
-    res.json({ success: true, post: result.rows[0] });
-  } catch (err) {
-    console.error('PUT /api/admin/feed/posts/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update post' });
-  }
-});
 
 // PATCH /api/admin/feed/posts/:id/toggle — toggle is_active (creator only)
-app.patch('/api/admin/feed/posts/:id/toggle', requireAuth, async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const result = await pool.query(
-      'UPDATE feed_posts SET is_active = NOT is_active, updated_at = NOW() WHERE id = $1 RETURNING id, is_active',
-      [req.params.id]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Post not found' });
-    res.json({ success: true, is_active: result.rows[0].is_active });
-  } catch (err) {
-    console.error('PATCH /api/admin/feed/posts/:id/toggle error:', err.message);
-    res.status(500).json({ error: 'Failed to toggle post' });
-  }
-});
 
 // DELETE /api/admin/feed/posts/:id — delete post (creator only)
-app.delete('/api/admin/feed/posts/:id', requireAuth, async (req, res) => {
-  try {
-    const creator = await isCreator(req.userId);
-    if (!creator) return res.status(403).json({ error: 'Creator access required' });
 
-    const result = await pool.query('DELETE FROM feed_posts WHERE id=$1 RETURNING id', [req.params.id]);
-    if (!result.rows.length) return res.status(404).json({ error: 'Post not found' });
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/admin/feed/posts/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete post' });
-  }
-});
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DAILY ENGAGEMENT LOOP — Streaks, Challenges, Tips, Points
-// ─────────────────────────────────────────────────────────────────────────────
+// [Phase5] engagement → routes/gamification.js
 
-// ── Activity Event Tracking (for view-based challenge verification) ──────────
-// Lightweight table: user_activity_events (user_id, event_type, event_date)
-// Created via ensureActivityTable() on first use; no migration needed.
-let _activityTableReady = false;
-async function ensureActivityTable() {
-  if (_activityTableReady) return;
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS user_activity_events (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        event_type VARCHAR(50) NOT NULL,
-        event_date DATE NOT NULL DEFAULT CURRENT_DATE,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        UNIQUE(user_id, event_type, event_date)
-      )
-    `);
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_user_activity_events_lookup ON user_activity_events(user_id, event_type, event_date)');
-    _activityTableReady = true;
-  } catch (e) {
-    // Table might already exist from a prior run — that's fine
-    if (e.code === '42P07' || e.message?.includes('already exists')) {
-      _activityTableReady = true;
-    } else {
-      console.error('[Activity] table setup error:', e.message);
-    }
-  }
-}
 
-// Record a user activity event (idempotent per user+type+date)
-async function recordActivity(userId, eventType) {
-  await ensureActivityTable();
-  try {
-    await pool.query(`
-      INSERT INTO user_activity_events (user_id, event_type, event_date)
-      VALUES ($1, $2, CURRENT_DATE)
-      ON CONFLICT (user_id, event_type, event_date) DO NOTHING
-    `, [userId, eventType]);
-  } catch (e) { /* silent — non-critical */ }
-}
 
-// Check if user performed activity today
-async function hasActivityToday(userId, eventType) {
-  await ensureActivityTable();
-  const today = new Date().toISOString().split('T')[0];
-  const r = await pool.query(
-    'SELECT 1 FROM user_activity_events WHERE user_id=$1 AND event_type=$2 AND event_date=$3 LIMIT 1',
-    [userId, eventType, today]
-  );
-  return r.rows.length > 0;
-}
 
-// POST /api/engagement/activity — track user view/visit events (for challenge verification)
-app.post('/api/engagement/activity', requireAuth, async (req, res) => {
-  try {
-    const { event_type } = req.body;
-    const ALLOWED_EVENTS = ['view_allocations', 'view_dashboard', 'visit_sovereign', 'view_fun_allocation', 'view_education'];
-    if (!event_type || !ALLOWED_EVENTS.includes(event_type)) {
-      return res.status(400).json({ error: 'Invalid event_type' });
-    }
-    await recordActivity(req.userId, event_type);
 
-    // Auto-complete the corresponding challenge if one matches
-    const autoResult = await tryAutoCompleteChallenge(req.userId, event_type);
-    res.json({ success: true, tracked: true, auto_completed: autoResult || null });
-  } catch (e) {
-    console.error('[Activity] track error:', e.message);
-    res.status(500).json({ error: 'Failed to track activity' });
-  }
-});
 
-// ── Challenge Verification System ────────────────────────────────────────────
 
-/**
- * Verify if a user has actually completed the action required by a challenge.
- * Returns { verified: boolean, reason?: string }
- */
-async function verifyChallengeCompletion(userId, criteriaKey, client, userTimezone) {
-  const db = client || pool;
-  const today = getUserLocalDate(userTimezone || null);
-  const now = new Date();
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  // ISO week start (Monday)
-  const weekDay = now.getDay() || 7; // Convert Sunday=0 to 7
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - weekDay + 1);
-  const weekStartStr = weekStart.toISOString().split('T')[0];
 
-  switch (criteriaKey) {
-    // ── DAILY challenges ─────────────────────────────────────────────
-    case 'log_transaction': {
-      const r = await db.query(
-        'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date=$2',
-        [userId, today]
-      );
-      const count = parseInt(r.rows[0].count);
-      return count >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Log at least 1 transaction today to complete this challenge.' };
-    }
-    case 'log_3_transactions': {
-      const r = await db.query(
-        'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date=$2',
-        [userId, today]
-      );
-      const count = parseInt(r.rows[0].count);
-      return count >= 3
-        ? { verified: true }
-        : { verified: false, reason: `Log ${3 - count} more transaction${3 - count === 1 ? '' : 's'} today (${count}/3 so far).` };
-    }
-    case 'view_allocations': {
-      const has = await hasActivityToday(userId, 'view_allocations');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'Visit the Allocations tab to complete this challenge.' };
-    }
-    case 'daily_checkin': {
-      // Auto-completed by check-in endpoint — verify via tfr_user_stats
-      const statsRow = await db.query(
-        'SELECT last_activity_date, checkin_timezone FROM tfr_user_stats WHERE user_id=$1', [userId]
-      );
-      const storedTz = userTimezone || statsRow.rows[0]?.checkin_timezone || null;
-      const todayLocal = getUserLocalDate(storedTz);
-      const lastDate = statsRow.rows[0]?.last_activity_date
-        ? new Date(statsRow.rows[0].last_activity_date).toISOString().split('T')[0]
-        : null;
-      return lastDate === todayLocal
-        ? { verified: true }
-        : { verified: false, reason: 'Hit the Check-In button to complete this challenge.' };
-    }
-    case 'read_tip': {
-      // Auto-completed by tip read endpoint — check user_challenges directly
-      return { verified: true }; // If they get here, the tip endpoint already handles it
-    }
-    case 'view_dashboard': {
-      const has = await hasActivityToday(userId, 'view_dashboard');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'Visit your Dashboard to complete this challenge.' };
-    }
-    case 'visit_sovereign': {
-      const has = await hasActivityToday(userId, 'visit_sovereign');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'Visit the Command Console to complete this challenge.' };
-    }
-    case 'view_fun_allocation': {
-      const has = await hasActivityToday(userId, 'view_fun_allocation');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'View your Fun spending in the Allocations tab to complete this challenge.' };
-    }
-    case 'log_bill': {
-      // Check for any expense transaction logged today (bills are expenses)
-      const r = await db.query(
-        "SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date=$2 AND type='expense'",
-        [userId, today]
-      );
-      return parseInt(r.rows[0].count) >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Log a bill or expense payment today to complete this challenge.' };
-    }
-    case 'view_education': {
-      const has = await hasActivityToday(userId, 'view_education');
-      return has
-        ? { verified: true }
-        : { verified: false, reason: 'View your Education budget in the Allocations tab to complete this challenge.' };
-    }
 
-    // ── WEEKLY challenges ────────────────────────────────────────────
-    case 'weekly_7day_streak': {
-      const stats = await db.query('SELECT streak_days FROM tfr_user_stats WHERE user_id=$1', [userId]);
-      const streak = stats.rows[0]?.streak_days || 0;
-      return streak >= 7
-        ? { verified: true }
-        : { verified: false, reason: `Maintain a 7-day streak (currently ${streak} days).` };
-    }
-    case 'review_all_allocations': {
-      // Check if user visited allocations at least once this week
-      await ensureActivityTable();
-      const r = await db.query(
-        'SELECT COUNT(DISTINCT event_date) FROM user_activity_events WHERE user_id=$1 AND event_type=$2 AND event_date >= $3',
-        [userId, 'view_allocations', weekStartStr]
-      );
-      return parseInt(r.rows[0].count) >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Review your allocations this week to complete this challenge.' };
-    }
-    case 'log_15_weekly': {
-      const r = await db.query(
-        'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date >= $2',
-        [userId, weekStartStr]
-      );
-      const count = parseInt(r.rows[0].count);
-      return count >= 15
-        ? { verified: true }
-        : { verified: false, reason: `Log ${15 - count} more transactions this week (${count}/15).` };
-    }
-    case 'check_savings_weekly': {
-      // Check if user visited allocations this week (viewing savings allocation)
-      await ensureActivityTable();
-      const r = await db.query(
-        'SELECT COUNT(*) FROM user_activity_events WHERE user_id=$1 AND event_type=$2 AND event_date >= $3',
-        [userId, 'view_allocations', weekStartStr]
-      );
-      return parseInt(r.rows[0].count) >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Check your Savings allocation this week.' };
-    }
 
-    // ── MONTHLY challenges ───────────────────────────────────────────
-    case 'monthly_30day_streak': {
-      const stats = await db.query('SELECT streak_days FROM tfr_user_stats WHERE user_id=$1', [userId]);
-      return (stats.rows[0]?.streak_days || 0) >= 30
-        ? { verified: true }
-        : { verified: false, reason: `Reach a 30-day streak (currently ${stats.rows[0]?.streak_days || 0} days).` };
-    }
-    case 'monthly_debt_review': {
-      // Check if user viewed debt-related tab or logged debt payments this month
-      await ensureActivityTable();
-      const r = await db.query(
-        "SELECT COUNT(*) FROM user_activity_events WHERE user_id=$1 AND event_type='view_allocations' AND event_date >= $2",
-        [userId, monthStart]
-      );
-      return parseInt(r.rows[0].count) >= 1
-        ? { verified: true }
-        : { verified: false, reason: 'Review your debt and allocations this month.' };
-    }
-    case 'monthly_fun_reduction': {
-      // Check if Fun spending % is at or below target allocation
-      const funCat = await db.query("SELECT id FROM categories WHERE slug IN ('lifestyle','fun') LIMIT 1");
-      if (!funCat.rows[0]) return { verified: false, reason: 'Fun category not found.' };
-      const funId = funCat.rows[0].id;
-      const target = await db.query(
-        'SELECT COALESCE(pa.percentage, ac.percentage) as pct FROM allocation_config ac LEFT JOIN permanent_allocations pa ON pa.category_id=ac.category_id AND pa.user_id=$1 WHERE ac.category_id=$2',
-        [userId, funId]
-      );
-      const targetPct = parseFloat(target.rows[0]?.pct || 10);
-      // Get this month's spending distribution
-      const spending = await db.query(`
-        SELECT COALESCE(SUM(CASE WHEN category_id=$1 THEN amount ELSE 0 END), 0) as fun_total,
-               COALESCE(SUM(amount), 0) as total
-        FROM transactions WHERE user_id=$2 AND type='expense' AND transaction_date >= $3
-      `, [funId, userId, monthStart]);
-      const funTotal = parseFloat(spending.rows[0].fun_total);
-      const total = parseFloat(spending.rows[0].total);
-      if (total === 0) return { verified: false, reason: 'Log some expenses this month first.' };
-      const actualPct = (funTotal / total) * 100;
-      return actualPct <= targetPct
-        ? { verified: true }
-        : { verified: false, reason: `Fun spending is ${actualPct.toFixed(1)}% vs ${targetPct}% target. Reduce Fun spending.` };
-    }
-    case 'monthly_50_logs': {
-      const r = await db.query(
-        'SELECT COUNT(*) FROM transactions WHERE user_id=$1 AND transaction_date >= $2',
-        [userId, monthStart]
-      );
-      const count = parseInt(r.rows[0].count);
-      return count >= 50
-        ? { verified: true }
-        : { verified: false, reason: `Log ${50 - count} more transactions this month (${count}/50).` };
-    }
-    case 'monthly_20_challenges': {
-      // Auto-completed by the system when 20 daily challenges are done
-      const monthKey = getPeriodKey('monthly');
-      const r = await db.query(`
-        SELECT COUNT(*) FROM user_challenges uc
-        JOIN engagement_challenges ec ON ec.id = uc.challenge_id
-        WHERE uc.user_id=$1 AND uc.status='completed' AND ec.type='daily'
-          AND uc.period_key LIKE $2
-      `, [userId, `${monthKey.substring(0, 7)}%`]);
-      return parseInt(r.rows[0].count) >= 20
-        ? { verified: true }
-        : { verified: false, reason: `Complete ${20 - parseInt(r.rows[0].count)} more daily challenges this month.` };
-    }
-    case 'monthly_streak_record': {
-      const stats = await db.query('SELECT streak_days, longest_streak FROM tfr_user_stats WHERE user_id=$1', [userId]);
-      const current = stats.rows[0]?.streak_days || 0;
-      const longest = stats.rows[0]?.longest_streak || 0;
-      // They hit a new record if current === longest and it increased this month
-      return current >= longest && current > 0
-        ? { verified: true }
-        : { verified: false, reason: `Beat your personal best streak of ${longest} days (currently ${current}).` };
-    }
 
-    default:
-      // Unknown criteria — allow completion (backwards compatible)
-      return { verified: true };
-  }
-}
 
-/**
- * Try to auto-complete a challenge by criteria_key for a user.
- * Used after actions (transaction logged, tab visited, etc.)
- * Returns { challenge_title, xp_earned } if completed, null otherwise.
- */
-async function tryAutoCompleteChallenge(userId, criteriaKey) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
 
-    const challenge = (await client.query(
-      'SELECT * FROM engagement_challenges WHERE criteria_key=$1 AND active=TRUE LIMIT 1',
-      [criteriaKey]
-    )).rows[0];
-    if (!challenge) { await client.query('ROLLBACK'); return null; }
 
-    const periodKey = getPeriodKey(challenge.type);
-    const existing = (await client.query(
-      'SELECT * FROM user_challenges WHERE user_id=$1 AND challenge_id=$2 AND period_key=$3',
-      [userId, challenge.id, periodKey]
-    )).rows[0];
-    if (existing?.status === 'completed') { await client.query('ROLLBACK'); return null; }
 
-    // Verify the action was actually done
-    const verification = await verifyChallengeCompletion(userId, criteriaKey, client);
-    if (!verification.verified) { await client.query('ROLLBACK'); return null; }
 
-    const isPro = await hasProAccess(userId);
-    const xpEarned = isPro ? Math.round(challenge.xp_reward * 2) : challenge.xp_reward;
 
-    await client.query(`
-      INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-      VALUES ($1, $2, $3, 'completed', NOW(), $4)
-      ON CONFLICT (user_id, challenge_id, period_key) DO UPDATE
-        SET status='completed', completed_at=NOW(), xp_awarded=$4
-    `, [userId, challenge.id, periodKey, xpEarned]);
 
-    await tfrEnsureStats(userId, client);
-    await tfrAwardXp(userId, 'challenge_complete', `Challenge: ${challenge.title}`, xpEarned, client);
-    await client.query(
-      'UPDATE tfr_user_stats SET total_points = COALESCE(total_points,0) + $1 WHERE user_id=$2',
-      [xpEarned, userId]
-    );
 
-    // Award TFR Reward Points if challenge has points_reward > 0
-    let pointsAwarded = 0;
-    const challengePtsReward = parseInt(challenge.points_reward) || 0;
-    if (challengePtsReward > 0) {
-      try {
-        await ensureFgBalance(userId);
-        const rpToday = new Date().toISOString().split('T')[0];
-        const rpMonth = rpToday.substring(0, 7);
-        const rpBal = (await client.query(
-          'SELECT monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-          [userId]
-        )).rows[0] || {};
-        const rpMonthEarned = rpBal.monthly_cap_reset_month === rpMonth
-          ? (parseInt(rpBal.monthly_points_earned) || 0) : 0;
-        const rpRemaining = Math.max(0, 5000 - rpMonthEarned);
-        const rpToAward = Math.min(challengePtsReward, rpRemaining);
-        if (rpToAward > 0) {
-          await client.query(
-            `UPDATE fg_points_balances
-             SET balance = balance + $2,
-                 total_earned = total_earned + $2,
-                 monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-                 monthly_cap_reset_month = $3,
-                 updated_at = NOW()
-             WHERE user_id = $1`,
-            [userId, rpToAward, rpMonth]
-          );
-          await client.query(
-            `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-             VALUES ($1, 'challenge_complete', $2, $3)`,
-            [userId, `Challenge: ${challenge.title} — ${rpToAward} FACTS Points`, rpToAward]
-          );
-          pointsAwarded = rpToAward;
-        }
-      } catch (rpErr) {
-        console.error('[Rewards] challenge points error:', rpErr.message);
-      }
-    }
 
-    await client.query('COMMIT');
-    return { challenge_title: challenge.title, xp_earned: xpEarned, points_awarded: pointsAwarded };
-  } catch (e) {
-    await client.query('ROLLBACK');
-    console.error('[AutoComplete] error for', criteriaKey, e.message);
-    return null;
-  } finally { client.release(); }
-}
 
-// Helper: deterministic "today's" tip index (rotates daily across 30 tips)
-function getTodaysTipIndex() {
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-  return (dayOfYear % 30) + 1;
-}
 
-// Helper: period_key for challenges (daily = YYYY-MM-DD, weekly = YYYY-Www, monthly = YYYY-MM)
-function getPeriodKey(type) {
-  const now = new Date();
-  if (type === 'daily') return now.toISOString().split('T')[0];
-  if (type === 'weekly') {
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const week = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-    return `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
-  }
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
 
-// Helper: get or init TFR stats without requiring Pro
-async function engEnsureStats(userId) {
-  const existing = (await pool.query('SELECT * FROM tfr_user_stats WHERE user_id = $1', [userId])).rows[0];
-  if (existing) return existing;
-  const deadline = new Date(Date.now() + 48 * 60 * 60 * 1000);
-  const row = (await pool.query(`
-    INSERT INTO tfr_user_stats (user_id, first_blood_deadline)
-    VALUES ($1, $2)
-    ON CONFLICT (user_id) DO UPDATE SET updated_at = NOW()
-    RETURNING *
-  `, [userId, deadline])).rows[0];
-  return row;
-}
 
-// GET /api/engagement/today — fetch today's tip, challenges, streak, points
-app.get('/api/engagement/today', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const isPro = await hasProAccess(userId);
-    const stats = await engEnsureStats(userId);
 
-    // Today's tip
-    const tipIndex = getTodaysTipIndex();
-    const tip = (await pool.query(
-      'SELECT id, content, author, category FROM daily_tips WHERE tip_index = $1 AND active = TRUE', [tipIndex]
-    )).rows[0] || null;
 
-    // Today's daily challenges (rotating — pick 3 based on day of year)
-    const allDailyChallenges = (await pool.query(
-      "SELECT * FROM engagement_challenges WHERE type = 'daily' AND active = TRUE ORDER BY sort_order"
-    )).rows;
-    const dayOffset = Math.floor(Date.now() / 86400000);
-    const todayChallenges = [];
-    for (let i = 0; i < 3 && allDailyChallenges.length > 0; i++) {
-      const idx = (dayOffset + i) % allDailyChallenges.length;
-      todayChallenges.push(allDailyChallenges[idx]);
-    }
 
-    // Active weekly + monthly challenges
-    const weeklyMonthly = (await pool.query(
-      "SELECT * FROM engagement_challenges WHERE type IN ('weekly','monthly') AND active = TRUE ORDER BY type, sort_order"
-    )).rows;
 
-    const allChallenges = [...todayChallenges, ...weeklyMonthly];
-    const challengeIds = allChallenges.map(c => c.id);
 
-    // Check completion status for all challenges
-    let completionMap = {};
-    if (challengeIds.length > 0) {
-      const periodKeys = {
-        daily: getPeriodKey('daily'),
-        weekly: getPeriodKey('weekly'),
-        monthly: getPeriodKey('monthly'),
-      };
-      const completions = (await pool.query(`
-        SELECT uc.challenge_id, uc.status, uc.completed_at
-        FROM user_challenges uc
-        JOIN engagement_challenges ec ON ec.id = uc.challenge_id
-        WHERE uc.user_id = $1
-          AND uc.challenge_id = ANY($2::int[])
-          AND (
-            (ec.type = 'daily'   AND uc.period_key = $3) OR
-            (ec.type = 'weekly'  AND uc.period_key = $4) OR
-            (ec.type = 'monthly' AND uc.period_key = $5)
-          )
-      `, [userId, challengeIds, periodKeys.daily, periodKeys.weekly, periodKeys.monthly])).rows;
-      completions.forEach(c => { completionMap[c.challenge_id] = c; });
-    }
 
-    // Check verification status for incomplete challenges
-    const verificationMap = {};
-    for (const c of allChallenges) {
-      if (completionMap[c.id]?.status !== 'completed') {
-        try {
-          verificationMap[c.id] = await verifyChallengeCompletion(userId, c.criteria_key, null, userTz);
-        } catch { verificationMap[c.id] = { verified: false, reason: 'Check failed' }; }
-      }
-    }
 
-    const challengesWithStatus = allChallenges.map(c => ({
-      ...c,
-      completed: completionMap[c.id]?.status === 'completed',
-      completed_at: completionMap[c.id]?.completed_at || null,
-      xp_reward: isPro ? Math.round(c.xp_reward * 1) : c.xp_reward, // 2x shown in UI for Pro
-      verified: completionMap[c.id]?.status === 'completed' ? true : (verificationMap[c.id]?.verified || false),
-      verify_hint: verificationMap[c.id]?.reason || null,
-    }));
 
-    // Streak info
-    const streak = {
-      days: stats.streak_days || 0,
-      longest: stats.longest_streak || 0,
-      freezes_remaining: isPro ? (stats.freezes_remaining || 0) : 0,
-      multiplier: (stats.streak_days || 0) >= 3 ? 1.5 : 1.0,
-      milestones: [7, 30, 90, 365],
-      next_milestone: [7, 30, 90, 365].find(m => m > (stats.streak_days || 0)) || null,
-    };
 
-    // Milestone achievements
-    const achievements = (await pool.query(
-      "SELECT achievement_key FROM tfr_achievements WHERE user_id = $1", [userId]
-    )).rows.map(r => r.achievement_key);
 
-    // TFR Reward Points (Aura Restored loyalty balance) — separate from Financial XP
-    await ensureFgBalance(userId);
-    const fgPointsRow = (await pool.query(
-      'SELECT balance, total_earned, total_redeemed FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0] || { balance: 0, total_earned: 0, total_redeemed: 0 };
 
-    // Use user's local timezone for checked_in_today (falls back to UTC)
-    const userTz = (req.query.timezone && isValidTimezone(req.query.timezone))
-      ? req.query.timezone : (stats.checkin_timezone || null);
-    const today = getUserLocalDate(userTz);
-    const checkedInToday = stats.last_activity_date
-      ? new Date(stats.last_activity_date).toISOString().split('T')[0] === today
-      : false;
 
-    res.json({
-      success: true,
-      is_pro: isPro,
-      streak,
-      checked_in_today: checkedInToday,
-      tip,
-      challenges: {
-        daily: challengesWithStatus.filter(c => c.type === 'daily'),
-        weekly: challengesWithStatus.filter(c => c.type === 'weekly'),
-        monthly: challengesWithStatus.filter(c => c.type === 'monthly'),
-      },
-      total_points: stats.total_points || stats.xp || 0,
-      // TFR Reward Points: redeemable at Aura Restored (separate from Financial XP)
-      reward_points: {
-        balance: parseInt(fgPointsRow.balance) || 0,
-        total_earned: parseInt(fgPointsRow.total_earned) || 0,
-        total_redeemed: parseInt(fgPointsRow.total_redeemed) || 0,
-      },
-      achievements,
-      xp_multiplier_active: streak.multiplier > 1,
-      pro_multiplier: isPro ? '2× User Points bonus active for Pro' : null,
-      user_timezone: userTz || 'UTC',
-    });
-  } catch (err) {
-    console.error('[Engagement] GET /today error:', err.message);
-    res.status(500).json({ error: 'Failed to load engagement data' });
-  }
-});
 
-// POST /api/engagement/challenge/:id/complete — mark a challenge as done (with verification)
-app.post('/api/engagement/challenge/:id/complete', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const challengeId = parseInt(req.params.id);
-    const isPro = await hasProAccess(userId);
 
-    const challenge = (await client.query(
-      'SELECT * FROM engagement_challenges WHERE id = $1 AND active = TRUE', [challengeId]
-    )).rows[0];
-    if (!challenge) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Challenge not found' });
-    }
 
-    const periodKey = getPeriodKey(challenge.type);
 
-    // Check if already completed
-    const existing = (await client.query(`
-      SELECT * FROM user_challenges WHERE user_id = $1 AND challenge_id = $2 AND period_key = $3
-    `, [userId, challengeId, periodKey])).rows[0];
-    if (existing?.status === 'completed') {
-      await client.query('ROLLBACK');
-      return res.json({ success: false, already_done: true, message: 'Challenge already completed' });
-    }
 
-    // ── Automated verification: check if user actually performed the required action ──
-    const verification = await verifyChallengeCompletion(userId, challenge.criteria_key, client);
-    if (!verification.verified) {
-      await client.query('ROLLBACK');
-      return res.json({
-        success: false,
-        not_verified: true,
-        message: verification.reason || 'Complete the required action first.',
-      });
-    }
 
-    // User Points earned (challenges award TFR Reward Points, NOT Financial XP)
-    // Pro users get 2x User Points bonus
-    const basePoints = challenge.xp_reward;
-    const pointsEarned = isPro ? Math.round(basePoints * 2) : basePoints;
 
-    // Upsert challenge completion (xp_awarded column stores points for backward compat)
-    await client.query(`
-      INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-      VALUES ($1, $2, $3, 'completed', NOW(), $4)
-      ON CONFLICT (user_id, challenge_id, period_key) DO UPDATE
-        SET status = 'completed', completed_at = NOW(), xp_awarded = $4
-    `, [userId, challengeId, periodKey, pointsEarned]);
 
-    // Award TFR Reward Points (fg_points_balances) — NOT Financial XP
-    // Challenges feed the Aura Restored loyalty system, not the financial progression system.
-    await ensureFgBalance(userId);
-    await client.query(
-      `UPDATE fg_points_balances
-       SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW()
-       WHERE user_id = $2`,
-      [pointsEarned, userId]
-    );
-    await client.query(
-      `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-       VALUES ($1, 'challenge_complete', $2, $3)`,
-      [userId, `Challenge: ${challenge.title}`, pointsEarned]
-    );
 
-    // Get current XP stats (unchanged — challenges no longer affect Financial XP)
-    await tfrEnsureStats(userId, client);
-    const currentStatsRow = (await client.query(
-      'SELECT xp, level FROM tfr_user_stats WHERE user_id = $1', [userId]
-    )).rows[0] || { xp: 0, level: 1 };
 
-    // Check for monthly_20_challenges milestone (also awards User Points, not XP)
-    if (challenge.type === 'daily') {
-      const monthKey = getPeriodKey('monthly');
-      const monthCount = (await client.query(`
-        SELECT COUNT(*) FROM user_challenges uc
-        JOIN engagement_challenges ec ON ec.id = uc.challenge_id
-        WHERE uc.user_id = $1 AND uc.status = 'completed' AND ec.type = 'daily'
-          AND uc.period_key LIKE $2
-      `, [userId, `${monthKey.substring(0, 7)}%`])).rows[0].count;
 
-      if (parseInt(monthCount) >= 20) {
-        const monthlyChal = (await client.query(
-          "SELECT id FROM engagement_challenges WHERE criteria_key = 'monthly_20_challenges' LIMIT 1"
-        )).rows[0];
-        if (monthlyChal) {
-          const monthPeriod = getPeriodKey('monthly');
-          const alreadyDone = (await client.query(
-            'SELECT id FROM user_challenges WHERE user_id=$1 AND challenge_id=$2 AND period_key=$3 AND status=$4',
-            [userId, monthlyChal.id, monthPeriod, 'completed']
-          )).rows[0];
-          if (!alreadyDone) {
-            const bonusPoints = isPro ? 200 : 100;
-            await client.query(`
-              INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-              VALUES ($1, $2, $3, 'completed', NOW(), $4)
-              ON CONFLICT DO NOTHING
-            `, [userId, monthlyChal.id, monthPeriod, bonusPoints]);
-            // Award bonus User Points for 20-challenge milestone
-            await client.query(
-              `UPDATE fg_points_balances SET balance = balance + $1, total_earned = total_earned + $1, updated_at = NOW() WHERE user_id = $2`,
-              [bonusPoints, userId]
-            );
-            await client.query(
-              `INSERT INTO fg_earning_events (user_id, activity_type, description, points) VALUES ($1, 'challenge_complete', 'Monthly: 20 daily challenges', $2)`,
-              [userId, bonusPoints]
-            );
-          }
-        }
-      }
-    }
 
-    await client.query('COMMIT');
-    res.json({
-      success: true,
-      user_points_earned: pointsEarned, // TFR Reward Points (Aura Restored)
-      xp_earned: 0, // Challenges no longer award Financial XP
-      total_xp: currentStatsRow.xp,
-      level: currentStatsRow.level,
-      leveled_up: false, // Challenges don't affect Financial XP / level progression
-      new_rank: null,
-      pro_bonus: isPro,
-      message: isPro ? `+${pointsEarned} FACTS Points (2× Pro bonus!)` : `+${pointsEarned} FACTS Points`,
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Engagement] challenge complete error:', err.message);
-    res.status(500).json({ error: 'Failed to complete challenge' });
-  } finally { client.release(); }
-});
 
-// POST /api/engagement/streak/freeze — burn a streak freeze (Pro only)
-app.post('/api/engagement/streak/freeze', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const isPro = await hasProAccess(userId);
-    if (!isPro) {
-      return res.status(403).json({ success: false, pro_required: true, message: 'Streak freezes are a paid feature. Upgrade to protect your streak!' });
-    }
 
-    const stats = await engEnsureStats(userId);
-    const currentMonth = new Date().toISOString().substring(0, 7);
 
-    // Grant monthly freeze if not yet given this month
-    let freezes = stats.freezes_remaining || 0;
-    if (stats.last_freeze_month !== currentMonth) {
-      // New month: restore 1 free freeze
-      await pool.query(
-        'UPDATE tfr_user_stats SET freezes_remaining = 1, last_freeze_month = $1, updated_at = NOW() WHERE user_id = $2',
-        [currentMonth, userId]
-      );
-      freezes = 1;
-    }
 
-    if (freezes < 1) {
-      return res.json({ success: false, message: 'No streak freezes remaining this month. Freezes reset on the 1st.' });
-    }
 
-    // Apply freeze: set last_activity_date to today so streak doesn't break
-    const today = new Date().toISOString().split('T')[0];
-    await pool.query(`
-      UPDATE tfr_user_stats
-        SET freezes_remaining = freezes_remaining - 1,
-            last_activity_date = $1,
-            updated_at = NOW()
-        WHERE user_id = $2
-    `, [today, userId]);
 
-    res.json({ success: true, message: 'Streak freeze used! Your streak is protected for today.', freezes_remaining: freezes - 1 });
-  } catch (err) {
-    console.error('[Engagement] streak freeze error:', err.message);
-    res.status(500).json({ error: 'Failed to apply streak freeze' });
-  }
-});
 
-// GET /api/engagement/tips — tips archive (last 14 days rotating)
-app.get('/api/engagement/tips', requireAuth, async (req, res) => {
-  try {
-    const tips = (await pool.query(
-      'SELECT id, content, author, category, tip_index FROM daily_tips WHERE active = TRUE ORDER BY tip_index'
-    )).rows;
-    const todayIndex = getTodaysTipIndex();
-    res.json({ success: true, tips, today_index: todayIndex });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load tips' });
-  }
-});
 
-// POST /api/engagement/tip/:id/read — mark tip as read (awards XP for read_tip challenge)
-app.post('/api/engagement/tip/:id/read', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
 
-    // Try to complete the "Read today's money tip" challenge
-    const challenge = (await client.query(
-      "SELECT * FROM engagement_challenges WHERE criteria_key = 'read_tip' AND active = TRUE LIMIT 1"
-    )).rows[0];
-    if (challenge) {
-      const periodKey = getPeriodKey('daily');
-      const existing = (await client.query(
-        'SELECT id FROM user_challenges WHERE user_id=$1 AND challenge_id=$2 AND period_key=$3 AND status=$4',
-        [userId, challenge.id, periodKey, 'completed']
-      )).rows[0];
-      if (!existing) {
-        const isPro = await hasProAccess(userId);
-        const xp = isPro ? challenge.xp_reward * 2 : challenge.xp_reward;
-        await client.query(`
-          INSERT INTO user_challenges (user_id, challenge_id, period_key, status, completed_at, xp_awarded)
-          VALUES ($1, $2, $3, 'completed', NOW(), $4)
-          ON CONFLICT DO NOTHING
-        `, [userId, challenge.id, periodKey, xp]);
-        await tfrEnsureStats(userId, client);
-        await tfrAwardXp(userId, 'challenge_complete', 'Challenge: Read today\'s money tip', xp, client);
-        await client.query(
-          'UPDATE tfr_user_stats SET total_points = COALESCE(total_points,0) + $1 WHERE user_id = $2',
-          [xp, userId]
-        );
-        await client.query('COMMIT');
-        return res.json({ success: true, xp_earned: xp, challenge_completed: true });
-      }
-    }
-    await client.query('COMMIT');
-    res.json({ success: true, xp_earned: 0, challenge_completed: false });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: 'Failed to record tip read' });
-  } finally { client.release(); }
-});
 
-// GET /api/engagement/leaderboard — top 10 by XP (Pro only, anonymous)
-app.get('/api/engagement/leaderboard', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const isPro = await hasProAccess(userId);
-    if (!isPro) {
-      return res.status(403).json({ success: false, pro_required: true, message: 'Leaderboard is a paid feature' });
-    }
-    const rows = (await pool.query(`
-      SELECT
-        ROW_NUMBER() OVER (ORDER BY xp DESC) AS rank,
-        CASE WHEN user_id = $1 THEN 'You' ELSE 'Player #' || MOD(user_id * 7919, 9999)::text END AS display_name,
-        xp, level, streak_days, user_id = $1 AS is_you
-      FROM tfr_user_stats
-      ORDER BY xp DESC
-      LIMIT 10
-    `, [userId])).rows;
-    res.json({ success: true, leaderboard: rows });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load leaderboard' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -29083,319 +25291,319 @@ app.get('/api/scorecard/user/:targetUserId', requireAuth, async (req, res) => {
 // ─── DOCUMENT VAULT ──────────────────────────────────────
 // ═══════════════════════════════════════════════════════════
 
-const vaultUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
-  fileFilter: (req, file, cb) => {
-    const name = file.originalname.toLowerCase();
-    const allowed = ['.pdf', '.jpg', '.jpeg', '.png', '.heic', '.heif', '.csv', '.ofx', '.qfx'];
-    if (allowed.some(ext => name.endsWith(ext))) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only PDF, JPG, PNG, HEIC, CSV, OFX, and QFX files are supported'));
-    }
-  }
-});
+// [Phase4] document vault → routes/vault.js
 
-const VAULT_CATEGORIES = ['receipts', 'financial_transactions', 'credit_reports', 'benefits_packages', 'life_insurance', 'other_documents'];
-const IMPORT_DOC_CATEGORIES = ['credit_reports', 'benefits_packages', 'life_insurance', 'other_documents'];
 
-// GET /api/vault/summary — count + last upload per category
-app.get('/api/vault/summary', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    const result = await pool.query(
-      `SELECT category, COUNT(*) AS count, MAX(created_at) AS last_upload
-       FROM user_documents WHERE user_id = $1 GROUP BY category`,
-      [req.userId]
-    );
-    const summary = {};
-    VAULT_CATEGORIES.forEach(cat => {
-      summary[cat] = { count: 0, last_upload: null };
-    });
-    result.rows.forEach(row => {
-      summary[row.category] = { count: parseInt(row.count), last_upload: row.last_upload };
-    });
-    res.json({ success: true, summary, has_pro: hasPro });
-  } catch (err) {
-    console.error('[Vault] summary error:', err.message);
-    res.status(500).json({ error: 'Failed to load vault summary' });
-  }
-});
 
-// GET /api/vault/documents — list documents, optionally by category
-app.get('/api/vault/documents', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    const { category } = req.query;
-    if (category && !VAULT_CATEGORIES.includes(category)) {
-      return res.status(400).json({ error: 'Invalid category' });
-    }
-    if (!hasPro && category && !IMPORT_DOC_CATEGORIES.includes(category)) {
-      return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
-    }
 
-    let query = `SELECT id, category, file_name, file_mime_type, file_size_bytes, notes, created_at
-                 FROM user_documents WHERE user_id = $1`;
-    const params = [req.userId];
-    if (category) {
-      query += ` AND category = $2`;
-      params.push(category);
-    } else if (!hasPro) {
-      query += ` AND category = ANY($2)`;
-      params.push(IMPORT_DOC_CATEGORIES);
-    }
-    query += ' ORDER BY created_at DESC';
 
-    const result = await pool.query(query, params);
-    res.json({ success: true, documents: result.rows, has_pro: hasPro });
-  } catch (err) {
-    console.error('[Vault] list error:', err.message);
-    res.status(500).json({ error: 'Failed to list documents' });
-  }
-});
 
-// POST /api/vault/documents — upload a document
-app.post('/api/vault/documents', requireAuth, vaultUpload.single('file'), async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
 
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const { category, notes } = req.body;
-    if (!category || !VAULT_CATEGORIES.includes(category)) {
-      return res.status(400).json({ error: 'Invalid category. Must be one of: ' + VAULT_CATEGORIES.join(', ') });
-    }
-    if (!hasPro && !IMPORT_DOC_CATEGORIES.includes(category)) {
-      return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
-    }
 
-    const result = await pool.query(
-      `INSERT INTO user_documents (user_id, category, file_name, file_mime_type, file_size_bytes, file_data, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, category, file_name, file_mime_type, file_size_bytes, notes, created_at`,
-      [
-        req.userId,
-        category,
-        req.file.originalname,
-        req.file.mimetype,
-        req.file.size,
-        req.file.buffer,
-        notes || null
-      ]
-    );
 
-    const doc = result.rows[0];
 
-    // If this is a benefits package upload, trigger a simple text-extraction attempt
-    // and return the document ID so the client can show the verification form
-    let benefitsHint = null;
-    if (category === 'benefits_packages') {
-      benefitsHint = { document_id: doc.id, show_verification_form: true };
-    }
 
-    // If this is a credit report upload, record completion (mirrors onboarding flow)
-    // Also satisfy the Level 4-6 credit gate requirement
-    if (category === 'credit_reports') {
-      await pool.query(
-        `UPDATE users SET credit_report_uploaded = TRUE, credit_gate_status = 'uploaded' WHERE id = $1`,
-        [req.userId]
-      );
-    }
 
-    res.json({ success: true, document: doc, benefits_hint: benefitsHint });
-  } catch (err) {
-    console.error('[Vault] upload error:', err.message);
-    res.status(500).json({ error: 'Failed to upload document' });
-  }
-});
 
-// GET /api/vault/documents/:id/download — serve file inline
-app.get('/api/vault/documents/:id/download', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
 
-    const result = await pool.query(
-      'SELECT * FROM user_documents WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Document not found' });
-    if (!hasPro && !IMPORT_DOC_CATEGORIES.includes(result.rows[0].category)) {
-      return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
-    }
 
-    const doc = result.rows[0];
-    const mime = doc.file_mime_type || 'application/octet-stream';
-    res.setHeader('Content-Type', mime);
-    res.setHeader('Content-Disposition', `inline; filename="${doc.file_name}"`);
-    res.send(doc.file_data);
-  } catch (err) {
-    console.error('[Vault] download error:', err.message);
-    res.status(500).json({ error: 'Failed to download document' });
-  }
-});
 
-// DELETE /api/vault/documents/:id — delete a document
-app.delete('/api/vault/documents/:id', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
 
-    const existing = await pool.query(
-      'SELECT category FROM user_documents WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.userId]
-    );
-    if (!existing.rows.length) return res.status(404).json({ error: 'Document not found' });
-    if (!hasPro && !IMPORT_DOC_CATEGORIES.includes(existing.rows[0].category)) {
-      return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
-    }
 
-    const result = await pool.query(
-      'DELETE FROM user_documents WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Document not found' });
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[Vault] delete error:', err.message);
-    res.status(500).json({ error: 'Failed to delete document' });
-  }
-});
 
-// ── Benefits Data ───────────────────────────────────────────────────────────
 
-// GET /api/vault/benefits-data — get user's saved benefits package data
-app.get('/api/vault/benefits-data', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
 
-    const result = await pool.query(
-      `SELECT b.*, d.file_name AS source_document_name
-       FROM user_benefits_data b
-       LEFT JOIN user_documents d ON d.id = b.document_id
-       WHERE b.user_id = $1`,
-      [req.userId]
-    );
 
-    // Also pull latest annual income from FACTS data for pre-filling salary
-    const incomeResult = await pool.query(
-      `SELECT COALESCE(SUM(amount_cents), 0) AS total_annual_income_cents
-       FROM transactions
-       WHERE user_id = $1
-         AND type = 'income'
-         AND transaction_date >= NOW() - INTERVAL '12 months'`,
-      [req.userId]
-    );
 
-    // Pull current 401k contribution allocation if exists
-    const allocationResult = await pool.query(
-      `SELECT ua.percentage
-       FROM user_allocations ua
-       JOIN allocation_categories ac ON ac.id = ua.category_id
-       WHERE ua.user_id = $1
-         AND LOWER(ac.name) LIKE '%financial freedom%'
-       LIMIT 1`,
-      [req.userId]
-    );
 
-    res.json({
-      success: true,
-      benefits: result.rows[0] || null,
-      facts_data: {
-        annual_income_cents: parseInt(incomeResult.rows[0]?.total_annual_income_cents || 0),
-        ff_allocation_percent: parseFloat(allocationResult.rows[0]?.percentage || 10)
-      },
-      has_pro: hasPro
-    });
-  } catch (err) {
-    console.error('[Vault] benefits-data GET error:', err.message);
-    res.status(500).json({ error: 'Failed to load benefits data' });
-  }
-});
 
-// POST /api/vault/benefits-data — save/update benefits package data
-app.post('/api/vault/benefits-data', requireAuth, async (req, res) => {
-  try {
-    const hasPro = await hasProAccess(req.userId);
-    if (!hasPro) return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
 
-    const {
-      document_id,
-      employer_name,
-      employee_contribution_percent,
-      match_rate_percent,
-      match_max_percent,
-      vesting_schedule,
-      hsa_employer_seed_cents,
-      hsa_plan_type,
-      hsa_employee_contribution_cents,
-      dental_annual_max_cents,
-      dental_used_cents,
-      vision_annual_max_cents,
-      vision_used_cents,
-      tuition_max_cents,
-      education_spent_cents,
-      base_salary_cents
-    } = req.body;
 
-    // Upsert — one record per user
-    const result = await pool.query(
-      `INSERT INTO user_benefits_data (
-        user_id, document_id, employer_name,
-        employee_contribution_percent, match_rate_percent, match_max_percent, vesting_schedule,
-        hsa_employer_seed_cents, hsa_plan_type, hsa_employee_contribution_cents,
-        dental_annual_max_cents, dental_used_cents,
-        vision_annual_max_cents, vision_used_cents,
-        tuition_max_cents, education_spent_cents,
-        base_salary_cents, verified_at, updated_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,NOW(),NOW())
-      ON CONFLICT (user_id) DO UPDATE SET
-        document_id = EXCLUDED.document_id,
-        employer_name = EXCLUDED.employer_name,
-        employee_contribution_percent = EXCLUDED.employee_contribution_percent,
-        match_rate_percent = EXCLUDED.match_rate_percent,
-        match_max_percent = EXCLUDED.match_max_percent,
-        vesting_schedule = EXCLUDED.vesting_schedule,
-        hsa_employer_seed_cents = EXCLUDED.hsa_employer_seed_cents,
-        hsa_plan_type = EXCLUDED.hsa_plan_type,
-        hsa_employee_contribution_cents = EXCLUDED.hsa_employee_contribution_cents,
-        dental_annual_max_cents = EXCLUDED.dental_annual_max_cents,
-        dental_used_cents = EXCLUDED.dental_used_cents,
-        vision_annual_max_cents = EXCLUDED.vision_annual_max_cents,
-        vision_used_cents = EXCLUDED.vision_used_cents,
-        tuition_max_cents = EXCLUDED.tuition_max_cents,
-        education_spent_cents = EXCLUDED.education_spent_cents,
-        base_salary_cents = EXCLUDED.base_salary_cents,
-        verified_at = NOW(),
-        updated_at = NOW()
-      RETURNING *`,
-      [
-        req.userId,
-        document_id || null,
-        employer_name || null,
-        employee_contribution_percent != null ? parseFloat(employee_contribution_percent) : null,
-        match_rate_percent != null ? parseFloat(match_rate_percent) : null,
-        match_max_percent != null ? parseFloat(match_max_percent) : null,
-        vesting_schedule || null,
-        hsa_employer_seed_cents != null ? parseInt(hsa_employer_seed_cents) : null,
-        hsa_plan_type || 'individual',
-        hsa_employee_contribution_cents != null ? parseInt(hsa_employee_contribution_cents) : null,
-        dental_annual_max_cents != null ? parseInt(dental_annual_max_cents) : null,
-        dental_used_cents != null ? parseInt(dental_used_cents) : 0,
-        vision_annual_max_cents != null ? parseInt(vision_annual_max_cents) : null,
-        vision_used_cents != null ? parseInt(vision_used_cents) : 0,
-        tuition_max_cents != null ? parseInt(tuition_max_cents) : null,
-        education_spent_cents != null ? parseInt(education_spent_cents) : 0,
-        base_salary_cents != null ? parseInt(base_salary_cents) : null
-      ]
-    );
 
-    res.json({ success: true, benefits: result.rows[0] });
-  } catch (err) {
-    console.error('[Vault] benefits-data POST error:', err.message);
-    res.status(500).json({ error: 'Failed to save benefits data' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ════════════════════════════════════════════════════════════════════════════
 // SOVEREIGN EXECUTIVE — Heir Designation, Vantage Point, Sovereign Flags
@@ -29434,46 +25642,7 @@ app.get('/api/sovereign/flags', requireAuth, async (req, res) => {
 });
 
 // ── POST /api/admin/sovereign/flags/:userId — Admin sets sovereign flags ─────
-app.post('/api/admin/sovereign/flags/:userId', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  const targetId = parseInt(req.params.userId);
-  const { p2p_lending_visible, mastermind_access, summit_invite, priority_orphan } = req.body;
 
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Update user sovereign flags
-    await client.query(
-      `UPDATE users SET
-         p2p_lending_visible = COALESCE($2, p2p_lending_visible),
-         mastermind_access   = COALESCE($3, mastermind_access),
-         summit_invite       = COALESCE($4, summit_invite)
-       WHERE id = $1`,
-      [targetId,
-       p2p_lending_visible != null ? !!p2p_lending_visible : null,
-       mastermind_access   != null ? !!mastermind_access   : null,
-       summit_invite       != null ? !!summit_invite       : null]
-    );
-
-    // Optionally update affiliate priority_orphan flag
-    if (priority_orphan != null) {
-      await client.query(
-        `UPDATE affiliates SET priority_orphan = $2 WHERE user_id = $1`,
-        [targetId, !!priority_orphan]
-      );
-    }
-
-    await client.query('COMMIT');
-    res.json({ success: true, message: 'Sovereign flags updated' });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Sovereign] POST /api/admin/sovereign/flags error:', err.message);
-    res.status(500).json({ error: 'Failed to update sovereign flags' });
-  } finally {
-    client.release();
-  }
-});
 
 // ════════════════════════════════════════════════════════════════════════════
 // HEIR DESIGNATION (Succession Key)
@@ -29632,172 +25801,10 @@ app.delete('/api/profile/heir-designation', requireAuth, async (req, res) => {
 });
 
 // ── POST /api/admin/succession/activate-heir/:designationId — Admin activates ─
-app.post('/api/admin/succession/activate-heir/:designationId', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  const designationId = parseInt(req.params.designationId);
-  const { notes } = req.body;
-  const adminId = req.userId;
 
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Load designation
-    const dResult = await client.query(
-      `SELECT hd.*, u.email AS owner_email, u.name AS owner_name,
-              hu.email AS heir_email, hu.name AS heir_name,
-              hu.plan AS heir_plan, hu.pricing_tier AS heir_pricing_tier
-         FROM heir_designation hd
-         JOIN users u  ON u.id  = hd.user_id
-         JOIN users hu ON hu.id = hd.heir_user_id
-        WHERE hd.id = $1 FOR UPDATE`,
-      [designationId]
-    );
-
-    if (!dResult.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Designation not found' });
-    }
-
-    const d = dResult.rows[0];
-    if (d.activation_status === 'activated') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Succession already activated' });
-    }
-    if (d.activation_status === 'revoked') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Designation has been revoked and cannot be activated' });
-    }
-
-    // Check heir subscription
-    const heirHasPro = d.heir_plan === 'paid' ||
-      ['tfr_pro','individual_pro','business_core','business_bundle','tfr_elite','sovereign_executive'].includes(d.heir_pricing_tier);
-
-    if (!heirHasPro) {
-      // Log it but don't hard-block — admin can override
-      console.warn(`[Succession] Heir ${d.heir_email} does not have active Pro. Admin activating anyway with note.`);
-    }
-
-    // Activate the designation
-    await client.query(
-      `UPDATE heir_designation
-         SET activation_status = 'activated',
-             activated_at = NOW(),
-             activated_by = $2,
-             heir_subscription_active = $3,
-             heir_subscription_last_checked = NOW(),
-             updated_at = NOW()
-       WHERE id = $1`,
-      [designationId, adminId, heirHasPro]
-    );
-
-    // Transfer affiliate node ownership (if applicable)
-    // Look up the original holder's affiliate record
-    const affResult = await client.query(
-      `SELECT id, user_id, affiliate_level, referral_code, status
-         FROM affiliates WHERE user_id = $1 AND status = 'active'`,
-      [d.user_id]
-    );
-
-    let affiliateTransferred = false;
-    if (affResult.rows.length) {
-      const aff = affResult.rows[0];
-      // Transfer the affiliate node to the heir
-      await client.query(
-        `UPDATE affiliates SET user_id = $2, updated_at = NOW() WHERE id = $1`,
-        [aff.id, d.heir_user_id]
-      );
-      affiliateTransferred = true;
-    }
-
-    // Transfer sovereign flags to heir
-    await client.query(
-      `UPDATE users AS heir
-         SET pricing_tier = orig.pricing_tier,
-             p2p_lending_visible = orig.p2p_lending_visible,
-             mastermind_access   = orig.mastermind_access,
-             summit_invite       = orig.summit_invite
-         FROM users orig
-        WHERE orig.id = $1 AND heir.id = $2`,
-      [d.user_id, d.heir_user_id]
-    );
-
-    // Log the activation
-    await client.query(
-      `INSERT INTO succession_activation_log
-         (designation_id, original_user_id, heir_user_id, action, admin_id, notes, metadata)
-       VALUES ($1, $2, $3, 'succession_activated', $4, $5, $6)`,
-      [designationId, d.user_id, d.heir_user_id, adminId,
-       notes || `Succession activated by admin. Heir: ${d.heir_email}`,
-       JSON.stringify({
-         original_email: d.owner_email,
-         heir_email: d.heir_email,
-         affiliate_transferred: affiliateTransferred,
-         heir_had_pro: heirHasPro
-       })]
-    );
-
-    // Pause commission if heir has no Pro
-    if (!heirHasPro) {
-      await client.query(
-        `UPDATE heir_designation SET commission_paused = TRUE, commission_paused_at = NOW() WHERE id = $1`,
-        [designationId]
-      );
-      await client.query(
-        `INSERT INTO succession_activation_log
-           (designation_id, original_user_id, heir_user_id, action, admin_id, notes)
-         VALUES ($1, $2, $3, 'commission_paused', $4, 'Heir lacks active Pro subscription at activation time')`,
-        [designationId, d.user_id, d.heir_user_id, adminId]
-      );
-    }
-
-    await client.query('COMMIT');
-
-    res.json({
-      success: true,
-      message: `Succession activated. ${affiliateTransferred ? 'Affiliate node transferred.' : 'No active affiliate node found.'} ${heirHasPro ? 'Commission engine active.' : '⚠️ Commission engine PAUSED — heir must activate Pro subscription.'}`,
-      designation_id: designationId,
-      affiliate_transferred: affiliateTransferred,
-      commission_paused: !heirHasPro
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Succession] POST activate-heir error:', err.message);
-    res.status(500).json({ error: 'Failed to activate succession' });
-  } finally {
-    client.release();
-  }
-});
 
 // ── GET /api/admin/succession/heir-designations — Admin list ─────────────────
-app.get('/api/admin/succession/heir-designations', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  try {
-    const { status } = req.query;
-    const cond = status ? `WHERE hd.activation_status = $1` : '';
-    const params = status ? [status] : [];
 
-    const result = await pool.query(
-      `SELECT hd.*,
-              u.email  AS owner_email,  u.name  AS owner_name,
-              hu.email AS heir_email,   hu.name AS heir_name,
-              hu.plan  AS heir_plan, hu.pricing_tier AS heir_pricing_tier,
-              au.email AS activated_by_email
-         FROM heir_designation hd
-         JOIN users u  ON u.id  = hd.user_id
-         JOIN users hu ON hu.id = hd.heir_user_id
-         LEFT JOIN users au ON au.id = hd.activated_by
-         ${cond}
-        ORDER BY hd.created_at DESC`,
-      params
-    );
-
-    res.json({ success: true, designations: result.rows, count: result.rows.length });
-  } catch (err) {
-    console.error('[Succession] GET admin heir-designations error:', err.message);
-    res.status(500).json({ error: 'Failed to load designations' });
-  }
-});
 
 // ════════════════════════════════════════════════════════════════════════════
 // THE VANTAGE POINT — Read-Only Data Shares
@@ -30667,135 +26674,19 @@ app.post('/api/waitlist/feature', async (req, res) => {
 });
 
 // GET /api/admin/waitlist
-app.get('/api/admin/waitlist', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
-    if (!decoded.is_creator) {
-      return res.status(403).json({ success: false, message: 'Forbidden' });
-    }
 
-    const { feature_name } = req.query;
-    let sql = `
-      SELECT fw.feature_name, fw.email, fw.user_id, fw.created_at,
-             u.name as user_name
-      FROM feature_waitlist fw
-      LEFT JOIN users u ON fw.user_id = u.id
-    `;
-    const params = [];
-    if (feature_name) {
-      sql += ' WHERE fw.feature_name = $1';
-      params.push(feature_name);
-    }
-    sql += ' ORDER BY fw.created_at DESC';
-
-    const result = await pool.query(sql, params);
-    res.json({ success: true, entries: result.rows });
-  } catch (err) {
-    console.error('[Admin Waitlist] error:', err.message);
-    res.status(500).json({ success: false, message: 'Could not fetch waitlist.' });
-  }
-});
 
 // ── GET /api/admin/launch-waitlist — View factsmoney.com launch waitlist signups ──
-app.get('/api/admin/launch-waitlist', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  try {
-    await ensureLaunchWaitlistNameColumn();
-    const result = await pool.query(
-      `SELECT id, email, name, ref_code, sovereign_score, monthly_income, liquid_reserves,
-              fixed_expenses, total_debt, source, created_at
-       FROM launch_waitlist
-       ORDER BY created_at DESC`
-    );
-    res.json({ success: true, entries: result.rows, total: result.rowCount });
-  } catch (err) {
-    console.error('[Admin] GET /api/admin/launch-waitlist error:', err.message);
-    res.status(500).json({ error: 'Failed to load launch waitlist' });
-  }
-});
+
 
 // ── GET /api/admin/phase-zero — Overview of all users' Phase Zero status ──────
-app.get('/api/admin/phase-zero', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  try {
-    const result = await pool.query(
-      `SELECT u.id, u.email, u.name, u.created_at,
-              u.declaration_accepted_at, u.phase_zero_completed_at,
-              u.ai_guided_setup, u.audit_status, u.audit_day_count,
-              u.audit_attempts, u.audit_lockout_until,
-              u.is_creator,
-              (SELECT COUNT(*) FROM phase_zero_daily_entries pze WHERE pze.user_id = u.id) AS entries_logged
-       FROM users u
-       WHERE u.is_creator = false
-         AND u.email NOT IN (${OWNER_EMAILS.map((_, i) => '$' + (i + 1)).join(',')})
-       ORDER BY u.created_at DESC
-       LIMIT 200`,
-      OWNER_EMAILS
-    );
-    const summary = {
-      total_users: result.rowCount,
-      completed: result.rows.filter(r => r.phase_zero_completed_at).length,
-      in_audit: result.rows.filter(r => r.audit_status === 'in_progress').length,
-      locked_out: result.rows.filter(r => r.audit_status === 'locked_out').length,
-      not_started: result.rows.filter(r => !r.declaration_accepted_at).length,
-    };
-    res.json({ success: true, summary, users: result.rows });
-  } catch (err) {
-    console.error('[Admin] GET /api/admin/phase-zero error:', err.message);
-    res.status(500).json({ error: 'Failed to load Phase Zero overview' });
-  }
-});
+
 
 // ── POST /api/admin/phase-zero/reset — Admin reset a user's Phase Zero audit ──
-app.post('/api/admin/phase-zero/reset', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  const { userId } = req.body;
-  if (!userId) return res.status(400).json({ error: 'userId required' });
-  try {
-    await pool.query(
-      `UPDATE users SET
-         audit_status = 'in_progress',
-         audit_day_count = 0,
-         audit_start_date = NOW(),
-         audit_last_activity_date = NULL,
-         audit_attempts = COALESCE(audit_attempts, 0),
-         audit_lockout_until = NULL
-       WHERE id = $1`,
-      [userId]
-    );
-    res.json({ success: true, message: 'Phase Zero audit reset' });
-  } catch (err) {
-    console.error('[Admin] POST /api/admin/phase-zero/reset error:', err.message);
-    res.status(500).json({ error: 'Failed to reset Phase Zero' });
-  }
-});
+
 
 // ── POST /api/admin/phase-zero/complete — Admin mark a user's Phase Zero as complete ──
-app.post('/api/admin/phase-zero/complete', requireAuth, async (req, res) => {
-  if (!(await requireCreator(req, res))) return;
-  const { userId } = req.body;
-  if (!userId) return res.status(400).json({ error: 'userId required' });
-  try {
-    await pool.query(
-      `UPDATE users SET
-         phase_zero_completed_at = COALESCE(phase_zero_completed_at, NOW()),
-         declaration_accepted_at = COALESCE(declaration_accepted_at, NOW()),
-         audit_status = 'completed',
-         audit_completed_at = COALESCE(audit_completed_at, NOW())
-       WHERE id = $1`,
-      [userId]
-    );
-    res.json({ success: true, message: 'Phase Zero marked as complete' });
-  } catch (err) {
-    console.error('[Admin] POST /api/admin/phase-zero/complete error:', err.message);
-    res.status(500).json({ error: 'Failed to complete Phase Zero' });
-  }
-});
+
 
 // GET /terms-of-service — Terms of Service page
 app.get('/terms-of-service', (req, res) => {
@@ -30992,520 +26883,520 @@ app.post('/api/user/restart-tour', requireAuth, async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ─────────────────────────────────────────────────────────────────────────────
-// TFR REWARDS PROGRAM — /api/rewards/*
-// Points economy separate from XP leveling system.
-// Points are a spendable currency redeemable at Aura Restored.
-// Monthly cap: 5,000 pts. Redemption: 1,000 pts = $1 store credit.
-// ─────────────────────────────────────────────────────────────────────────────
+// [Phase5] rewards → routes/gamification.js
 
-/**
- * GET /api/rewards/dashboard
- * Full rewards dashboard data for the current user.
- */
-app.get('/api/rewards/dashboard', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    await ensureFgBalance(userId);
 
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7);
 
-    // Balance + monthly tracking
-    const balRow = (await pool.query(
-      `SELECT balance, total_earned, total_redeemed,
-              login_streak_days, longest_login_streak,
-              monthly_points_earned, monthly_cap_reset_month,
-              last_login_streak_date
-       FROM fg_points_balances WHERE user_id = $1`,
-      [userId]
-    )).rows[0] || {};
 
-    const monthlyEarned = balRow.monthly_cap_reset_month === currentMonth
-      ? (parseInt(balRow.monthly_points_earned) || 0) : 0;
 
-    // Recent earning history (last 30 events)
-    const history = (await pool.query(
-      `SELECT activity_type, description, points, created_at
-       FROM fg_earning_events WHERE user_id = $1
-       ORDER BY created_at DESC LIMIT 30`,
-      [userId]
-    )).rows;
 
-    // Redemption codes
-    const codes = (await pool.query(
-      `SELECT code, points_spent, dollar_value_cents, status, generated_at, expires_at, used_at
-       FROM rewards_discount_codes WHERE user_id = $1
-       ORDER BY generated_at DESC LIMIT 20`,
-      [userId]
-    )).rows;
 
-    // Achievements
-    const earnedAchievements = (await pool.query(
-      `SELECT achievement_key, points_awarded, earned_at FROM rewards_achievements WHERE user_id = $1`,
-      [userId]
-    )).rows;
-    const earnedKeys = new Set(earnedAchievements.map(a => a.achievement_key));
 
-    // Also check tfr_achievements for checkin streaks
-    const tfrAchs = (await pool.query(
-      `SELECT achievement_key FROM tfr_achievements WHERE user_id = $1`,
-      [userId]
-    )).rows;
-    const tfrAchKeys = new Set(tfrAchs.map(a => a.achievement_key));
 
-    // Define all achievements
-    const ALL_ACHIEVEMENTS = [
-      { key: 'first_transaction',    label: 'First Transaction Logged',     points: 25, icon: '💸', description: 'Log your first transaction' },
-      { key: 'first_checkin',        label: 'First Daily Check-in',         points: 0,  icon: '✅', description: 'Complete your first daily check-in' },
-      { key: 'first_budget',         label: 'First Budget Set',             points: 50, icon: '📊', description: 'Set all 6 FACTS allocation categories' },
-      { key: 'first_debt_milestone', label: 'First Debt Payoff Milestone',  points: 100,icon: '🎯', description: 'Pay off any portion of a debt' },
-      { key: 'credit_report_uploaded', label: 'Credit Report Uploaded',    points: 50, icon: '📄', description: 'Upload your credit report' },
-      { key: 'discovery_scan',       label: 'Discovery Scan Complete',      points: 75, icon: '🔍', description: 'Complete your first Discovery Scan' },
-      { key: 'plaid_connected',      label: 'Bank Connected via Plaid',     points: 100,icon: '🏦', description: 'Connect a bank account (Pro)' },
-      { key: 'login_streak_7',       label: '7-Day Login Streak',           points: 50, icon: '🔥', description: 'Log in 7 days in a row' },
-      { key: 'login_streak_14',      label: '14-Day Login Streak',          points: 100,icon: '⚡', description: 'Log in 14 days in a row' },
-      { key: 'login_streak_30',      label: '30-Day Login Streak',          points: 250,icon: '👑', description: 'Log in 30 days in a row' },
-    ];
 
-    const achievementsWithStatus = ALL_ACHIEVEMENTS.map(a => ({
-      ...a,
-      earned: earnedKeys.has(a.key) || tfrAchKeys.has(a.key),
-      earned_at: earnedAchievements.find(e => e.achievement_key === a.key)?.earned_at || null,
-    }));
 
-    // Active challenges (weekly + monthly)
-    const activeChallenges = (await pool.query(`
-      SELECT ec.id, ec.title, ec.description, ec.type, ec.xp_reward, ec.points_reward, ec.criteria_key,
-             uc.status AS user_status, uc.completed_at, uc.period_key
-      FROM engagement_challenges ec
-      LEFT JOIN user_challenges uc
-        ON uc.challenge_id = ec.id AND uc.user_id = $1 AND uc.period_key = (
-          CASE ec.type
-            WHEN 'weekly' THEN to_char(now(), 'IYYY-IW')
-            WHEN 'monthly' THEN to_char(now(), 'YYYY-MM')
-            ELSE to_char(now(), 'YYYY-MM-DD')
-          END
-        )
-      WHERE ec.active = TRUE AND ec.type IN ('weekly','monthly') AND ec.points_reward > 0
-      ORDER BY ec.type DESC, ec.sort_order
-    `, [userId])).rows;
 
-    // Login streak info
-    const loginStreak = {
-      current: parseInt(balRow.login_streak_days) || 0,
-      longest: parseInt(balRow.longest_login_streak) || 0,
-      next_milestone: [7, 14, 30].find(m => m > (parseInt(balRow.login_streak_days) || 0)) || null,
-      next_milestone_bonus: null,
-    };
-    if (loginStreak.next_milestone) {
-      loginStreak.next_milestone_bonus = { 7: 50, 14: 100, 30: 250 }[loginStreak.next_milestone];
-    }
 
-    res.json({
-      success: true,
-      points: {
-        balance: parseInt(balRow.balance) || 0,
-        total_earned: parseInt(balRow.total_earned) || 0,
-        total_redeemed: parseInt(balRow.total_redeemed) || 0,
-        monthly_earned: monthlyEarned,
-        monthly_cap: 5000,
-        monthly_remaining: Math.max(0, 5000 - monthlyEarned),
-        monthly_cap_pct: Math.min(100, Math.round((monthlyEarned / 5000) * 100)),
-      },
-      login_streak: loginStreak,
-      history,
-      discount_codes: codes,
-      achievements: achievementsWithStatus,
-      active_challenges: activeChallenges,
-      redemption_info: {
-        min_redemption: 1000,
-        rate: '1,000 pts = $1.00 store credit',
-        store: 'Aura Restored',
-        expiration_days: 90,
-      },
-    });
-  } catch (err) {
-    console.error('[Rewards] GET /api/rewards/dashboard error:', err.message);
-    res.status(500).json({ error: 'Failed to load rewards dashboard' });
-  }
-});
 
-/**
- * POST /api/rewards/daily-interaction
- * Records that the user had a meaningful app interaction today.
- * Awards 10 FACTS Points (max once per calendar day).
- * A "meaningful interaction" means the user navigated to a core feature,
- * logged data, or completed an action — not just opened the app.
- */
-app.post('/api/rewards/daily-interaction', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { action } = req.body || {};
-    await ensureFgBalance(userId);
 
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7);
 
-    // Check if already awarded today (last_daily_points_date covers the login award;
-    // we use a separate mechanism here but login already awards 10 pts)
-    // This endpoint is for non-login interactions (e.g., viewing dashboard, transactions, etc.)
-    // We reuse last_daily_points_date since login already sets it; this is a no-op if already logged in today.
-    const balRow = (await pool.query(
-      'SELECT last_daily_points_date, monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0] || {};
 
-    const alreadyAwarded = balRow.last_daily_points_date &&
-      String(balRow.last_daily_points_date).split('T')[0] === today;
 
-    if (alreadyAwarded) {
-      return res.json({ success: true, already_done: true, message: 'Daily interaction points already awarded today' });
-    }
 
-    const monthEarned = balRow.monthly_cap_reset_month === currentMonth
-      ? (parseInt(balRow.monthly_points_earned) || 0) : 0;
-    const remaining = Math.max(0, 5000 - monthEarned);
-    const toAward = Math.min(10, remaining);
 
-    if (toAward > 0) {
-      await pool.query(
-        `UPDATE fg_points_balances
-         SET balance = balance + $2,
-             total_earned = total_earned + $2,
-             last_daily_points_date = $3,
-             monthly_points_earned = CASE WHEN monthly_cap_reset_month = $4 THEN monthly_points_earned + $2 ELSE $2 END,
-             monthly_cap_reset_month = $4,
-             updated_at = NOW()
-         WHERE user_id = $1`,
-        [userId, toAward, today, currentMonth]
-      );
-      await pool.query(
-        `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-         VALUES ($1, 'daily_interaction', $2, $3)`,
-        [userId, `Daily interaction: ${action || 'app session'} — ${toAward} FACTS Points`, toAward]
-      );
-    } else {
-      // Still record the date to suppress duplicate calls even when capped
-      await pool.query(
-        'UPDATE fg_points_balances SET last_daily_points_date = $2, updated_at = NOW() WHERE user_id = $1',
-        [userId, today]
-      );
-    }
 
-    res.json({
-      success: true,
-      points_awarded: toAward,
-      capped: toAward < 10,
-      message: toAward > 0 ? `+${toAward} FACTS Points for today's activity` : 'Monthly cap reached',
-    });
-  } catch (err) {
-    console.error('[Rewards] POST /api/rewards/daily-interaction error:', err.message);
-    res.status(500).json({ error: 'Failed to record daily interaction' });
-  }
-});
 
-/**
- * POST /api/rewards/redeem
- * Redeem FACTS Points for an Aura Restored discount code.
- * Body: { points: number }
- * Min: 1,000 pts. Rate: 1,000 pts = $1.
- * Points deducted immediately. Code expires in 90 days.
- */
-app.post('/api/rewards/redeem', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const userId = req.userId;
-    const requestedPoints = parseInt(req.body && req.body.points) || 0;
 
-    if (requestedPoints < 1000) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Minimum redemption is 1,000 points ($1.00 value)' });
-    }
-    if (requestedPoints % 1000 !== 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Points must be in multiples of 1,000' });
-    }
 
-    await ensureFgBalance(userId);
-    const balRow = (await client.query(
-      'SELECT balance FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0];
 
-    if (!balRow || parseInt(balRow.balance) < requestedPoints) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: `Insufficient points. You have ${parseInt(balRow?.balance) || 0} pts, need ${requestedPoints} pts.` });
-    }
 
-    const dollarValueCents = (requestedPoints / 1000) * 100; // 1000 pts = $1 = 100 cents
 
-    // Generate unique discount code: TFR-[USER_ID]-[RANDOM6]
-    const randomSuffix = crypto.randomBytes(3).toString('hex').toUpperCase();
-    const code = `TFR-${userId}-${randomSuffix}`;
 
-    // Deduct points
-    await client.query(
-      `UPDATE fg_points_balances
-       SET balance = balance - $2,
-           total_redeemed = total_redeemed + $2,
-           updated_at = NOW()
-       WHERE user_id = $1`,
-      [userId, requestedPoints]
-    );
 
-    // Record redemption event
-    await client.query(
-      `INSERT INTO fg_redemption_events (user_id, item_name, points_spent, external_ref, status)
-       VALUES ($1, 'Aura Restored Store Credit', $2, $3, 'completed')`,
-      [userId, requestedPoints, code]
-    );
 
-    // Create discount code record
-    const codeRow = (await client.query(
-      `INSERT INTO rewards_discount_codes (user_id, code, points_spent, dollar_value_cents, status)
-       VALUES ($1, $2, $3, $4, 'active')
-       RETURNING *`,
-      [userId, code, requestedPoints, dollarValueCents]
-    )).rows[0];
 
-    await client.query('COMMIT');
 
-    // Fetch user email for notification (fire-and-forget)
-    const userRow = (await pool.query('SELECT email, name FROM users WHERE id = $1', [userId])).rows[0];
 
-    res.json({
-      success: true,
-      code: code,
-      points_spent: requestedPoints,
-      dollar_value: (dollarValueCents / 100).toFixed(2),
-      expires_at: codeRow.expires_at,
-      message: `Your Aura Restored discount code: ${code}`,
-      instructions: 'Use this code at checkout on the Aura Restored store. Valid for 90 days.',
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('[Rewards] POST /api/rewards/redeem error:', err.message);
-    res.status(500).json({ error: 'Redemption failed. Please try again.' });
-  } finally {
-    client.release();
-  }
-});
 
-/**
- * GET /api/rewards/codes
- * List all discount codes for the current user.
- */
-app.get('/api/rewards/codes', requireAuth, async (req, res) => {
-  try {
-    const codes = (await pool.query(
-      `SELECT code, points_spent, dollar_value_cents, status, generated_at, expires_at, used_at
-       FROM rewards_discount_codes WHERE user_id = $1
-       ORDER BY generated_at DESC`,
-      [req.userId]
-    )).rows;
-    // Mark expired codes
-    const now = new Date();
-    await pool.query(
-      `UPDATE rewards_discount_codes SET status = 'expired'
-       WHERE user_id = $1 AND status = 'active' AND expires_at < NOW()`,
-      [req.userId]
-    );
-    res.json({ success: true, codes });
-  } catch (err) {
-    console.error('[Rewards] GET /api/rewards/codes error:', err.message);
-    res.status(500).json({ error: 'Failed to load discount codes' });
-  }
-});
 
-/**
- * POST /api/rewards/achievement
- * Award a one-time achievement to the current user.
- * Called by frontend after specific actions (budget set, Plaid connect, etc.)
- * Body: { achievement_key: string }
- */
-app.post('/api/rewards/achievement', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { achievement_key } = req.body || {};
 
-    const ACHIEVEMENT_POINTS = {
-      first_budget:          50,
-      first_debt_milestone: 100,
-      credit_report_uploaded: 50,
-      discovery_scan:        75,
-      plaid_connected:      100,
-    };
 
-    if (!achievement_key || !ACHIEVEMENT_POINTS[achievement_key]) {
-      return res.status(400).json({ error: 'Invalid or unsupported achievement key' });
-    }
 
-    // Check if already earned
-    const existing = (await pool.query(
-      'SELECT id FROM rewards_achievements WHERE user_id = $1 AND achievement_key = $2',
-      [userId, achievement_key]
-    )).rows[0];
-    if (existing) {
-      return res.json({ success: true, already_earned: true, message: 'Achievement already unlocked' });
-    }
 
-    const pts = ACHIEVEMENT_POINTS[achievement_key];
-    await ensureFgBalance(userId);
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7);
-    const balRow = (await pool.query(
-      'SELECT monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-      [userId]
-    )).rows[0] || {};
-    const monthEarned = balRow.monthly_cap_reset_month === currentMonth
-      ? (parseInt(balRow.monthly_points_earned) || 0) : 0;
-    const toAward = Math.min(pts, Math.max(0, 5000 - monthEarned));
 
-    if (toAward > 0) {
-      await pool.query(
-        `UPDATE fg_points_balances
-         SET balance = balance + $2,
-             total_earned = total_earned + $2,
-             monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-             monthly_cap_reset_month = $3,
-             updated_at = NOW()
-         WHERE user_id = $1`,
-        [userId, toAward, currentMonth]
-      );
-      await pool.query(
-        `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-         VALUES ($1, 'achievement', $2, $3)`,
-        [userId, `Achievement unlocked: ${achievement_key.replace(/_/g,' ')} — ${toAward} FACTS Points`, toAward]
-      );
-    }
 
-    await pool.query(
-      `INSERT INTO rewards_achievements (user_id, achievement_key, points_awarded)
-       VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-      [userId, achievement_key, toAward || 0]
-    );
 
-    res.json({
-      success: true,
-      achievement_key,
-      points_awarded: toAward,
-      message: `Achievement unlocked! +${toAward} FACTS Points`,
-    });
-  } catch (err) {
-    console.error('[Rewards] POST /api/rewards/achievement error:', err.message);
-    res.status(500).json({ error: 'Failed to record achievement' });
-  }
-});
 
-/**
- * POST /api/rewards/referral
- * Award referral points when a referred user completes signup + activation.
- * Called internally — not directly by the client.
- * Also enforces 5 referral bonuses/month cap.
- */
-async function awardReferralPoints(referrerId, referredUserId) {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7);
-    await ensureFgBalance(referrerId);
 
-    // Check monthly referral cap (5 referrals = 2,500 pts max per month)
-    const monthlyReferrals = (await pool.query(
-      `SELECT COUNT(*) AS cnt FROM fg_earning_events
-       WHERE user_id = $1 AND activity_type = 'referral'
-         AND to_char(created_at, 'YYYY-MM') = $2`,
-      [referrerId, currentMonth]
-    )).rows[0]?.cnt || 0;
 
-    if (parseInt(monthlyReferrals) >= 5) {
-      console.log(`[Rewards] Referral cap reached for user ${referrerId} this month`);
-      return { awarded: false, reason: 'monthly_referral_cap' };
-    }
 
-    const balRow = (await pool.query(
-      'SELECT monthly_points_earned, monthly_cap_reset_month FROM fg_points_balances WHERE user_id = $1',
-      [referrerId]
-    )).rows[0] || {};
-    const monthEarned = balRow.monthly_cap_reset_month === currentMonth
-      ? (parseInt(balRow.monthly_points_earned) || 0) : 0;
-    const toAward = Math.min(500, Math.max(0, 5000 - monthEarned));
 
-    if (toAward > 0) {
-      await pool.query(
-        `UPDATE fg_points_balances
-         SET balance = balance + $2,
-             total_earned = total_earned + $2,
-             monthly_points_earned = CASE WHEN monthly_cap_reset_month = $3 THEN monthly_points_earned + $2 ELSE $2 END,
-             monthly_cap_reset_month = $3,
-             updated_at = NOW()
-         WHERE user_id = $1`,
-        [referrerId, toAward, currentMonth]
-      );
-      await pool.query(
-        `INSERT INTO fg_earning_events (user_id, activity_type, description, points)
-         VALUES ($1, 'referral', $2, $3)`,
-        [referrerId, `Referral bonus: friend signed up and activated — ${toAward} FACTS Points`, toAward]
-      );
-    }
-    return { awarded: true, points: toAward };
-  } catch (err) {
-    console.error('[Rewards] awardReferralPoints error:', err.message);
-    return { awarded: false, error: err.message };
-  }
-}
 
-// Serve rewards dashboard page
-app.get('/rewards', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'rewards.html'));
-});
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Monthly cap reset job — runs once daily at 00:05 UTC
-// Resets monthly_points_earned for users whose cap month has rolled over
-// ─────────────────────────────────────────────────────────────────────────────
-(function scheduleRewardsJobs() {
-  const FIVE_MINUTES = 5 * 60 * 1000;
-  const ONE_DAY = 24 * 60 * 60 * 1000;
 
-  // Run daily maintenance
-  async function runDailyRewardsMaintenance() {
-    try {
-      const currentMonth = new Date().toISOString().substring(0, 7);
-      // Reset monthly_points_earned for users in a stale month
-      const resetResult = await pool.query(
-        `UPDATE fg_points_balances
-         SET monthly_points_earned = 0,
-             monthly_cap_reset_month = $1
-         WHERE monthly_cap_reset_month IS NOT NULL
-           AND monthly_cap_reset_month != $1`,
-        [currentMonth]
-      );
-      if (resetResult.rowCount > 0) {
-        console.log(`[Rewards] Monthly cap reset for ${resetResult.rowCount} users (new month: ${currentMonth})`);
-      }
 
-      // Expire discount codes past their expiry date
-      const expiredResult = await pool.query(
-        `UPDATE rewards_discount_codes SET status = 'expired'
-         WHERE status = 'active' AND expires_at < NOW()`
-      );
-      if (expiredResult.rowCount > 0) {
-        console.log(`[Rewards] Expired ${expiredResult.rowCount} discount codes`);
-      }
-    } catch (err) {
-      console.error('[Rewards] Daily maintenance error:', err.message);
-    }
-  }
 
-  // Run after a short delay on startup, then every 24 hours
-  setTimeout(() => {
-    runDailyRewardsMaintenance();
-    setInterval(runDailyRewardsMaintenance, ONE_DAY);
-  }, FIVE_MINUTES);
-})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ██████╗ ██████╗  ██████╗ ██╗  ██╗███████╗██████╗  █████╗  ██████╗ ███████╗
@@ -31518,605 +27409,608 @@ app.get('/rewards', requireAuth, (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── FACTS Brokerage Formulas ──────────────────────────────────────────────────
-function computeBrokerageMetrics(transactions) {
-  const totalBuyCost = transactions
-    .filter(t => t.activity_type === 'buy')
-    .reduce((s, t) => s + Math.abs(parseFloat(t.cash_flow)), 0);
-
-  const totalRecovered = transactions
-    .filter(t => ['sell','dividend','option_premium','lending_fee'].includes(t.activity_type))
-    .reduce((s, t) => s + parseFloat(t.cash_flow), 0);
-
-  const totalShares = transactions.reduce((s, t) => {
-    if (t.activity_type === 'buy' && t.share_count)  return s + parseFloat(t.share_count);
-    if (t.activity_type === 'sell' && t.share_count) return s - Math.abs(parseFloat(t.share_count));
-    return s;
-  }, 0);
-
-  const netExposure   = totalBuyCost - totalRecovered;
-  const infiniteReturn = netExposure <= 0 && totalBuyCost > 0;
-  const recoveryPct   = totalBuyCost > 0 ? (totalRecovered / totalBuyCost) * 100 : 0;
-
-  // True cost basis per share
-  const dividendTotal = transactions
-    .filter(t => ['dividend','option_premium','lending_fee'].includes(t.activity_type))
-    .reduce((s, t) => s + parseFloat(t.cash_flow), 0);
-  const trueCostBasisPerShare = totalShares > 0
-    ? (totalBuyCost - dividendTotal) / totalShares
-    : null;
-
-  // Yield on true cost (12-month dividends / net exposure)
-  const twelveMonthsAgo = new Date();
-  twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
-  const annualDividend = transactions
-    .filter(t => t.activity_type === 'dividend' && new Date(t.date) >= twelveMonthsAgo)
-    .reduce((s, t) => s + parseFloat(t.cash_flow), 0);
-
-  const yieldOnTrueCost = netExposure <= 0
-    ? 'Infinite'
-    : netExposure > 0 && annualDividend > 0
-      ? ((annualDividend / netExposure) * 100).toFixed(2)
-      : '0.00';
-
-  // Average cost per share = total buy cost / total shares (shares sold subtracted from denominator)
-  const avgCostPerShare = totalShares > 0
-    ? (totalBuyCost / totalShares)
-    : null;
-
-  return {
-    total_shares: parseFloat(totalShares.toFixed(6)),
-    total_buy_cost: parseFloat(totalBuyCost.toFixed(4)),
-    total_recovered: parseFloat(totalRecovered.toFixed(4)),
-    net_exposure: parseFloat(netExposure.toFixed(4)),
-    infinite_return: infiniteReturn,
-    recovery_percentage: parseFloat(recoveryPct.toFixed(2)),
-    true_cost_basis_per_share: trueCostBasisPerShare !== null ? parseFloat(trueCostBasisPerShare.toFixed(4)) : null,
-    average_cost_per_share: avgCostPerShare !== null ? parseFloat(avgCostPerShare.toFixed(4)) : null,
-    yield_on_true_cost: yieldOnTrueCost,
-    annual_dividend: parseFloat(annualDividend.toFixed(4))
-  };
-}
-
-async function computeRecoveryVelocity(pool, assetId, userId) {
-  // Recovery % today vs 30 days ago — derived purely from transactions
-  const [allTx, oldTx] = await Promise.all([
-    pool.query(
-      `SELECT activity_type, cash_flow, share_count, date FROM brokerage_transactions WHERE asset_id=$1 AND user_id=$2 ORDER BY date`,
-      [assetId, userId]
-    ),
-    pool.query(
-      `SELECT activity_type, cash_flow, share_count, date FROM brokerage_transactions WHERE asset_id=$1 AND user_id=$2 AND date <= NOW() - INTERVAL '30 days' ORDER BY date`,
-      [assetId, userId]
-    )
-  ]);
-  const today30 = computeBrokerageMetrics(allTx.rows).recovery_percentage;
-  const prev30  = computeBrokerageMetrics(oldTx.rows).recovery_percentage;
-  return parseFloat(((today30 - prev30) / 30).toFixed(4));
-}
-
-// ── Vault-lock middleware (runs on all brokerage routes except discipline) ─────
-async function checkVaultLock(req, res, next) {
-  const userId = req.userId;
-  try {
-    const rec = await pool.query(
-      `SELECT vault_status, last_entry_date FROM brokerage_discipline WHERE user_id=$1`,
-      [userId]
-    );
-    if (!rec.rows.length) return next(); // no discipline record yet → not locked
-
-    const d = rec.rows[0];
-    // Auto-lock if 30+ days since last entry
-    if (d.last_entry_date) {
-      const daysSince = (Date.now() - new Date(d.last_entry_date).getTime()) / 86400000;
-      if (daysSince > 30 && d.vault_status === 'active') {
-        await pool.query(
-          `UPDATE brokerage_discipline SET vault_status='locked', locked_at=NOW(), updated_at=NOW() WHERE user_id=$1`,
-          [userId]
-        );
-        return res.status(423).json({
-          error: 'Your Project Net Zero has been sealed due to 30 days of inactivity. Reactivate to continue.',
-          code: 'VAULT_LOCKED'
-        });
-      }
-    }
-    if (d.vault_status === 'locked') {
-      return res.status(423).json({
-        error: 'Your Project Net Zero is locked. Reactivate to view your recovery progress.',
-        code: 'VAULT_LOCKED'
-      });
-    }
-    next();
-  } catch (err) {
-    console.error('[Brokerage] vault check error:', err.message);
-    next(); // fail open so lock doesn't break everything
-  }
-}
-
-// ── Streak helper ──────────────────────────────────────────────────────────────
-async function updateDisciplineStreak(pool, userId) {
-  // Upsert discipline record
-  const rec = await pool.query(`SELECT * FROM brokerage_discipline WHERE user_id=$1`, [userId]);
-  const now = new Date();
-
-  if (!rec.rows.length) {
-    await pool.query(
-      `INSERT INTO brokerage_discipline (user_id, last_entry_date, streak_count, vault_status)
-       VALUES ($1, $2, 1, 'active')`,
-      [userId, now]
-    );
-    return;
-  }
-
-  const d = rec.rows[0];
-  const lastEntry = d.last_entry_date ? new Date(d.last_entry_date) : null;
-  let newStreak = d.streak_count;
-
-  if (lastEntry) {
-    // Determine ISO week number helper
-    const isoWeek = (dt) => {
-      const d = new Date(dt);
-      d.setHours(0,0,0,0);
-      d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-      const week1 = new Date(d.getFullYear(), 0, 4);
-      return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
-    };
-    const currentWeek = isoWeek(now);
-    const lastWeek    = isoWeek(lastEntry);
-    const weekDiff    = currentWeek - lastWeek + (now.getFullYear() - lastEntry.getFullYear()) * 52;
-
-    if (weekDiff === 0) {
-      // same week — no streak change
-    } else if (weekDiff === 1) {
-      newStreak = d.streak_count + 1;
-    } else {
-      newStreak = 1; // gap — reset
-    }
-  } else {
-    newStreak = 1;
-  }
-
-  await pool.query(
-    `UPDATE brokerage_discipline
-     SET last_entry_date=$1, streak_count=$2, vault_status='active', updated_at=NOW()
-     WHERE user_id=$3`,
-    [now, newStreak, userId]
-  );
-}
-
-// GET /brokerage-tracker page
+// [Phase4] brokerage tracker → routes/investments.js
 app.get('/brokerage-tracker', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'brokerage-tracker.html'));
 });
 
-// ═══════════════════════════════════════════════════════════
-// BROKERAGE ASSETS
-// ═══════════════════════════════════════════════════════════
 
-// List all assets with computed FACTS metrics, sorted by recovery velocity
-app.get('/api/brokerage/assets', requireAuth, checkVaultLock, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const assetsResult = await pool.query(
-      `SELECT * FROM brokerage_assets WHERE user_id=$1 AND is_archived=FALSE ORDER BY created_at`,
-      [userId]
-    );
 
-    const assets = await Promise.all(assetsResult.rows.map(async (asset) => {
-      const txResult = await pool.query(
-        `SELECT * FROM brokerage_transactions WHERE asset_id=$1 AND user_id=$2 ORDER BY date`,
-        [asset.id, userId]
-      );
-      const metrics  = computeBrokerageMetrics(txResult.rows);
-      const velocity = await computeRecoveryVelocity(pool, asset.id, userId);
-      return { ...asset, ...metrics, recovery_velocity: velocity, transactions: txResult.rows };
-    }));
 
-    // Sort: infinite_return assets first (gold hall-of-fame), then by recovery_velocity desc
-    assets.sort((a, b) => {
-      if (a.infinite_return && !b.infinite_return) return -1;
-      if (!a.infinite_return && b.infinite_return) return 1;
-      return b.recovery_velocity - a.recovery_velocity;
-    });
 
-    res.json({ assets });
-  } catch (err) {
-    console.error('GET /api/brokerage/assets error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch assets' });
-  }
-});
 
-// Create asset
-app.post('/api/brokerage/assets', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { ticker_symbol, entity_owner = 'personal', goal_percent } = req.body;
 
-    if (!ticker_symbol || !ticker_symbol.trim()) {
-      return res.status(400).json({ error: 'ticker_symbol is required' });
-    }
 
-    const result = await pool.query(
-      `INSERT INTO brokerage_assets (user_id, ticker_symbol, entity_owner, goal_percent)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [userId, ticker_symbol.trim().toUpperCase(), entity_owner, goal_percent || null]
-    );
 
-    // Ensure discipline record exists
-    const existing = await pool.query(`SELECT id FROM brokerage_discipline WHERE user_id=$1`, [userId]);
-    if (!existing.rows.length) {
-      await pool.query(
-        `INSERT INTO brokerage_discipline (user_id, vault_status, streak_count) VALUES ($1,'active',0)`,
-        [userId]
-      );
-    }
 
-    res.status(201).json({ asset: { ...result.rows[0], ...computeBrokerageMetrics([]) } });
-  } catch (err) {
-    console.error('POST /api/brokerage/assets error:', err.message);
-    res.status(500).json({ error: 'Failed to create asset' });
-  }
-});
 
-// Get single asset with full transaction history + current price
-app.get('/api/brokerage/assets/:id', requireAuth, checkVaultLock, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const assetId = parseInt(req.params.id);
 
-    const assetResult = await pool.query(
-      `SELECT * FROM brokerage_assets WHERE id=$1 AND user_id=$2 AND is_archived=FALSE`,
-      [assetId, userId]
-    );
-    if (!assetResult.rows.length) return res.status(404).json({ error: 'Asset not found' });
 
-    const txResult = await pool.query(
-      `SELECT * FROM brokerage_transactions WHERE asset_id=$1 AND user_id=$2 ORDER BY date DESC`,
-      [assetId, userId]
-    );
-    const metrics  = computeBrokerageMetrics(txResult.rows.slice().reverse());
-    const velocity = await computeRecoveryVelocity(pool, assetId, userId);
 
-    // Fetch current price from Yahoo Finance
-    let currentPrice = null;
-    try {
-      const ticker = assetResult.rows[0].ticker_symbol;
-      const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/spark?symbols=${ticker}&range=1d&interval=1d`;
-      const priceRes = await fetch(yahooUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FACTS/1.0)' }
-      });
-      if (priceRes.ok) {
-        const priceData = await priceRes.json();
-        const spark = priceData.spark?.result?.[0];
-        if (spark?.data?.[0]?.meta?.regularMarketPrice) {
-          currentPrice = spark.data[0].meta.regularMarketPrice;
-        }
-      }
-      if (!currentPrice) {
-        // Fallback to v7 quote endpoint
-        const v7Url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ticker}`;
-        const v7Res = await fetch(v7Url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FACTS/1.0)' } });
-        if (v7Res.ok) {
-          const v7Data = await v7Res.json();
-          currentPrice = v7Data.quoteResponse?.result?.[0]?.regularMarketPrice || null;
-        }
-      }
-    } catch (priceErr) {
-      console.error('[Brokerage] Price fetch error:', priceErr.message);
-    }
 
-    // Running net exposure over time for chart
-    const chronoTx = txResult.rows.slice().reverse();
-    let running = 0;
-    const chartData = chronoTx.map(t => {
-      if (t.activity_type === 'buy') running += Math.abs(parseFloat(t.cash_flow));
-      else running -= parseFloat(t.cash_flow);
-      return { date: t.date, net_exposure: parseFloat(running.toFixed(4)), activity_type: t.activity_type };
-    });
 
-    res.json({
-      asset: { ...assetResult.rows[0], ...metrics, recovery_velocity: velocity, current_price: currentPrice },
-      transactions: txResult.rows,
-      chart_data: chartData
-    });
-  } catch (err) {
-    console.error('GET /api/brokerage/assets/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch asset' });
-  }
-});
 
-// Update asset
-app.patch('/api/brokerage/assets/:id', requireAuth, async (req, res) => {
-  try {
-    const userId  = req.userId;
-    const assetId = parseInt(req.params.id);
-    const { entity_owner, goal_percent, ticker_symbol } = req.body;
 
-    const existing = await pool.query(
-      `SELECT id FROM brokerage_assets WHERE id=$1 AND user_id=$2 AND is_archived=FALSE`,
-      [assetId, userId]
-    );
-    if (!existing.rows.length) return res.status(404).json({ error: 'Asset not found' });
 
-    const result = await pool.query(
-      `UPDATE brokerage_assets
-       SET entity_owner=COALESCE($1,entity_owner),
-           goal_percent=COALESCE($2,goal_percent),
-           ticker_symbol=COALESCE($3,ticker_symbol),
-           updated_at=NOW()
-       WHERE id=$4 AND user_id=$5
-       RETURNING *`,
-      [entity_owner || null, goal_percent || null, ticker_symbol ? ticker_symbol.trim().toUpperCase() : null, assetId, userId]
-    );
-    res.json({ asset: result.rows[0] });
-  } catch (err) {
-    console.error('PATCH /api/brokerage/assets/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update asset' });
-  }
-});
 
-// Archive asset (soft delete)
-app.delete('/api/brokerage/assets/:id', requireAuth, async (req, res) => {
-  try {
-    const userId  = req.userId;
-    const assetId = parseInt(req.params.id);
 
-    const result = await pool.query(
-      `UPDATE brokerage_assets SET is_archived=TRUE, updated_at=NOW()
-       WHERE id=$1 AND user_id=$2 RETURNING id`,
-      [assetId, userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Asset not found' });
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/brokerage/assets/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to archive asset' });
-  }
-});
 
-// ═══════════════════════════════════════════════════════════
-// BROKERAGE TRANSACTIONS
-// ═══════════════════════════════════════════════════════════
 
-// List transactions for an asset
-app.get('/api/brokerage/transactions', requireAuth, checkVaultLock, async (req, res) => {
-  try {
-    const userId  = req.userId;
-    const assetId = req.query.assetId ? parseInt(req.query.assetId) : null;
 
-    if (!assetId) return res.status(400).json({ error: 'assetId query param required' });
 
-    const result = await pool.query(
-      `SELECT * FROM brokerage_transactions WHERE asset_id=$1 AND user_id=$2 ORDER BY date DESC, created_at DESC`,
-      [assetId, userId]
-    );
-    res.json({ transactions: result.rows });
-  } catch (err) {
-    console.error('GET /api/brokerage/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
-  }
-});
 
-// All transactions across all assets
-app.get('/api/brokerage/transactions/all', requireAuth, checkVaultLock, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const result = await pool.query(
-      `SELECT bt.*, ba.ticker_symbol FROM brokerage_transactions bt
-       JOIN brokerage_assets ba ON bt.asset_id = ba.id
-       WHERE bt.user_id=$1 ORDER BY bt.date DESC, bt.created_at DESC`,
-      [userId]
-    );
-    res.json({ transactions: result.rows });
-  } catch (err) {
-    console.error('GET /api/brokerage/transactions/all error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
-  }
-});
 
-// Create transaction
-app.post('/api/brokerage/transactions', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const {
-      asset_id, date, activity_type, cash_flow_input, share_count,
-      fee, price_per_share, strike_price, expiry_date, call_put, notes
-    } = req.body;
 
-    if (!asset_id || !date || !activity_type || cash_flow_input == null) {
-      return res.status(400).json({ error: 'Missing required fields: asset_id, date, activity_type, cash_flow_input' });
-    }
 
-    const validTypes = ['buy','sell','dividend','option_premium','lending_fee','options'];
-    if (!validTypes.includes(activity_type)) {
-      return res.status(400).json({ error: 'Invalid activity_type' });
-    }
 
-    // Verify asset belongs to user
-    const assetCheck = await pool.query(
-      `SELECT id FROM brokerage_assets WHERE id=$1 AND user_id=$2 AND is_archived=FALSE`,
-      [asset_id, userId]
-    );
-    if (!assetCheck.rows.length) return res.status(404).json({ error: 'Asset not found' });
 
-    const absAmt   = Math.abs(parseFloat(cash_flow_input));
-    const isOptions = activity_type === 'options';
-    const isBuy    = activity_type === 'buy';
 
-    // Auto-sign cash_flow: buys are negative, everything else is positive
-    const cashFlow = isBuy ? -absAmt : absAmt;
 
-    // Fee reduces proceeds for sell/options; adds to cost for buy
-    const feeAmt = fee ? Math.abs(parseFloat(fee)) : 0;
-    // Options share_count is optional but if provided must be valid
-    if (isOptions && share_count != null && parseFloat(share_count) <= 0) {
-      return res.status(400).json({ error: 'share_count must be positive for options' });
-    }
-    // For buy/sell, share_count required
-    if (['buy','sell'].includes(activity_type) && (share_count == null || parseFloat(share_count) <= 0)) {
-      return res.status(400).json({ error: 'share_count is required and must be positive for buy/sell' });
-    }
 
-    const result = await pool.query(
-      `INSERT INTO brokerage_transactions
-        (user_id, asset_id, date, activity_type, cash_flow, share_count, fee, price_per_share,
-         strike_price, expiry_date, call_put, is_options, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-      [
-        userId, asset_id, date, activity_type, cashFlow,
-        ['buy','sell','options'].includes(activity_type) ? Math.abs(parseFloat(share_count || 0)) : null,
-        feeAmt, price_per_share || null, strike_price || null, expiry_date || null,
-        call_put || null, isOptions ? true : false, notes || null
-      ]
-    );
 
-    // Update discipline streak
-    await updateDisciplineStreak(pool, userId);
 
-    res.status(201).json({ transaction: result.rows[0] });
-  } catch (err) {
-    console.error('POST /api/brokerage/transactions error:', err.message);
-    res.status(500).json({ error: 'Failed to create transaction' });
-  }
-});
 
-// Update transaction
-app.patch('/api/brokerage/transactions/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const txId   = parseInt(req.params.id);
-    const { date, activity_type, cash_flow_input, share_count, fee, notes } = req.body;
 
-    const existing = await pool.query(
-      `SELECT id FROM brokerage_transactions WHERE id=$1 AND user_id=$2`,
-      [txId, userId]
-    );
-    if (!existing.rows.length) return res.status(404).json({ error: 'Transaction not found' });
 
-    let cashFlow = null;
-    if (cash_flow_input != null && activity_type) {
-      const absAmt = Math.abs(parseFloat(cash_flow_input));
-      cashFlow = activity_type === 'buy' ? -absAmt : absAmt;
-    }
 
-    const result = await pool.query(
-      `UPDATE brokerage_transactions
-       SET date=COALESCE($1,date),
-           activity_type=COALESCE($2,activity_type),
-           cash_flow=COALESCE($3,cash_flow),
-           share_count=COALESCE($4,share_count),
-           fee=COALESCE($5,fee),
-           notes=COALESCE($6,notes),
-           updated_at=NOW()
-       WHERE id=$7 AND user_id=$8
-       RETURNING *`,
-      [
-        date || null, activity_type || null, cashFlow,
-        share_count ? Math.abs(parseFloat(share_count)) : null,
-        fee != null ? Math.abs(parseFloat(fee)) : null,
-        notes || null, txId, userId
-      ]
-    );
-    res.json({ transaction: result.rows[0] });
-  } catch (err) {
-    console.error('PATCH /api/brokerage/transactions/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to update transaction' });
-  }
-});
 
-// Delete transaction
-app.delete('/api/brokerage/transactions/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const txId   = parseInt(req.params.id);
 
-    const result = await pool.query(
-      `DELETE FROM brokerage_transactions WHERE id=$1 AND user_id=$2 RETURNING id`,
-      [txId, userId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Transaction not found' });
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DELETE /api/brokerage/transactions/:id error:', err.message);
-    res.status(500).json({ error: 'Failed to delete transaction' });
-  }
-});
 
-// ═══════════════════════════════════════════════════════════
-// BROKERAGE DISCIPLINE
-// ═══════════════════════════════════════════════════════════
 
-app.get('/api/brokerage/discipline', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    let rec = await pool.query(`SELECT * FROM brokerage_discipline WHERE user_id=$1`, [userId]);
 
-    if (!rec.rows.length) {
-      // No record yet — return safe defaults (not locked)
-      return res.json({
-        discipline: {
-          vault_status: 'active',
-          streak_count: 0,
-          last_entry_date: null,
-          days_until_lock: 30,
-          reactivation_count: 0
-        }
-      });
-    }
 
-    const d = rec.rows[0];
-    const daysUntilLock = d.last_entry_date
-      ? Math.max(0, 30 - Math.floor((Date.now() - new Date(d.last_entry_date).getTime()) / 86400000))
-      : 30;
 
-    // Auto-update vault status if needed
-    if (daysUntilLock === 0 && d.vault_status === 'active') {
-      await pool.query(
-        `UPDATE brokerage_discipline SET vault_status='locked', locked_at=NOW(), updated_at=NOW() WHERE user_id=$1`,
-        [userId]
-      );
-      d.vault_status = 'locked';
-    }
 
-    res.json({
-      discipline: {
-        vault_status: d.vault_status,
-        streak_count: d.streak_count,
-        last_entry_date: d.last_entry_date,
-        days_until_lock: daysUntilLock,
-        reactivation_count: d.reactivation_count,
-        locked_at: d.locked_at
-      }
-    });
-  } catch (err) {
-    console.error('GET /api/brokerage/discipline error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch discipline data' });
-  }
-});
 
-// Reactivate locked vault
-app.post('/api/brokerage/discipline/reactivate', requireAuth, async (req, res) => {
-  try {
-    const userId = req.userId;
-    const rec = await pool.query(`SELECT * FROM brokerage_discipline WHERE user_id=$1`, [userId]);
 
-    if (!rec.rows.length || rec.rows[0].vault_status !== 'locked') {
-      return res.status(400).json({ error: 'Project Net Zero is not locked' });
-    }
 
-    await pool.query(
-      `UPDATE brokerage_discipline
-       SET vault_status='active', streak_count=0, locked_at=NULL,
-           reactivation_count=reactivation_count+1, updated_at=NOW()
-       WHERE user_id=$1`,
-      [userId]
-    );
 
-    res.json({ success: true, message: 'Project Net Zero reactivated. Streak reset to 0. Start building your streak again.' });
-  } catch (err) {
-    console.error('POST /api/brokerage/discipline/reactivate error:', err.message);
-    res.status(500).json({ error: 'Failed to reactivate Project Net Zero' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FACTS CORE — NEW FEATURE ENDPOINTS
@@ -32304,184 +28198,184 @@ app.get('/api/sovereignty-baseline', requireAuth, async (req, res) => {
 // §3: Deposit Directive — Income Allocation Flow
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INCOME_SOURCES = ['Salary', 'Bonus', 'Dividends', 'Interest', 'Gifts', 'Side Hustle', 'Other'];
-
-// GET /api/income — list income entries for user
-app.get('/api/income', requireAuth, async (req, res) => {
-  try {
-    const { limit = 20, offset = 0 } = req.query;
-    const entries = await pool.query(
-      `SELECT ie.*,
-              json_agg(json_build_object(
-                'category_id', ia.category_id,
-                'category_name', c.name,
-                'category_slug', c.slug,
-                'category_color', c.color,
-                'amount', ia.amount,
-                'percentage', ia.percentage_used
-              ) ORDER BY c.sort_order) FILTER (WHERE ia.id IS NOT NULL) as allocations
-       FROM income_entries ie
-       LEFT JOIN income_allocations ia ON ia.income_entry_id = ie.id
-       LEFT JOIN categories c ON c.id = ia.category_id
-       WHERE ie.user_id=$1
-       GROUP BY ie.id
-       ORDER BY ie.entry_date DESC, ie.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [req.userId, parseInt(limit), parseInt(offset)]
-    );
-    res.json({ entries: entries.rows, sources: INCOME_SOURCES });
-  } catch (err) {
-    console.error('GET /api/income error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch income entries' });
-  }
-});
-
-// POST /api/income/preview — calculate split without saving (for confirmation screen)
-app.post('/api/income/preview', requireAuth, async (req, res) => {
-  try {
-    const { amount, source = 'Other', date, note } = req.body;
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: 'amount must be a positive number' });
-    }
-    const incomeAmt = parseFloat(parseFloat(amount).toFixed(2));
-
-    // Get active allocations for this user
-    const allocResult = await pool.query(
-      `SELECT c.id, c.name, c.slug, c.color, c.icon, c.sort_order,
-              COALESCE(pa.percentage, ac.percentage) as percentage
-       FROM categories c
-       JOIN allocation_config ac ON ac.category_id = c.id
-       LEFT JOIN permanent_allocations pa ON pa.category_id = c.id AND pa.user_id = $1
-       WHERE c.is_active IS DISTINCT FROM FALSE
-       ORDER BY c.sort_order`,
-      [req.userId]
-    );
-
-    const splits = allocResult.rows.map(cat => {
-      const pct = parseFloat(cat.percentage) || 0;
-      return {
-        category_id: cat.id,
-        category_name: cat.name,
-        category_slug: cat.slug,
-        category_color: cat.color,
-        category_icon: cat.icon,
-        percentage: pct,
-        amount: parseFloat((incomeAmt * pct / 100).toFixed(2))
-      };
-    });
-
-    // Ensure splits sum to total (handle rounding by adjusting largest bucket)
-    const splitTotal = splits.reduce((s, x) => s + x.amount, 0);
-    if (splits.length > 0 && Math.abs(splitTotal - incomeAmt) > 0.001) {
-      const maxIdx = splits.reduce((mi, x, i) => x.amount > splits[mi].amount ? i : mi, 0);
-      splits[maxIdx].amount = parseFloat((incomeAmt - (splitTotal - splits[maxIdx].amount)).toFixed(2));
-    }
-
-    res.json({
-      amount: incomeAmt,
-      source,
-      date: date || new Date().toISOString().split('T')[0],
-      note,
-      splits,
-      total_allocated: splits.reduce((s, x) => s + x.amount, 0)
-    });
-  } catch (err) {
-    console.error('POST /api/income/preview error:', err.message);
-    res.status(500).json({ error: 'Failed to calculate income split' });
-  }
-});
-
-// POST /api/income — confirm and save income entry + all allocations
-app.post('/api/income', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { amount, source = 'Other', date, note, splits } = req.body;
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: 'amount must be a positive number' });
-    }
-    if (!Array.isArray(splits) || splits.length === 0) {
-      return res.status(400).json({ error: 'splits array required (use /api/income/preview to generate)' });
-    }
-
-    const incomeAmt = parseFloat(parseFloat(amount).toFixed(2));
-    const entryDate = date || new Date().toISOString().split('T')[0];
-    const validSource = INCOME_SOURCES.includes(source) ? source : 'Other';
-
-    // Validate splits sum
-    const splitTotal = splits.reduce((s, x) => s + parseFloat(x.amount), 0);
-    if (Math.abs(splitTotal - incomeAmt) > 0.05) {
-      return res.status(400).json({ error: `Splits total ${splitTotal.toFixed(2)} doesn't match income ${incomeAmt}` });
-    }
-
-    await client.query('BEGIN');
-
-    // Create income_entries record
-    const entryRes = await client.query(
-      `INSERT INTO income_entries (user_id, amount, source, note, entry_date)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [req.userId, incomeAmt, validSource, note || null, entryDate]
-    );
-    const entryId = entryRes.rows[0].id;
-
-    // Create income_allocations + one transaction per bucket
-    const savedAllocations = [];
-    for (const split of splits) {
-      if (!split.category_id || parseFloat(split.amount) <= 0) continue;
-
-      const splitAmt = parseFloat(parseFloat(split.amount).toFixed(2));
-      const splitPct = parseFloat(split.percentage) || 0;
-
-      // income_allocations record
-      await client.query(
-        `INSERT INTO income_allocations (income_entry_id, category_id, amount, percentage_used)
-         VALUES ($1, $2, $3, $4)`,
-        [entryId, split.category_id, splitAmt, splitPct]
-      );
+// [Phase2] income → routes/transactions.js (incomeRouter)
 
 
-      // Transaction record per bucket (maintains existing balance system)
-      const txnRes = await client.query(
-        `INSERT INTO transactions (user_id, type, amount, description, category_id, transaction_date, payment_method)
-         VALUES ($1, 'income', $2, $3, $4, $5, 'Deposit Directive')
-         RETURNING id`,
-        [req.userId, splitAmt, `${validSource} - ${split.category_name || 'Bucket'} allocation`, split.category_id, entryDate]
-      );
 
-      savedAllocations.push({ category_id: split.category_id, amount: splitAmt, percentage: splitPct });
 
-      // Frozen allocation snapshot for SSC/sweep capacity tracking
-      await client.query(
-        `INSERT INTO transaction_allocations (transaction_id, category_id, percentage, amount)
-         VALUES ($1, $2, $3, $4)`,
-        [txnRes.rows[0].id, split.category_id, splitPct, splitAmt]
-      );
-    }
 
-    // Also record a single summary transaction for reporting
-    await client.query(
-      `UPDATE users SET updated_at=NOW() WHERE id=$1`,
-      [req.userId]
-    ).catch(() => {});
 
-    await client.query('COMMIT');
 
-    res.json({
-      success: true,
-      entry_id: entryId,
-      amount: incomeAmt,
-      source: validSource,
-      date: entryDate,
-      allocations: savedAllocations,
-      message: `$${incomeAmt.toFixed(2)} split across ${savedAllocations.length} buckets`
-    });
-  } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
-    console.error('POST /api/income error:', err.message);
-    res.status(500).json({ error: 'Failed to save income entry' });
-  } finally {
-    client.release();
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // §9: EOM Sweep — End-of-Month cascading rebalance
@@ -33187,87 +29081,7 @@ async function initializeModuleArchitecture() {
   }
 })();
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ─── PHASE ZERO ENGINE ───────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Utility: log Phase Zero reward for retroactive application if gamification not live
-async function pzLogReward(userId, eventType, xpAmount, pointsAmount, metadata, dbClient) {
-  try {
-    var q = dbClient || pool;
-    await q.query(
-      'INSERT INTO phase_zero_rewards_log (user_id, event_type, xp_amount, points_amount, metadata) VALUES ($1,$2,$3,$4,$5)',
-      [userId, eventType, xpAmount, pointsAmount, JSON.stringify(metadata || {})]
-    );
-  } catch(e) { /* non-fatal */ }
-}
-
-// Utility: award TFR XP (wraps tfrAwardXp, handles missing stats row gracefully)
-async function pzAwardXp(userId, source, description, xpAmount, dbClient) {
-  var q = dbClient || pool;
-  try {
-    // Ensure stats row exists
-    await tfrEnsureStats(userId, q);
-    // Need a transaction client for tfrAwardXp
-    if (dbClient) {
-      return await tfrAwardXp(userId, source, description, xpAmount, dbClient);
-    } else {
-      var client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-        var result = await tfrAwardXp(userId, source, description, xpAmount, client);
-        await client.query('COMMIT');
-        return result;
-      } catch(e) {
-        await client.query('ROLLBACK');
-        throw e;
-      } finally {
-        client.release();
-      }
-    }
-  } catch(e) {
-    console.error('[PhaseZero] XP award failed:', e.message);
-    await pzLogReward(userId, source, xpAmount, 0, { description, error: e.message });
-  }
-}
-
-// Utility: award FG wallet points
-async function pzAwardWalletPoints(userId, amount, activity, description) {
-  try {
-    await ensureFgBalance(userId);
-    await pool.query(
-      'UPDATE fg_points_balances SET balance = balance + $2, total_earned = total_earned + $2, updated_at = NOW() WHERE user_id = $1',
-      [userId, amount]
-    );
-    await pool.query(
-      'INSERT INTO fg_earning_events (user_id, activity_type, description, points) VALUES ($1,$2,$3,$4)',
-      [userId, activity, description, amount]
-    );
-  } catch(e) {
-    console.error('[PhaseZero] Wallet points award failed:', e.message);
-    await pzLogReward(userId, activity, 0, amount, { description, error: e.message });
-  }
-}
-
-// Rule-based allocation suggestion (fallback when AI unavailable)
-// Always returns the canonical 50/10/10/10/10/10 baseline with a goal-specific rationale.
-// The AI path can personalize; the fallback must be safe and predictable.
-function buildAllocationSuggestion(answers) {
-  var alloc = { necessities: 50, velocity: 10, reserve: 10, lifestyle: 10, growth: 10, legacy: 10 };
-  var rationale = 'Balanced allocation across all 6 categories — the FACTS baseline. You can customize anytime in Settings.';
-
-  if (answers.goal === 'crush_debt' || answers.debt === 'yes_significant') {
-    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting Velocity to accelerate debt payoff — adjust in Settings.';
-  } else if (answers.goal === 'build_savings' || answers.emergency === 'no') {
-    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting The Reserve to build your emergency fund — adjust in Settings.';
-  } else if (answers.goal === 'grow_wealth') {
-    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Once settled, consider boosting Growth and Legacy to accelerate wealth building — adjust in Settings.';
-  } else if (answers.debt === 'yes_mortgage') {
-    rationale = 'Starting with the balanced 50/10/10/10/10/10 baseline. Mortgage-only debt allows a balanced approach — adjust in Settings as your strategy evolves.';
-  }
-
-  return { allocations: alloc, rationale: rationale };
-}
+// Phase Zero helpers: routes/phaseZero.js (pzAwardXp / pzAwardWalletPoints / pzLogReward)
 
 // ── FACTS Marketing Site Routes (extensionless clean URLs) ──────────
 app.get('/products', (req, res) => {
@@ -33283,530 +29097,10 @@ app.get('/about', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'about.html'));
 });
 
-// ── Auth entry point redirects (extensionless clean URLs) ──────────────
-app.get('/login', (req, res) => {
-  res.redirect('/login.html');
-});
-app.get('/signup', (req, res) => {
-  res.redirect('/signup.html');
-});
-app.get('/forgot-password', (req, res) => {
-  res.redirect('/forgot-password.html');
-});
-app.get('/reset-password', (req, res) => {
-  res.redirect('/reset-password.html');
-});
 
-// GET /phase-zero — clean URL for Phase Zero front gate page
-app.get('/phase-zero', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'phase-zero.html'));
-});
 
-// GET /lockout — Phase Zero deadline lockout screen
-app.get('/lockout', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'lockout.html'));
-});
 
-// GET /api/phase-zero/status
-app.get('/api/phase-zero/status', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    var result = await pool.query(
-      `SELECT email, declaration_accepted_at, phase_zero_completed_at, ai_guided_setup,
-              phone_verified_at, audit_status, audit_day_count, audit_start_date,
-              audit_last_activity_date, audit_completed_at, audit_attempts, audit_lockout_until
-       FROM users WHERE id = $1`, [userId]
-    );
-    var user = result.rows[0];
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
-  } catch(e) {
-    console.error('[PhaseZero] status error:', e.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// POST /api/phase-zero/accept-declaration
-app.post('/api/phase-zero/accept-declaration', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    // Set declaration_accepted_at + phase_zero_started_at (starts the 7-day deadline timer)
-    // COALESCE preserves the original start time if user re-accepts (e.g., after admin override resets timer)
-    await pool.query(
-      `UPDATE users SET
-         declaration_accepted_at = COALESCE(declaration_accepted_at, NOW()),
-         phase_zero_started_at = COALESCE(phase_zero_started_at, NOW()),
-         updated_at = NOW()
-       WHERE id = $1`,
-      [userId]
-    );
-    res.json({ ok: true });
-  } catch(e) {
-    console.error('[PhaseZero] declaration error:', e.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// POST /api/phase-zero/skip-ai  (use defaults)
-app.post('/api/phase-zero/skip-ai', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    var defaults = { necessities: 50, velocity: 10, reserve: 10, lifestyle: 10, growth: 10, legacy: 10 };
-    await pool.query(
-      'UPDATE users SET ai_guided_setup = FALSE, ai_setup_answers = $2, updated_at = NOW() WHERE id = $1',
-      [userId, JSON.stringify({ method: 'manual', allocations: defaults })]
-    );
-    // Apply default allocations if allocation columns exist
-    try {
-      await pool.query(
-        `UPDATE users SET
-          alloc_necessities = $2, alloc_velocity = $3, alloc_reserve = $4,
-          alloc_lifestyle = $5, alloc_growth = $6, alloc_legacy = $7
-         WHERE id = $1`,
-        [userId, defaults.necessities, defaults.velocity, defaults.reserve,
-         defaults.lifestyle, defaults.growth, defaults.legacy]
-      );
-    } catch(e2) { /* allocation columns might not exist — non-fatal */ }
-    res.json({ ok: true });
-  } catch(e) {
-    console.error('[PhaseZero] skip-ai error:', e.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// POST /api/phase-zero/ai-suggest  (AI generates allocation recommendation)
-app.post('/api/phase-zero/ai-suggest', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    var { income, debt, emergency, goal } = req.body;
-    if (!income || !debt || !emergency || !goal) {
-      return res.status(400).json({ error: 'All four answers are required.' });
-    }
-
-    // Try AI first, fall back to rule-based
-    var suggestion = null;
-    try {
-      var aiClient = getOpenAI();
-      var prompt = `You are a FACTS Protocol financial architect. Based on the user's answers, suggest optimal allocation percentages across 6 buckets that sum to exactly 100.
-
-User answers:
-- Monthly income: $${income}
-- Debt situation: ${debt}
-- Emergency fund: ${emergency}
-- Primary goal: ${goal}
-
-Buckets (must sum to exactly 100):
-- necessities (shelter, utilities, food) — typically 40-55%
-- velocity (debt payoff) — increase if significant debt
-- reserve (emergency savings) — increase if no emergency fund
-- lifestyle (discretionary spending)
-- growth (investments, wealth building)
-- legacy (generational wealth, giving)
-
-Respond with JSON only:
-{"necessities": N, "velocity": N, "reserve": N, "lifestyle": N, "growth": N, "legacy": N, "rationale": "one sentence explanation"}`;
-
-      var completion = await aiClient.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-        max_tokens: 300,
-        temperature: 0.3
-      }, { headers: { 'x-task': 'phase_zero_allocation_suggest' } });
-
-      var parsed = JSON.parse(completion.choices[0].message.content);
-      var total = (parsed.necessities||0) + (parsed.velocity||0) + (parsed.reserve||0) +
-                  (parsed.lifestyle||0) + (parsed.growth||0) + (parsed.legacy||0);
-
-      // Normalize if needed
-      if (Math.abs(total - 100) > 2) {
-        // Fall through to rule-based
-        throw new Error('AI allocation did not sum to 100: ' + total);
-      }
-      // Adjust final bucket to ensure exact 100
-      var buckets = ['necessities','velocity','reserve','lifestyle','growth','legacy'];
-      var runningTotal = 0;
-      for (var i = 0; i < buckets.length - 1; i++) {
-        parsed[buckets[i]] = Math.round(parsed[buckets[i]]);
-        runningTotal += parsed[buckets[i]];
-      }
-      parsed.legacy = 100 - runningTotal;
-
-      suggestion = { allocations: parsed, rationale: parsed.rationale || 'AI-optimized allocation based on your financial situation.' };
-    } catch(aiErr) {
-      console.warn('[PhaseZero] AI suggest fallback:', aiErr.message);
-      suggestion = buildAllocationSuggestion({ income, debt, emergency, goal });
-    }
-
-    res.json(suggestion);
-  } catch(e) {
-    console.error('[PhaseZero] ai-suggest error:', e.message);
-    res.status(500).json({ error: 'Server error generating suggestion.' });
-  }
-});
-
-// POST /api/phase-zero/ai-setup  (accept AI-suggested allocation)
-app.post('/api/phase-zero/ai-setup', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    var { answers, allocations } = req.body;
-    if (!allocations) return res.status(400).json({ error: 'Allocations required.' });
-    var total = Object.values(allocations).reduce(function(a,b) { return a+b; }, 0);
-    if (Math.abs(total - 100) > 0.5) {
-      return res.status(400).json({ error: 'Allocations must sum to 100. Got: ' + total });
-    }
-
-    await pool.query(
-      'UPDATE users SET ai_guided_setup = TRUE, ai_setup_answers = $2, updated_at = NOW() WHERE id = $1',
-      [userId, JSON.stringify({ answers: answers, allocations: allocations })]
-    );
-    // Apply allocations if columns exist
-    try {
-      await pool.query(
-        `UPDATE users SET
-          alloc_necessities = $2, alloc_velocity = $3, alloc_reserve = $4,
-          alloc_lifestyle = $5, alloc_growth = $6, alloc_legacy = $7
-         WHERE id = $1`,
-        [userId, allocations.necessities||50, allocations.velocity||10, allocations.reserve||10,
-         allocations.lifestyle||10, allocations.growth||10, allocations.legacy||10]
-      );
-    } catch(e2) { /* non-fatal */ }
-    res.json({ ok: true });
-  } catch(e) {
-    console.error('[PhaseZero] ai-setup error:', e.message);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
-
-// ─── EMAIL VERIFICATION (Phase Zero) ─────────────────────────────────────────
-// Replaces SMS verification. Sends a 6-digit OTP to the user's registered email.
-// No phone number required — code goes to the email used at signup.
-
-function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-// POST /api/email-verify/send  — send 6-digit OTP to user's registered email
-app.post('/api/email-verify/send', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-
-    // Rate limit: max 3 attempts per hour
-    var user = (await pool.query(
-      'SELECT email, name, phone_otp_attempts, phone_otp_window_start FROM users WHERE id = $1', [userId]
-    )).rows[0];
-    if (!user || !user.email) {
-      return res.status(400).json({ error: 'User not found or no email on account.' });
-    }
-
-    var windowStart = user.phone_otp_window_start ? new Date(user.phone_otp_window_start) : null;
-    var windowOpen = windowStart && (Date.now() - windowStart.getTime()) < 3600000;
-    if (windowOpen && (user.phone_otp_attempts || 0) >= 3) {
-      return res.status(429).json({ error: 'Too many attempts. Try again in an hour.' });
-    }
-
-    var otp = generateOtp();
-    var expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    var attempts = (user && windowOpen) ? (user.phone_otp_attempts || 0) + 1 : 1;
-
-    // Reuse phone_otp columns for email OTP (same schema, no migration needed)
-    await pool.query(
-      `UPDATE users SET phone_otp = $2, phone_otp_expires_at = $3,
-          phone_otp_attempts = $4,
-          phone_otp_window_start = CASE WHEN $5 THEN phone_otp_window_start ELSE NOW() END,
-          updated_at = NOW() WHERE id = $1`,
-      [userId, otp, expiresAt, attempts, !!(windowOpen)]
-    );
-
-    // Send OTP via Resend
-    var appName = 'FACTS';
-    var appUrl = process.env.APP_URL || 'https://app.factsmoney.com';
-    try {
-      await sendEmail({
-          to: user.email,
-          subject: `${otp} is your ${appName} verification code`,
-          text: `Your ${appName} Phase Zero verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`,
-          html: `
-            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#0a0f1a;border-radius:16px;">
-              <h2 style="color:#10b981;margin:0 0 8px;font-size:1.4rem;">${appName} Verification Code</h2>
-              <p style="color:#94a3b8;margin:0 0 28px;font-size:0.95rem;">Hi ${user.name || 'there'},</p>
-              <p style="color:#e2e8f0;margin:0 0 24px;font-size:0.95rem;line-height:1.6;">
-                Use the code below to complete your Phase Zero identity verification. It expires in <strong style="color:#f59e0b;">10 minutes</strong>.
-              </p>
-              <div style="background:#1a2332;border:2px solid #10b981;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
-                <span style="font-size:2.5rem;font-weight:700;letter-spacing:12px;color:#10b981;font-family:'Courier New',monospace;">${otp}</span>
-              </div>
-              <p style="color:#64748b;font-size:0.85rem;line-height:1.5;">
-                If you didn't request this, you can safely ignore this email.<br>
-                <a href="${appUrl}" style="color:#10b981;">${appUrl}</a>
-              </p>
-            </div>`
-      });
-    } catch (emailErr) {
-      console.error('[PhaseZero] email-verify send error:', emailErr.message);
-      // Still return success — code is stored, user can retry
-    }
-
-    res.json({ ok: true, message: 'Code sent to your email.' });
-  } catch(e) {
-    console.error('[PhaseZero] email-verify-send error:', e.message);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
-
-// POST /api/email-verify/confirm  — verify the 6-digit OTP
-app.post('/api/email-verify/confirm', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    var { code } = req.body;
-    if (!code || code.trim().length !== 6) {
-      return res.status(400).json({ error: 'Enter the 6-digit code.' });
-    }
-
-    var user = (await pool.query(
-      'SELECT phone_otp, phone_otp_expires_at FROM users WHERE id = $1', [userId]
-    )).rows[0];
-
-    if (!user || !user.phone_otp) {
-      return res.status(400).json({ error: 'No pending verification. Request a new code.' });
-    }
-    if (new Date(user.phone_otp_expires_at) < new Date()) {
-      return res.status(400).json({ error: 'Code expired. Request a new one.' });
-    }
-    if (code.trim() !== user.phone_otp) {
-      return res.status(400).json({ error: 'Incorrect code. Try again.' });
-    }
-
-    // Mark email verified — reuse phone_verified_at as the verification timestamp
-    await pool.query(
-      `UPDATE users SET phone_verified_at = NOW(),
-          phone_otp = NULL, phone_otp_expires_at = NULL, updated_at = NOW()
-       WHERE id = $1`,
-      [userId]
-    );
-
-    res.json({ ok: true });
-  } catch(e) {
-    console.error('[PhaseZero] email-verify-confirm error:', e.message);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
-
-// ─── SMS VERIFY (Twilio Verify) ──────────────────────────────────────
-// Real SMS OTP via Twilio Verify API.
-// Uses existing users columns: verified_phone, phone_otp_attempts, phone_otp_window_start
-
-// POST /api/sms-verify/set-phone — store phone number and send first SMS
-app.post('/api/sms-verify/set-phone', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    var { phone } = req.body;
-
-    if (!phone || !phone.trim()) {
-      return res.status(400).json({ error: 'Phone number is required.' });
-    }
-
-    // Validate and normalize E.164 format (allow + prefix, strip spaces/dashes)
-    var normalized = phone.trim().replace(/[\t ]+/g, '');
-    if (!normalized.startsWith('+')) {
-      normalized = '+' + normalized;
-    }
-    // Basic E.164 validation: + then 7-15 digits
-    if (!/^\\+[1-9]\/[1-9]{7,14}$/.test(normalized.replace(/[ -]/g, ''))) {
-      // More permissive check: at least + and reasonable digit count
-      var digitsOnly = normalized.replace(/[^0-9]/g, '');
-      if (digitsOnly.length < 7 || digitsOnly.length > 15) {
-        return res.status(400).json({ error: 'Enter a valid phone number with country code (e.g. +12025551234).' });
-      }
-    }
-
-    // Store the phone number
-    await pool.query(
-      'UPDATE users SET verified_phone = $2, updated_at = NOW() WHERE id = $1',
-      [userId, normalized]
-    );
-
-    // Reset OTP attempts on new phone registration
-    await pool.query(
-      `UPDATE users SET phone_otp_attempts = 0, phone_otp_window_start = NULL WHERE id = $1`,
-      [userId]
-    );
-
-    // Send first SMS verification
-    var rateLimitUser = (await pool.query(
-      'SELECT phone_otp_attempts, phone_otp_window_start FROM users WHERE id = $1', [userId]
-    )).rows[0];
-
-    var windowStart = rateLimitUser.phone_otp_window_start ? new Date(rateLimitUser.phone_otp_window_start) : null;
-    var windowOpen = windowStart && (Date.now() - windowStart.getTime()) < 3600000;
-    if (windowOpen && (rateLimitUser.phone_otp_attempts || 0) >= 3) {
-      return res.status(429).json({ error: 'Too many attempts. Try again in an hour.' });
-    }
-
-    var attempts = (windowOpen) ? (rateLimitUser.phone_otp_attempts || 0) + 1 : 1;
-    await pool.query(
-      `UPDATE users SET phone_otp_attempts = $2,
-          phone_otp_window_start = CASE WHEN $3 THEN phone_otp_window_start ELSE NOW() END
-       WHERE id = $1`,
-      [userId, attempts, !!(windowOpen)]
-    );
-
-    var result = await sendVerification(normalized);
-
-    if (!result.success) {
-      return res.status(400).json({ error: result.error || 'Failed to send SMS. Please check your phone number.' });
-    }
-
-    res.json({
-      ok: true,
-      message: 'Verification code sent to ' + normalized + '.',
-      stub: result.stub || false
-    });
-  } catch(e) {
-    console.error('[SMS] set-phone error:', e.message);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
-
-// POST /api/sms-verify/send — resend verification SMS
-app.post('/api/sms-verify/send', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-
-    var user = (await pool.query(
-      'SELECT verified_phone, phone_otp_attempts, phone_otp_window_start FROM users WHERE id = $1', [userId]
-    )).rows[0];
-
-    if (!user || !user.verified_phone) {
-      return res.status(400).json({ error: 'No phone number set. Call /api/sms-verify/set-phone first.' });
-    }
-
-    // Rate limit: max 3 sends per hour
-    var windowStart = user.phone_otp_window_start ? new Date(user.phone_otp_window_start) : null;
-    var windowOpen = windowStart && (Date.now() - windowStart.getTime()) < 3600000;
-    if (windowOpen && (user.phone_otp_attempts || 0) >= 3) {
-      return res.status(429).json({ error: 'Too many attempts. Try again in an hour.' });
-    }
-
-    var attempts = (windowOpen) ? (user.phone_otp_attempts || 0) + 1 : 1;
-    await pool.query(
-      `UPDATE users SET phone_otp_attempts = $2,
-          phone_otp_window_start = CASE WHEN $3 THEN phone_otp_window_start ELSE NOW() END
-       WHERE id = $1`,
-      [userId, attempts, !!(windowOpen)]
-    );
-
-    var result = await sendVerification(user.verified_phone);
-
-    if (!result.success) {
-      return res.status(400).json({ error: result.error || 'Failed to send verification code.' });
-    }
-
-    res.json({ ok: true, message: 'Code resent to ' + user.verified_phone + '.' });
-  } catch(e) {
-    console.error('[SMS] send error:', e.message);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
-
-// POST /api/sms-verify/confirm — verify the 6-digit code
-app.post('/api/sms-verify/confirm', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    var { code, phone } = req.body;
-
-    if (!code || code.trim().length !== 6) {
-      return res.status(400).json({ error: 'Enter the 6-digit verification code.' });
-    }
-
-    // Use provided phone or fall back to stored verified_phone
-    var phoneToVerify = (phone && phone.trim()) ? phone.trim().replace(/[\t ]+/g, '') : null;
-
-    var user = (await pool.query(
-      'SELECT verified_phone FROM users WHERE id = $1', [userId]
-    )).rows[0];
-
-    if (!phoneToVerify && !user.verified_phone) {
-      return res.status(400).json({ error: 'No phone number on file. Call /api/sms-verify/set-phone first.' });
-    }
-
-    var targetPhone = phoneToVerify || user.verified_phone;
-
-    var result = await checkVerification(targetPhone, code.trim());
-
-    if (!result.success) {
-      return res.status(400).json({ error: result.error || 'Incorrect verification code.' });
-    }
-
-    // Mark phone verified
-    await pool.query(
-      `UPDATE users SET phone_verified_at = NOW(),
-          verified_phone = $2,
-          phone_otp = NULL, phone_otp_expires_at = NULL,
-          updated_at = NOW() WHERE id = $1`,
-      [userId, targetPhone]
-    );
-
-    res.json({ ok: true });
-  } catch(e) {
-    console.error('[SMS] confirm error:', e.message);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
-
-// POST /api/phase-zero/complete  (mark Phase Zero done, start audit, award XP)
-app.post('/api/phase-zero/complete', requireAuth, async (req, res) => {
-  try {
-    var userId = req.userId;
-    var user = (await pool.query(
-      'SELECT declaration_accepted_at, phone_verified_at, ai_guided_setup, phase_zero_completed_at FROM users WHERE id = $1',
-      [userId]
-    )).rows[0];
-
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    if (user.phase_zero_completed_at) {
-      return res.json({ ok: true, already_complete: true, ai_guided: user.ai_guided_setup });
-    }
-    if (!user.declaration_accepted_at) {
-      return res.status(400).json({ error: 'Declaration not yet accepted.' });
-    }
-    if (!user.phone_verified_at) {
-      return res.status(400).json({ error: 'Phone not yet verified.' });
-    }
-
-    // Mark complete, start audit
-    await pool.query(
-      `UPDATE users SET
-          phase_zero_completed_at = NOW(),
-          audit_status = 'in_progress',
-          audit_start_date = NOW(),
-          audit_day_count = 0,
-          audit_last_activity_date = NULL,
-          updated_at = NOW()
-       WHERE id = $1`, [userId]
-    );
-
-    // Clear session cache so gate re-checks
-    req.session.pzComplete = true;
-
-    // Award 100 XP for Phase Zero completion
-    await pzAwardXp(userId, 'phase_zero_complete', 'Phase Zero Complete — 100 XP', 100);
-
-    // Award 25 bonus wallet points for AI-guided path
-    if (user.ai_guided_setup) {
-      await pzAwardWalletPoints(userId, 25, 'phase_zero_ai_bonus', 'Phase Zero AI-Guided Setup Bonus — 25 Points');
-    }
-
-    // Log rewards for retroactive application
-    await pzLogReward(userId, 'phase_zero_complete', 100, user.ai_guided_setup ? 25 : 0,
-      { source: 'phase_zero_complete', ai_guided: user.ai_guided_setup });
-
-    res.json({ ok: true, ai_guided: !!user.ai_guided_setup });
-  } catch(e) {
-    console.error('[PhaseZero] complete error:', e.message);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
+// Phase Zero pages/API/email/SMS verify live in routes/phaseZero.js
 
 // ─── AUDIT STATUS API ─────────────────────────────────────────────────────────
 
@@ -33998,63 +29292,6 @@ app.post('/api/internal/audit-sweep', function(req, res) {
 // Admin allowlist: config/adminAccess.js plus users.is_admin.
 // Personal owner accounts stay out unless they are on that admin allowlist.
 
-async function requireAdminAllowlist(req, res) {
-  if (!req.session || !req.session.userId) {
-    res.status(401).json({ error: 'Authentication required' });
-    return false;
-  }
-  const row = await loadAdminFlags(pool, req.session.userId);
-  if (!row) {
-    res.status(403).json({ error: 'Admin access required' });
-    return false;
-  }
-  const userEmail = (row.email || '').toLowerCase();
-
-  // Personal owner accounts stay out of admin tools. Allowlisted admin emails
-  // and users.is_admin are the people who can open the dashboard.
-  if (isFutureGenEmail(userEmail) && !userIsAdminAccount(row)) {
-    res.status(403).json({ error: 'Admin access required' });
-    return false;
-  }
-
-  const isCreatorUser = row.is_creator || userEmail === CREATOR_EMAIL;
-  const isAdmin = isAdminEmail(userEmail) || userIsAdminAccount(row);
-  if (!isCreatorUser && !isAdmin) {
-    res.status(403).json({ error: 'Admin access required' });
-    return false;
-  }
-  return true;
-}
-
-const { collectAggregateMetrics, emptyAggregate } = require('./modules/admin/aggregate-metrics');
-
-// GET /api/admin/aggregate-metrics — Aggregate user & engagement metrics (no individual data)
-app.get('/api/admin/aggregate-metrics', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireAdminAllowlist(req, res))) return;
-  } catch (err) {
-    console.error('[AdminDashboard] admin check error:', err.message);
-    if (!res.headersSent) res.status(403).json({ success: false, error: 'Admin access required' });
-    return;
-  }
-
-  let client;
-  try {
-    client = await pool.connect();
-    try { await client.query("SET statement_timeout = '8000'"); } catch (timeoutErr) { /* keep going */ }
-    const payload = await collectAggregateMetrics(client);
-    res.json(payload);
-  } catch (err) {
-    console.error('[AdminDashboard] aggregate-metrics error:', err.message);
-    if (!res.headersSent) res.json(emptyAggregate(['aggregate']));
-  } finally {
-    if (client) {
-      try { await client.query('RESET statement_timeout'); } catch (resetErr) { /* connection may already be closed */ }
-      client.release();
-    }
-  }
-});
-
 // ─── SUPPORT TICKETS ─────────────────────────────────────────────────────────
 
 const supportUpload = multer({
@@ -34112,85 +29349,10 @@ app.post('/api/support/tickets', optionalAuth, supportUpload.single('screenshot'
 });
 
 // GET /api/admin/support-tickets — admin view of all tickets
-app.get('/api/admin/support-tickets', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireAdminAllowlist(req, res))) return;
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS support_tickets (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER,
-        subject TEXT,
-        description TEXT,
-        screenshot_url TEXT,
-        page_url TEXT,
-        status VARCHAR(32) DEFAULT 'open',
-        admin_notes TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW(),
-        resolved_at TIMESTAMPTZ
-      )
-    `);
-
-    const { status, limit = 50, offset = 0 } = req.query;
-    let query = `
-      SELECT
-        st.id, st.subject, st.description, st.screenshot_url, st.page_url,
-        st.status, st.admin_notes, st.created_at, st.resolved_at,
-        u.email AS user_email, u.name AS user_name
-      FROM support_tickets st
-      LEFT JOIN users u ON u.id = st.user_id
-    `;
-    const params = [];
-    if (status && ['open', 'resolved'].includes(status)) {
-      query += ` WHERE st.status = $1`;
-      params.push(status);
-    }
-    query += ` ORDER BY st.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(parseInt(limit) || 50, parseInt(offset) || 0);
-
-    const [tickets, countRes] = await Promise.all([
-      pool.query(query, params),
-      pool.query(`SELECT COUNT(*) FROM support_tickets${status && ['open', 'resolved'].includes(status) ? ` WHERE status = '${status}'` : ''}`)
-    ]);
-
-    res.json({
-      success: true,
-      tickets: tickets.rows,
-      total: parseInt(countRes.rows[0].count)
-    });
-  } catch (err) {
-    console.error('[SupportTickets] admin list error:', err.message);
-    res.status(500).json({ error: 'Failed to load support tickets' });
-  }
-});
 
 // PATCH /api/admin/support-tickets/:id — update ticket status/notes
-app.patch('/api/admin/support-tickets/:id', requireAuth, async (req, res) => {
-  try {
-    if (!(await requireAdminAllowlist(req, res))) return;
 
-    const ticketId = parseInt(req.params.id);
-    const { status, admin_notes } = req.body;
-    if (!status || !['open', 'resolved'].includes(status)) {
-      return res.status(400).json({ error: 'Status must be open or resolved' });
-    }
-
-    const result = await pool.query(
-      `UPDATE support_tickets
-       SET status = $1, admin_notes = $2, resolved_at = $3, updated_at = NOW()
-       WHERE id = $4
-       RETURNING id, status, admin_notes, resolved_at`,
-      [status, admin_notes || null, status === 'resolved' ? new Date() : null, ticketId]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'Ticket not found' });
-
-    res.json({ success: true, ticket: result.rows[0] });
-  } catch (err) {
-    console.error('[SupportTickets] update error:', err.message);
-    res.status(500).json({ error: 'Failed to update ticket' });
-  }
-});
 
 // ─── ADVISORY SWITCH (Schema deployed; API stubs) ────────────────────────────
 //
@@ -34502,6 +29664,81 @@ app.get('/change-plan', (req, res) => {
 
 // Ensure PWA icons exist BEFORE accepting requests (eliminates race condition)
 ensurePWAIconsSync();
+
+bindFamilyRuntime({
+  hasProAccess
+});
+
+bindGamificationRuntime({
+  hasProAccess,
+  hasBusinessAccess,
+  getUserProductTier,
+  checkCreditGate,
+  ensureFgBalance,
+  tfrEnsureStats,
+  tfrAwardXp,
+  tfrCalcLevel,
+  tfrXpToNext,
+  getUserLocalDate,
+  getUserLocalYesterday,
+  isValidTimezone,
+  TFR_RANKS,
+  TFR_PHASE_NAMES,
+  TFR_PHASE_THEMES
+});
+
+bindVaultRuntime({
+  hasProAccess,
+  getSovereignLensLastCycle: function () { return sovereignLensLastCycle; }
+});
+
+bindInvestmentsRuntime({
+  hasProAccess
+});
+
+bindDebtRuntime({
+  hasProAccess
+});
+
+bindTransactionsRuntime({
+  hasProAccess,
+  ensureFgBalance,
+  tryAutoCompleteChallenge
+});
+
+bindAuthRuntime({
+  validatePassword,
+  hasProAccess,
+  buildProResponse,
+  calculatePromoGraceStatus,
+  calculateTrialStatus,
+  isCreator,
+  hasIncubatorSubAccess,
+  ensureFgBalance,
+  generateUniqueReferralCode,
+  startVerification: sendVerification,
+  checkVerification
+});
+
+bindPhaseZeroRuntime({
+  ensureFgBalance,
+  tfrEnsureStats,
+  tfrAwardXp
+});
+
+bindAdminRuntime({
+  isCreator,
+  hasProAccess,
+  processOrphanUpgrade,
+  processCommission,
+  generatePromoCode,
+  generateReferralCode,
+  ensureLaunchWaitlistNameColumn,
+  requestIsAdmin,
+  scheduler,
+  priceScheduler,
+  promoGraceScheduler
+});
 
 // Initialize module architecture, then start server
 (async () => {
