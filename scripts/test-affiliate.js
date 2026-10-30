@@ -5,7 +5,8 @@
  * Affiliate partner integration test (staging).
  *
  * Verifies:
- *   - POST /api/affiliates/register
+ *   - POST /api/affiliates/register (custom + auto-generated codes)
+ *   - 1-code-per-user idempotent re-register
  *   - affiliate_referrals linkage
  *   - recordAffiliateMilestone (idempotent bucket_setup_complete)
  *   - GET /api/affiliates/dashboard/:partnerId metrics
@@ -19,6 +20,7 @@ const BASE = process.env.AFFILIATE_API_BASE || process.env.STAGING_API_BASE || '
 const TAG = 'affiliate-e2e-' + Date.now();
 const PARTNER_EMAIL = TAG + '.partner@facts-staging.test';
 const REFERRED_EMAIL = TAG + '.referred@facts-staging.test';
+const AUTO_EMAIL = TAG + '.auto@facts-staging.test';
 const PARTNER_CODE = ('E2E' + String(Date.now()).slice(-8)).toUpperCase();
 
 async function api(method, urlPath, body) {
@@ -50,7 +52,9 @@ async function main() {
 
   let partnerUserId = null;
   let referredUserId = null;
+  let autoUserId = null;
   let partnerId = null;
+  let autoPartnerId = null;
   let referralId = null;
   let milestoneIds = [];
 
@@ -73,7 +77,7 @@ async function main() {
     }
     record('partners schema present', true);
 
-    // Create partner + referred users
+    // Create partner + referred + auto-gen users
     const partnerUser = await pool.query(
       `INSERT INTO users (email, name, password_hash)
        VALUES ($1, 'Affiliate E2E Partner', 'test-not-a-real-hash')
@@ -89,10 +93,21 @@ async function main() {
       [REFERRED_EMAIL]
     );
     referredUserId = referredUser.rows[0].id;
+
+    const autoUser = await pool.query(
+      `INSERT INTO users (email, name, password_hash)
+       VALUES ($1, 'Auto Code Member', 'test-not-a-real-hash')
+       RETURNING id`,
+      [AUTO_EMAIL]
+    );
+    autoUserId = autoUser.rows[0].id;
+
     record(
       'staging users created',
-      !!partnerUserId && !!referredUserId,
-      'partnerUser=' + partnerUserId + ' referredUser=' + referredUserId
+      !!partnerUserId && !!referredUserId && !!autoUserId,
+      'partnerUser=' + partnerUserId +
+        ' referredUser=' + referredUserId +
+        ' autoUser=' + autoUserId
     );
 
     // a) Partner registration via API
@@ -114,7 +129,7 @@ async function main() {
       'status=' + reg.status + ' partnerId=' + partnerId
     );
 
-    // Duplicate code should 409
+    // Duplicate code on a different user should 409
     const dup = await api('POST', '/api/affiliates/register', {
       userId: referredUserId,
       partnerCode: PARTNER_CODE
@@ -123,6 +138,62 @@ async function main() {
       'duplicate partnerCode rejected',
       dup.status === 409,
       'status=' + dup.status
+    );
+
+    // Same user re-register returns existing partner (1-code-per-user)
+    const again = await api('POST', '/api/affiliates/register', {
+      userId: partnerUserId,
+      partnerCode: 'SHOULD-NOT-CREATE-' + Date.now()
+    });
+    console.log('re-register:', JSON.stringify(again.data, null, 2));
+    record(
+      'duplicate registration returns existing partner',
+      again.status === 200 &&
+        again.data &&
+        again.data.existing === true &&
+        again.data.partner &&
+        again.data.partner.id === partnerId &&
+        again.data.partner.partner_code === PARTNER_CODE,
+      'status=' + again.status +
+        ' partnerId=' + (again.data && again.data.partner && again.data.partner.id)
+    );
+
+    // Auto-generate when partnerCode omitted
+    console.log('--------------------------------------------------');
+    console.log('[A2] Auto-Generated Partner Code');
+    const autoReg = await api('POST', '/api/affiliates/register', {
+      userId: autoUserId
+    });
+    console.log(JSON.stringify(autoReg.data, null, 2));
+    autoPartnerId = autoReg.data && autoReg.data.partner && autoReg.data.partner.id;
+    const autoCode =
+      autoReg.data && autoReg.data.partner && autoReg.data.partner.partner_code;
+    const autoCodeOk =
+      typeof autoCode === 'string' &&
+      new RegExp('^FR-[A-Z0-9]+-' + autoUserId + '-\\d{4}$').test(autoCode);
+    record(
+      'register without partnerCode auto-generates',
+      autoReg.status === 201 &&
+        autoReg.data &&
+        autoReg.data.status === 'success' &&
+        autoPartnerId != null &&
+        autoCodeOk,
+      'status=' + autoReg.status + ' code=' + autoCode
+    );
+
+    const autoAgain = await api('POST', '/api/affiliates/register', {
+      userId: autoUserId
+    });
+    record(
+      'auto-user re-register is idempotent',
+      autoAgain.status === 200 &&
+        autoAgain.data &&
+        autoAgain.data.existing === true &&
+        autoAgain.data.partner &&
+        autoAgain.data.partner.id === autoPartnerId &&
+        autoAgain.data.partner.partner_code === autoCode,
+      'status=' + autoAgain.status +
+        ' partnerId=' + (autoAgain.data && autoAgain.data.partner && autoAgain.data.partner.id)
     );
 
     // b) Referral creation
@@ -231,13 +302,18 @@ async function main() {
     console.log('--------------------------------------------------');
     console.log('[E] Cleanup');
     try {
-      if (partnerId) {
-        await pool.query('DELETE FROM affiliate_milestones WHERE partner_id = $1', [partnerId]);
-        await pool.query('DELETE FROM affiliate_referrals WHERE partner_id = $1', [partnerId]);
-        await pool.query('DELETE FROM partners WHERE id = $1', [partnerId]);
+      const partnerIds = [partnerId, autoPartnerId].filter(Boolean);
+      for (let i = 0; i < partnerIds.length; i++) {
+        const pid = partnerIds[i];
+        await pool.query('DELETE FROM affiliate_milestones WHERE partner_id = $1', [pid]);
+        await pool.query('DELETE FROM affiliate_referrals WHERE partner_id = $1', [pid]);
+        await pool.query('DELETE FROM partners WHERE id = $1', [pid]);
       }
       if (referredUserId) {
         await pool.query('DELETE FROM users WHERE id = $1', [referredUserId]);
+      }
+      if (autoUserId) {
+        await pool.query('DELETE FROM users WHERE id = $1', [autoUserId]);
       }
       if (partnerUserId) {
         await pool.query('DELETE FROM users WHERE id = $1', [partnerUserId]);

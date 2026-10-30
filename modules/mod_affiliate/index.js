@@ -174,46 +174,115 @@ router.get('/orphan-preview', asyncRoute(async function (req, res) {
   res.json(preview);
 }));
 
+// Fallback code generator if custom partnerCode isn't passed
+function generatePartnerCode(user) {
+  const rawName =
+    user.username ||
+    user.first_name ||
+    user.name ||
+    (user.email && String(user.email).split('@')[0]) ||
+    'MEMBER';
+  const cleanName = String(rawName)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const idPart = String(user.id);
+  // Keep within partners.partner_code VARCHAR(50): FR- + name + - + id + - + 4 digits
+  const budget = 50 - (3 + 1 + idPart.length + 1 + 4);
+  const namePart = (cleanName || 'MEMBER').slice(0, Math.max(1, budget));
+  return `FR-${namePart}-${idPart}-${randomSuffix}`;
+}
+
 /**
  * @route   POST /api/mod_affiliate/register  (alias: POST /api/affiliates/register)
- * @desc    Register a user as an official FACTS affiliate partner
+ * @desc    Register a user as an official FACTS affiliate partner (1 code per user)
  */
 router.post('/register', asyncRoute(async function (req, res) {
   const body = req.body || {};
   const sessionUserId = req.session && req.session.userId;
   const userId = parseInt(body.userId || body.user_id || sessionUserId, 10);
-  const partnerCode = String(body.partnerCode || body.partner_code || '').trim();
+  let partnerCode = String(body.partnerCode || body.partner_code || '').trim();
   const parentPartnerId = body.parentPartnerId != null || body.parent_partner_id != null
     ? parseInt(body.parentPartnerId || body.parent_partner_id, 10)
     : null;
+  const parentId =
+    Number.isInteger(parentPartnerId) && parentPartnerId > 0 ? parentPartnerId : null;
 
-  if (!userId || !partnerCode) {
-    return res.status(400).json({ error: 'userId and partnerCode are required' });
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
   }
   if (sessionUserId && parseInt(sessionUserId, 10) !== userId) {
     return res.status(403).json({ error: 'userId mismatch' });
   }
+
+  // 1-code-per-user: return existing partner node (idempotent)
+  const existing = await pool.query(
+    `SELECT * FROM partners WHERE user_id = $1 ORDER BY id ASC LIMIT 1`,
+    [userId]
+  );
+  if (existing.rows[0]) {
+    return res.status(200).json({
+      status: 'success',
+      partner: existing.rows[0],
+      existing: true
+    });
+  }
+
+  const userRes = await pool.query(
+    `SELECT id, name, email FROM users WHERE id = $1`,
+    [userId]
+  );
+  if (!userRes.rows[0]) {
+    return res.status(404).json({ error: 'user not found' });
+  }
+
+  const autoGenerate = !partnerCode;
+  if (autoGenerate) {
+    partnerCode = generatePartnerCode(userRes.rows[0]);
+  }
+
   if (!/^[A-Za-z0-9_-]{3,50}$/.test(partnerCode)) {
     return res.status(400).json({
       error: 'partnerCode must be 3–50 chars (letters, numbers, _ or -)'
     });
   }
 
-  try {
-    const result = await pool.query(
-      `INSERT INTO partners (user_id, partner_code, parent_partner_id)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [userId, partnerCode, Number.isInteger(parentPartnerId) && parentPartnerId > 0 ? parentPartnerId : null]
-    );
-    return res.status(201).json({ status: 'success', partner: result.rows[0] });
-  } catch (error) {
-    if (error && error.code === '23505') {
-      return res.status(409).json({ error: 'partnerCode already in use' });
+  const maxAttempts = autoGenerate ? 5 : 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await pool.query(
+        `INSERT INTO partners (user_id, partner_code, parent_partner_id)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [userId, partnerCode, parentId]
+      );
+      return res.status(201).json({ status: 'success', partner: result.rows[0] });
+    } catch (error) {
+      if (error && error.code === '23505') {
+        // Race: another request created this user's partner
+        const raced = await pool.query(
+          `SELECT * FROM partners WHERE user_id = $1 ORDER BY id ASC LIMIT 1`,
+          [userId]
+        );
+        if (raced.rows[0]) {
+          return res.status(200).json({
+            status: 'success',
+            partner: raced.rows[0],
+            existing: true
+          });
+        }
+        if (autoGenerate && attempt < maxAttempts) {
+          partnerCode = generatePartnerCode(userRes.rows[0]);
+          continue;
+        }
+        return res.status(409).json({ error: 'partnerCode already in use' });
+      }
+      console.error('[AFFILIATE REGISTRATION ERROR]', error);
+      return res.status(500).json({ error: 'Failed to register partner account' });
     }
-    console.error('[AFFILIATE REGISTRATION ERROR]', error);
-    return res.status(500).json({ error: 'Failed to register partner account' });
   }
+
+  return res.status(409).json({ error: 'partnerCode already in use' });
 }));
 
 /**
