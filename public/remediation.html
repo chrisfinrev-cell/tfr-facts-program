@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FACTS — Forensic Compliance Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at top, #1e293b 0%, #020617 60%);
+      padding: 2rem 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="remediation-dashboard"></div>
+  <script src="/remediation-dashboard.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    mountRemediationDashboard(document.getElementById('remediation-dashboard'), {
+      userId: params.get('userId') || undefined
+    });
+  </script>
+</body>
+</html>

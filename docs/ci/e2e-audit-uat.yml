@@ -1,0 +1,72 @@
+name: E2E Audit & UAT Test Suite
+
+on:
+  push:
+    branches: [ main, staging ]
+  pull_request:
+    branches: [ main, staging ]
+
+jobs:
+  audit-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: facts_staging
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/facts_staging
+      NODE_ENV: staging
+      PORT: 3010
+      SESSION_SECRET: ci-e2e-session-secret-not-for-production
+      VAULT_API_BASE: http://127.0.0.1:3010
+      PLAID_API_BASE: http://127.0.0.1:3010
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js Environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        run: npm run migrate
+
+      - name: Start API server
+        run: |
+          node server.js > /tmp/facts-api-server.log 2>&1 &
+          echo $! > /tmp/facts-api-server.pid
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3010/api/mod_plaid/health >/dev/null 2>&1 \
+              || curl -sf http://127.0.0.1:3010/ >/dev/null 2>&1; then
+              echo "API server ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API server failed to become ready"
+          tail -n 200 /tmp/facts-api-server.log || true
+          exit 1
+
+      - name: Run Master E2E Staging Test Suite
+        run: bash scripts/run-e2e-staging-suite.sh
+
+      - name: Run UAT Simulation Suite
+        run: node scripts/test-uat-scenarios.js
