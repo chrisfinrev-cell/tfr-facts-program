@@ -107,7 +107,7 @@ async function main() {
     const jar = new CookieJar();
 
     const health = await api('GET', '/health');
-    record('GET /health', health.status === 200 && health.data && health.data.status === 'ok',
+    record('GET /health', health.status === 200 && health.data && health.data.status === 'healthy',
       'status=' + health.status + ' ' + summarize(health.data));
 
     const unauthDash = await api('GET', '/api/mod_sweep/bucket-dashboard');

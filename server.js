@@ -48,11 +48,6 @@ const { isConfigured: twilioConfigured, sendVerification, checkVerification } = 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ─── Health Check (Render deploy requirement) ───────────────────────────────
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', service: 'facts-finance-2' });
-});
-
 // Stop a stuck database or middleware call from leaving the browser tab spinning.
 app.use(function requestTimeoutGuard(req, res, next) {
   if (req.path === '/api/plaid/sync') return next();
@@ -101,6 +96,34 @@ const pool = process.env.DATABASE_URL ? new Pool({
   connectionTimeoutMillis: 8000,
   max: 10
 }) : null;
+
+/**
+ * @route   GET /health
+ * @desc    Production health check endpoint verifying server uptime and database connectivity
+ * @access  Public
+ */
+app.get('/health', async (req, res) => {
+  try {
+    // Ping the PostgreSQL database pool to ensure active connectivity
+    if (!pool) {
+      throw new Error('DATABASE_URL not configured');
+    }
+    await pool.query('SELECT 1');
+    return res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: 'connected'
+    });
+  } catch (error) {
+    console.error('[HEALTH CHECK FAILED]', error);
+    return res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: 'Database connection failed'
+    });
+  }
+});
 
 // Self-heal auth columns on boot so login never 500s on schema drift.
 (async () => {
