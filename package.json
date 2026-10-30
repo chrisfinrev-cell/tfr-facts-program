@@ -28,6 +28,7 @@
     "test:vault-scaffold": "node scripts/test-vault-scaffold.js",
     "test:sovereign-lens": "node scripts/test-sovereign-lens.js",
     "test:til": "node scripts/test-truth-in-lending.js",
+    "test:affiliate": "node scripts/test-affiliate.js",
     "cron:forensic-milestones": "node jobs/forensic-audit-milestones.js",
     "worker:audit-milestones": "node jobs/audit-milestone-worker.js"
   },

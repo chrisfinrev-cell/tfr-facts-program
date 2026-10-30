@@ -49,6 +49,15 @@ async function seedDefaultAllocations(pool, userId) {
         ).catch(function () { /* already present */ });
       });
     }
+
+    // Partner milestone when default 6-bucket allocations are first created
+    try {
+      const { recordAffiliateMilestone } = require('./milestones');
+      await recordAffiliateMilestone(pool, userId, 'bucket_setup_complete');
+    } catch (affErr) {
+      console.warn('[seedDefaultAllocations] affiliate milestone:', affErr.message);
+    }
+
     return true;
   } catch (err) {
     console.warn('[seedDefaultAllocations]', err.message);

@@ -10,6 +10,7 @@ const { pool } = require('../../db/pool');
 const { asyncRoute } = require('../../module-error-boundary');
 const { withManualExecutionNotice } = require('../shared/edu-compliance');
 const { seedDefaultAllocations } = require('./seed-allocations');
+const { recordAffiliateMilestone } = require('./milestones');
 const {
   routeOrphanUser,
   getTierForCount,
@@ -122,7 +123,7 @@ const router = express.Router();
 router.get('/health', asyncRoute(async function (req, res) {
   res.json({
     status: 'ok',
-    version: '1.1.0',
+    version: '1.2.0',
     orphan_tiers: ORPHAN_TIERS.map(function (t) {
       return { level: t.level, range: [t.min, t.max === Infinity ? null : t.max], split: t.label, cycle: t.cycleSize };
     })
@@ -171,6 +172,104 @@ router.get('/orphan-preview', asyncRoute(async function (req, res) {
   if (!n) return res.status(400).json({ error: 'next_index required' });
   const preview = splitSample(n);
   res.json(preview);
+}));
+
+/**
+ * @route   POST /api/mod_affiliate/register  (alias: POST /api/affiliates/register)
+ * @desc    Register a user as an official FACTS affiliate partner
+ */
+router.post('/register', asyncRoute(async function (req, res) {
+  const body = req.body || {};
+  const sessionUserId = req.session && req.session.userId;
+  const userId = parseInt(body.userId || body.user_id || sessionUserId, 10);
+  const partnerCode = String(body.partnerCode || body.partner_code || '').trim();
+  const parentPartnerId = body.parentPartnerId != null || body.parent_partner_id != null
+    ? parseInt(body.parentPartnerId || body.parent_partner_id, 10)
+    : null;
+
+  if (!userId || !partnerCode) {
+    return res.status(400).json({ error: 'userId and partnerCode are required' });
+  }
+  if (sessionUserId && parseInt(sessionUserId, 10) !== userId) {
+    return res.status(403).json({ error: 'userId mismatch' });
+  }
+  if (!/^[A-Za-z0-9_-]{3,50}$/.test(partnerCode)) {
+    return res.status(400).json({
+      error: 'partnerCode must be 3–50 chars (letters, numbers, _ or -)'
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO partners (user_id, partner_code, parent_partner_id)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [userId, partnerCode, Number.isInteger(parentPartnerId) && parentPartnerId > 0 ? parentPartnerId : null]
+    );
+    return res.status(201).json({ status: 'success', partner: result.rows[0] });
+  } catch (error) {
+    if (error && error.code === '23505') {
+      return res.status(409).json({ error: 'partnerCode already in use' });
+    }
+    console.error('[AFFILIATE REGISTRATION ERROR]', error);
+    return res.status(500).json({ error: 'Failed to register partner account' });
+  }
+}));
+
+/**
+ * @route   POST /api/mod_affiliate/milestones
+ *          (alias: POST /api/affiliates/milestones)
+ * @desc    Record a partner milestone for a referred user (idempotent)
+ * Body: { referredUserId, milestoneType, rewardUnits? }
+ */
+router.post('/milestones', asyncRoute(async function (req, res) {
+  const body = req.body || {};
+  const referredUserId = parseInt(body.referredUserId || body.referred_user_id || body.userId, 10);
+  const milestoneType = String(body.milestoneType || body.milestone_type || '').trim();
+  const rewardUnits = body.rewardUnits != null || body.reward_units != null
+    ? Number(body.rewardUnits || body.reward_units)
+    : undefined;
+
+  if (!referredUserId || !milestoneType) {
+    return res.status(400).json({ error: 'referredUserId and milestoneType are required' });
+  }
+
+  const result = await recordAffiliateMilestone(pool, referredUserId, milestoneType, rewardUnits);
+  if (!result.recorded && result.reason === 'no_referral') {
+    return res.status(404).json({ status: 'noop', ...result });
+  }
+  return res.status(result.recorded ? 201 : 200).json({ status: 'success', ...result });
+}));
+
+/**
+ * @route   GET /api/mod_affiliate/dashboard/:partnerId
+ *          (alias: GET /api/affiliates/dashboard/:partnerId)
+ * @desc    Retrieve metrics, referral counts, and milestone stats for a partner
+ */
+router.get('/dashboard/:partnerId', asyncRoute(async function (req, res) {
+  const partnerId = parseInt(req.params.partnerId, 10);
+  if (!partnerId) {
+    return res.status(400).json({ error: 'partnerId required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT
+         COUNT(DISTINCT ar.id) AS total_referrals,
+         COUNT(DISTINCT am.id) AS total_milestones,
+         COALESCE(SUM(am.reward_units), 0) AS total_rewards
+       FROM partners p
+       LEFT JOIN affiliate_referrals ar ON p.id = ar.partner_id
+       LEFT JOIN affiliate_milestones am ON p.id = am.partner_id
+       WHERE p.id = $1
+       GROUP BY p.id`,
+      [partnerId]
+    );
+    return res.status(200).json({ status: 'success', metrics: result.rows[0] || {} });
+  } catch (error) {
+    console.error('[AFFILIATE DASHBOARD ERROR]', error);
+    return res.status(500).json({ error: 'Failed to retrieve partner metrics' });
+  }
 }));
 
 router.get('/activation-status', asyncRoute(async function (req, res) {
@@ -284,11 +383,13 @@ router.get('/activation-status', asyncRoute(async function (req, res) {
 module.exports = {
   metadata: {
     name: 'Affiliate Program',
-    version: '1.1.0',
+    version: '1.2.0',
     requiredCoreVersion: '1.0.0',
     defaultEnabled: true
   },
   routes: router,
+  aliasPath: '/api/affiliates',
+  aliasRouter: router,
   mountRoot: function (app) {
     app.use(wrapSignupResponse);
   },
@@ -296,6 +397,7 @@ module.exports = {
     const p = dbPool || pool;
     let migrationApplied = false;
     let companyRootId = null;
+    let partnersReady = false;
     try {
       const applied = await p.query(
         `SELECT 1 FROM _migrations WHERE name = $1 LIMIT 1`,
@@ -303,17 +405,26 @@ module.exports = {
       );
       migrationApplied = applied.rows.length > 0;
       companyRootId = await resolveCompanyRootId(p);
+      const partners = await p.query(
+        `SELECT EXISTS (
+           SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = 'partners'
+         ) AS ok`
+      );
+      partnersReady = !!(partners.rows[0] && partners.rows[0].ok);
     } catch (_) { /* DB may be unavailable during boot */ }
     return {
       module: 'mod_affiliate',
       status: 'ok',
-      version: '1.1.0',
+      version: '1.2.0',
       migration_applied: migrationApplied,
+      partners_schema: partnersReady,
       company_root_resolved: companyRootId != null,
       timestamp: new Date().toISOString()
     };
   },
   getRecommendedTools,
   routeOrphanUser,
-  handleNewRegistration
+  handleNewRegistration,
+  recordAffiliateMilestone
 };

@@ -169,7 +169,8 @@ module.exports = class ModuleLoader {
             FINANCIAL_API_MODULES.has(moduleId) ||
             aliasPath === '/api/plaid' ||
             aliasPath === '/api/forensic' ||
-            aliasPath === '/api/vault'
+            aliasPath === '/api/vault' ||
+            aliasPath === '/api/affiliates'
           ) {
             app.use(aliasPath, requireAuthFinancial);
           }

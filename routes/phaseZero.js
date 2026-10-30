@@ -734,6 +734,14 @@ router.post('/complete', requireAuth, async (req, res) => {
     await pzLogReward(userId, 'phase_zero_complete', 100, user.ai_guided_setup ? 25 : 0,
       { source: 'phase_zero_complete', ai_guided: user.ai_guided_setup });
 
+    // Partner milestone: referred user finished Phase Zero / bucket setup
+    try {
+      const { recordAffiliateMilestone } = require('../modules/mod_affiliate/milestones');
+      await recordAffiliateMilestone(pool, userId, 'bucket_setup_complete');
+    } catch (affErr) {
+      console.warn('[PhaseZero] affiliate milestone:', affErr.message);
+    }
+
     res.json({ ok: true, ai_guided: !!user.ai_guided_setup });
   } catch(e) {
     console.error('[PhaseZero] complete error:', e.message);
