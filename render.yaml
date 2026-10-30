@@ -8,7 +8,34 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: VAULT_ENCRYPTION_KEY
+        sync: false
       # Option A: integer affiliates.id that receives the company keep on each split cycle.
       # Option B: leave unset and set affiliates.is_master_node = true on the master row.
       - key: COMPANY_ROOT_ID
+        sync: false
+
+  - type: worker
+    runtime: node
+    name: facts-audit-worker
+    buildCommand: npm install
+    startCommand: npm run worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
+      - key: FORENSIC_AUDIT_URL
         sync: false

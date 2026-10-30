@@ -32,14 +32,26 @@ async function main() {
     signupUrl
   });
   assert.strictEqual(payload.to, 'jane@example.com');
-  assert.strictEqual(payload.subject, 'Your FACTS beta invite code');
+  assert.strictEqual(
+    payload.subject,
+    'Private Invitation: Welcome to the Inner Circle of The Financial Revolution 🔒'
+  );
+  assert.strictEqual(payload.from, 'The Financial Revolution <beta@factsmoney.com>');
+  assert.strictEqual(payload.replyTo, 'beta@factsmoney.com');
   assert.ok(payload.text.includes('FACTS-7K9P-2M4X'));
   assert.ok(payload.text.includes(signupUrl));
+  assert.ok(payload.html.includes('THE FINANCIAL REVOLUTION'));
   assert.ok(payload.html.includes('Jane &lt;Doe&gt;'));
   assert.ok(!payload.html.includes('Jane <Doe>'));
+  assert.ok(payload.html.includes(signupUrl));
+  assert.ok(payload.html.includes('mailto:beta@factsmoney.com'));
 
   const previousKey = process.env.RESEND_API_KEY;
+  const previousFrom = process.env.EMAIL_FROM;
+  const previousBetaFrom = process.env.BETA_EMAIL_FROM;
   delete process.env.RESEND_API_KEY;
+  delete process.env.BETA_EMAIL_FROM;
+  process.env.EMAIL_FROM = 'FACTS <noreply@factsmoney.com>';
   const missing = await sendBetaInviteEmail({
     to: 'jane@example.com',
     code: 'FACTS-7K9P-2M4X',
@@ -64,7 +76,16 @@ async function main() {
   assert.strictEqual(captured.options.headers.Authorization, 'Bearer test-key');
   const body = JSON.parse(captured.options.body);
   assert.deepStrictEqual(body.to, ['jane@example.com']);
-  assert.ok(body.from);
+  assert.strictEqual(
+    body.from,
+    'The Financial Revolution <beta@factsmoney.com>',
+    'beta invites must send from The Financial Revolution <beta@factsmoney.com>'
+  );
+  assert.ok(!String(body.from).includes('noreply@'), 'beta invites must not use noreply sender');
+  assert.strictEqual(
+    body.subject,
+    'Private Invitation: Welcome to the Inner Circle of The Financial Revolution 🔒'
+  );
   assert.ok(body.html.includes('FACTS-7K9P-2M4X'));
   assert.ok(body.html.includes(signupUrl));
 
@@ -104,6 +125,10 @@ async function main() {
 
   if (previousKey == null) delete process.env.RESEND_API_KEY;
   else process.env.RESEND_API_KEY = previousKey;
+  if (previousFrom == null) delete process.env.EMAIL_FROM;
+  else process.env.EMAIL_FROM = previousFrom;
+  if (previousBetaFrom == null) delete process.env.BETA_EMAIL_FROM;
+  else process.env.BETA_EMAIL_FROM = previousBetaFrom;
 
   console.log('beta invite send checks passed');
 }

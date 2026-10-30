@@ -29,6 +29,10 @@ const FINANCIAL_API_MODULES = new Set([
   'mod_rewards',
   'mod_lending_desk',
   'mod_legacy_lens',
+  'mod_forensic_audit',
+  'mod_gamification',
+  'mod_ssc',
+  'mod_income',
   'tfr_vault_services'
 ]);
 

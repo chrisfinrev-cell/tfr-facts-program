@@ -1,0 +1,7 @@
+# FACTS — agent rules
+- Stack: Express + PostgreSQL (Neon) + vanilla JS in /public
+- NEVER add routes to server.js — new features go in modules/
+- Module pattern: modules/mod_*/index.js exports routes, healthCheck, metadata
+- DB migrations: modules/mod_*/migrations/{timestamp}_{name}.js
+- Read MODULES.md for module registry; read CLAUDE.md for schema/tables
+- Frontend: static HTML in public/ — no build step
