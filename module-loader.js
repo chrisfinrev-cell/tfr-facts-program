@@ -154,9 +154,23 @@ module.exports = class ModuleLoader {
           console.log(`[ModuleLoader] Mounted root handlers for ${moduleId}`);
         }
         if (module.exports.aliasRouter && apiEnabled) {
-          app.use('/api/plaid', educationalMetaMiddleware);
-          app.use('/api/plaid', requireAuthFinancial, module.exports.aliasRouter);
-          console.log(`[ModuleLoader] Mounted alias routes for ${moduleId} at /api/plaid`);
+          // Prefer explicit aliasPath (forensic → /api/forensic, vault → /api/vault).
+          // Default /api/plaid preserves mod_plaid when aliasPath is omitted.
+          const aliasPath = module.exports.aliasPath || '/api/plaid';
+          const aliasId = String(aliasPath).replace(/^\/api\//, '').split('/')[0];
+          if (isHighRiskModule(moduleId) || isHighRiskModule(aliasId) || aliasPath === '/api/plaid') {
+            app.use(aliasPath, educationalMetaMiddleware);
+          }
+          if (
+            FINANCIAL_API_MODULES.has(moduleId) ||
+            aliasPath === '/api/plaid' ||
+            aliasPath === '/api/forensic' ||
+            aliasPath === '/api/vault'
+          ) {
+            app.use(aliasPath, requireAuthFinancial);
+          }
+          app.use(aliasPath, module.exports.aliasRouter);
+          console.log(`[ModuleLoader] Mounted alias routes for ${moduleId} at ${aliasPath}`);
         }
       } catch (err) {
         console.error(`[ModuleLoader] Failed to mount routes for ${moduleId}:`, err.message);
