@@ -573,9 +573,10 @@ const SHIELD_MAP = {
  * @param {object} client   - pg transaction client
  * @param {object} deal     - lending_deals row (includes sovereign_lens_access cols)
  * @param {number} cycleRunId
+ * @param {object|null} [balanceOverride] - optional Plaid-shaped balances for tests / dry-runs
  * @returns {object} { alertsGenerated, autoRevoke, lockedOpenActivated, lockedOpenDeactivated }
  */
-async function processDeal(client, deal, cycleRunId) {
+async function processDeal(client, deal, cycleRunId, balanceOverride) {
   const {
     id: dealId,
     borrower_user_id, lender_user_id,
@@ -590,7 +591,10 @@ async function processDeal(client, deal, cycleRunId) {
   let lockedOpenDeactivated = false;
 
   // ── Step 1: Plaid Balance Check ──────────────────────────────────────────
-  const balanceData = await fetchPlaidBalances(plaid_access_token);
+  // Tests may pass an explicit balance snapshot (incl. zero-balance revoke path).
+  const balanceData = (balanceOverride != null)
+    ? balanceOverride
+    : await fetchPlaidBalances(plaid_access_token);
   const scorecard   = borrower_scorecard || {};
 
   let plaidDataSnapshot = {};
@@ -895,4 +899,5 @@ async function runSovereignLensNightlyCycle(pool) {
 
 module.exports = {
   runSovereignLensNightlyCycle,
+  processDeal,
 };

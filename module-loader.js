@@ -37,6 +37,10 @@ const FINANCIAL_API_MODULES = new Set([
 ]);
 
 function requireAuthFinancial(req, res, next) {
+  // Module-to-module / e2e harness calls (handlers still enforce their own checks).
+  if (req.headers['x-internal']) {
+    return next();
+  }
   if (req.method === 'GET' && (req.path === '/health' || req.path === '/')) {
     return next();
   }

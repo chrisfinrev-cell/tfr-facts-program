@@ -810,7 +810,7 @@ module.exports = {
     description: 'The Brain — XP, Levels (1–12), Identity Titles, Structural Decay',
     version: '1.0.0',
     requiredCoreVersion: '1.0.0',
-    defaultEnabled: false,
+    defaultEnabled: true,
     featureFlag: 'preview_only'
   },
 

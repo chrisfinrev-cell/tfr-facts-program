@@ -795,7 +795,7 @@ module.exports = {
     moduleId: 'lending_desk',
     version: '1.0.0',
     requiredCoreVersion: '1.0.0',
-    defaultEnabled: false,
+    defaultEnabled: true,
     addonPriceCents: 2900,
     description: '9-Pod Sovereign Lending Architecture with Behavioral Underwriting'
   },
