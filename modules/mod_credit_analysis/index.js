@@ -412,6 +412,111 @@ router.get('/history', asyncRoute(async (req, res) => {
   return res.json({ analyses: rows });
 }));
 
+/**
+ * Alias: run forensic audit from an already-vaulted document.
+ * Proxies to the vault implementation (same session cookie auth).
+ * POST /api/mod_credit_analysis/run-from-vault  { documentId }
+ */
+router.post('/run-from-vault', asyncRoute(async (req, res) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
+  // Forward internally by reusing vault route handler via HTTP-less require pattern:
+  // Call the shared vault path logic by issuing a synthetic request is awkward;
+  // instead duplicate the fetch+analyze using the same primitives.
+  const userId = req.session.userId;
+  const documentId = parseInt(req.body?.documentId || req.body?.document_id, 10);
+  if (!documentId) return res.status(400).json({ error: 'No document selected for audit.' });
+
+  req.userId = userId;
+  // Delegate to vault endpoint implementation by requiring pool ops inline
+  const { ensureVaultSchema } = require('../../lib/ensureVaultSchema');
+  await ensureVaultSchema(pool);
+
+  const limit = await checkRateLimit(req);
+  if (!limit.allowed) {
+    return res.status(429).json({ error: limit.message, reason: limit.reason });
+  }
+
+  const docRes = await pool.query(
+    `SELECT id, category, file_name, file_mime_type, file_data
+     FROM user_documents WHERE id = $1 AND user_id = $2`,
+    [documentId, userId]
+  );
+  const doc = docRes.rows[0];
+  if (!doc) return res.status(404).json({ error: 'Document not found.' });
+  if (doc.category !== 'credit_reports') {
+    return res.status(400).json({ error: 'Only credit report documents can be audited here.' });
+  }
+  if (!doc.file_data) {
+    return res.status(400).json({ error: 'Document file data is missing. Re-upload the PDF.' });
+  }
+  const nameLower = String(doc.file_name || '').toLowerCase();
+  const mime = String(doc.file_mime_type || '');
+  if (!mime.includes('pdf') && !nameLower.endsWith('.pdf')) {
+    return res.status(400).json({ error: 'Selected file is not a PDF credit report.' });
+  }
+
+  const buffer = Buffer.isBuffer(doc.file_data) ? doc.file_data : Buffer.from(doc.file_data);
+  await pool.query(`UPDATE user_documents SET audit_status = 'processing' WHERE id = $1`, [documentId]).catch(() => {});
+
+  const accessToken = newAccessToken();
+  const ip = getClientIP(req);
+  let analysisId;
+  try {
+    analysisId = (await pool.query(
+      `INSERT INTO credit_analyses (user_id, ip_address, status, access_token)
+       VALUES ($1, $2, 'processing', $3) RETURNING id`,
+      [userId, ip, accessToken]
+    )).rows[0].id;
+  } catch (e) {
+    analysisId = (await pool.query(
+      `INSERT INTO credit_analyses (user_id, ip_address, status) VALUES ($1, $2, 'processing') RETURNING id`,
+      [userId, ip]
+    )).rows[0].id;
+  }
+
+  try {
+    const parsed = await analyzeReport(buffer);
+    await pool.query(
+      `UPDATE credit_analyses SET status = 'complete', analysis = $1, raw_text = $2, updated_at = NOW() WHERE id = $3`,
+      [JSON.stringify(parsed.analysis), parsed.rawText, analysisId]
+    );
+    await pool.query(
+      `UPDATE user_documents
+       SET audit_status = 'audited', analysis_id = $2, audited_at = NOW(),
+           audit_headline = $3, audit_severity = $4
+       WHERE id = $1`,
+      [
+        documentId,
+        analysisId,
+        parsed.analysis?.summary_headline ? String(parsed.analysis.summary_headline).slice(0, 500) : null,
+        parsed.analysis?.overall_severity || null
+      ]
+    ).catch(() => {});
+    await pool.query(
+      `UPDATE users SET credit_report_uploaded = TRUE, credit_gate_status = 'uploaded' WHERE id = $1`,
+      [userId]
+    ).catch(() => {});
+
+    return res.json({
+      success: true,
+      message: 'Forensic credit audit completed successfully.',
+      document_id: documentId,
+      analysis_id: analysisId,
+      access_token: accessToken,
+      analysis: parsed.analysis,
+      audit_status: 'audited',
+      redirect: '/credit-analysis?id=' + analysisId + '&token=' + encodeURIComponent(accessToken),
+      disclaimer: 'Educational analysis only. Not credit-repair services, legal advice, or a guarantee of score/item outcomes.'
+    });
+  } catch (err) {
+    await pool.query(`UPDATE credit_analyses SET status = 'error' WHERE id = $1`, [analysisId]).catch(() => {});
+    await pool.query(`UPDATE user_documents SET audit_status = 'error' WHERE id = $1`, [documentId]).catch(() => {});
+    return res.status(500).json({ error: err.message || 'Failed to run forensic credit audit on selected document.' });
+  }
+}));
+
 module.exports = {
   metadata: { name: 'Forensic Credit Scan', version: '1.0.0', defaultEnabled: true },
   routes: router,
