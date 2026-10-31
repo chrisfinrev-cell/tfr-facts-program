@@ -1387,6 +1387,27 @@
   function toTitleCase(str) {
     return String(str || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
+
+  // Deep-link from Import Documents unified upload: /credit-analysis?id=&token=
+  (async function loadExistingAnalysisFromQuery() {
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      const id = params.get('id');
+      if (!id) return;
+      const token = params.get('token') || '';
+      const url = '/api/mod_credit_analysis/analysis/' + encodeURIComponent(id) +
+        (token ? ('?token=' + encodeURIComponent(token)) : '');
+      const res = await fetch(url, { credentials: 'same-origin' });
+      const data = await res.json().catch(function() { return {}; });
+      if (!res.ok || !data.analysis) return;
+      currentId = data.id || id;
+      document.querySelector('.upload-zone').style.display = 'none';
+      document.querySelector('.hero').style.display = 'none';
+      renderReport(data.analysis, !!data.authenticated, null);
+    } catch (err) {
+      console.warn('Could not load linked analysis:', err.message);
+    }
+  })();
 </script>
 <script defer src="/legal-disclaimer.js"></script>
 <script src="/js/global-footer.js"></script>

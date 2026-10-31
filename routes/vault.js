@@ -60,6 +60,226 @@ async function ensureVaultTables() {
   }
 }
 
+const creditReportUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf' || String(file.originalname || '').toLowerCase().endsWith('.pdf')) {
+      return cb(null, true);
+    }
+    cb(new Error('Only PDF credit reports are accepted for forensic analysis.'));
+  }
+});
+
+/**
+ * One-upload credit report flow:
+ * 1) store PDF in user_documents vault
+ * 2) clear credit gate flags
+ * 3) run Forensic Credit Scan (OCR + AI) into credit_analyses
+ * 4) best-effort map negative/revolving balances into debts (educational ledger)
+ *
+ * POST /api/vault/upload-credit-report  (field: file)
+ */
+router.post('/upload-credit-report', requireAuth, (req, res, next) => {
+  creditReportUpload.single('file')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || 'Invalid upload' });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No credit report file provided.' });
+    }
+
+    await ensureVaultTables();
+
+    const creditMod = require('../modules/mod_credit_analysis');
+    const limit = await creditMod.checkRateLimit(req);
+    if (!limit.allowed) {
+      return res.status(429).json({ error: limit.message, reason: limit.reason });
+    }
+
+    // 1) Vault storage
+    let document;
+    try {
+      const docResult = await pool.query(
+        `INSERT INTO user_documents (user_id, category, file_name, file_mime_type, file_size_bytes, file_data, notes)
+         VALUES ($1, 'credit_reports', $2, $3, $4, $5, $6)
+         RETURNING id, category, file_name, file_mime_type, file_size_bytes, notes, created_at`,
+        [
+          userId,
+          req.file.originalname,
+          req.file.mimetype || 'application/pdf',
+          req.file.size,
+          req.file.buffer,
+          'Unified credit report upload + forensic scan'
+        ]
+      );
+      document = docResult.rows[0];
+    } catch (vaultErr) {
+      console.error('[Vault] unified credit vault insert failed:', vaultErr.message);
+      await ensureVaultTables();
+      const docResult = await pool.query(
+        `INSERT INTO user_documents (user_id, category, file_name, file_mime_type, file_size_bytes, file_data, notes)
+         VALUES ($1, 'credit_reports', $2, $3, $4, $5, $6)
+         RETURNING id, category, file_name, file_mime_type, file_size_bytes, notes, created_at`,
+        [
+          userId,
+          req.file.originalname,
+          req.file.mimetype || 'application/pdf',
+          req.file.size,
+          req.file.buffer,
+          'Unified credit report upload + forensic scan'
+        ]
+      );
+      document = docResult.rows[0];
+    }
+
+    // 2) Credit gate
+    try {
+      await pool.query(
+        `UPDATE users SET credit_report_uploaded = TRUE, credit_gate_status = 'uploaded', updated_at = NOW() WHERE id = $1`,
+        [userId]
+      );
+    } catch (gateErr) {
+      console.error('[Vault] credit gate update skipped:', gateErr.message);
+    }
+
+    // 3) Forensic analysis row + AI parse
+    const accessToken = creditMod.newAccessToken();
+    const ip = creditMod.getClientIP(req);
+    let analysisId = null;
+    try {
+      const inserted = await pool.query(
+        `INSERT INTO credit_analyses (user_id, ip_address, status, access_token)
+         VALUES ($1, $2, 'processing', $3) RETURNING id`,
+        [userId, ip, accessToken]
+      );
+      analysisId = inserted.rows[0].id;
+    } catch (insertErr) {
+      const inserted = await pool.query(
+        `INSERT INTO credit_analyses (user_id, ip_address, status)
+         VALUES ($1, $2, 'processing') RETURNING id`,
+        [userId, ip]
+      );
+      analysisId = inserted.rows[0].id;
+    }
+
+    let analysis = null;
+    let debtsMapped = 0;
+    try {
+      const parsed = await creditMod.analyzeReport(req.file.buffer);
+      analysis = parsed.analysis;
+      await pool.query(
+        `UPDATE credit_analyses
+         SET status = 'complete', analysis = $1, raw_text = $2, updated_at = NOW()
+         WHERE id = $3`,
+        [JSON.stringify(analysis), parsed.rawText, analysisId]
+      );
+
+      // 4) Best-effort debt ledger mapping from negative items + revolving balances
+      debtsMapped = await mapCreditAnalysisToDebts(pool, userId, analysis);
+    } catch (analyzeErr) {
+      console.error('[Vault] unified forensic analyze error:', analyzeErr.message);
+      if (analysisId) {
+        await pool.query(
+          `UPDATE credit_analyses SET status = 'error', updated_at = NOW() WHERE id = $1`,
+          [analysisId]
+        ).catch(() => {});
+      }
+      // Vault + gate already succeeded — return partial success
+      return res.status(200).json({
+        success: true,
+        partial: true,
+        message: 'Credit report stored in vault, but forensic analysis failed.',
+        document,
+        analysis_id: analysisId,
+        error: analyzeErr.message,
+        redirect: '/credit-analysis'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Credit report stored, parsed, and mapped.',
+      document,
+      analysis_id: analysisId,
+      access_token: accessToken,
+      analysis,
+      debts_mapped: debtsMapped,
+      authenticated: true,
+      tier: limit.tier,
+      redirect: analysisId ? ('/credit-analysis?id=' + analysisId) : '/credit-analysis',
+      disclaimer:
+        'Educational analysis only. Not credit-repair services, legal advice, or a guarantee of score/item outcomes.'
+    });
+  } catch (err) {
+    console.error('[Vault] unified upload error:', err.message);
+    return res.status(500).json({ error: 'Failed to process and analyze credit report.' });
+  }
+});
+
+/**
+ * Map educational forensic findings into debts ledger (best-effort, non-fatal).
+ * Does not invent APRs; balance-only rows for awareness / velocity planning.
+ */
+async function mapCreditAnalysisToDebts(db, userId, analysis) {
+  if (!analysis || typeof analysis !== 'object') return 0;
+  let mapped = 0;
+
+  const candidates = [];
+  for (const item of analysis.negative_items || []) {
+    const amount = Number(item.amount);
+    if (!item.creditor || !Number.isFinite(amount) || amount <= 0) continue;
+    candidates.push({
+      name: String(item.creditor).slice(0, 200) + (item.type ? ` (${item.type})` : ''),
+      balance: amount,
+      notes: 'Imported from credit report forensic scan (educational)'
+    });
+  }
+  for (const acct of analysis.accounts || []) {
+    const balance = Number(acct.balance);
+    if (!acct.creditor || !Number.isFinite(balance) || balance <= 0) continue;
+    if (acct.account_type && !['revolving', 'installment', 'other'].includes(acct.account_type)) continue;
+    candidates.push({
+      name: String(acct.creditor).slice(0, 220),
+      balance,
+      notes: 'Imported revolving/installment balance from credit report scan (educational)'
+    });
+  }
+
+  for (const row of candidates.slice(0, 40)) {
+    try {
+      const existing = await db.query(
+        `SELECT id FROM debts WHERE user_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
+        [userId, row.name]
+      );
+      if (existing.rows[0]) {
+        await db.query(
+          `UPDATE debts SET balance = $2, notes = COALESCE(notes, $3), updated_at = NOW() WHERE id = $1`,
+          [existing.rows[0].id, row.balance, row.notes]
+        );
+      } else {
+        await db.query(
+          `INSERT INTO debts (user_id, name, balance, interest_rate, minimum_payment, notes)
+           VALUES ($1, $2, $3, 0, 0, $4)`,
+          [userId, row.name, row.balance, row.notes]
+        );
+      }
+      mapped += 1;
+    } catch (mapErr) {
+      console.warn('[Vault] debt map skip:', mapErr.message);
+    }
+  }
+  return mapped;
+}
+
 // GET /api/vault/summary — count + last upload per category
 router.get('/summary', requireAuth, async (req, res) => {
   try {
