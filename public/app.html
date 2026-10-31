@@ -3577,6 +3577,13 @@
                         </div>
                         <p id="import-doc-status" style="display:none;margin-top:12px;font-size:0.9rem;"></p>
                         <div id="import-doc-analysis" style="display:none;margin-top:14px;padding:14px;border-radius:12px;border:1px solid rgba(52,211,153,0.35);background:rgba(16,185,129,0.08);"></div>
+                        <div id="import-doc-audit-bar" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                            <div style="font-size:0.85rem;color:var(--text-muted);">Select a stored credit report, then start the forensic audit.</div>
+                            <button type="button" id="import-doc-audit-btn" onclick="startSelectedCreditAudit()"
+                                style="padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:700;cursor:pointer;">
+                                Start Forensic Audit
+                            </button>
+                        </div>
                         <div id="import-doc-list" style="margin-top:18px;"></div>
                     </div>
                 </div>
@@ -17914,12 +17921,108 @@
             analysisBox.style.display = 'none';
             analysisBox.innerHTML = '';
         }
+        const auditBar = document.getElementById('import-doc-audit-bar');
+        if (auditBar) auditBar.style.display = typeId === 'credit_reports' ? 'flex' : 'none';
         renderImportDocTypes();
         await loadImportDocs();
     }
 
+    function escImportDocText(value) {
+        return String(value || '').replace(/[&<>"']/g, function(ch) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+        });
+    }
+
+    function creditAuditStatusBadge(doc) {
+        const status = String(doc.audit_status || 'stored').toLowerCase();
+        if (status === 'audited') {
+            return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(16,185,129,0.15);color:#34d399;font-size:0.72rem;font-weight:700;">Audited</span>';
+        }
+        if (status === 'processing') {
+            return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(234,179,8,0.15);color:#fbbf24;font-size:0.72rem;font-weight:700;">Processing</span>';
+        }
+        if (status === 'error') {
+            return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(248,113,113,0.15);color:#f87171;font-size:0.72rem;font-weight:700;">Error</span>';
+        }
+        return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,0.15);color:#94a3b8;font-size:0.72rem;font-weight:700;">Stored</span>';
+    }
+
+    function renderCreditAuditResult(data) {
+        const analysisBox = document.getElementById('import-doc-analysis');
+        if (!analysisBox) return;
+        const headline = (data.analysis && data.analysis.summary_headline) || data.audit_headline || '';
+        const severity = (data.analysis && data.analysis.overall_severity) || data.audit_severity || '';
+        const debts = typeof data.debts_mapped === 'number' ? data.debts_mapped : 0;
+        const link = data.analysis_id
+            ? ('/credit-analysis?id=' + encodeURIComponent(data.analysis_id) + (data.access_token ? ('&token=' + encodeURIComponent(data.access_token)) : ''))
+            : '/credit-analysis';
+        analysisBox.style.display = 'block';
+        analysisBox.innerHTML =
+            '<div style="font-weight:700;color:#34d399;margin-bottom:6px;">Forensic Credit Scan</div>' +
+            (headline ? ('<div style="color:var(--text-primary);margin-bottom:6px;">' + escImportDocText(headline) + '</div>') : '') +
+            (severity ? ('<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px;">Severity: ' + escImportDocText(severity) + (debts ? (' · ' + debts + ' debt row(s) mapped') : '') + '</div>') : '') +
+            '<a href="' + link + '" style="color:#34d399;font-weight:600;text-decoration:underline;">Open full Structural Vulnerability Report →</a>';
+    }
+
+    async function startSelectedCreditAudit() {
+        const status = document.getElementById('import-doc-status');
+        const btn = document.getElementById('import-doc-audit-btn');
+        const selected = document.querySelector('input[name="import-credit-doc"]:checked');
+        if (!selected) {
+            if (status) {
+                status.style.display = 'block';
+                status.style.color = '#f87171';
+                status.textContent = 'Select a credit report checkbox first.';
+            }
+            return;
+        }
+        const documentId = parseInt(selected.value, 10);
+        if (!documentId) return;
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Running audit…';
+        }
+        if (status) {
+            status.style.display = 'block';
+            status.style.color = 'var(--text-secondary)';
+            status.textContent = 'Running forensic credit audit on selected report…';
+        }
+
+        try {
+            const res = await fetch('/api/vault/run-credit-audit', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ documentId: documentId })
+            });
+            const data = await res.json().catch(function() { return {}; });
+            if (!res.ok) throw new Error(data.error || 'Audit failed');
+            if (status) {
+                status.style.color = '#34d399';
+                status.textContent = 'Forensic credit audit complete.';
+            }
+            renderCreditAuditResult(data);
+            await loadImportDocs();
+            // Restore selection if still present
+            const again = document.querySelector('input[name="import-credit-doc"][value="' + documentId + '"]');
+            if (again) again.checked = true;
+        } catch (err) {
+            if (status) {
+                status.style.color = '#f87171';
+                status.textContent = err.message;
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Start Forensic Audit';
+            }
+        }
+    }
+
     async function loadImportDocs() {
         const list = document.getElementById('import-doc-list');
+        const auditBar = document.getElementById('import-doc-audit-bar');
         if (!list) return;
         list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">Loading documents…</p>';
         try {
@@ -17927,19 +18030,34 @@
             const data = await res.json().catch(function() { return {}; });
             if (!res.ok) throw new Error(data.error || 'Could not load documents');
             const docs = data.documents || [];
+            if (auditBar) auditBar.style.display = (selectedImportDoc === 'credit_reports' && docs.length) ? 'flex' : (selectedImportDoc === 'credit_reports' ? 'flex' : 'none');
             if (!docs.length) {
                 list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">Nothing imported in this group yet.</p>';
                 return;
             }
+            const isCredit = selectedImportDoc === 'credit_reports';
             list.innerHTML = docs.map(function(doc) {
                 const when = doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-                const name = String(doc.file_name || 'Document').replace(/[&<>"']/g, function(ch) {
-                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
-                });
+                const name = escImportDocText(doc.file_name || 'Document');
+                const checkbox = isCredit
+                    ? ('<input type="checkbox" name="import-credit-doc" value="' + doc.id + '" ' +
+                       'onchange="document.querySelectorAll(\'input[name=import-credit-doc]\').forEach(function(el){ if(el!==this) el.checked=false; }.bind(this))" ' +
+                       'style="width:18px;height:18px;accent-color:#10b981;cursor:pointer;" aria-label="Select ' + name + ' for audit">')
+                    : '';
+                const badge = isCredit ? creditAuditStatusBadge(doc) : '';
+                const headline = (isCredit && doc.audit_headline)
+                    ? ('<div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">' + escImportDocText(doc.audit_headline) + '</div>')
+                    : '';
+                const reportLink = (isCredit && doc.analysis_id)
+                    ? ('<a href="/credit-analysis?id=' + encodeURIComponent(doc.analysis_id) + '" style="color:#34d399;font-size:0.85rem;font-weight:600;text-decoration:none;margin-right:12px;">Report</a>')
+                    : '';
                 return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">' +
-                    '<div><div style="font-weight:600;color:var(--text-primary);">' + name + '</div>' +
-                    '<div style="font-size:0.78rem;color:var(--text-muted);">' + when + '</div></div>' +
-                    '<a href="/api/vault/documents/' + doc.id + '/download" style="color:#34d399;font-size:0.85rem;font-weight:600;text-decoration:none;">Open</a></div>';
+                    '<div style="display:flex;gap:12px;align-items:flex-start;flex:1;min-width:0;">' +
+                    checkbox +
+                    '<div style="min-width:0;"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><div style="font-weight:600;color:var(--text-primary);">' + name + '</div>' + badge + '</div>' +
+                    '<div style="font-size:0.78rem;color:var(--text-muted);">' + when + '</div>' + headline + '</div></div>' +
+                    '<div style="display:flex;align-items:center;flex-shrink:0;">' + reportLink +
+                    '<a href="/api/vault/documents/' + doc.id + '/download" style="color:#34d399;font-size:0.85rem;font-weight:600;text-decoration:none;">Open</a></div></div>';
             }).join('');
         } catch (err) {
             list.innerHTML = '<p style="color:#f87171;font-size:0.85rem;">' + err.message + '</p>';
@@ -18008,20 +18126,7 @@
                 }
             }
 
-            if (isCredit && analysisBox) {
-                const headline = (data.analysis && data.analysis.summary_headline) || '';
-                const severity = (data.analysis && data.analysis.overall_severity) || '';
-                const debts = typeof data.debts_mapped === 'number' ? data.debts_mapped : 0;
-                const link = data.analysis_id
-                    ? ('/credit-analysis?id=' + encodeURIComponent(data.analysis_id) + (data.access_token ? ('&token=' + encodeURIComponent(data.access_token)) : ''))
-                    : '/credit-analysis';
-                analysisBox.style.display = 'block';
-                analysisBox.innerHTML =
-                    '<div style="font-weight:700;color:#34d399;margin-bottom:6px;">Forensic Credit Scan</div>' +
-                    (headline ? ('<div style="color:var(--text-primary);margin-bottom:6px;">' + String(headline).replace(/[<>&]/g, '') + '</div>') : '') +
-                    (severity ? ('<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px;">Severity: ' + String(severity) + (debts ? (' · ' + debts + ' debt row(s) mapped') : '') + '</div>') : '') +
-                    '<a href="' + link + '" style="color:#34d399;font-weight:600;text-decoration:underline;">Open full Structural Vulnerability Report →</a>';
-            }
+            if (isCredit && !data.partial) renderCreditAuditResult(data);
 
             await loadImportDocs();
         } catch (err) {

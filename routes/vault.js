@@ -185,6 +185,11 @@ router.post('/upload-credit-report', requireAuth, (req, res, next) => {
 
       // 4) Best-effort debt ledger mapping from negative items + revolving balances
       debtsMapped = await mapCreditAnalysisToDebts(pool, userId, analysis);
+      await markDocumentAudited(pool, document.id, analysisId, analysis);
+      document.audit_status = 'audited';
+      document.analysis_id = analysisId;
+      document.audit_headline = analysis?.summary_headline || null;
+      document.audit_severity = analysis?.overall_severity || null;
     } catch (analyzeErr) {
       console.error('[Vault] unified forensic analyze error:', analyzeErr.message);
       if (analysisId) {
@@ -193,6 +198,10 @@ router.post('/upload-credit-report', requireAuth, (req, res, next) => {
           [analysisId]
         ).catch(() => {});
       }
+      await pool.query(
+        `UPDATE user_documents SET audit_status = 'error' WHERE id = $1`,
+        [document.id]
+      ).catch(() => {});
       // Vault + gate already succeeded — return partial success
       return res.status(200).json({
         success: true,
@@ -224,6 +233,164 @@ router.post('/upload-credit-report', requireAuth, (req, res, next) => {
     return res.status(500).json({ error: 'Failed to process and analyze credit report.' });
   }
 });
+
+/**
+ * Run forensic credit audit on an already-vaulted PDF.
+ * POST /api/vault/run-credit-audit  { documentId }
+ * Alias also available at POST /api/mod_credit_analysis/run-from-vault
+ */
+router.post('/run-credit-audit', requireAuth, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const documentId = parseInt(req.body?.documentId || req.body?.document_id, 10);
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+    if (!documentId) return res.status(400).json({ error: 'No document selected for audit.' });
+
+    await ensureVaultTables();
+
+    const creditMod = require('../modules/mod_credit_analysis');
+    const limit = await creditMod.checkRateLimit(req);
+    if (!limit.allowed) {
+      return res.status(429).json({ error: limit.message, reason: limit.reason });
+    }
+
+    const docRes = await pool.query(
+      `SELECT id, category, file_name, file_mime_type, file_data, audit_status, analysis_id
+       FROM user_documents WHERE id = $1 AND user_id = $2`,
+      [documentId, userId]
+    );
+    const doc = docRes.rows[0];
+    if (!doc) return res.status(404).json({ error: 'Document not found.' });
+    if (doc.category !== 'credit_reports') {
+      return res.status(400).json({ error: 'Only credit report documents can be audited here.' });
+    }
+    if (!doc.file_data) {
+      return res.status(400).json({ error: 'Document file data is missing. Re-upload the PDF.' });
+    }
+
+    const nameLower = String(doc.file_name || '').toLowerCase();
+    const mime = String(doc.file_mime_type || '');
+    if (!mime.includes('pdf') && !nameLower.endsWith('.pdf')) {
+      return res.status(400).json({ error: 'Selected file is not a PDF credit report.' });
+    }
+
+    const buffer = Buffer.isBuffer(doc.file_data) ? doc.file_data : Buffer.from(doc.file_data);
+
+    await pool.query(
+      `UPDATE user_documents SET audit_status = 'processing' WHERE id = $1`,
+      [documentId]
+    ).catch(() => {});
+
+    const accessToken = creditMod.newAccessToken();
+    const ip = creditMod.getClientIP(req);
+    let analysisId = null;
+    try {
+      const inserted = await pool.query(
+        `INSERT INTO credit_analyses (user_id, ip_address, status, access_token)
+         VALUES ($1, $2, 'processing', $3) RETURNING id`,
+        [userId, ip, accessToken]
+      );
+      analysisId = inserted.rows[0].id;
+    } catch (insertErr) {
+      const inserted = await pool.query(
+        `INSERT INTO credit_analyses (user_id, ip_address, status)
+         VALUES ($1, $2, 'processing') RETURNING id`,
+        [userId, ip]
+      );
+      analysisId = inserted.rows[0].id;
+    }
+
+    try {
+      const parsed = await creditMod.analyzeReport(buffer);
+      const analysis = parsed.analysis;
+      await pool.query(
+        `UPDATE credit_analyses
+         SET status = 'complete', analysis = $1, raw_text = $2, updated_at = NOW()
+         WHERE id = $3`,
+        [JSON.stringify(analysis), parsed.rawText, analysisId]
+      );
+
+      await pool.query(
+        `UPDATE users SET credit_report_uploaded = TRUE, credit_gate_status = 'uploaded', updated_at = NOW() WHERE id = $1`,
+        [userId]
+      ).catch(() => {});
+
+      const debtsMapped = await mapCreditAnalysisToDebts(pool, userId, analysis);
+      await markDocumentAudited(pool, documentId, analysisId, analysis);
+
+      return res.json({
+        success: true,
+        message: 'Forensic credit audit completed successfully.',
+        document_id: documentId,
+        analysis_id: analysisId,
+        access_token: accessToken,
+        analysis,
+        debts_mapped: debtsMapped,
+        audit_status: 'audited',
+        redirect: '/credit-analysis?id=' + analysisId + '&token=' + encodeURIComponent(accessToken),
+        disclaimer:
+          'Educational analysis only. Not credit-repair services, legal advice, or a guarantee of score/item outcomes.'
+      });
+    } catch (analyzeErr) {
+      console.error('[Vault] run-credit-audit analyze error:', analyzeErr.message);
+      if (analysisId) {
+        await pool.query(
+          `UPDATE credit_analyses SET status = 'error', updated_at = NOW() WHERE id = $1`,
+          [analysisId]
+        ).catch(() => {});
+      }
+      await pool.query(
+        `UPDATE user_documents SET audit_status = 'error' WHERE id = $1`,
+        [documentId]
+      ).catch(() => {});
+      return res.status(500).json({
+        error: analyzeErr.message || 'Failed to run forensic credit audit on selected document.'
+      });
+    }
+  } catch (err) {
+    console.error('[Vault] run-credit-audit error:', err.message);
+    return res.status(500).json({ error: 'Failed to run forensic credit audit on selected document.' });
+  }
+});
+
+async function markDocumentAudited(db, documentId, analysisId, analysis) {
+  try {
+    await db.query(
+      `UPDATE user_documents
+       SET audit_status = 'audited',
+           analysis_id = $2,
+           audited_at = NOW(),
+           audit_headline = $3,
+           audit_severity = $4
+       WHERE id = $1`,
+      [
+        documentId,
+        analysisId,
+        analysis?.summary_headline ? String(analysis.summary_headline).slice(0, 500) : null,
+        analysis?.overall_severity ? String(analysis.overall_severity).slice(0, 16) : null
+      ]
+    );
+  } catch (err) {
+    // Older schemas may lack audit columns — ensure then retry once
+    console.warn('[Vault] markDocumentAudited:', err.message);
+    await ensureVaultTables();
+    await db.query(
+      `UPDATE user_documents
+       SET audit_status = 'audited',
+           analysis_id = $2,
+           audited_at = NOW(),
+           audit_headline = $3,
+           audit_severity = $4
+       WHERE id = $1`,
+      [
+        documentId,
+        analysisId,
+        analysis?.summary_headline ? String(analysis.summary_headline).slice(0, 500) : null,
+        analysis?.overall_severity ? String(analysis.overall_severity).slice(0, 16) : null
+      ]
+    );
+  }
+}
 
 /**
  * Map educational forensic findings into debts ledger (best-effort, non-fatal).
@@ -326,7 +493,9 @@ router.get('/documents', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Paid plan required', upgrade_required: true });
     }
 
-    let query = `SELECT id, category, file_name, file_mime_type, file_size_bytes, notes, created_at
+    let query = `SELECT id, category, file_name, file_mime_type, file_size_bytes, notes, created_at,
+                        COALESCE(audit_status, 'stored') AS audit_status,
+                        analysis_id, audited_at, audit_headline, audit_severity
                  FROM user_documents WHERE user_id = $1`;
     const params = [req.userId];
     if (category) {
@@ -344,7 +513,23 @@ router.get('/documents', requireAuth, async (req, res) => {
     } catch (selectErr) {
       console.error('[Vault] list SELECT failed, self-healing:', selectErr.message);
       await ensureVaultTables();
-      result = await pool.query(query, params);
+      // Fallback without audit columns if still missing mid-heal
+      try {
+        result = await pool.query(query, params);
+      } catch (retryErr) {
+        const legacy = `SELECT id, category, file_name, file_mime_type, file_size_bytes, notes, created_at
+                        FROM user_documents WHERE user_id = $1` +
+          (category ? ' AND category = $2' : (!hasPro ? ' AND category = ANY($2)' : '')) +
+          ' ORDER BY created_at DESC';
+        result = await pool.query(legacy, params);
+        result.rows = result.rows.map((row) => Object.assign({
+          audit_status: 'stored',
+          analysis_id: null,
+          audited_at: null,
+          audit_headline: null,
+          audit_severity: null
+        }, row));
+      }
     }
     res.json({ success: true, documents: result.rows, has_pro: hasPro });
   } catch (err) {
