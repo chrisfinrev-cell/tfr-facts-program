@@ -39,6 +39,13 @@ const multer   = require('multer');
 const { getOpenAI } = require('../../lib/aiClient');
 const { asyncRoute } = require('../../module-error-boundary');
 const { withManualExecutionNotice } = require('../shared/edu-compliance');
+const {
+  ensureActionItemsSchema,
+  seedActionItems,
+  listActionItems,
+  setItemResolved,
+  buildEducationalLetter
+} = require('./actionItems');
 
 function newAccessToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -151,6 +158,11 @@ async function analyzeReport(pdfBuffer) {
     throw new Error('The PDF appears to be empty or image-only. Export a text-based credit report PDF and try again.');
   }
 
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error(
+      'Credit forensic scan is not configured (OPENAI_API_KEY missing on the server). Ask an admin to set it in Vercel environment variables, then retry.'
+    );
+  }
   const aiClient = getOpenAI();
 
   const { AI_SYSTEM_GUARDRAILS } = require('../shared/edu-compliance');
@@ -331,11 +343,20 @@ router.post('/analyze', upload.single('credit_report'), asyncRoute(async (req, r
       [JSON.stringify(analysis), rawText, analysisId]
     );
 
+    let actionItems = [];
+    try {
+      await seedActionItems(pool, { analysisId, userId: limit.userId, analysis });
+      actionItems = await listActionItems(pool, analysisId);
+    } catch (seedErr) {
+      console.warn('[mod_credit_analysis] action item seed:', seedErr.message);
+    }
+
     return res.json({
       success: true,
       analysis_id: analysisId,
       access_token: accessToken,
       analysis,
+      action_items: actionItems,
       authenticated: !!limit.userId,
       tier: limit.tier,
       disclaimer: 'Educational analysis only. Not credit-repair services, legal advice, or a guarantee of score/item outcomes. Consult a licensed professional before acting.',
@@ -383,13 +404,121 @@ router.get('/analysis/:id', asyncRoute(async (req, res) => {
     return res.status(404).json({ error: 'Analysis not found.' });
   }
 
+  let actionItems = [];
+  try {
+    actionItems = await listActionItems(pool, id);
+    if (!actionItems.length && row.analysis) {
+      await seedActionItems(pool, { analysisId: id, userId: row.user_id || userId, analysis: row.analysis });
+      actionItems = await listActionItems(pool, id);
+    }
+  } catch (seedErr) {
+    console.warn('[mod_credit_analysis] action items load:', seedErr.message);
+  }
+
   return res.json({
     id: row.id,
     status: row.status,
     analysis: row.analysis,
+    action_items: actionItems,
     created_at: row.created_at,
     authenticated: !!userId,
     disclaimer: 'Educational analysis only. Not credit-repair services, legal advice, or a guarantee of score/item outcomes.',
+  });
+}));
+
+// GET /analysis/:id/items — checklist items for Action Center
+router.get('/analysis/:id/items', asyncRoute(async (req, res) => {
+  const pool = getPool();
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ error: 'Invalid analysis ID.' });
+
+  const token = String(req.query.token || req.get('x-analysis-token') || '').trim();
+  const userId = req.session?.userId || null;
+  const { rows } = await pool.query(
+    `SELECT id, user_id, access_token, analysis, status FROM credit_analyses WHERE id = $1`,
+    [id]
+  );
+  const row = rows[0];
+  if (!row || row.status !== 'complete') return res.status(404).json({ error: 'Analysis not found.' });
+  const isOwner = !!(userId && row.user_id && Number(row.user_id) === Number(userId));
+  const tokenOk = !!(token && row.access_token && token === row.access_token);
+  if (!isOwner && !tokenOk) return res.status(404).json({ error: 'Analysis not found.' });
+
+  let items = await listActionItems(pool, id);
+  if (!items.length && row.analysis) {
+    await seedActionItems(pool, { analysisId: id, userId: row.user_id || userId, analysis: row.analysis });
+    items = await listActionItems(pool, id);
+  }
+  return res.json({ items, analysis_id: id });
+}));
+
+// PATCH /items/:itemId — toggle strike-through / resolved
+router.patch('/items/:itemId', asyncRoute(async (req, res) => {
+  const pool = getPool();
+  await ensureActionItemsSchema(pool);
+  const itemId = parseInt(req.params.itemId, 10);
+  if (!itemId) return res.status(400).json({ error: 'Invalid item id.' });
+
+  const userId = req.session?.userId || null;
+  const resolved = req.body?.resolved;
+  if (typeof resolved !== 'boolean') {
+    return res.status(400).json({ error: 'resolved boolean required.' });
+  }
+
+  const { rows: owned } = await pool.query(
+    `SELECT i.*, a.user_id AS analysis_user_id, a.access_token
+     FROM credit_audit_items i
+     JOIN credit_analyses a ON a.id = i.analysis_id
+     WHERE i.id = $1`,
+    [itemId]
+  );
+  const row = owned[0];
+  if (!row) return res.status(404).json({ error: 'Item not found.' });
+
+  const token = String(req.body?.token || req.query.token || req.get('x-analysis-token') || '').trim();
+  const isOwner = !!(userId && row.analysis_user_id && Number(row.analysis_user_id) === Number(userId));
+  const tokenOk = !!(token && row.access_token && token === row.access_token);
+  if (!isOwner && !tokenOk) return res.status(404).json({ error: 'Item not found.' });
+
+  const updated = await setItemResolved(pool, {
+    itemId,
+    userId: row.analysis_user_id || userId,
+    resolved
+  });
+  return res.json({ success: true, item: updated });
+}));
+
+// POST /items/:itemId/letter — educational dispute letter draft (user sends themselves)
+router.post('/items/:itemId/letter', asyncRoute(async (req, res) => {
+  const pool = getPool();
+  await ensureActionItemsSchema(pool);
+  const itemId = parseInt(req.params.itemId, 10);
+  if (!itemId) return res.status(400).json({ error: 'Invalid item id.' });
+
+  const userId = req.session?.userId || null;
+  const { rows } = await pool.query(
+    `SELECT i.*, a.user_id AS analysis_user_id, a.access_token, u.name AS user_name
+     FROM credit_audit_items i
+     JOIN credit_analyses a ON a.id = i.analysis_id
+     LEFT JOIN users u ON u.id = a.user_id
+     WHERE i.id = $1`,
+    [itemId]
+  );
+  const row = rows[0];
+  if (!row) return res.status(404).json({ error: 'Item not found.' });
+
+  const token = String(req.body?.token || req.query.token || req.get('x-analysis-token') || '').trim();
+  const isOwner = !!(userId && row.analysis_user_id && Number(row.analysis_user_id) === Number(userId));
+  const tokenOk = !!(token && row.access_token && token === row.access_token);
+  if (!isOwner && !tokenOk) return res.status(404).json({ error: 'Item not found.' });
+
+  const letter = buildEducationalLetter(row, req.body?.full_name || row.user_name);
+  return res.json({
+    success: true,
+    item_id: itemId,
+    letter,
+    disclaimer:
+      'Educational template only. FACTS does not send this letter, contact bureaus, or provide credit-repair services. You are solely responsible for any letter you send.'
   });
 }));
 
@@ -499,6 +628,14 @@ router.post('/run-from-vault', asyncRoute(async (req, res) => {
       [userId]
     ).catch(() => {});
 
+    let actionItems = [];
+    try {
+      await seedActionItems(pool, { analysisId, userId, analysis: parsed.analysis });
+      actionItems = await listActionItems(pool, analysisId);
+    } catch (seedErr) {
+      console.warn('[mod_credit_analysis] run-from-vault seed:', seedErr.message);
+    }
+
     return res.json({
       success: true,
       message: 'Forensic credit audit completed successfully.',
@@ -506,6 +643,7 @@ router.post('/run-from-vault', asyncRoute(async (req, res) => {
       analysis_id: analysisId,
       access_token: accessToken,
       analysis: parsed.analysis,
+      action_items: actionItems,
       audit_status: 'audited',
       redirect: '/credit-analysis?id=' + analysisId + '&token=' + encodeURIComponent(accessToken),
       disclaimer: 'Educational analysis only. Not credit-repair services, legal advice, or a guarantee of score/item outcomes.'
