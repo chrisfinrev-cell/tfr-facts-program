@@ -21,6 +21,9 @@
  *   GET  /analysis/:id   — retrieve a previously run analysis
  *   GET  /history        — list user's analyses (authenticated only)
  *
+ * Unified vault + forensic (authenticated Import Documents flow):
+ *   POST /api/vault/upload-credit-report  — store PDF in vault, clear credit gate, run analyzeReport
+ *
  * Rate limits (enforced in /analyze):
  *   Anonymous (no account): 1 scan per IP address, ever.
  *   Free tier:              3 scans per calendar month.
@@ -412,5 +415,10 @@ router.get('/history', asyncRoute(async (req, res) => {
 module.exports = {
   metadata: { name: 'Forensic Credit Scan', version: '1.0.0', defaultEnabled: true },
   routes: router,
-  analyzeCreditPosture
+  analyzeCreditPosture,
+  analyzeReport,
+  checkRateLimit,
+  getClientIP,
+  newAccessToken,
+  getUserTier
 };

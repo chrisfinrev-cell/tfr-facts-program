@@ -17,7 +17,7 @@
       };
     })();
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>FACTS — Allocate Every Dollar Before You Spend | Free Budget App</title>
     <meta name="description" content="Stop tracking expenses AFTER you spend. FACTS allocates every dollar BEFORE you spend it. Simple 6-category system. Free forever. Bank-level encryption. Take control now.">
     <meta property="og:title" content="FACTS — Take Control of Your Money in 60 Seconds">
@@ -46,6 +46,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/mobile.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -119,6 +120,7 @@
         #landing-page { position: relative; z-index: 1; min-height: 100vh; min-height: 100dvh; }
 
         nav {
+            position: relative;
             padding: 20px 0;
             display: flex; align-items: center; justify-content: space-between;
             max-width: 1100px; margin: 0 auto; padding-left: 24px; padding-right: 24px;
@@ -1866,7 +1868,8 @@
     <div id="landing-page">
         <nav>
             <div class="logo">FACTS <span>by FACTS Finance</span></div>
-            <div class="nav-links" id="nav-links">
+            <button type="button" class="hamburger-toggle" id="hamburger-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="nav-links">☰</button>
+            <div class="nav-links nav-menu" id="nav-links">
                 <a href="/pricing.html" class="nav-link">Pricing</a>
                 <a href="/login.html" class="nav-link" id="nav-login">Log In</a>
                 <a href="/signup.html" class="nav-cta" id="nav-signup">Sign Up Free</a>
@@ -1874,6 +1877,18 @@
                 <a href="/admin" class="nav-link creator-only" id="nav-admin" style="display:none;color:#f59e0b;font-weight:600;" onclick="openAdminGate(event)">🔐 Admin</a>
             </div>
         </nav>
+        <script>
+        (function () {
+          var btn = document.getElementById('hamburger-toggle');
+          var links = document.getElementById('nav-links');
+          if (!btn || !links) return;
+          btn.addEventListener('click', function () {
+            var open = links.classList.toggle('active');
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            btn.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+          });
+        })();
+        </script>
 
         <!-- Hero Section -->
         <section class="hero">
@@ -2829,7 +2844,7 @@
                     <h3 class="section-title" id="alloc-status-title" style="margin-bottom:0;">Allocation Overview</h3>
                     <span style="font-size:0.75rem; color:var(--text-muted);">Tap category to filter</span>
                 </div>
-                <div class="allocation-grid" id="alloc-status">
+                <div class="allocation-grid bucket-grid dashboard-grid" id="alloc-status">
                     <!-- Default fallback: 6-bucket FACTS grid matching real card format (replaced by JS when data loads) -->
                     <div class="alloc-card" title="Necessities allocation"><div class="alloc-header"><div class="alloc-name"><span class="icon">🏠</span><span>Necessities</span></div><span class="alloc-status-badge below">∅ Not Set</span></div><div class="alloc-row1"><span class="alloc-pct-set">Target: <strong style="color:#10b981">50%</strong></span><span class="alloc-pct-actual" style="color:#818cf8">Actual: 0.0%</span><span class="alloc-pct-used" style="color:var(--accent-green)">Used: 0.0%</span></div><div class="alloc-bar" style="margin-bottom:10px;"><div class="alloc-bar-fill" style="width:0%;background:#10b981"></div></div><div class="alloc-row2"><div class="alloc-row2-item"><div class="alloc-row2-label">Set Aside</div><div class="alloc-row2-val">$0.00</div></div><div class="alloc-row2-divider"></div><div class="alloc-row2-item"><div class="alloc-row2-label">Spent</div><div class="alloc-row2-val">$0.00</div></div></div></div>
                     <div class="alloc-card" title="Velocity allocation"><div class="alloc-header"><div class="alloc-name"><span class="icon">⚡</span><span>Velocity</span></div><span class="alloc-status-badge below">∅ Not Set</span></div><div class="alloc-row1"><span class="alloc-pct-set">Target: <strong style="color:#f59e0b">10%</strong></span><span class="alloc-pct-actual" style="color:#818cf8">Actual: 0.0%</span><span class="alloc-pct-used" style="color:var(--accent-green)">Used: 0.0%</span></div><div class="alloc-bar" style="margin-bottom:10px;"><div class="alloc-bar-fill" style="width:0%;background:#f59e0b"></div></div><div class="alloc-row2"><div class="alloc-row2-item"><div class="alloc-row2-label">Set Aside</div><div class="alloc-row2-val">$0.00</div></div><div class="alloc-row2-divider"></div><div class="alloc-row2-item"><div class="alloc-row2-label">Spent</div><div class="alloc-row2-val">$0.00</div></div></div></div>
@@ -3557,10 +3572,11 @@
                              ondrop="handleImportDocDrop(event)">
                             <div style="font-size:2rem;margin-bottom:8px;">📄</div>
                             <div style="font-weight:600;color:var(--text-primary);">Drop the downloaded file here</div>
-                            <div style="color:var(--text-muted);font-size:0.85rem;margin-top:4px;">or click to browse · PDF, JPG, PNG · max 20 MB</div>
+                            <div id="import-doc-formats" style="color:var(--text-muted);font-size:0.85rem;margin-top:4px;">or click to browse · PDF, JPG, PNG · max 20 MB</div>
                             <input type="file" id="import-doc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="handleImportDocSelect(event)">
                         </div>
                         <p id="import-doc-status" style="display:none;margin-top:12px;font-size:0.9rem;"></p>
+                        <div id="import-doc-analysis" style="display:none;margin-top:14px;padding:14px;border-radius:12px;border:1px solid rgba(52,211,153,0.35);background:rgba(16,185,129,0.08);"></div>
                         <div id="import-doc-list" style="margin-top:18px;"></div>
                     </div>
                 </div>
@@ -6290,7 +6306,20 @@
     </div>
     <!-- END GRADUATION MODAL -->
 
-    <!-- Auto-logout Warning Modal -->
+    <!-- --- INACTIVITY WARNING MODAL --- -->
+    <div id="inactivity-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: #131827; border: 1px solid rgba(255, 255, 255, 0.12); padding: 32px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 12px 32px rgba(0,0,0,0.5);">
+            <h3 style="color: #ffffff; margin-top: 0; font-size: 1.25rem;">Session Expiring Soon</h3>
+            <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5; margin-bottom: 24px;">
+                You have been inactive for a while. For your security, you will be automatically logged out in <span id="idle-countdown" style="color: #f59e0b; font-weight: bold;">60</span> seconds.
+            </p>
+            <button id="stay-logged-in-btn" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%; font-size: 1rem;">
+                Stay Logged In
+            </button>
+        </div>
+    </div>
+
+    <!-- Auto-logout Warning Modal (legacy fallback) -->
     <div id="logout-warning-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;align-items:center;justify-content:center;">
         <div style="background:var(--bg-card);border:2px solid var(--accent-rose);border-radius:16px;padding:36px;max-width:440px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
             <div style="text-align:center;margin-bottom:24px;">
@@ -17864,8 +17893,27 @@
         const type = IMPORT_DOC_TYPES.find(function(item) { return item.id === typeId; }) || IMPORT_DOC_TYPES[0];
         const title = document.getElementById('import-doc-title');
         const detail = document.getElementById('import-doc-detail');
+        const formats = document.getElementById('import-doc-formats');
+        const fileInput = document.getElementById('import-doc-file');
+        const analysisBox = document.getElementById('import-doc-analysis');
         if (title) title.textContent = type.title;
-        if (detail) detail.innerHTML = importDocDetailHtml(type);
+        if (detail) {
+            detail.innerHTML = importDocDetailHtml(type) + (typeId === 'credit_reports'
+                ? ' <span style="color:#34d399;">One upload stores the PDF in your vault and runs the Forensic Credit Scan.</span>'
+                : '');
+        }
+        if (formats) {
+            formats.textContent = typeId === 'credit_reports'
+                ? 'or click to browse · PDF only (text-based credit report) · max 20 MB'
+                : 'or click to browse · PDF, JPG, PNG · max 20 MB';
+        }
+        if (fileInput) {
+            fileInput.accept = typeId === 'credit_reports' ? '.pdf,application/pdf' : '.pdf,.jpg,.jpeg,.png';
+        }
+        if (analysisBox) {
+            analysisBox.style.display = 'none';
+            analysisBox.innerHTML = '';
+        }
         renderImportDocTypes();
         await loadImportDocs();
     }
@@ -17914,22 +17962,67 @@
 
     async function uploadImportDoc(file) {
         const status = document.getElementById('import-doc-status');
+        const analysisBox = document.getElementById('import-doc-analysis');
+        if (analysisBox) {
+            analysisBox.style.display = 'none';
+            analysisBox.innerHTML = '';
+        }
         if (status) {
             status.style.display = 'block';
             status.style.color = 'var(--text-secondary)';
-            status.textContent = 'Importing ' + file.name + '…';
+            status.textContent = selectedImportDoc === 'credit_reports'
+                ? ('Storing + forensic scanning ' + file.name + '…')
+                : ('Importing ' + file.name + '…');
         }
+
+        const isCredit = selectedImportDoc === 'credit_reports';
+        if (isCredit) {
+            const lower = String(file.name || '').toLowerCase();
+            if (file.type !== 'application/pdf' && !lower.endsWith('.pdf')) {
+                if (status) {
+                    status.style.color = '#f87171';
+                    status.textContent = 'Credit reports require a PDF export for forensic analysis.';
+                }
+                return;
+            }
+        }
+
         const body = new FormData();
         body.append('file', file);
-        body.append('category', selectedImportDoc);
+        if (!isCredit) body.append('category', selectedImportDoc);
+
         try {
-            const res = await fetch('/api/vault/documents', { method: 'POST', credentials: 'same-origin', body: body });
+            const endpoint = isCredit ? '/api/vault/upload-credit-report' : '/api/vault/documents';
+            const res = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', body: body });
             const data = await res.json().catch(function() { return {}; });
             if (!res.ok) throw new Error(data.error || 'Import failed');
+
             if (status) {
                 status.style.color = '#34d399';
-                status.textContent = file.name + ' is in the system.';
+                if (isCredit) {
+                    status.textContent = data.partial
+                        ? (file.name + ' saved to vault. Forensic scan needs a retry.')
+                        : (file.name + ' stored and forensic scan complete.');
+                } else {
+                    status.textContent = file.name + ' is in the system.';
+                }
             }
+
+            if (isCredit && analysisBox) {
+                const headline = (data.analysis && data.analysis.summary_headline) || '';
+                const severity = (data.analysis && data.analysis.overall_severity) || '';
+                const debts = typeof data.debts_mapped === 'number' ? data.debts_mapped : 0;
+                const link = data.analysis_id
+                    ? ('/credit-analysis?id=' + encodeURIComponent(data.analysis_id) + (data.access_token ? ('&token=' + encodeURIComponent(data.access_token)) : ''))
+                    : '/credit-analysis';
+                analysisBox.style.display = 'block';
+                analysisBox.innerHTML =
+                    '<div style="font-weight:700;color:#34d399;margin-bottom:6px;">Forensic Credit Scan</div>' +
+                    (headline ? ('<div style="color:var(--text-primary);margin-bottom:6px;">' + String(headline).replace(/[<>&]/g, '') + '</div>') : '') +
+                    (severity ? ('<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px;">Severity: ' + String(severity) + (debts ? (' · ' + debts + ' debt row(s) mapped') : '') + '</div>') : '') +
+                    '<a href="' + link + '" style="color:#34d399;font-weight:600;text-decoration:underline;">Open full Structural Vulnerability Report →</a>';
+            }
+
             await loadImportDocs();
         } catch (err) {
             if (status) {
@@ -17955,6 +18048,12 @@
 
     // Initialize auto-logout system
     async function initAutoLogout() {
+        // Shared cross-device manager owns timers when loaded
+        if (window.FactsInactivityLogout) {
+            _autoLogoutInitialized = true;
+            await window.FactsInactivityLogout.ensureArmed();
+            return;
+        }
         // Guard: don't double-initialize (retry loop can race with DOMContentLoaded call)
         if (_autoLogoutInitialized) return;
         _autoLogoutInitialized = true;
@@ -18143,6 +18242,10 @@
     }
 
     function stayLoggedIn() {
+        if (window.FactsInactivityLogout) {
+            window.FactsInactivityLogout.stayLoggedIn();
+            return;
+        }
         hideLogoutWarning();
         resetInactivityTimer();
     }
@@ -18172,6 +18275,10 @@
     }
 
     function logoutNow() {
+        if (window.FactsInactivityLogout) {
+            window.FactsInactivityLogout.logoutNow();
+            return;
+        }
         // Clear all timers
         if (inactivityTimer) clearTimeout(inactivityTimer);
         if (warningTimer) clearTimeout(warningTimer);
@@ -18217,7 +18324,11 @@
 
             if (response.ok) {
                 userTimeoutMinutes = timeoutMinutes;
-                resetInactivityTimer();
+                if (window.FactsInactivityLogout) {
+                    window.FactsInactivityLogout.setTimeoutMinutes(timeoutMinutes);
+                } else {
+                    resetInactivityTimer();
+                }
 
                 // Show success message
                 const successMsg = document.getElementById('timeout-success-message');
@@ -24984,6 +25095,7 @@ document.addEventListener('click', function(e) {
 <!-- FACTS AI Coach — floating chat widget (tier-gated) -->
 <script src="/js/ai-coach.js" defer></script>
 <script src="/js/facts-logout.js"></script>
+<script src="/js/inactivity-logout.js"></script>
 <script src="/js/global-footer.js"></script>
 </body>
 </html>
