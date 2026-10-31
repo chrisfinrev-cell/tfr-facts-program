@@ -363,6 +363,57 @@
     }
     #report-container.visible { display: block; }
 
+    /* Action Center — strike-through checklist + letter drafts */
+    .action-center-list { display: flex; flex-direction: column; gap: 10px; }
+    .action-center-row {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 14px 16px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-panel);
+    }
+    .action-center-row.resolved { opacity: 0.62; background: rgba(15,23,42,0.35); }
+    .action-center-main { display: flex; gap: 12px; align-items: flex-start; flex: 1; min-width: 0; }
+    .action-center-main input[type="checkbox"] {
+      width: 18px; height: 18px; margin-top: 2px; accent-color: #10b981; cursor: pointer; flex-shrink: 0;
+    }
+    .action-center-label { font-weight: 600; color: var(--text-primary); }
+    .action-center-row.resolved .action-center-label {
+      text-decoration: line-through; color: var(--text-muted);
+    }
+    .action-center-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+    .action-center-type {
+      display: inline-block; font-size: 0.68rem; padding: 2px 8px; border-radius: 999px;
+      background: rgba(148,163,184,0.15); color: #94a3b8; margin-right: 6px; text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 700;
+    }
+    .btn-draft-letter {
+      flex-shrink: 0; padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer;
+      background: #059669; color: #fff; font-size: 0.75rem; font-weight: 700;
+    }
+    .btn-draft-letter:hover { background: #10b981; }
+    .letter-modal-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.72); align-items: center; justify-content: center; padding: 16px;
+    }
+    .letter-modal-backdrop.open { display: flex; }
+    .letter-modal {
+      width: min(640px, 100%); background: #0f172a; border: 1px solid #334155; border-radius: 14px;
+      padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+    }
+    .letter-modal h3 { margin: 0 0 6px; color: #34d399; font-size: 1.1rem; }
+    .letter-modal .letter-sub { font-size: 0.78rem; color: #94a3b8; margin-bottom: 12px; }
+    .letter-modal textarea {
+      width: 100%; min-height: 280px; background: #020617; color: #e2e8f0; border: 1px solid #334155;
+      border-radius: 10px; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem; line-height: 1.45; resize: vertical;
+    }
+    .letter-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .letter-modal-actions button {
+      padding: 9px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    }
+    .letter-btn-close { background: #334155; color: #cbd5e1; }
+    .letter-btn-copy { background: #059669; color: #fff; }
+    .letter-disclaimer { font-size: 0.72rem; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
+
     /* Report header */
     .report-header {
       border: 1px solid var(--border);
@@ -948,9 +999,9 @@
 
     <!-- Inline CTA: Educational resources (coming soon) -->
     <div class="cta-block gold-border" id="cta-dispute" style="display:none;">
-      <div class="cta-title">📚 Educational Resource (Coming Soon)</div>
-      <div class="cta-desc">FACTS may later offer optional educational letter templates for literacy purposes. FACTS is <strong>not</strong> a credit repair organization, does not contact bureaus on your behalf, and does not guarantee deletion, score changes, or any outcome. Consult a licensed professional before taking action.</div>
-      <button class="cta-btn" disabled>Educational Templates — Coming Soon</button>
+      <div class="cta-title">📚 Educational Letter Drafts Available</div>
+      <div class="cta-desc">Use the Action Center below to draft educational self-advocacy letters. FACTS is <strong>not</strong> a credit repair organization, does not contact bureaus on your behalf, and does not guarantee deletion, score changes, or any outcome. Consult a licensed professional before taking action.</div>
+      <a class="cta-btn" href="#section-action-center" style="display:inline-block;text-decoration:none;">Go to Action Center →</a>
     </div>
   </div>
 
@@ -1003,6 +1054,19 @@
     </div>
     <div id="actions-content"></div>
 
+    <!-- Action Center: strike-through checklist + educational letter drafts -->
+    <div class="section" id="section-action-center" style="margin-top:24px;border:1px solid rgba(52,211,153,0.28);border-radius:12px;padding:20px;">
+      <div class="section-header" style="margin-bottom:12px;">
+        <div class="section-icon">🎯</div>
+        <div>
+          <div class="section-title">Forensic Credit Audit Action Center</div>
+          <div class="section-sub">Check items off as you follow through. Draft educational self-advocacy letters you can copy and send yourself. FACTS never contacts bureaus for you.</div>
+        </div>
+        <div class="section-count" id="action-center-count">0 items</div>
+      </div>
+      <div id="action-center-content"><div class="empty-state">Action items will appear after a completed scan.</div></div>
+    </div>
+
     <!-- Inline CTA: Credit Architecture Monitor -->
     <div class="cta-block teal-border" style="margin-top:24px;">
       <div class="cta-title">📡 Track Your Progress</div>
@@ -1047,6 +1111,20 @@
 
 </div><!-- /#report-container -->
 
+<!-- Educational letter draft modal -->
+<div class="letter-modal-backdrop" id="letterModal" role="dialog" aria-modal="true" aria-labelledby="letterModalTitle">
+  <div class="letter-modal">
+    <h3 id="letterModalTitle">Educational Letter Draft</h3>
+    <p class="letter-sub" id="letterModalSub">Review, edit, then copy. You send this yourself.</p>
+    <textarea id="letterModalText" spellcheck="true"></textarea>
+    <p class="letter-disclaimer">Educational template only. FACTS is not a credit repair organization and does not contact bureaus, furnishers, or collectors for you. Outcomes are not guaranteed. Consult a licensed professional before sending.</p>
+    <div class="letter-modal-actions">
+      <button type="button" class="letter-btn-close" onclick="closeLetterModal()">Close</button>
+      <button type="button" class="letter-btn-copy" onclick="copyLetterDraft()">Copy Letter</button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── Footer ───────────────────────────────────────────────────────────── -->
 <footer class="footer">
   <p>Forensic Credit Scan is an educational tool. It does not constitute legal or financial advice.<br>
@@ -1058,6 +1136,8 @@
   let selectedFile = null;
   let isScanning   = false;
   let currentId    = null;
+  let currentToken = null;
+  let actionItemsCache = [];
 
   // ─── File selection ───────────────────────────────────────────────────────
   const fileInput   = document.getElementById('fileInput');
@@ -1180,7 +1260,8 @@
       }
 
       currentId = data.analysis_id;
-      renderReport(data.analysis, data.authenticated, data.tier);
+      currentToken = data.access_token || null;
+      renderReport(data.analysis, data.authenticated, data.tier, data.action_items || []);
     } catch (err) {
       stopStepAnimation();
       document.getElementById('processing').classList.remove('visible');
@@ -1194,8 +1275,103 @@
     }
   }
 
+  function analysisAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (currentToken) headers['x-analysis-token'] = currentToken;
+    return headers;
+  }
+
+  function renderActionCenter(items) {
+    actionItemsCache = Array.isArray(items) ? items : [];
+    const countEl = document.getElementById('action-center-count');
+    const content = document.getElementById('action-center-content');
+    if (!content) return;
+    if (countEl) {
+      const done = actionItemsCache.filter(i => i.resolved).length;
+      countEl.textContent = actionItemsCache.length
+        ? `${done}/${actionItemsCache.length} done`
+        : '0 items';
+    }
+    if (!actionItemsCache.length) {
+      content.innerHTML = '<div class="empty-state">No actionable items were extracted. Re-run the scan with a clearer text-based PDF if needed.</div>';
+      return;
+    }
+    content.innerHTML = '<div class="action-center-list">' + actionItemsCache.map(item => {
+      const resolved = !!item.resolved;
+      return `
+        <div class="action-center-row ${resolved ? 'resolved' : ''}" data-item-id="${item.id}">
+          <div class="action-center-main">
+            <input type="checkbox" ${resolved ? 'checked' : ''} aria-label="Mark complete"
+              onchange="toggleActionItem(${item.id}, this.checked)">
+            <div>
+              <div class="action-center-label">
+                <span class="action-center-type">${escHtml(item.item_type || 'item')}</span>
+                ${escHtml(item.label || 'Item')}
+              </div>
+              <div class="action-center-meta">${escHtml(item.details || '')}${item.bureau ? ' · ' + escHtml(item.bureau) : ''}</div>
+            </div>
+          </div>
+          <button type="button" class="btn-draft-letter" onclick="draftLetterForItem(${item.id})">Draft Letter</button>
+        </div>`;
+    }).join('') + '</div>';
+  }
+
+  async function toggleActionItem(itemId, resolved) {
+    if (!currentId) return;
+    try {
+      const res = await fetch('/api/mod_credit_analysis/items/' + itemId, {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: analysisAuthHeaders(),
+        body: JSON.stringify({ resolved: !!resolved, token: currentToken || undefined })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not update item');
+      actionItemsCache = actionItemsCache.map(i => i.id === itemId ? Object.assign({}, i, data.item || { resolved: !!resolved }) : i);
+      renderActionCenter(actionItemsCache);
+    } catch (err) {
+      showStatus(err.message || 'Failed to save checklist progress.', 'error');
+      renderActionCenter(actionItemsCache);
+    }
+  }
+
+  async function draftLetterForItem(itemId) {
+    try {
+      const res = await fetch('/api/mod_credit_analysis/items/' + itemId + '/letter', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: analysisAuthHeaders(),
+        body: JSON.stringify({ token: currentToken || undefined })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not draft letter');
+      const item = actionItemsCache.find(i => i.id === itemId);
+      document.getElementById('letterModalSub').textContent =
+        (item ? (item.label + ' · ') : '') + 'Educational self-advocacy draft — you send it yourself';
+      document.getElementById('letterModalText').value = data.letter || '';
+      document.getElementById('letterModal').classList.add('open');
+    } catch (err) {
+      showStatus(err.message || 'Letter draft failed.', 'error');
+    }
+  }
+
+  function closeLetterModal() {
+    document.getElementById('letterModal').classList.remove('open');
+  }
+
+  async function copyLetterDraft() {
+    const text = document.getElementById('letterModalText').value || '';
+    try {
+      await navigator.clipboard.writeText(text);
+      showStatus('Letter copied to clipboard.', 'info');
+    } catch (err) {
+      document.getElementById('letterModalText').select();
+      showStatus('Select the letter text and copy manually (Ctrl/Cmd+C).', 'info');
+    }
+  }
+
   // ─── Render report ────────────────────────────────────────────────────────
-  function renderReport(analysis, authenticated, tier) {
+  function renderReport(analysis, authenticated, tier, actionItems) {
     document.getElementById('processing').classList.remove('visible');
     const container = document.getElementById('report-container');
     container.classList.add('visible');
@@ -1353,6 +1529,20 @@
       document.getElementById('actions-content').innerHTML = `<div class="action-list">${items}</div>`;
     }
 
+    // ── Action Center checklist + letters ───────────────────────────────────
+    if (Array.isArray(actionItems) && actionItems.length) {
+      renderActionCenter(actionItems);
+    } else if (currentId) {
+      fetch('/api/mod_credit_analysis/analysis/' + encodeURIComponent(currentId) + '/items' +
+        (currentToken ? ('?token=' + encodeURIComponent(currentToken)) : ''),
+        { credentials: 'same-origin' }
+      ).then(r => r.json().catch(() => ({})))
+        .then(data => renderActionCenter(data.items || []))
+        .catch(() => renderActionCenter([]));
+    } else {
+      renderActionCenter([]);
+    }
+
     // ── Summary CTA ─────────────────────────────────────────────────────────
     const addrCount  = addrs.length;
     const negCount   = negs.length;
@@ -1360,8 +1550,8 @@
       document.getElementById('summary-cta').innerHTML = `
         <div class="cta-block gold-border">
           <div class="cta-title">Your Forensic Credit Scan found <strong style="color:var(--red);">${addrCount} invalid past address${addrCount !== 1 ? 'es' : ''}</strong> and <strong style="color:var(--red);">${negCount} negative item${negCount !== 1 ? 's' : ''}</strong>.</div>
-          <div class="cta-desc">This educational scan highlights patterns some consumers review with licensed professionals. FACTS does not dispute items, contact bureaus, or provide credit-repair services. Outcomes are not guaranteed.</div>
-          <button class="cta-btn" disabled>Educational Resources → <span class="coming-soon">Coming Soon</span></button>
+          <div class="cta-desc">Use the Action Center above to strike through follow-through steps and draft educational letters. FACTS does not dispute items, contact bureaus, or provide credit-repair services. Outcomes are not guaranteed.</div>
+          <a class="cta-btn" href="#section-action-center" style="display:inline-block;text-decoration:none;">Open Action Center →</a>
         </div>
       `;
     }
@@ -1401,9 +1591,10 @@
       const data = await res.json().catch(function() { return {}; });
       if (!res.ok || !data.analysis) return;
       currentId = data.id || id;
+      currentToken = token || null;
       document.querySelector('.upload-zone').style.display = 'none';
       document.querySelector('.hero').style.display = 'none';
-      renderReport(data.analysis, !!data.authenticated, null);
+      renderReport(data.analysis, !!data.authenticated, null, data.action_items || []);
     } catch (err) {
       console.warn('Could not load linked analysis:', err.message);
     }

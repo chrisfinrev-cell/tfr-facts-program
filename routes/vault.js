@@ -186,6 +186,12 @@ router.post('/upload-credit-report', requireAuth, (req, res, next) => {
       // 4) Best-effort debt ledger mapping from negative items + revolving balances
       debtsMapped = await mapCreditAnalysisToDebts(pool, userId, analysis);
       await markDocumentAudited(pool, document.id, analysisId, analysis);
+      try {
+        const { seedActionItems } = require('../modules/mod_credit_analysis/actionItems');
+        await seedActionItems(pool, { analysisId, userId, analysis });
+      } catch (seedErr) {
+        console.warn('[Vault] action item seed:', seedErr.message);
+      }
       document.audit_status = 'audited';
       document.analysis_id = analysisId;
       document.audit_headline = analysis?.summary_headline || null;
@@ -317,6 +323,12 @@ router.post('/run-credit-audit', requireAuth, async (req, res) => {
 
       const debtsMapped = await mapCreditAnalysisToDebts(pool, userId, analysis);
       await markDocumentAudited(pool, documentId, analysisId, analysis);
+      try {
+        const { seedActionItems } = require('../modules/mod_credit_analysis/actionItems');
+        await seedActionItems(pool, { analysisId, userId, analysis });
+      } catch (seedErr) {
+        console.warn('[Vault] action item seed:', seedErr.message);
+      }
 
       return res.json({
         success: true,
