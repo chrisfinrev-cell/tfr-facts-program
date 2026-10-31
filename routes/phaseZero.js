@@ -230,16 +230,38 @@ pageRouter.get('/lockout', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'lockout.html'));
 });
 
+async function ensurePhaseZeroColumns() {
+  try {
+    const { ensureAuthSchema } = require('../lib/ensureAuthSchema');
+    await ensureAuthSchema(pool);
+  } catch (err) {
+    console.error('[PhaseZero] ensureAuthSchema:', err.message);
+  }
+}
+
 router.get('/status', requireAuth, async (req, res) => {
   try {
     var userId = req.userId;
-    var result = await pool.query(
-      `SELECT email, declaration_accepted_at, phase_zero_completed_at, ai_guided_setup,
-              ai_setup_answers, phone_verified_at, audit_status, audit_day_count, audit_start_date,
-              audit_last_activity_date, audit_completed_at, audit_attempts, audit_lockout_until,
-              updated_at
-       FROM users WHERE id = $1`, [userId]
-    );
+    var result;
+    try {
+      result = await pool.query(
+        `SELECT email, declaration_accepted_at, phase_zero_completed_at, ai_guided_setup,
+                ai_setup_answers, phone_verified_at, audit_status, audit_day_count, audit_start_date,
+                audit_last_activity_date, audit_completed_at, audit_attempts, audit_lockout_until,
+                updated_at
+         FROM users WHERE id = $1`, [userId]
+      );
+    } catch (selectErr) {
+      console.error('[PhaseZero] status SELECT failed, self-healing schema:', selectErr.message);
+      await ensurePhaseZeroColumns();
+      result = await pool.query(
+        `SELECT email, declaration_accepted_at, phase_zero_completed_at, ai_guided_setup,
+                ai_setup_answers, phone_verified_at, audit_status, audit_day_count, audit_start_date,
+                audit_last_activity_date, audit_completed_at, audit_attempts, audit_lockout_until,
+                updated_at
+         FROM users WHERE id = $1`, [userId]
+      );
+    }
     var user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
     // Client resumes steps using allocation_set_at (derived when skip-ai or ai-setup saved answers).
@@ -253,7 +275,7 @@ router.get('/status', requireAuth, async (req, res) => {
     }));
   } catch(e) {
     console.error('[PhaseZero] status error:', e.message);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', detail: String(e.message || '').slice(0, 180) });
   }
 });
 
@@ -262,18 +284,31 @@ router.post('/accept-declaration', requireAuth, async (req, res) => {
     var userId = req.userId;
     // Set declaration_accepted_at + phase_zero_started_at (starts the 7-day deadline timer)
     // COALESCE preserves the original start time if user re-accepts (e.g., after admin override resets timer)
-    await pool.query(
-      `UPDATE users SET
-         declaration_accepted_at = COALESCE(declaration_accepted_at, NOW()),
-         phase_zero_started_at = COALESCE(phase_zero_started_at, NOW()),
-         updated_at = NOW()
-       WHERE id = $1`,
-      [userId]
-    );
+    try {
+      await pool.query(
+        `UPDATE users SET
+           declaration_accepted_at = COALESCE(declaration_accepted_at, NOW()),
+           phase_zero_started_at = COALESCE(phase_zero_started_at, NOW()),
+           updated_at = NOW()
+         WHERE id = $1`,
+        [userId]
+      );
+    } catch (updateErr) {
+      console.error('[PhaseZero] declaration UPDATE failed, self-healing schema:', updateErr.message);
+      await ensurePhaseZeroColumns();
+      await pool.query(
+        `UPDATE users SET
+           declaration_accepted_at = COALESCE(declaration_accepted_at, NOW()),
+           phase_zero_started_at = COALESCE(phase_zero_started_at, NOW()),
+           updated_at = NOW()
+         WHERE id = $1`,
+        [userId]
+      );
+    }
     res.json({ ok: true });
   } catch(e) {
     console.error('[PhaseZero] declaration error:', e.message);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', detail: String(e.message || '').slice(0, 180) });
   }
 });
 
