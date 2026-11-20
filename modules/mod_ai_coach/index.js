@@ -70,7 +70,7 @@ const {
 // ─── System prompts by intelligence level ─────────────────────────────────────
 function buildSystemPrompt(level, userData, archetypeData) {
   const archetype = archetypeData?.archetype || 'undetermined';
-  const baseContext = `You are the FACTS Allocation Coach — an educational financial literacy assistant for the FACTS (Financial Allocation Control & Tracking System) platform.
+  const baseContext = `You are the FACTS Allocation Coach — an educational financial literacy strategist for the FACTS (Financial Allocation Control & Tracking System) platform.
 You teach budgeting/allocation frameworks. You are NOT a licensed advisor and do NOT provide regulated advice.
 
 FACTS METHODOLOGY (educational framework only): Users allocate income across 6 purpose-driven categories:
