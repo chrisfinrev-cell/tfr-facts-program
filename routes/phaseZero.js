@@ -384,7 +384,7 @@ Respond with JSON only:
       // Normalize if needed
       if (Math.abs(total - 100) > 2) {
         // Fall through to rule-based
-        throw new Error('AI allocation did not sum to 100: ' + total);
+        throw new Error('Allocation did not sum to 100: ' + total);
       }
       // Adjust final bucket to ensure exact 100
       var buckets = ['necessities','velocity','reserve','lifestyle','growth','legacy'];
@@ -395,7 +395,7 @@ Respond with JSON only:
       }
       parsed.legacy = 100 - runningTotal;
 
-      suggestion = { allocations: parsed, rationale: parsed.rationale || 'AI-optimized allocation based on your financial situation.' };
+      suggestion = { allocations: parsed, rationale: parsed.rationale || 'Rule-based allocation optimized for your financial situation.' };
     } catch(aiErr) {
       console.warn('[PhaseZero] AI suggest fallback:', aiErr.message);
       suggestion = buildAllocationSuggestion({ income, debt, emergency, goal });
@@ -762,7 +762,7 @@ router.post('/complete', requireAuth, async (req, res) => {
 
     // Award 25 bonus wallet points for AI-guided path
     if (user.ai_guided_setup) {
-      await pzAwardWalletPoints(userId, 25, 'phase_zero_ai_bonus', 'Phase Zero AI-Guided Setup Bonus — 25 Points');
+      await pzAwardWalletPoints(userId, 25, 'phase_zero_ai_bonus', 'Phase Zero Guided Setup Bonus — 25 Points');
     }
 
     // Log rewards for retroactive application

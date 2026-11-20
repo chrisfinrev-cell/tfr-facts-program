@@ -21,7 +21,7 @@
     'We do not provide financial, investment, tax, legal, lending, insurance, or credit-repair advice. ' +
     'We do not manage, control, or hold user funds, nor do we act as a bank, lender, credit repair organization, ' +
     'broker-dealer, registered investment advisor (RIA), or fiduciary. All tools, calculators, scores, ' +
-    'projections, comparisons, and AI outputs are illustrative estimates — not guarantees. All decisions ' +
+    'projections, comparisons, and system outputs are illustrative estimates — not guarantees. All decisions ' +
     'are made solely by you. Consult a licensed professional before acting.';
 
   // Collapsed version — shown by default on mobile

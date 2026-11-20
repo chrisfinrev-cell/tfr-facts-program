@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Receipt Scanner | FACTS Finance</title>
+<title>Receipt Scanner | FACTS Finance</title>
 <link rel="icon" href="/favicon.ico" type="image/x-icon">
 <style>
   :root {
@@ -190,18 +190,18 @@
   <!-- Page header -->
   <div class="page-header">
     <div class="page-title">
-      🧾 AI Receipt Scanner
+      🧾 Receipt Scanner
       <span id="tier-badge" class="tier-badge" style="display:none"></span>
     </div>
-    <div class="page-sub">Snap a receipt → AI extracts the data → auto-fills your FACTS ledger</div>
+    <div class="page-sub">Snap a receipt → extract the data → auto-fills your FACTS ledger</div>
   </div>
 
   <!-- Free user gate (hidden by default, shown if not Pro) -->
   <div id="upgrade-gate" class="card" style="display:none">
     <div class="upgrade-gate">
       <div class="upgrade-icon">📷</div>
-      <div class="upgrade-title">AI Receipt Scanner</div>
-      <div class="upgrade-desc">Take a photo of any receipt and our AI instantly extracts the vendor, amount, date, and category — then adds it directly to your FACTS ledger.</div>
+      <div class="upgrade-title">Receipt Scanner</div>
+      <div class="upgrade-desc">Take a photo of any receipt and our scanner instantly extracts the vendor, amount, date, and category — then adds it directly to your FACTS ledger.</div>
       <ul class="feature-list">
         <li><span class="check">✓</span> OCR extraction from photos or images</li>
         <li><span class="check">✓</span> Auto-category detection from FACTS buckets</li>
@@ -270,7 +270,7 @@
     <div id="scan-overlay" class="scan-overlay">
       <div>🔍</div>
       <div class="scan-bar"><div class="scan-bar-fill"></div></div>
-      <div class="scan-text">AI is reading your receipt…</div>
+      <div class="scan-text">Reading your receipt…</div>
     </div>
   </div>
 
@@ -278,10 +278,10 @@
   <div id="review-section" class="review-section">
     <div class="card">
       <div class="card-title">✏️ Review & Edit</div>
-      <div class="card-sub">AI extracted the data below — review and correct anything before saving.</div>
+      <div class="card-sub">Extracted data below — review and correct anything before saving.</div>
 
       <div class="form-group">
-        <label class="form-label">Vendor / Description <span class="ai-note" style="text-transform:none; letter-spacing:0">(AI-extracted)</span></label>
+        <label class="form-label">Vendor / Description <span class="ai-note" style="text-transform:none; letter-spacing:0">(auto-extracted)</span></label>
         <input type="text" id="r-description" class="form-input" placeholder="e.g. Whole Foods Market" maxlength="200" />
       </div>
 

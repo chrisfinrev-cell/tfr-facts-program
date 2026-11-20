@@ -172,7 +172,7 @@ Return JSON only.`;
 
   // Extract JSON from response
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('AI did not return valid JSON');
+  if (!jsonMatch) throw new Error('Comparison did not return valid JSON');
   return JSON.parse(jsonMatch[0]);
 }
 
@@ -215,7 +215,7 @@ async function extractBillFromFile(buffer, mimeType, fileUrl) {
 
   const text = response.choices[0].message.content;
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('AI extraction did not return valid JSON');
+  if (!jsonMatch) throw new Error('Bill extraction did not return valid JSON');
   return JSON.parse(jsonMatch[0]);
 }
 
@@ -433,7 +433,7 @@ router.post('/bills/:id/compare', asyncRoute(async (req, res) => {
   try {
     result = await runComparison(bill);
   } catch (e) {
-    return res.status(500).json({ error: 'AI comparison failed. Try again in a moment.', detail: e.message });
+    return res.status(500).json({ error: 'Rate comparison failed. Try again in a moment.', detail: e.message });
   }
 
   const alternatives = result.alternatives || [];

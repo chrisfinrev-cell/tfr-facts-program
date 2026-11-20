@@ -11,7 +11,7 @@
 ### New
 | Path | Purpose |
 |------|---------|
-| `modules/shared/edu-compliance.js` | Shared disclaimers, AI guardrails, `_meta` middleware, manual-execution notice helper |
+| `modules/shared/edu-compliance.js` | Shared disclaimers, educational guardrails, `_meta` middleware, manual-execution notice helper |
 
 ### Backend (logic / posture)
 | Path | Change summary |
@@ -19,7 +19,7 @@
 | `module-loader.js` | Mounts `educationalMetaMiddleware` on high-risk module APIs + `/api/plaid` |
 | `modules/mod_sweep/index.js` | Non-custodial comments; execute = instructional log; `withManualExecutionNotice` on potential/recalculate/execute |
 | `modules/mod_lending_desk/index.js` | Simulation-only underwriting copy; sweep responses get manual-execution notice |
-| `modules/mod_credit_analysis/index.js` | Removed CROA “dispute pack” specs; educational AI schema; API disclaimers |
+| `modules/mod_credit_analysis/index.js` | Removed CROA “dispute pack” specs; educational analysis schema; API disclaimers |
 | `modules/mod_ai_coach/index.js` | Educational system prompt + response footer + disclaimer field |
 | `modules/mod_rate_radar/index.js` | Educational comparison prompt + API disclaimer |
 | `modules/mod_plaid/index.js` | Products reduced to `['transactions']` only (no `auth` / assets) |

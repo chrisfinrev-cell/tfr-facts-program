@@ -72,7 +72,7 @@ const TIER_FEATURES = {
   ],
   individual_pro: [
     'Everything in Free',
-    'AI allocation coach (20 messages/mo)',
+    'Allocation coach (20 messages/mo)',
     'Transaction import & categorization',
     'Financial health scorecard',
     'Document vault',
@@ -80,7 +80,7 @@ const TIER_FEATURES = {
   tfr_pro: [
     'Everything in Individual',
     'Family sharing (up to 6 members)',
-    'AI coach (50 messages/mo)',
+    'Allocation coach (50 messages/mo)',
     'Shared goals & budgets',
     'Family dashboard',
   ],
@@ -92,7 +92,7 @@ const TIER_FEATURES = {
   ],
   business_bundle: [
     'Everything in Business Core',
-    'AI coach (100 messages/mo)',
+    'Allocation coach (100 messages/mo)',
     'Bundle engine & add-ons',
     'Priority support',
   ],
@@ -100,13 +100,13 @@ const TIER_FEATURES = {
     'Everything in Business',
     'HELOC engine & lending desk',
     'Sovereign wealth management',
-    'AI coach (200 messages/mo)',
+    'Allocation coach (200 messages/mo)',
     'Brokerage tracker',
     'Elite analytics suite',
   ],
   sovereign_executive: [
     'Everything in Elite',
-    'Unlimited AI coach',
+    'Unlimited allocation coach',
     'Succession planning tools',
     'Sovereign oath & legacy vault',
     'Direct advisory access',

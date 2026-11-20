@@ -180,7 +180,7 @@
         eyebrow: 'Core program',
         icon: '₣',
         desc: 'The allocation engine for individuals. Six buckets, paycheck entry, tracking, and the path through the first six levels.',
-        includes: ['6-bucket allocations', 'Paycheck & spend tracking', 'Sovereign Score', 'AI Coach (tiered)'],
+        includes: ['6-bucket allocations', 'Paycheck & spend tracking', 'Sovereign Score', 'Allocation Coach (tiered)'],
         cta: { label: 'Open the engine', href: FACTS_APP + '/signup.html' }
       },
       {
@@ -207,7 +207,7 @@
         eyebrow: 'Intake',
         icon: '🌅',
         desc: 'The forensic intake that builds your Day Zero picture — income, bleed, and the first allocation draft — before the engine is fully live.',
-        includes: ['Income & bleed snapshot', 'Forensic questions', 'AI allocation draft'],
+        includes: ['Income & bleed snapshot', 'Forensic questions', 'Rule-based allocation draft'],
         cta: { label: 'Start Phase Zero', href: FACTS_APP + '/phase-zero.html' }
       },
       {
@@ -231,7 +231,7 @@
     ],
 
     modules: [
-      { id: 'ai-coach', title: 'AI Coach', icon: '🧠', status: 'engine', desc: 'Allocation strategist that learns your patterns. Educational output only — not advice.', href: FACTS_APP + '/app.html' },
+      { id: 'ai-coach', title: 'Allocation Coach', icon: '🧠', status: 'engine', desc: 'Allocation strategist grounded in your FACTS patterns. Educational output only — not advice.', href: FACTS_APP + '/app.html' },
       { id: 'rate-radar', title: 'Rate Radar', icon: '📡', status: 'engine', desc: 'Recurring-bill scan with alternative illustrations and a 7-day comparison window.', href: FACTS_APP + '/rate-radar.html' },
       { id: 'forensic-credit', title: 'Forensic Credit Scan', icon: '🔍', status: 'tool', desc: 'Penny-accurate interest-leak breakdown from a credit report upload.', href: '/credit-analysis.html' },
       { id: 'shopping', title: 'Shopping & Receipts', icon: '🛒', status: 'engine', desc: 'GPS store radar, community prices, receipt scan, and bucket sweep of trip savings.', href: FACTS_APP + '/shopping-calculator.html' },

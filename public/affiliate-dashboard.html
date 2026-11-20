@@ -527,12 +527,12 @@
         <!-- Certification Gate Section -->
         <div id="cert-gate-section">
 
-          <!-- AI Sweep Alerts — shown when Plaid finds undeclared institutions -->
+          <!-- Account Sweep Alerts — shown when Plaid finds undeclared institutions -->
           <div id="sweep-alerts-container" class="hidden rounded-xl p-5" style="background:rgba(245,158,11,0.08);border:2px solid rgba(245,158,11,0.5);">
             <div class="flex items-start gap-3">
               <span class="text-2xl flex-shrink-0">🔍</span>
               <div class="flex-1">
-                <h3 class="font-bold text-base" style="color:#92400e;">AI Sweep — Undeclared Accounts Detected</h3>
+                <h3 class="font-bold text-base" style="color:#92400e;">Account Sweep — Undeclared Accounts Detected</h3>
                 <p class="text-sm text-amber-800 mt-1">We noticed transactions to financial institutions not yet linked to your profile. To maintain your Sovereign Certification, acknowledge each one below — mark as Closed/Inactive or link it via Plaid.</p>
                 <div id="sweep-alerts-list" class="mt-3 space-y-2"></div>
               </div>
@@ -1589,7 +1589,7 @@
           renderCertChecklist(gates);
         }
 
-        // ── AI Sweep Alerts ──
+        // ── Account Sweep Alerts ──
         if (sweepAlerts && sweepAlerts.length > 0) {
           renderSweepAlerts(sweepAlerts);
         }

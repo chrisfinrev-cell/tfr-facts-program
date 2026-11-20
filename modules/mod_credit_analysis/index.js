@@ -273,7 +273,7 @@ Output ONLY valid JSON matching this exact schema (no markdown, no explanation):
   } catch (parseErr) {
     console.error('[mod_credit_analysis] AI JSON parse error:', parseErr.message);
     console.error('[mod_credit_analysis] Raw AI response:', raw.slice(0, 500));
-    throw new Error('Analysis failed — the AI returned an unexpected format. Please try again.');
+    throw new Error('Analysis failed — unexpected response format. Please try again.');
   }
 
   return { analysis, rawText: pdfText.slice(0, 50000) };

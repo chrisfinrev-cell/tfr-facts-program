@@ -23,9 +23,9 @@ Express.js + PostgreSQL (Neon) + vanilla JS frontend, served as static HTML from
 - `user_events` — analytics event log (event_type, metadata JSONB, user_id, created_at).
 - `module_events` — module-scoped event audit trail.
 - `stripe_subscriptions` — Stripe subscription records.
-- `ai_coach_messages` — AI coach chat history per user (role, content, tier, created_at).
+- `ai_coach_messages` — allocation coach chat history per user (role, content, tier, created_at).
 - `rate_radar_bills` — recurring bill tracking (category, provider, amount, frequency, renewal dates).
-- `rate_radar_comparisons` — AI comparison results per bill (alternatives JSONB, 7-day TTL).
+- `rate_radar_comparisons` — rate comparison results per bill (alternatives JSONB, 7-day TTL).
 - `rate_radar_dismissals` — dismissed alternatives per user/bill.
 - `credit_analyses` — Forensic Credit Scan results (user_id nullable for anonymous, analysis JSONB).
 - `ip_scan_log` — IP-based rate limiting for anonymous credit scans (1 per IP).
@@ -50,7 +50,7 @@ Express.js + PostgreSQL (Neon) + vanilla JS frontend, served as static HTML from
 - Plaid — bank account linking and balance sync.
 - Twilio — 2FA SMS verification.
 - Web Push — push notification subscriptions.
-- OpenAI — AI allocation suggestions (Phase Zero engine).
+- OpenAI — allocation suggestion engine (Phase Zero; internal integration only).
 
 ## Recent changes
 - 2026-06-02: Renamed "Stolen Wealth Calculator" → "Stolen Wealth Estimator" — text only in facts-funnel.html (title, SVG text, aria-label, comments). URLs unchanged.

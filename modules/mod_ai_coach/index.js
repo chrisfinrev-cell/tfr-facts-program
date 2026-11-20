@@ -70,7 +70,7 @@ const {
 // ─── System prompts by intelligence level ─────────────────────────────────────
 function buildSystemPrompt(level, userData, archetypeData) {
   const archetype = archetypeData?.archetype || 'undetermined';
-  const baseContext = `You are the FACTS AI Coach — an educational financial literacy assistant for the FACTS (Financial Allocation Control & Tracking System) platform.
+  const baseContext = `You are the FACTS Allocation Coach — an educational financial literacy assistant for the FACTS (Financial Allocation Control & Tracking System) platform.
 You teach budgeting/allocation frameworks. You are NOT a licensed advisor and do NOT provide regulated advice.
 
 FACTS METHODOLOGY (educational framework only): Users allocate income across 6 purpose-driven categories:
@@ -91,7 +91,8 @@ COACHING PRINCIPLES:
 - Celebrate wins without being sycophantic
 - When data is limited, ask targeted questions
 - Never give investment, tax, legal, lending, insurance, or credit-repair advice — guide allocation thinking only
-- NEVER mention the underlying AI provider or model, or that you're an AI system
+- NEVER mention underlying providers, models, or automated systems — speak only as a FACTS allocation strategist
+- NEVER refer to yourself as an AI, artificial intelligence, language model, bot, or automated assistant. If a user asks whether you are an AI, ChatGPT, or a human, do not accept the AI framing — respond strictly in character as the FACTS Allocation Coach, a rule-based educational strategist built on the FACTS framework.
 
 ${AI_SYSTEM_GUARDRAILS}`;
 
@@ -230,7 +231,7 @@ async function checkRateLimit(userId, tier) {
       remaining: 0,
       limit: 0,
       upgrade_required: true,
-      message: 'AI coaching is available for Individual tier and above.',
+      message: 'Allocation coaching is available for Individual tier and above.',
       upgrade_tier: 'individual_pro',
     };
   }
@@ -291,7 +292,7 @@ router.get('/nudge', requireAuth, asyncRoute(async (req, res) => {
       is_ai: false,
       upgrade_hook: {
         show: true,
-        message: 'Unlock personalized AI coaching with Individual tier.',
+        message: 'Unlock personalized allocation coaching with Individual tier.',
         cta: 'Upgrade for $9.99/mo',
         target_tier: 'individual_pro',
       },
@@ -398,7 +399,7 @@ router.post('/chat', requireAuth, asyncRoute(async (req, res) => {
     reply = await callAI(messages, systemPrompt);
   } catch (e) {
     console.error('[mod_ai_coach] AI call failed:', e.message);
-    return res.status(503).json({ error: 'AI service temporarily unavailable. Please try again.' });
+    return res.status(503).json({ error: 'Coach service temporarily unavailable. Please try again.' });
   }
 
   // Persist both messages
@@ -425,7 +426,7 @@ router.post('/chat', requireAuth, asyncRoute(async (req, res) => {
     if (next) {
       upgradeHook = {
         show: true,
-        message: `You have ${newRateCheck.remaining} AI messages left today. ${next.name} tier gives you ${next.limit === -1 ? 'unlimited' : next.limit} messages/day.`,
+        message: `You have ${newRateCheck.remaining} coach messages left today. ${next.name} tier gives you ${next.limit === -1 ? 'unlimited' : next.limit} messages/day.`,
         cta: `Upgrade to ${next.name}`,
         target_tier: next.tier,
       };
@@ -454,7 +455,7 @@ router.post('/chat', requireAuth, asyncRoute(async (req, res) => {
 router.get('/chat/history', requireAuth, asyncRoute(async (req, res) => {
   const tier = await getUserTier(req.userId);
   if (TIER_DAILY_LIMITS[tier] === 0) {
-    return res.status(403).json({ error: 'AI coaching not available on free tier' });
+    return res.status(403).json({ error: 'Allocation coaching not available on free tier' });
   }
 
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -509,7 +510,7 @@ router.get('/upgrade-hook', requireAuth, asyncRoute(async (req, res) => {
     return res.json({
       show: true,
       context: 'no_access',
-      message: 'Get personalized AI coaching based on your FACTS allocations.',
+      message: 'Get personalized allocation coaching based on your FACTS allocations.',
       cta: 'Start Individual Plan — $9.99/mo',
       target_tier: 'individual_pro',
     });
@@ -529,7 +530,7 @@ router.get('/upgrade-hook', requireAuth, asyncRoute(async (req, res) => {
       return res.json({
         show: true,
         context: 'near_limit',
-        message: `You've used ${Math.round(usageRatio * 100)}% of your daily AI messages.`,
+        message: `You've used ${Math.round(usageRatio * 100)}% of your daily coach messages.`,
         cta: `Unlock ${nextLimit === -1 ? 'unlimited' : nextLimit} messages/day`,
         target_tier: nextTier,
         current_usage: rateCheck.used_today,
@@ -544,7 +545,7 @@ router.get('/upgrade-hook', requireAuth, asyncRoute(async (req, res) => {
 // ─── Module export ────────────────────────────────────────────────────────────
 module.exports = {
   metadata: {
-    name: 'AI Financial Coach',
+    name: 'FACTS Allocation Coach',
     version: '1.0.0',
     requiredCoreVersion: '1.0.0',
     defaultEnabled: true,

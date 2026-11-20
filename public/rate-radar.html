@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="FACTS">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <title>Rate Radar — Find Better Deals | FACTS</title>
-  <meta name="description" content="Track every recurring bill, scan statements, and let AI find better deals. FACTS Rate Radar.">
+  <meta name="description" content="Track every recurring bill, scan statements, and find better deals. FACTS Rate Radar.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1f2e'/%3E%3Ctext x='50%25' y='62%25' dominant-baseline='middle' text-anchor='middle' font-size='18' fill='%23c9a227'%3E📡%3C/text%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -182,7 +182,7 @@
 
     <!-- Tab: Comparisons -->
     <div id="panel-comparison" style="display:none;">
-      <h3 style="font-size:1rem; font-weight:700; margin:0 0 1rem; color:#94a3b8;">AI Comparison Results</h3>
+      <h3 style="font-size:1rem; font-weight:700; margin:0 0 1rem; color:#94a3b8;">Comparison Results</h3>
       <div id="comparisons-list">
         <div style="text-align:center; padding:3rem; color:#64748b;">Loading comparison data...</div>
       </div>
@@ -377,7 +377,7 @@
 
     <div id="scan-loading-step" style="display:none; text-align:center; padding:2rem 0;">
       <div class="spinner" style="margin:0 auto 1rem; width:36px; height:36px; border-width:3px;"></div>
-      <div style="font-weight:600; color:#f1f5f9; margin-bottom:0.25rem;">AI is reading your bill...</div>
+      <div style="font-weight:600; color:#f1f5f9; margin-bottom:0.25rem;">Reading your bill...</div>
       <div style="font-size:0.8125rem; color:#64748b;">Extracting provider, amount, and renewal date</div>
     </div>
 
@@ -457,7 +457,7 @@
 <div id="modal-comparison" class="modal-backdrop" onclick="if(event.target===this) closeComparisonModal()">
   <div class="modal" style="max-width:620px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
-      <h2 style="font-size:1.125rem; font-weight:700; margin:0;" class="gold-text">AI Rate Comparison</h2>
+      <h2 style="font-size:1.125rem; font-weight:700; margin:0;" class="gold-text">Rate Comparison</h2>
       <button onclick="closeComparisonModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer; line-height:1;">×</button>
     </div>
     <div id="comparison-modal-content"></div>
@@ -531,7 +531,7 @@ async function loadDashboard() {
     document.getElementById('quick-win-sub').textContent = `Save ~$${parseFloat(qw.potential_savings).toFixed(2)}/mo`;
   } else {
     document.getElementById('quick-win-text').textContent = 'No comparisons yet';
-    document.getElementById('quick-win-sub').textContent = 'Add bills and run AI analysis';
+    document.getElementById('quick-win-sub').textContent = 'Add bills and run rate analysis';
   }
 
   if (data.facts_allocation_suggestion) {
@@ -633,7 +633,7 @@ function renderComparisons() {
     el.innerHTML = `<div style="text-align:center;padding:3rem;color:#64748b;">
       <div style="font-size:2.5rem;margin-bottom:0.75rem;">🤖</div>
       <div style="font-weight:600;color:#f1f5f9;margin-bottom:0.5rem;">No comparisons run yet</div>
-      <div style="margin-bottom:1.25rem;">Add bills and click "Find Deals" or "Refresh All Rates" to run AI analysis.</div>
+      <div style="margin-bottom:1.25rem;">Add bills and click "Find Deals" or "Refresh All Rates" to run rate analysis.</div>
     </div>`;
     return;
   }
@@ -825,7 +825,7 @@ async function deleteBill(id) {
 
 // ─── Run Comparison ───────────────────────────────────────────────────────────
 async function runComparison(billId) {
-  showToast('🤖 AI is searching for better rates...');
+  showToast('Searching for better rates...');
   try {
     const result = await apiFetch('/bills/' + billId + '/compare', { method: 'POST' });
     showToast(`✅ Found ${result.alternatives.length} alternatives — save up to $${result.potential_savings.toFixed(2)}/mo`);

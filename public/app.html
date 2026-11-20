@@ -77,14 +77,14 @@
             -webkit-font-smoothing: antialiased;
             -webkit-overflow-scrolling: touch;
             /* WHY: overflow:hidden on body/html creates a clipping context that clips
-               fixed-position children (AI coach button, mobile nav overlay).
+               fixed-position children (allocation coach button, mobile nav overlay).
                Using overflow-x only to allow vertical scroll while preserving
                full visibility of fixed elements. */
             overflow: visible !important;
         }
         html {
             /* WHY: html overflow also creates a clipping context — ensure fixed
-               elements (AI coach, report issue) are never clipped. */
+               elements (allocation coach, report issue) are never clipped. */
             overflow: visible !important;
         }
 
@@ -1304,7 +1304,7 @@
             /* WHY: overflow:hidden on a parent clips fixed-position children (mobile nav overlay, coach button). */
             /* ─── Mobile Navigation Overlay fix ─── */
             #mobile-menu-overlay { overflow: visible !important; }
-            /* AI Coach: ensure button + panel sit above mobile tab bar (z-index 9990) */
+            /* Allocation Coach: ensure button + panel sit above mobile tab bar (z-index 9990) */
             /* WHY: hard pixel values — max()/env() failed on some devices (3rd fix attempt) */
             /* WHY: contain:none required — contain:layout clips the button on some Android Chrome versions */
             #facts-ai-coach-btn { bottom: 80px !important; right: 16px !important; width: 56px !important; height: 56px !important; min-width: 56px !important; min-height: 56px !important; z-index: 9995 !important; overflow: visible !important; border-radius: 50% !important; contain: none !important; }
@@ -2064,7 +2064,7 @@
                     <div class="pricing-amount" style="color: #8b5cf6;">$125<span class="small">/mo annual</span></div>
                     <ul class="pricing-features">
                         <li>✓ HELOC Velocity Engine</li>
-                        <li>✓ Debt-to-Wealth AI</li>
+                        <li>✓ Debt-to-Wealth Engine</li>
                         <li>✓ Automated Interest Offset</li>
                         <li>✓ Friday Sweeps</li>
                     </ul>
@@ -6754,7 +6754,7 @@
                 scanCta.removeAttribute('data-tier-locked');
                 scanCta.style.opacity = '1';
                 scanCta.onclick = function() { window.location.href = '/receipt-scanner'; };
-                if (scanSub) scanSub.textContent = 'AI extracts vendor, amount & category';
+                if (scanSub) scanSub.textContent = 'Extracts vendor, amount & category';
                 if (scanArrow) scanArrow.textContent = '→';
             } else if (scanCta) {
                 // Reinforce locked state for free-tier: explicit event listener as backup
@@ -21866,7 +21866,7 @@
   <div style="font-size:3rem;margin-bottom:16px;">📡</div>
   <h2 style="font-size:1.75rem;font-weight:800;color:var(--text-primary);margin:0 0 12px;">Rate Radar</h2>
   <p style="color:var(--text-secondary);font-size:1rem;line-height:1.6;max-width:500px;margin:0 auto 32px;">
-    Track every recurring bill, scan statements with AI, and find better rates — all in one place.
+    Track every recurring bill, scan statements with rule-based extraction, and find better rates — all in one place.
   </p>
   <a href="/rate-radar" style="
     display:inline-flex;align-items:center;gap:8px;
@@ -21878,7 +21878,7 @@
     box-shadow:0 4px 16px rgba(16,185,129,0.3);
   ">📡 Open Rate Radar</a>
   <p style="margin-top:20px;font-size:0.8rem;color:var(--text-muted);">
-    Opens the Rate Radar dashboard with your tracked bills and AI comparison engine.
+    Opens the Rate Radar dashboard with your tracked bills and rate comparison engine.
   </p>
 </div>
 </div>
@@ -25209,7 +25209,7 @@ document.addEventListener('click', function(e) {
 <script src="/sweep-widget.js"></script>
 
 <script src="/analytics-tracker.js" defer></script>
-<!-- FACTS AI Coach — floating chat widget (tier-gated) -->
+<!-- FACTS Allocation Coach — floating chat widget (tier-gated) -->
 <script src="/js/ai-coach.js" defer></script>
 <script src="/js/facts-logout.js"></script>
 <script src="/js/inactivity-logout.js"></script>

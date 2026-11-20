@@ -365,7 +365,7 @@
     box-shadow: 0 0 20px rgba(212,175,55,0.4);
   }
 
-  /* AI option cards */
+  /* Guided setup option cards */
   .option-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -879,9 +879,9 @@
 
       <div class="option-grid" id="customizeOptions" style="display:none;margin-top:20px;">
         <div class="option-card" id="optYes" onclick="selectSetupOption('yes')">
-          <div class="opt-icon">🤖</div>
-          <div class="opt-label">AI-Assisted Setup</div>
-          <p class="opt-desc">AI suggests custom allocations based on your income and goals. Takes 60 seconds.</p>
+          <div class="opt-icon">📐</div>
+          <div class="opt-label">Guided Architecture Setup</div>
+          <p class="opt-desc">Build custom allocations from your income and goals using FACTS rule-based architecture. Takes 60 seconds.</p>
         </div>
         <div class="option-card" id="optNo" onclick="selectSetupOption('no')">
           <div class="opt-icon">⚙️</div>
@@ -892,13 +892,13 @@
     </div>
   </div>
 
-  <!-- ═══ STEP 2B: AI QUESTIONNAIRE ═══ -->
+  <!-- ═══ STEP 2B: ARCHITECTURE QUESTIONNAIRE ═══ -->
   <div class="step" id="step2b">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
-      <div class="step-count">STEP 03 / 05 — AI ARCHITECTURE BRIEF</div>
+      <div class="step-count">STEP 03 / 05 — ARCHITECTURE BRIEF</div>
       <div class="hud-tag">4 Questions — 60 Seconds</div>
-      <h1>Brief the AI Architect</h1>
+      <h1>Brief Your Financial Architect</h1>
 
       <div class="q-item">
         <label>Q1 — Monthly Income (rough estimate)</label>
@@ -944,12 +944,12 @@
     </div>
   </div>
 
-  <!-- ═══ STEP 2C: AI RESULT ═══ -->
+  <!-- ═══ STEP 2C: ALLOCATION RESULT ═══ -->
   <div class="step" id="step2c">
     <div class="hud-card">
       <div class="corner-tl"></div><div class="corner-br"></div>
       <div class="step-count">STEP 03 / 05 — ALLOCATION RESULT</div>
-      <div class="hud-tag">AI Architect Recommendation</div>
+      <div class="hud-tag">Architecture Recommendation</div>
       <h1>Your Architecture</h1>
       <p id="allocRationale" class="lead"></p>
 
@@ -1056,7 +1056,7 @@ var BUCKET_LABELS = {
 
 // Steps: 0=pregate, 1=declaration, 2=aiChoice, 2b=aiQ, 2c=aiResult, 3=sms, 4=complete
 var STEP_INDICES = { 0: 0, 1: 1, 2: 2, '2b': 2, '2c': 2, 3: 3, 4: 4 };
-// Flow: 0(Pre-Gate) → 1(Declaration) → 3(Email Verify) → 2(Setup) → 2b/2c(AI) → 4(Complete)
+// Flow: 0(Pre-Gate) → 1(Declaration) → 3(Email Verify) → 2(Setup) → 2b/2c(Guided) → 4(Complete)
 var PROGRESS_MAP = { 0: 0, 1: 20, 3: 40, 2: 60, '2b': 70, '2c': 80, 4: 100 };
 var LABEL_ACTIVE_AT = { pl0: [0], pl1: [1], pl2: [2,'2b','2c'], pl3: [3], pl4: [4] };
 
@@ -1255,7 +1255,7 @@ function acceptDeclaration() {
 }
 
 // ═══════════════════════════════════════
-// Step 2: AI Choice
+// Step 2: Setup Choice
 // ═══════════════════════════════════════
 function selectSetupOption(choice) {
   setupChoice = choice;
@@ -1270,7 +1270,7 @@ function proceedSetupChoice() {
   if (setupChoice === 'yes') {
     showStep('2b');
   } else {
-    // Skip AI — use defaults, award XP
+    // Skip guided path — use defaults, award XP
     skipAi();
   }
 }
@@ -1305,7 +1305,7 @@ function skipAi() {
 
 // Bug 3: Show default allocation with customize toggle
 function useDefaultAllocation() {
-  // Use defaults directly (same as skip-AI)
+  // Use defaults directly (same as skip-guided)
   skipAi();
 }
 
@@ -1318,7 +1318,7 @@ function showCustomizeOptions() {
 }
 
 // ═══════════════════════════════════════
-// Step 2B: AI Questionnaire
+// Step 2B: Architecture Questionnaire
 // ═══════════════════════════════════════
 function getAiSuggestion() {
   var income = document.getElementById('qIncome').value;
@@ -1523,7 +1523,7 @@ function completePhaseZero() {
   .then(function(data) {
     if (data.error) { showError('errStep3', data.error || 'Error completing Phase Zero.'); return; }
 
-    // Show AI bonus if applicable
+    // Show guided-setup bonus if applicable
     if (data.ai_guided) {
       document.getElementById('xpBanner').textContent = '🏆 Phase Zero Complete — 100 XP + 25 Bonus Wallet Points earned. Your architecture is set.';
     }
@@ -1541,7 +1541,7 @@ function renderCompletionStats(data) {
   html += '<div class="stat-row"><span class="stat-label">Status</span><span class="stat-value" style="color:var(--accent)">VERIFIED ✓</span></div>';
   html += '<div class="stat-row"><span class="stat-label">XP Awarded</span><span class="stat-value">+100 XP</span></div>';
   if (data && data.ai_guided) {
-    html += '<div class="stat-row"><span class="stat-label">AI Bonus Points</span><span class="stat-value" style="color:var(--gold)">+25 Wallet Points</span></div>';
+    html += '<div class="stat-row"><span class="stat-label">Guided Setup Bonus</span><span class="stat-value" style="color:var(--gold)">+25 Wallet Points</span></div>';
   }
   html += '<div class="stat-row"><span class="stat-label">Audit Status</span><span class="stat-value">168-Hour Audit Starting</span></div>';
   html += '<div class="stat-row"><span class="stat-label">Access Level</span><span class="stat-value">Standard (Audit Mode)</span></div>';

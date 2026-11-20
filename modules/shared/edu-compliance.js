@@ -18,7 +18,7 @@ const EDUCATIONAL_DISCLAIMER =
   'FACTS is a strictly educational and informational platform. ' +
   'It does not provide financial, investment, tax, legal, lending, insurance, or credit-repair advice. ' +
   'FACTS is not a bank, broker-dealer, registered investment advisor (RIA), lender, credit repair organization, or fiduciary. ' +
-  'All tools, calculators, scores, projections, comparisons, and AI outputs are illustrative estimates for literacy and planning education only. ' +
+  'All tools, calculators, scores, projections, comparisons, and system outputs are illustrative estimates for literacy and planning education only. ' +
   'Nothing on this platform guarantees outcomes. All decisions are made solely by you at your own risk. ' +
   'Consult a licensed professional before acting on any financial, credit, lending, tax, or legal matter.';
 

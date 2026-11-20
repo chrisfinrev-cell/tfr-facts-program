@@ -1,5 +1,5 @@
 /**
- * AI Coach Widget — FACTS Financial Coach
+ * Allocation Coach Widget — FACTS Financial Coach
  *
  * Injects a floating chat widget into any page that includes this script.
  * Tier-gated: Free gets nudge-only, Individual+ gets chat.
@@ -351,7 +351,7 @@
     // Toggle button
     const btn = document.createElement('button');
     btn.id = WIDGET_ID + '-btn';
-    btn.setAttribute('aria-label', 'Open AI Coach');
+    btn.setAttribute('aria-label', 'Open Allocation Coach');
     btn.innerHTML = '🧠<span class="coach-badge" id="coach-notif-badge"></span>';
     btn.addEventListener('click', togglePanel);
     document.body.appendChild(btn);
@@ -360,7 +360,7 @@
     const panel = document.createElement('div');
     panel.id = WIDGET_ID + '-panel';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'FACTS AI Coach');
+    panel.setAttribute('aria-label', 'FACTS Allocation Coach');
     panel.innerHTML = `
       <div class="coach-header">
         <div class="coach-header-left">
@@ -457,8 +457,8 @@
     msgsEl.innerHTML = `
       <div class="coach-locked">
         <div class="coach-locked-icon">🔒</div>
-        <div class="coach-locked-title">AI Coaching Locked</div>
-        <div class="coach-locked-sub">Personalized AI coaching is available for Individual tier and above. Get coaching grounded in your FACTS allocations and financial archetype.</div>
+        <div class="coach-locked-title">Coaching Locked</div>
+        <div class="coach-locked-sub">Personalized allocation coaching is available for Individual tier and above. Get coaching grounded in your FACTS allocations and financial archetype.</div>
         <a href="/tier-upgrade" class="coach-locked-cta">Unlock for $9.99/mo →</a>
         <div class="coach-tip" id="free-coach-tip"><strong>💡 Today's Tip</strong><br>Loading your tip...</div>
       </div>
@@ -583,7 +583,7 @@
         // Rate limited
         addMessage({
           role: 'upgrade',
-          content: data.message || 'You\'ve reached your daily message limit. Upgrade your plan for more AI coaching.',
+          content: data.message || 'You\'ve reached your daily message limit. Upgrade your plan for more allocation coaching.',
         });
       } else if (!r.ok) {
         addMessage({ role: 'assistant', content: data.error || 'Something went wrong. Please try again.' });

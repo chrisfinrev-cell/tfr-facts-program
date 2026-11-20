@@ -19565,7 +19565,7 @@ app.get('/api/knowledge-vault/content', requireAuth, async (req, res) => {
       { id: 'b3', tier: 'business', title: 'Business Tax Strategy 101', type: 'strategy', icon: '📑', desc: 'Legitimate tax reduction strategies for small business owners — depreciation, home office, vehicle.', tags: ['tax','business'], read_time: '30 min' },
       { id: 'b4', tier: 'business', title: 'S-Corp vs. LLC: The Tax Decision', type: 'guide', icon: '🏢', desc: 'When to elect S-Corp status to reduce self-employment taxes and how to implement payroll.', tags: ['tax','structure'], read_time: '20 min' },
       { id: 'b5', tier: 'business', title: 'The Business Allocation Percentages', type: 'masterclass', icon: '📐', desc: 'How to allocate business revenue across Operating Expenses, Owner\'s Pay, Taxes, and Profit accounts.', tags: ['business','allocation'], read_time: '18 min' },
-      { id: 'b6', tier: 'business', title: 'AI Receipt Scanner: Getting the Most Out of It', type: 'guide', icon: '🤖', desc: 'Best practices for using TFR\'s AI receipt scanner for expense categorization and tax prep.', tags: ['tools','automation'], read_time: '8 min' },
+      { id: 'b6', tier: 'business', title: 'Receipt Scanner: Getting the Most Out of It', type: 'guide', icon: '🧾', desc: 'Best practices for using TFR\'s receipt scanner for expense categorization and tax prep.', tags: ['tools','automation'], read_time: '8 min' },
 
       // ── ELITE (L10-12) ───────────────────────────────────────────────────
       { id: 'e1', tier: 'elite', title: 'HELOC Velocity: The Mortgage Acceleration Strategy', type: 'masterclass', icon: '🏠', desc: 'How to use a Home Equity Line of Credit as a checking account to slash mortgage interest.', tags: ['heloc','wealth'], read_time: '35 min' },
@@ -26302,8 +26302,8 @@ Return ONLY the JSON object, no other text.`
         }]
       });
     } catch (aiErr) {
-      console.error('[ReceiptScanner] AI error:', aiErr.message);
-      return res.status(503).json({ error: 'AI service unavailable. Please try again shortly.' });
+      console.error('[ReceiptScanner] scan error:', aiErr.message);
+      return res.status(503).json({ error: 'Receipt scan service unavailable. Please try again shortly.' });
     }
 
     let extracted;

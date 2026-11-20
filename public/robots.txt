@@ -1,6 +1,6 @@
 # Financial Revolution — robots.txt
 # © 2024–2026 Financial Revolution. All rights reserved.
-# Unauthorized scraping, data extraction, and AI training use is prohibited.
+# Unauthorized scraping, data extraction, and automated model training use is prohibited.
 # See /terms-of-service for full legal terms.
 
 User-agent: *
@@ -41,7 +41,7 @@ Allow: /community
 Allow: /training
 Allow: /feed
 
-# ── Block AI content scrapers ──────────────────────
+# ── Block automated content scrapers ──────────────────────
 User-agent: GPTBot
 Disallow: /
 

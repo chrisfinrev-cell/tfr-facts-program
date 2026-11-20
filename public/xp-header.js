@@ -38,7 +38,7 @@
     5:  ['Debt Elimination Path', 'Debt Payoff Projections', '2× Streak XP Multipliers'],
     6:  ['Family Incubator (5 sub-accounts)', 'family Linking', 'Breakaway hive-off'],
     7:  ['SDIRA Wealth Hub', 'Vantage Point Dashboard', 'Business community'],
-    8:  ['AI Receipt Scanner', 'Business Dashboard', 'Business Heartbeat Audit'],
+    8:  ['Receipt Scanner', 'Business Dashboard', 'Business Heartbeat Audit'],
     9:  ['Friday Sweep Automation', '5-Pillar Allocation Engine', 'Legacy Strategy Vault'],
     10: ['HELOC Velocity Engine', 'Elite community access', 'Levels 10–12 curriculum'],
     11: ['Interest Recapture Tools', '1-on-1 onboarding call', 'Elite badge + rank'],
